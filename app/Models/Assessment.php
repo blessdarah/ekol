@@ -23,6 +23,7 @@ use Illuminate\Support\Carbon;
  * @property string $exam_weight
  * @property Carbon|null $window_starts_on
  * @property Carbon|null $window_ends_on
+ * @property string|null $assessment_plan_id
  */
 class Assessment extends Model
 {
@@ -41,6 +42,7 @@ class Assessment extends Model
         'window_starts_on',
         'window_ends_on',
         'total_max',
+        'assessment_plan_id',
     ];
 
     /**
@@ -68,6 +70,14 @@ class Assessment extends Model
         }
 
         return today()->between($this->window_starts_on, $this->window_ends_on);
+    }
+
+    /**
+     * @return BelongsTo<AssessmentPlan, $this>
+     */
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(AssessmentPlan::class, 'assessment_plan_id');
     }
 
     /**

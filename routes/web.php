@@ -1,11 +1,16 @@
 <?php
 
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\StaffInvitationController;
+use App\Http\Controllers\CorrectionController;
 use App\Http\Controllers\EnrolmentController;
+use App\Http\Controllers\ExamScheduleController;
 use App\Http\Controllers\FeeController;
+use App\Http\Controllers\GradingController;
+use App\Http\Controllers\MarkSheetController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SeriesRegistrationController;
 use App\Http\Controllers\SetupController;
@@ -14,6 +19,7 @@ use App\Http\Controllers\StructureController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\TermResultController;
 use App\Http\Controllers\TimetableChangeController;
 use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\TimetableReviewController;
@@ -158,16 +164,34 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::post('/fees/invoices/{invoice}/exemption', [FeeController::class, 'exempt'])->name('fees.exemption');
         Route::delete('/fees/invoices/{invoice}/exemption', [FeeController::class, 'removeExemption'])->name('fees.exemption.remove');
         Route::get('/fees/payments/{payment}/receipt', [FeeController::class, 'receipt'])->name('fees.receipt');
+        Route::get('/assessments', [AssessmentController::class, 'index'])->name('assessments');
+        Route::get('/assessments/new', [AssessmentController::class, 'create'])->name('assessments.create');
+        Route::post('/assessments', [AssessmentController::class, 'store'])->name('assessments.store');
+        Route::post('/assessments/terms/{term}/usual', [AssessmentController::class, 'usual'])->name('assessments.usual');
+        Route::get('/assessments/schedule', [ExamScheduleController::class, 'show'])->name('assessments.schedule');
+        Route::post('/assessments/schedule/{plan}/papers', [ExamScheduleController::class, 'save'])->name('assessments.schedule.save');
+        Route::delete('/assessments/schedule/{plan}/papers/{paper}', [ExamScheduleController::class, 'destroy'])->name('assessments.schedule.destroy');
+        Route::post('/assessments/schedule/{plan}/publish', [ExamScheduleController::class, 'publish'])->name('assessments.schedule.publish');
+        Route::get('/assessments/progress', [AssessmentController::class, 'progress'])->name('assessments.progress');
+        Route::get('/assessments/results', [AssessmentController::class, 'results'])->name('assessments.results');
+        Route::get('/assessments/term', [TermResultController::class, 'term'])->name('assessments.term');
+        Route::get('/assessments/reports', [TermResultController::class, 'reports'])->name('assessments.reports');
+        Route::get('/assessments/reports/print', [TermResultController::class, 'print'])->name('assessments.reports.print');
+        Route::get('/assessments/corrections', [CorrectionController::class, 'index'])->name('assessments.corrections');
+        Route::post('/assessments/corrections', [CorrectionController::class, 'store'])->name('assessments.corrections.store');
+        Route::post('/assessments/corrections/{correction}/decision', [CorrectionController::class, 'decide'])->name('assessments.corrections.decide');
+        Route::get('/assessments/grading', [GradingController::class, 'show'])->name('assessments.grading');
+        Route::put('/assessments/grading', [GradingController::class, 'update'])->name('assessments.grading.update');
+        Route::get('/assessments/sheets', [MarkSheetController::class, 'index'])->name('assessments.sheets');
+        Route::get('/assessments/sheets/{sheet}', [MarkSheetController::class, 'show'])->name('assessments.sheets.show');
+        Route::patch('/assessments/sheets/{sheet}', [MarkSheetController::class, 'update'])->name('assessments.sheets.update');
+        Route::get('/assessments/{plan}/edit', [AssessmentController::class, 'edit'])->name('assessments.edit');
+        Route::patch('/assessments/{plan}', [AssessmentController::class, 'update'])->name('assessments.update');
+        Route::post('/assessments/{plan}/close', [AssessmentController::class, 'close'])->name('assessments.close');
+        Route::post('/assessments/{plan}/window', [AssessmentController::class, 'window'])->name('assessments.window');
+        Route::post('/assessments/{plan}/publish', [AssessmentController::class, 'publish'])->name('assessments.publish');
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-        $stubs = [
-            '/assessments' => ['Sequences & Exams', 'assessment flow'],
-        ];
-
-        foreach ($stubs as $uri => [$section, $flow]) {
-            $name = trim($uri, '/');
-            Route::inertia($uri, 'shell/stub', ['section' => $section, 'flow' => $flow])->name($name);
-        }
     });
 });
 

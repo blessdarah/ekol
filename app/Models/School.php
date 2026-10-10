@@ -23,6 +23,7 @@ use Illuminate\Validation\ValidationException;
  * @property string $timezone
  * @property string|null $logo_path
  * @property int $school_days
+ * @property string $pass_mark
  */
 class School extends Model
 {
@@ -76,6 +77,7 @@ class School extends Model
         'timezone',
         'logo_path',
         'school_days',
+        'pass_mark',
     ];
 
     /**

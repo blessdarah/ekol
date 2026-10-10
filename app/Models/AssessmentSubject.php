@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * One row per subject covered by an assessment. The coefficient_id is a
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $max_score
  * @property string|null $examiner_id
  * @property string|null $venue
+ * @property Carbon|null $submitted_at
+ * @property string|null $submitted_by
  */
 class AssessmentSubject extends Model
 {
@@ -32,7 +35,19 @@ class AssessmentSubject extends Model
         'max_score',
         'examiner_id',
         'venue',
+        'submitted_at',
+        'submitted_by',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'submitted_at' => 'datetime',
+        ];
+    }
 
     /**
      * @return BelongsTo<Assessment, $this>
@@ -48,6 +63,14 @@ class AssessmentSubject extends Model
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function examiner(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'examiner_id');
     }
 
     /**

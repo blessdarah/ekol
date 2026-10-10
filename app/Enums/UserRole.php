@@ -84,6 +84,14 @@ enum UserRole: string
     }
 
     /**
+     * Whether the role may plan assessments, follow marks and publish results.
+     */
+    public function managesAssessments(): bool
+    {
+        return in_array($this, [self::Admin, self::Principal, self::AcademicLead], true);
+    }
+
+    /**
      * Whether the role may set fees and record payments.
      */
     public function managesFees(): bool
