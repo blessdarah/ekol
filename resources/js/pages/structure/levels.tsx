@@ -4,6 +4,7 @@ import { index as seriesIndex } from '@/actions/App/Http/Controllers/SeriesContr
 import {
     createLevel,
     destroyClass,
+    levelTemplates,
     storeClass,
     storeRoom,
     updateClass,
@@ -20,6 +21,7 @@ import {
     SUBSYSTEM_LABELS,
     Toggle,
     capsLabelClass,
+    outlineButtonClass,
     solidButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
@@ -464,19 +466,36 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
                 tag={`Structure${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={`${levels.length} levels · ${classCount} classes · series on ${seriesLevels} levels`}
                 action={
-                    <Link href={createLevel.url()} className={solidButtonClass}>
-                        <PlusIcon />
-                        Add level
-                    </Link>
+                    <div className="flex items-center gap-4">
+                        {levels.length > 0 && (
+                            <Link
+                                href={levelTemplates.url()}
+                                className="text-[13px] leading-4 font-medium text-primary hover:underline"
+                            >
+                                Standard structure
+                            </Link>
+                        )}
+                        <Link href={createLevel.url()} className={solidButtonClass}>
+                            <PlusIcon />
+                            Add level
+                        </Link>
+                    </div>
                 }
             />
             <StructureTabs active="levels" />
 
             {levels.length === 0 ? (
-                <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    No levels yet. Add the first one, such as Form 1, and its
-                    classes are created with it.
-                </p>
+                <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">
+                    <p className="text-[13px] leading-[19px] text-text">
+                        No levels yet. Start from a standard structure to
+                        create Form 1 to Upper Sixth (or Sixième to
+                        Terminale) with their classes in one go, or add
+                        levels one at a time.
+                    </p>
+                    <Link href={levelTemplates.url()} className={outlineButtonClass}>
+                        Start from a standard structure
+                    </Link>
+                </div>
             ) : (
                 <div className="flex flex-col gap-8 lg:flex-row">
                     <div className="min-w-0 flex-1 overflow-x-auto">

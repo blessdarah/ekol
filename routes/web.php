@@ -7,6 +7,7 @@ use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StructureController;
+use App\Http\Controllers\SubjectController;
 use App\Http\Middleware\ResolveSchool;
 use Illuminate\Support\Facades\Route;
 
@@ -60,6 +61,8 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::get('/classes', [StructureController::class, 'index'])->name('classes');
         Route::get('/classes/levels/new', [StructureController::class, 'createLevel'])->name('classes.levels.create');
         Route::post('/classes/levels', [StructureController::class, 'storeLevel'])->name('classes.levels.store');
+        Route::get('/classes/levels/templates', [StructureController::class, 'levelTemplates'])->name('classes.levels.templates');
+        Route::post('/classes/levels/templates', [StructureController::class, 'storeLevelTemplates'])->name('classes.levels.templates.store');
         Route::patch('/classes/levels/{level}', [StructureController::class, 'updateLevel'])->name('classes.levels.update');
         Route::post('/classes/levels/{level}/classes', [StructureController::class, 'storeClass'])->name('classes.classes.store');
         Route::patch('/classes/classes/{class}', [StructureController::class, 'updateClass'])->name('classes.classes.update');
@@ -70,6 +73,14 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::post('/classes/series', [SeriesController::class, 'store'])->name('classes.series.store');
         Route::get('/classes/series/{series}', [SeriesController::class, 'edit'])->name('classes.series.edit');
         Route::patch('/classes/series/{series}', [SeriesController::class, 'update'])->name('classes.series.update');
+        Route::get('/classes/subjects', [SubjectController::class, 'index'])->name('classes.subjects');
+        Route::get('/classes/subjects/new', [SubjectController::class, 'create'])->name('classes.subjects.create');
+        Route::post('/classes/subjects', [SubjectController::class, 'store'])->name('classes.subjects.store');
+        Route::get('/classes/subjects/templates', [SubjectController::class, 'templates'])->name('classes.subjects.templates');
+        Route::post('/classes/subjects/templates', [SubjectController::class, 'storeTemplates'])->name('classes.subjects.templates.store');
+        Route::get('/classes/subjects/{subject}', [SubjectController::class, 'show'])->name('classes.subjects.show');
+        Route::get('/classes/subjects/{subject}/edit', [SubjectController::class, 'edit'])->name('classes.subjects.edit');
+        Route::patch('/classes/subjects/{subject}', [SubjectController::class, 'update'])->name('classes.subjects.update');
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
         $stubs = [

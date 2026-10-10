@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditEvent;
+use App\Models\ClassSubject;
 use App\Models\Enrolment;
 use App\Models\Level;
 use App\Models\School;
@@ -10,7 +11,6 @@ use App\Models\SchoolClass;
 use App\Models\Series;
 use App\Models\StudentSeries;
 use App\Models\Subject;
-use App\Models\SubjectTeacher;
 use App\Models\Term;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -149,7 +149,8 @@ class SeriesController extends Controller
         $series?->load('subjects:id');
         $levels = $this->seriesLevels($school);
 
-        $teachers = SubjectTeacher::whereNull('released_at')
+        $teachers = ClassSubject::where('school_id', $school->id)
+            ->whereNotNull('staff_id')
             ->selectRaw('subject_id, COUNT(DISTINCT staff_id) as total')
             ->groupBy('subject_id')
             ->pluck('total', 'subject_id');
@@ -169,8 +170,8 @@ class SeriesController extends Controller
                 'stream' => $series->stream ?? 'science',
                 'min_subjects' => $series->min_subjects,
                 'max_subjects' => $series->max_subjects,
-                'core' => $series->subjects->where('pivot.kind', 'core')->modelKeys(),
-                'electives' => $series->subjects->where('pivot.kind', 'elective')->modelKeys(),
+                'core' => $this->subjectIds($series, 'core'),
+                'electives' => $this->subjectIds($series, 'elective'),
                 'level_ids' => $siblings,
             ] : null,
             'subjects' => Subject::where('school_id', $school->id)
@@ -191,11 +192,22 @@ class SeriesController extends Controller
                 ->map(fn (Series $other) => [
                     'id' => $other->id,
                     'label' => "{$other->code} · {$other->name} · {$other->level?->name}",
-                    'core' => $other->subjects->where('pivot.kind', 'core')->modelKeys(),
-                    'electives' => $other->subjects->where('pivot.kind', 'elective')->modelKeys(),
+                    'core' => $this->subjectIds($other, 'core'),
+                    'electives' => $this->subjectIds($other, 'elective'),
                 ])
                 ->values(),
         ]);
+    }
+
+    /**
+     * Subject ids of one kind, as a plain list. Filtering keeps the
+     * original positions, which would otherwise serialize as an object.
+     *
+     * @return list<string>
+     */
+    protected function subjectIds(Series $series, string $kind): array
+    {
+        return array_values($series->subjects->where('pivot.kind', $kind)->modelKeys());
     }
 
     /**

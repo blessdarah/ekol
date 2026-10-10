@@ -19,6 +19,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -208,6 +209,106 @@ class StructureController extends Controller
         });
 
         return redirect()->route('classes', ['level' => $level->id]);
+    }
+
+    public function levelTemplates(Request $request): Response
+    {
+        $school = static::schoolFor($request);
+        $year = static::currentYear($school);
+        $existing = Level::withTrashed()->where('school_id', $school->id)->get(['name', 'code']);
+
+        return Inertia::render('structure/level-templates', [
+            'yearLabel' => $year?->label,
+            'hasYear' => $year !== null,
+            'defaultSeats' => static::DEFAULT_SEATS,
+            'sets' => collect($this->levelTemplateSets())->map(fn (array $set, string $key) => [
+                'key' => $key,
+                'name' => $set['name'],
+                'description' => $set['description'],
+                'levels' => array_map(fn (array $level) => [
+                    'name' => $level[0],
+                    'code' => $level[1],
+                    'cycle' => $level[2],
+                    'uses_series' => $level[3],
+                    'exists' => $existing->contains(fn (Level $own) => $own->name === $level[0] || $own->code === $level[1]),
+                ], $set['levels']),
+            ])->values(),
+        ]);
+    }
+
+    public function storeLevelTemplates(Request $request): RedirectResponse
+    {
+        $school = static::schoolFor($request);
+        $year = static::currentYear($school);
+        $set = $this->levelTemplateSets()[$request->string('set')->toString()] ?? null;
+
+        abort_unless($set !== null, 404);
+
+        $data = $request->validate([
+            'levels' => ['required', 'array', 'min:1'],
+            'levels.*.code' => ['required', 'string', 'distinct'],
+            'levels.*.class_count' => ['required', 'integer', 'min:0', 'max:12'],
+        ]);
+
+        /** Requested class counts, keyed by level code. */
+        $counts = Arr::pluck($data['levels'], 'class_count', 'code');
+
+        if (array_sum($counts) > 0 && ! $year) {
+            throw ValidationException::withMessages([
+                'levels' => 'Classes belong to an academic year. Make a year active in School Setup first.',
+            ]);
+        }
+
+        $existing = Level::withTrashed()->where('school_id', $school->id)->get(['name', 'code']);
+
+        DB::transaction(function () use ($request, $school, $year, $set, $counts, $existing) {
+            $ordinal = (int) Level::withTrashed()->where('school_id', $school->id)->max('ordinal');
+
+            foreach ($set['levels'] as [$name, $code, $cycle, $usesSeries]) {
+                $taken = $existing->contains(fn (Level $own) => $own->name === $name || $own->code === $code);
+
+                // Levels the school already has are left alone.
+                if (! array_key_exists($code, $counts) || $taken) {
+                    continue;
+                }
+
+                $level = Level::create([
+                    'school_id' => $school->id,
+                    'name' => $name,
+                    'code' => $code,
+                    'ordinal' => ++$ordinal,
+                    'cycle' => $cycle,
+                    'subsystem' => $set['subsystem'],
+                    'uses_series' => $usesSeries && static::seriesAllowed($cycle, $set['subsystem']),
+                ]);
+
+                foreach (array_slice(range('A', 'Z'), 0, $year ? (int) $counts[$code] : 0) as $letter) {
+                    SchoolClass::create([
+                        'school_id' => $school->id,
+                        'academic_year_id' => $year?->id,
+                        'level_id' => $level->id,
+                        'name' => "{$name} {$letter}",
+                        'capacity' => static::DEFAULT_SEATS,
+                    ]);
+                }
+
+                $this->audit($request, $school, 'level', $level->id, 'created', [
+                    'name' => $name,
+                    'classes' => (int) $counts[$code],
+                    'template' => true,
+                ]);
+            }
+        });
+
+        return redirect()->route('classes');
+    }
+
+    /**
+     * @return array<string, array{name: string, description: string, subsystem: string, levels: list<array{0: string, 1: string, 2: string, 3: bool}>}>
+     */
+    protected function levelTemplateSets(): array
+    {
+        return config('level_templates');
     }
 
     public function updateLevel(Request $request, string $level): RedirectResponse

@@ -317,3 +317,92 @@ test('structure is closed to teachers and to other schools', function () {
         ->delete("http://structa.ekol.test/classes/classes/{$foreignClass->id}")
         ->assertNotFound();
 });
+
+test('a standard structure creates its levels and classes and skips existing ones', function () {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+    $year = structureYear($school);
+    structureLevel($school, [
+        'name' => 'Form 1', 'code' => 'F1', 'ordinal' => 1,
+        'cycle' => SchoolCycle::Secondary, 'uses_series' => false,
+    ]);
+
+    $this->actingAs($admin)
+        ->get('http://structa.ekol.test/classes/levels/templates')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('structure/level-templates')
+            ->has('sets', 3)
+            ->where('sets.0.levels.0.exists', true)
+            ->where('sets.0.levels.1.exists', false));
+
+    $this->actingAs($admin)
+        ->post('http://structa.ekol.test/classes/levels/templates', [
+            'set' => 'anglophone_full',
+            'levels' => [
+                ['code' => 'F1', 'class_count' => 4],
+                ['code' => 'F2', 'class_count' => 2],
+                ['code' => 'U6', 'class_count' => 1],
+            ],
+        ])
+        ->assertRedirect(route('classes'))
+        ->assertSessionHasNoErrors();
+
+    $form2 = Level::where('name', 'Form 2')->firstOrFail();
+    $upper = Level::where('name', 'Upper Sixth')->firstOrFail();
+
+    expect(Level::where('school_id', $school->id)->orderBy('ordinal')->pluck('name')->all())
+        ->toBe(['Form 1', 'Form 2', 'Upper Sixth'])
+        ->and(SchoolClass::where('level_id', $form2->id)->orderBy('name')->pluck('name')->all())
+        ->toBe(['Form 2 A', 'Form 2 B'])
+        ->and(SchoolClass::where('academic_year_id', $year->id)->count())->toBe(3)
+        ->and($upper->uses_series)->toBeTrue()
+        ->and($form2->uses_series)->toBeFalse()
+        ->and($upper->cycle)->toBe(SchoolCycle::HighSchool);
+});
+
+test('a standard structure needs an active year before it can create classes', function () {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+
+    $this->actingAs($admin)
+        ->post('http://structa.ekol.test/classes/levels/templates', [
+            'set' => 'francophone',
+            'levels' => [['code' => '6E', 'class_count' => 2]],
+        ])
+        ->assertSessionHasErrors('levels');
+
+    $this->actingAs($admin)
+        ->post('http://structa.ekol.test/classes/levels/templates', [
+            'set' => 'francophone',
+            'levels' => [['code' => '6E', 'class_count' => 0]],
+        ])
+        ->assertRedirect();
+
+    expect(Level::where('name', 'Sixième')->value('subsystem'))->toBe('francophone');
+});
+
+test('the series form receives core and elective ids as plain lists', function () {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+    structureYear($school);
+    $level = structureLevel($school);
+    $biology = structureSubject($school, 'BIO', 'Biology');
+    $physics = structureSubject($school, 'PHY', 'Physics');
+    $series = Series::create([
+        'school_id' => $school->id, 'level_id' => $level->id,
+        'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science',
+    ]);
+    // Alphabetically the elective comes first, so the core subject is not at position 0.
+    $series->subjects()->sync([
+        $biology->id => ['kind' => 'elective'],
+        $physics->id => ['kind' => 'core'],
+    ]);
+
+    $this->actingAs($admin)
+        ->get("http://structa.ekol.test/classes/series/{$series->id}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('structure/series-edit')
+            ->where('series.core', [$physics->id])
+            ->where('series.electives', [$biology->id]));
+});

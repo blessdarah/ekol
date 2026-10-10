@@ -6,8 +6,10 @@ import {
     update,
 } from '@/actions/App/Http/Controllers/SeriesController';
 import {
+    ChipPicker,
     ErrorText,
     LockIcon,
+    RemoveIcon,
     StructureHeader,
     capsLabelClass,
     fieldInputClass,
@@ -41,70 +43,6 @@ interface SeriesEditProps {
     } | null;
     subjects: SubjectProp[];
     others: { id: string; label: string; core: string[]; electives: string[] }[];
-}
-
-function RemoveIcon({ tone }: { tone: string }) {
-    return (
-        <svg width="10" height="10" viewBox="0 0 10 10" className="shrink-0">
-            <path d="M2 2l6 6M8 2L2 8" fill="none" stroke={tone} strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
-    );
-}
-
-/** Chips for what is chosen, with a native picker for what is left. */
-function ChipPicker({
-    label,
-    chosen,
-    options,
-    summary,
-    addLabel,
-    onAdd,
-    children,
-}: {
-    label: string;
-    chosen: number;
-    options: { id: string; name: string }[];
-    summary: string;
-    addLabel: string;
-    onAdd: (id: string) => void;
-    children: ReactNode;
-}) {
-    return (
-        <div className="flex min-h-10 flex-wrap items-center justify-between gap-3 rounded-md border border-solid border-border px-3 py-[7px]">
-            <div className="flex flex-wrap items-center gap-[6px]">
-                {children}
-                {chosen === 0 && (
-                    <span className="text-[13px] leading-4 text-text-muted">
-                        None chosen
-                    </span>
-                )}
-            </div>
-            <div className="flex items-center gap-[10px]">
-                <span className="text-[13px] leading-4 text-text-muted">
-                    {summary}
-                </span>
-                {options.length > 0 && (
-                    <select
-                        aria-label={label}
-                        value=""
-                        onChange={(e) => {
-                            if (e.target.value) {
-                                onAdd(e.target.value);
-                            }
-                        }}
-                        className="h-7 max-w-[160px] rounded-sm border border-solid border-border bg-white px-1 text-[13px] text-text outline-none focus:border-primary"
-                    >
-                        <option value="">{addLabel}</option>
-                        {options.map((option) => (
-                            <option key={option.id} value={option.id}>
-                                {option.name}
-                            </option>
-                        ))}
-                    </select>
-                )}
-            </div>
-        </div>
-    );
 }
 
 function Check({ tone, children }: { tone: 'success' | 'warning'; children: ReactNode }) {

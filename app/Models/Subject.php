@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToSchool;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $department
  * @property int $weekly_periods
  * @property bool $is_theory_practical
+ * @property string|null $coefficient
+ * @property string|null $note
  */
 class Subject extends Model
 {
@@ -28,6 +31,8 @@ class Subject extends Model
         'department',
         'weekly_periods',
         'is_theory_practical',
+        'coefficient',
+        'note',
     ];
 
     /**
@@ -46,6 +51,26 @@ class Subject extends Model
     public function coefficients(): HasMany
     {
         return $this->hasMany(Coefficient::class);
+    }
+
+    /**
+     * The classes that take this subject, each with its own teacher.
+     *
+     * @return HasMany<ClassSubject, $this>
+     */
+    public function classSubjects(): HasMany
+    {
+        return $this->hasMany(ClassSubject::class);
+    }
+
+    /**
+     * Series that carry this subject, as core or elective.
+     *
+     * @return BelongsToMany<Series, $this>
+     */
+    public function series(): BelongsToMany
+    {
+        return $this->belongsToMany(Series::class, 'series_subjects')->withPivot('kind');
     }
 
     /**

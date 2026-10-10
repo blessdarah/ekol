@@ -102,14 +102,14 @@ class User extends Authenticatable
     }
 
     /**
-     * Subjects she currently teaches (released assignments excluded).
+     * Subjects she teaches, in any class.
      *
      * @return BelongsToMany<Subject, $this>
      */
     public function subjects(): BelongsToMany
     {
-        return $this->belongsToMany(Subject::class, 'subject_teachers', 'staff_id', 'subject_id')
-            ->wherePivotNull('released_at')
+        return $this->belongsToMany(Subject::class, 'class_subjects', 'staff_id', 'subject_id')
+            ->distinct()
             ->orderBy('name');
     }
 }
