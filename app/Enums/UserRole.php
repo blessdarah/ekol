@@ -68,6 +68,22 @@ enum UserRole: string
     }
 
     /**
+     * Whether the role may register students and edit their records.
+     */
+    public function managesStudents(): bool
+    {
+        return in_array($this, [self::Admin, self::Principal, self::Registrar], true);
+    }
+
+    /**
+     * Religion and disability are for the principal and administrator only.
+     */
+    public function seesPrivateStudentDetails(): bool
+    {
+        return in_array($this, [self::Admin, self::Principal], true);
+    }
+
+    /**
      * Whether the role may register and manage other staff.
      */
     public function managesStaff(): bool

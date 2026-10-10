@@ -7,6 +7,8 @@ use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StructureController;
+use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Middleware\ResolveSchool;
 use Illuminate\Support\Facades\Route;
@@ -81,10 +83,24 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::get('/classes/subjects/{subject}', [SubjectController::class, 'show'])->name('classes.subjects.show');
         Route::get('/classes/subjects/{subject}/edit', [SubjectController::class, 'edit'])->name('classes.subjects.edit');
         Route::patch('/classes/subjects/{subject}', [SubjectController::class, 'update'])->name('classes.subjects.update');
+        Route::get('/students', [StudentController::class, 'index'])->name('students');
+        Route::get('/students/new', [StudentController::class, 'create'])->name('students.create');
+        Route::post('/students', [StudentController::class, 'store'])->name('students.store');
+        Route::get('/students/sibling-check', [StudentController::class, 'siblingCheck'])->name('students.sibling-check');
+        Route::get('/students/import', [StudentImportController::class, 'show'])->name('students.import');
+        Route::post('/students/import', [StudentImportController::class, 'upload'])->name('students.import.upload');
+        Route::delete('/students/import', [StudentImportController::class, 'destroy'])->name('students.import.destroy');
+        Route::post('/students/import/mapping', [StudentImportController::class, 'mapping'])->name('students.import.mapping');
+        Route::delete('/students/import/mapping', [StudentImportController::class, 'clearMapping'])->name('students.import.mapping.clear');
+        Route::post('/students/import/run', [StudentImportController::class, 'run'])->name('students.import.run');
+        Route::get('/students/import/problems', [StudentImportController::class, 'problems'])->name('students.import.problems');
+        Route::get('/students/import/template', [StudentImportController::class, 'template'])->name('students.import.template');
+        Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
+        Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
+        Route::patch('/students/{student}', [StudentController::class, 'update'])->name('students.update');
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
         $stubs = [
-            '/students' => ['Students', 'student flow'],
             '/enrolment' => ['Enrolment', 'enrolment flow'],
             '/series' => ['Series Registration', 'series registration flow'],
             '/assessments' => ['Sequences & Exams', 'assessment flow'],
