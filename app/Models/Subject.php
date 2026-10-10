@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RoomKind;
 use App\Models\Concerns\BelongsToSchool;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property bool $is_theory_practical
  * @property string|null $coefficient
  * @property string|null $note
+ * @property RoomKind|null $room_kind
  */
 class Subject extends Model
 {
@@ -33,6 +35,7 @@ class Subject extends Model
         'is_theory_practical',
         'coefficient',
         'note',
+        'room_kind',
     ];
 
     /**
@@ -42,6 +45,7 @@ class Subject extends Model
     {
         return [
             'is_theory_practical' => 'boolean',
+            'room_kind' => RoomKind::class,
         ];
     }
 

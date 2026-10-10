@@ -13,6 +13,10 @@ use App\Http\Controllers\StructureController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\TimetableChangeController;
+use App\Http\Controllers\TimetableController;
+use App\Http\Controllers\TimetableReviewController;
+use App\Http\Controllers\TimetableRoomController;
 use App\Http\Middleware\ResolveSchool;
 use Illuminate\Support\Facades\Route;
 
@@ -126,11 +130,27 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::post('/enrolment/placement/clear', [EnrolmentController::class, 'clearClass'])->name('enrolment.placement.clear');
         Route::get('/enrolment/confirm', [EnrolmentController::class, 'confirm'])->name('enrolment.confirm');
         Route::post('/enrolment/confirm', [EnrolmentController::class, 'storeConfirmation'])->name('enrolment.confirm.store');
+        Route::get('/timetable', [TimetableController::class, 'index'])->name('timetable');
+        Route::get('/timetable/setup', [TimetableController::class, 'setup'])->name('timetable.setup');
+        Route::get('/timetable/rooms', [TimetableRoomController::class, 'index'])->name('timetable.rooms');
+        Route::post('/timetable/rooms', [TimetableRoomController::class, 'store'])->name('timetable.rooms.store');
+        Route::patch('/timetable/rooms/{room}', [TimetableRoomController::class, 'update'])->name('timetable.rooms.update');
+        Route::delete('/timetable/rooms/{room}', [TimetableRoomController::class, 'destroy'])->name('timetable.rooms.destroy');
+        Route::get('/timetable/checks', [TimetableController::class, 'checks'])->name('timetable.checks');
+        Route::get('/timetable/generate', [TimetableController::class, 'generator'])->name('timetable.generate');
+        Route::post('/timetable/generate', [TimetableController::class, 'generate'])->name('timetable.generate.run');
+        Route::get('/timetable/review', [TimetableReviewController::class, 'show'])->name('timetable.review');
+        Route::post('/timetable/slots', [TimetableReviewController::class, 'store'])->name('timetable.slots.store');
+        Route::patch('/timetable/slots/{slot}', [TimetableReviewController::class, 'update'])->name('timetable.slots.update');
+        Route::delete('/timetable/slots/{slot}', [TimetableReviewController::class, 'destroy'])->name('timetable.slots.destroy');
+        Route::get('/timetable/publish', [TimetableController::class, 'publishing'])->name('timetable.publish');
+        Route::post('/timetable/publish', [TimetableController::class, 'publish'])->name('timetable.publish.store');
+        Route::get('/timetable/changes', [TimetableChangeController::class, 'index'])->name('timetable.changes');
+        Route::post('/timetable/changes', [TimetableChangeController::class, 'store'])->name('timetable.changes.store');
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
         $stubs = [
             '/assessments' => ['Sequences & Exams', 'assessment flow'],
-            '/timetable' => ['Timetable', 'timetable flow'],
             '/fees' => ['Fees', 'finance flow'],
         ];
 

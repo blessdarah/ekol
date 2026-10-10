@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $staff_id
  * @property string|null $room_id
  * @property int $weekday
+ * @property string|null $timetable_version_id
+ * @property bool $is_locked
  */
 class TimetableSlot extends Model
 {
@@ -34,7 +36,51 @@ class TimetableSlot extends Model
         'staff_id',
         'room_id',
         'weekday',
+        'timetable_version_id',
+        'is_locked',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_locked' => 'boolean',
+        ];
+    }
+
+    /**
+     * @return BelongsTo<TimetableVersion, $this>
+     */
+    public function version(): BelongsTo
+    {
+        return $this->belongsTo(TimetableVersion::class, 'timetable_version_id');
+    }
+
+    /**
+     * @return BelongsTo<Subject, $this>
+     */
+    public function subject(): BelongsTo
+    {
+        return $this->belongsTo(Subject::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function staff(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'staff_id');
+    }
+
+    /**
+     * @return BelongsTo<Room, $this>
+     */
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
+    }
 
     /**
      * @return BelongsTo<Term, $this>

@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $name
  * @property int $capacity
  * @property RoomKind $kind
+ * @property list<array{weekday: int, period_id: string, reason: string|null}>|null $unavailable
  */
 class Room extends Model
 {
@@ -27,6 +28,7 @@ class Room extends Model
         'name',
         'capacity',
         'kind',
+        'unavailable',
     ];
 
     /**
@@ -36,6 +38,7 @@ class Room extends Model
     {
         return [
             'kind' => RoomKind::class,
+            'unavailable' => 'array',
         ];
     }
 
