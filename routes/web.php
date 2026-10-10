@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\StaffInvitationController;
 use App\Http\Controllers\SeriesController;
+use App\Http\Controllers\SeriesRegistrationController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StructureController;
@@ -98,11 +99,17 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
         Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
         Route::patch('/students/{student}', [StudentController::class, 'update'])->name('students.update');
+        Route::get('/series', [SeriesRegistrationController::class, 'index'])->name('series');
+        Route::get('/series/register', [SeriesRegistrationController::class, 'one'])->name('series.one');
+        Route::post('/series/register', [SeriesRegistrationController::class, 'register'])->name('series.register');
+        Route::get('/series/bulk', [SeriesRegistrationController::class, 'bulk'])->name('series.bulk');
+        Route::post('/series/bulk', [SeriesRegistrationController::class, 'bulkStore'])->name('series.bulk.store');
+        Route::get('/series/students/{student}/change', [SeriesRegistrationController::class, 'change'])->name('series.change');
+        Route::post('/series/students/{student}/change', [SeriesRegistrationController::class, 'changeStore'])->name('series.change.store');
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
         $stubs = [
             '/enrolment' => ['Enrolment', 'enrolment flow'],
-            '/series' => ['Series Registration', 'series registration flow'],
             '/assessments' => ['Sequences & Exams', 'assessment flow'],
             '/timetable' => ['Timetable', 'timetable flow'],
             '/fees' => ['Fees', 'finance flow'],

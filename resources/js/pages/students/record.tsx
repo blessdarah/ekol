@@ -1,5 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+import {
+    change as changeSeries,
+    one as chooseSeries,
+} from '@/actions/App/Http/Controllers/SeriesRegistrationController';
 import { edit } from '@/actions/App/Http/Controllers/StudentController';
 import {
     StreamChip,
@@ -275,7 +279,11 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                         </Link>
                         {student.class?.uses_series && (
                             <Link
-                                href={edit.url(student.id)}
+                                href={
+                                    student.series
+                                        ? changeSeries.url(student.id)
+                                        : chooseSeries.url({ query: { student: student.id } })
+                                }
                                 className="text-[13px] leading-4 font-medium text-primary hover:underline"
                             >
                                 {student.series ? 'Change series' : 'Choose a series'}

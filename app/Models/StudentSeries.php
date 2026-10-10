@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -14,6 +15,9 @@ use Illuminate\Support\Carbon;
  * @property string $term_id
  * @property string|null $chosen_by
  * @property Carbon $chosen_at
+ * @property string|null $change_reason
+ * @property string|null $change_note
+ * @property bool $parent_agreed
  */
 class StudentSeries extends Model
 {
@@ -27,6 +31,9 @@ class StudentSeries extends Model
         'term_id',
         'chosen_by',
         'chosen_at',
+        'change_reason',
+        'change_note',
+        'parent_agreed',
     ];
 
     /**
@@ -36,7 +43,18 @@ class StudentSeries extends Model
     {
         return [
             'chosen_at' => 'datetime',
+            'parent_agreed' => 'boolean',
         ];
+    }
+
+    /**
+     * The electives this student chose; core subjects come with the series.
+     *
+     * @return BelongsToMany<Subject, $this>
+     */
+    public function electives(): BelongsToMany
+    {
+        return $this->belongsToMany(Subject::class, 'student_series_subjects')->withTimestamps();
     }
 
     /**

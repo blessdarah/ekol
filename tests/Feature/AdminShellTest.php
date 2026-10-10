@@ -65,7 +65,7 @@ test('every stub destination renders inside the shell', function () {
         '/students' => 'students/roster',
         '/enrolment' => 'shell/stub',
         '/classes' => 'structure/levels',
-        '/series' => 'shell/stub',
+        '/series' => 'series/overview',
         '/assessments' => 'shell/stub',
         '/timetable' => 'shell/stub',
         '/fees' => 'shell/stub',
