@@ -60,6 +60,14 @@ enum UserRole: string
     }
 
     /**
+     * Whether the role may change levels, classes and series.
+     */
+    public function managesStructure(): bool
+    {
+        return $this->managesStaff();
+    }
+
+    /**
      * Whether the role may register and manage other staff.
      */
     public function managesStaff(): bool

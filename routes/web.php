@@ -3,8 +3,10 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\StaffInvitationController;
+use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\StructureController;
 use App\Http\Middleware\ResolveSchool;
 use Illuminate\Support\Facades\Route;
 
@@ -55,12 +57,24 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::post('/staff/{staff}/reminder', [StaffController::class, 'remind'])->name('staff.remind');
         Route::patch('/staff/{staff}/hours', [StaffController::class, 'updateHours'])->name('staff.hours');
 
+        Route::get('/classes', [StructureController::class, 'index'])->name('classes');
+        Route::get('/classes/levels/new', [StructureController::class, 'createLevel'])->name('classes.levels.create');
+        Route::post('/classes/levels', [StructureController::class, 'storeLevel'])->name('classes.levels.store');
+        Route::patch('/classes/levels/{level}', [StructureController::class, 'updateLevel'])->name('classes.levels.update');
+        Route::post('/classes/levels/{level}/classes', [StructureController::class, 'storeClass'])->name('classes.classes.store');
+        Route::patch('/classes/classes/{class}', [StructureController::class, 'updateClass'])->name('classes.classes.update');
+        Route::delete('/classes/classes/{class}', [StructureController::class, 'destroyClass'])->name('classes.classes.destroy');
+        Route::post('/classes/rooms', [StructureController::class, 'storeRoom'])->name('classes.rooms.store');
+        Route::get('/classes/series', [SeriesController::class, 'index'])->name('classes.series');
+        Route::get('/classes/series/new', [SeriesController::class, 'create'])->name('classes.series.create');
+        Route::post('/classes/series', [SeriesController::class, 'store'])->name('classes.series.store');
+        Route::get('/classes/series/{series}', [SeriesController::class, 'edit'])->name('classes.series.edit');
+        Route::patch('/classes/series/{series}', [SeriesController::class, 'update'])->name('classes.series.update');
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
         $stubs = [
             '/students' => ['Students', 'student flow'],
             '/enrolment' => ['Enrolment', 'enrolment flow'],
-            '/classes' => ['Classes & Subjects', 'subject management flow'],
             '/series' => ['Series Registration', 'series registration flow'],
             '/assessments' => ['Sequences & Exams', 'assessment flow'],
             '/timetable' => ['Timetable', 'timetable flow'],

@@ -14,6 +14,7 @@ use Illuminate\Support\Carbon;
  * @property string $id
  * @property string $school_id
  * @property string $name
+ * @property string|null $code
  * @property int $ordinal
  * @property SchoolCycle $cycle
  * @property string|null $subsystem
@@ -27,6 +28,7 @@ class Level extends Model
     protected $fillable = [
         'school_id',
         'name',
+        'code',
         'ordinal',
         'cycle',
         'subsystem',

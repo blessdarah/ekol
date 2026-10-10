@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $form_master_id
  * @property int $capacity
  * @property string|null $stream
+ * @property string|null $home_room_id
  */
 class SchoolClass extends Model
 {
@@ -35,6 +36,7 @@ class SchoolClass extends Model
         'form_master_id',
         'capacity',
         'stream',
+        'home_room_id',
     ];
 
     /**
@@ -59,6 +61,14 @@ class SchoolClass extends Model
     public function formMaster(): BelongsTo
     {
         return $this->belongsTo(User::class, 'form_master_id');
+    }
+
+    /**
+     * @return BelongsTo<Room, $this>
+     */
+    public function homeRoom(): BelongsTo
+    {
+        return $this->belongsTo(Room::class, 'home_room_id');
     }
 
     /**
