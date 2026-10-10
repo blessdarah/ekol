@@ -50,6 +50,8 @@ return new class extends Migration
             $table->decimal('sequence_weight', 3, 1);
             $table->decimal('exam_weight', 3, 1);
             $table->timestamptz('scheduled_for')->nullable();
+            $table->date('window_starts_on')->nullable();
+            $table->date('window_ends_on')->nullable();
             $table->decimal('total_max', 5, 1)->nullable();
             $table->timestampsTz();
         });

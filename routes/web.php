@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
+use App\Http\Controllers\SetupController;
 use App\Http\Middleware\ResolveSchool;
 use Illuminate\Support\Facades\Route;
 
@@ -27,8 +28,31 @@ Route::middleware(ResolveSchool::class)->group(function () {
 
     Route::middleware('auth')->group(function () {
         Route::inertia('/dashboard', 'dashboard')->name('dashboard');
-        Route::inertia('/setup', 'setup')->name('setup');
+        Route::get('/setup', [SetupController::class, 'show'])->name('setup');
+        Route::patch('/setup/profile', [SetupController::class, 'updateProfile'])->name('setup.profile');
+        Route::post('/setup/years', [SetupController::class, 'storeYear'])->name('setup.years.store');
+        Route::patch('/setup/terms', [SetupController::class, 'updateTerms'])->name('setup.terms');
+        Route::patch('/setup/terms/{term}/active', [SetupController::class, 'activateTerm'])->name('setup.terms.activate');
+        Route::patch('/setup/installments', [SetupController::class, 'updateInstallments'])->name('setup.installments');
+        Route::patch('/setup/windows', [SetupController::class, 'updateWindows'])->name('setup.windows');
+        Route::patch('/setup/schoolday', [SetupController::class, 'updateSchoolday'])->name('setup.schoolday');
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+        $stubs = [
+            '/students' => ['Students', 'student flow'],
+            '/enrolment' => ['Enrolment', 'enrolment flow'],
+            '/classes' => ['Classes & Subjects', 'subject management flow'],
+            '/series' => ['Series Registration', 'series registration flow'],
+            '/assessments' => ['Sequences & Exams', 'assessment flow'],
+            '/timetable' => ['Timetable', 'timetable flow'],
+            '/fees' => ['Fees', 'finance flow'],
+            '/staff' => ['Teachers & Staff', 'staff management flow'],
+        ];
+
+        foreach ($stubs as $uri => [$section, $flow]) {
+            $name = trim($uri, '/');
+            Route::inertia($uri, 'shell/stub', ['section' => $section, 'flow' => $flow])->name($name);
+        }
     });
 });
 

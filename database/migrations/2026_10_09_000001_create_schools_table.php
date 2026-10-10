@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('town')->nullable();
             $table->string('cycle')->nullable();
             $table->string('subsystem')->nullable();
+            $table->string('logo_path')->nullable();
+            $table->smallInteger('school_days')->default(63);
             $table->char('currency', 3);
             $table->string('timezone');
             $table->timestampsTz();

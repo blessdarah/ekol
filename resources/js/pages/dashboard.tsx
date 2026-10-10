@@ -1,23 +1,24 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
+import { withAppShell } from '../layouts/app-layout';
 
-export default function Dashboard() {
+function Dashboard() {
     return (
         <>
             <Head title="Dashboard" />
-            <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center p-6">
-                <h1 className="mb-1 text-2xl font-semibold">Dashboard</h1>
-                <p className="text-sm text-gray-500">
-                    Admin dashboard lands here (screen 01, separate change).
+            <div className="rounded-xl border border-solid border-border bg-white p-8">
+                <p className="text-xs font-semibold tracking-[0.06em] text-text-muted uppercase">
+                    Coming soon
                 </p>
-                <Link
-                    href="/logout"
-                    method="post"
-                    as="button"
-                    className="mt-4 text-sm underline"
-                >
-                    Sign out
-                </Link>
-            </main>
+                <h1 className="font-display mt-2 text-[28px] leading-[1.2] font-bold text-text">
+                    Dashboard
+                </h1>
+                <p className="mt-2 text-[14px] text-text-muted">
+                    Arriving in the dashboard flow. Stats, overdue fees and
+                    attention items land here.
+                </p>
+            </div>
         </>
     );
 }
+
+export default withAppShell(Dashboard);

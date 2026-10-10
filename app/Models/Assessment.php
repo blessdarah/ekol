@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property string $id
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property AssessmentState $state
  * @property string $sequence_weight
  * @property string $exam_weight
+ * @property Carbon|null $window_starts_on
+ * @property Carbon|null $window_ends_on
  */
 class Assessment extends Model
 {
@@ -35,6 +38,8 @@ class Assessment extends Model
         'sequence_weight',
         'exam_weight',
         'scheduled_for',
+        'window_starts_on',
+        'window_ends_on',
         'total_max',
     ];
 
@@ -47,7 +52,22 @@ class Assessment extends Model
             'kind' => AssessmentKind::class,
             'state' => AssessmentState::class,
             'scheduled_for' => 'datetime',
+            'window_starts_on' => 'date',
+            'window_ends_on' => 'date',
         ];
+    }
+
+    /**
+     * Whether teachers may currently enter marks: today inside the
+     * window when both bounds are set; unconstrained otherwise.
+     */
+    public function windowOpen(): bool
+    {
+        if (! $this->window_starts_on || ! $this->window_ends_on) {
+            return true;
+        }
+
+        return today()->between($this->window_starts_on, $this->window_ends_on);
     }
 
     /**

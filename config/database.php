@@ -97,6 +97,11 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Must match the app timezone: Laravel sends datetimes to
+            // Postgres as naive wall-clock strings, and Postgres reads
+            // them in the session timezone. A mismatch silently shifts
+            // every timestamptz column (codes looked instantly expired).
+            'timezone' => env('DB_TIMEZONE', 'UTC'),
         ],
 
         'sqlsrv' => [

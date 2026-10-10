@@ -51,10 +51,22 @@ class Term extends Model
     /**
      * A term's dates must fall inside its academic year. This is a
      * cross-table rule, so no declarative CHECK can express it.
+     *
+     * Once any marks exist for the term, its dates and sequence lock:
+     * history must stay explainable.
      */
     protected static function booted(): void
     {
         static::saving(function (Term $term) {
+            if ($term->exists
+                && $term->isDirty(['starts_on', 'ends_on', 'sequence'])
+                && $term->hasMarks()
+            ) {
+                throw ValidationException::withMessages([
+                    'starts_on' => 'This term already has marks and can no longer be changed.',
+                ]);
+            }
+
             if (! $term->academic_year_id) {
                 return;
             }
@@ -75,6 +87,17 @@ class Term extends Model
                 ]);
             }
         });
+    }
+
+    /**
+     * Whether any marks have been entered for this term's assessments.
+     */
+    public function hasMarks(): bool
+    {
+        return Mark::whereHas(
+            'assessmentSubject.assessment',
+            fn ($query) => $query->where('term_id', $this->id)
+        )->exists();
     }
 
     /**

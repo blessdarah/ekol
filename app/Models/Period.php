@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\BelongsToSchool;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -39,5 +40,13 @@ class Period extends Model
         return [
             'is_break' => 'boolean',
         ];
+    }
+
+    /**
+     * @return HasMany<TimetableSlot, $this>
+     */
+    public function timetableSlots(): HasMany
+    {
+        return $this->hasMany(TimetableSlot::class);
     }
 }

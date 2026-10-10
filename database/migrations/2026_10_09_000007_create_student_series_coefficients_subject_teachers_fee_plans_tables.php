@@ -61,6 +61,17 @@ return new class extends Migration
             $table->unique(['school_id', 'level_id', 'academic_year_id']);
         });
 
+        Schema::create('fee_installment_templates', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('school_id')->constrained('schools')->cascadeOnDelete();
+            $table->foreignUuid('academic_year_id')->constrained('academic_years')->cascadeOnDelete();
+            $table->smallInteger('seq');
+            $table->decimal('percent', 5, 2);
+            $table->timestampsTz();
+
+            $table->unique(['school_id', 'academic_year_id', 'seq']);
+        });
+
         if (DB::getDriverName() === 'pgsql') {
             DB::statement("ALTER TABLE coefficients ADD CONSTRAINT coefficients_status_check CHECK (status IN ('draft', 'pending', 'complete'))");
             DB::statement("ALTER TABLE subject_teachers ADD CONSTRAINT subject_teachers_role_check CHECK (role IN ('lead', 'backup'))");
@@ -76,6 +87,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('fee_installment_templates');
         Schema::dropIfExists('fee_plans');
         Schema::dropIfExists('subject_teachers');
         Schema::dropIfExists('coefficients');

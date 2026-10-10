@@ -1,11 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Fee plans price list
-The system SHALL provide a `fee_plans` table scoped to school with level_id, academic_year text, UQ(school_id, level_id, academic_year), annual_amount numeric(10,2), currency char(3), is_active.
+The system SHALL provide a `fee_plans` table scoped to school with level_id, academic_year_id FK (replacing free text), UQ(school_id, level_id, academic_year_id), annual_amount numeric(10,2), currency char(3), is_active.
 
 #### Scenario: Raise fees next year
-- **WHEN** annual_amount increases for a new academic_year
-- **THEN** a new plan row is added; old invoices keep old amounts
+- **WHEN** annual_amount increases for a new academic year
+- **THEN** a new plan row is added pointing at the new year; old invoices keep old amounts
 
 ### Requirement: Invoices with copied amount
 The system SHALL provide an `invoices` table with UQ(student_id, term_id), fee_plan_id, amount_due numeric(10,2) copied (not looked up), issued_on, status enum; balance SHALL always be amount_due minus SUM(payments).

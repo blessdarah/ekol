@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 
 /**
  * @property string $id
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $subsystem
  * @property string $currency
  * @property string $timezone
+ * @property string|null $logo_path
+ * @property int $school_days
  */
 class School extends Model
 {
@@ -71,6 +74,8 @@ class School extends Model
         'subsystem',
         'currency',
         'timezone',
+        'logo_path',
+        'school_days',
     ];
 
     /**
@@ -81,6 +86,21 @@ class School extends Model
         return [
             'cycle' => SchoolCycle::class,
         ];
+    }
+
+    /**
+     * The workspace slug feeds subdomain resolution and must never
+     * change after creation — not even via crafted requests.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (School $school) {
+            if ($school->exists && $school->isDirty('slug')) {
+                throw ValidationException::withMessages([
+                    'slug' => 'The workspace address cannot be changed.',
+                ]);
+            }
+        });
     }
 
     /**
