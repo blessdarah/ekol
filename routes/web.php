@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\StaffInvitationController;
 use App\Http\Controllers\CorrectionController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnrolmentController;
 use App\Http\Controllers\ExamScheduleController;
 use App\Http\Controllers\FeeController;
@@ -51,7 +52,20 @@ Route::middleware(ResolveSchool::class)->group(function () {
         ->middleware('throttle:10,1')->name('invitation.store');
 
     Route::middleware('auth')->group(function () {
-        Route::inertia('/dashboard', 'dashboard')->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
+
+        $teacherStubs = [
+            '/my-timetable' => ['My Timetable', 'teacher timetable flow'],
+            '/attendance' => ['Attendance', 'attendance flow'],
+            '/teaching-log' => ['Teaching Log', 'teaching log flow'],
+            '/lesson-notes' => ['Lesson Notes', 'lesson notes flow'],
+            '/question-bank' => ['Question Bank', 'question bank flow'],
+        ];
+
+        foreach ($teacherStubs as $uri => [$section, $flow]) {
+            Route::inertia($uri, 'shell/stub', ['section' => $section, 'flow' => $flow])->name(trim($uri, '/'));
+        }
+
         Route::get('/setup', [SetupController::class, 'show'])->name('setup');
         Route::patch('/setup/profile', [SetupController::class, 'updateProfile'])->name('setup.profile');
         Route::post('/setup/years', [SetupController::class, 'storeYear'])->name('setup.years.store');

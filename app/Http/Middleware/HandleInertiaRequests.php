@@ -117,6 +117,7 @@ class HandleInertiaRequests extends Middleware
         return [
             'full_name' => $user->full_name,
             'roleLabel' => Str::headline($user->role->value),
+            'portal' => $user->role->teaches() ? 'teacher' : 'admin',
         ];
     }
 

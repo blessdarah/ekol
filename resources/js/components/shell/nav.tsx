@@ -47,6 +47,24 @@ export const Icons = {
     settings: (
         <Icon d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
     ),
+    today: (
+        <Icon d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2" />
+    ),
+    attendance: (
+        <Icon d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM16 11l2 2 4-4" />
+    ),
+    log: (
+        <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
+    ),
+    marks: (
+        <Icon d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9" />
+    ),
+    notes: (
+        <Icon d="M6 3h9l5 5v13H6zM14 3v6h6M9 13h7M9 17h5" />
+    ),
+    bank: (
+        <Icon d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-4.3-4.3" />
+    ),
     chevron: (
         <Icon d="M6 9l6 6 6-6" />
     ),
@@ -95,6 +113,31 @@ export const NAV_SECTIONS: NavSection[] = [
             { href: '/fees', label: 'Fees', icon: 'fees' },
             { href: '/staff', label: 'Teachers & Staff', icon: 'staff' },
             { href: '/setup', label: 'School Setup', icon: 'settings' },
+        ],
+    },
+];
+
+export const TEACHER_NAV_SECTIONS: NavSection[] = [
+    {
+        label: '',
+        links: [
+            { href: '/dashboard', label: 'Today', icon: 'today' },
+            { href: '/my-timetable', label: 'My Timetable', icon: 'timetable' },
+        ],
+    },
+    {
+        label: 'In class',
+        links: [
+            { href: '/attendance', label: 'Attendance', icon: 'attendance' },
+            { href: '/teaching-log', label: 'Teaching Log', icon: 'log' },
+            { href: '/assessments/sheets', label: 'Marks', icon: 'marks' },
+        ],
+    },
+    {
+        label: 'Preparation',
+        links: [
+            { href: '/lesson-notes', label: 'Lesson Notes', icon: 'notes' },
+            { href: '/question-bank', label: 'Question Bank', icon: 'bank' },
         ],
     },
 ];

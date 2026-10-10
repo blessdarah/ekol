@@ -1,6 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { logout } from '@/actions/App/Http/Controllers/Auth/LoginController';
-import { Icons, NAV_SECTIONS } from './nav';
+import { Icons, NAV_SECTIONS, TEACHER_NAV_SECTIONS } from './nav';
 
 export interface ShellSchool {
     id: string;
@@ -19,6 +19,7 @@ export interface ShellUser {
     full_name: string;
     initials: string;
     roleLabel: string;
+    portal?: 'teacher' | 'admin';
 }
 
 function initialsOf(name: string): string {
@@ -39,6 +40,8 @@ export default function Sidebar({
     feeBadge: number | null;
 }) {
     const { url } = usePage();
+    const sections = user?.portal === 'teacher' ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
+    const path = url.split('?')[0];
 
     return (
         <aside className="font-auth sticky top-0 flex h-screen print:hidden w-[248px] shrink-0 flex-col border-r border-solid border-border bg-surface antialiased">
@@ -51,7 +54,7 @@ export default function Sidebar({
                         {school?.name ?? '…'}
                     </span>
                     <span className="text-[12px] text-text-muted">
-                        {school?.role ?? 'Administrator'}
+                        {user?.roleLabel ?? 'Administrator'}
                     </span>
                 </span>
                 <span className="shrink-0 text-text-muted">
@@ -74,15 +77,17 @@ export default function Sidebar({
             )}
 
             <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 pb-4">
-                {NAV_SECTIONS.map((section) => (
+                {sections.map((section) => (
                     <div key={section.label} className="flex flex-col gap-1">
-                        <p className="px-2 text-[11px] font-semibold tracking-[0.06em] text-text-muted uppercase">
-                            {section.label}
-                        </p>
+                        {section.label && (
+                            <p className="px-2 text-[11px] font-semibold tracking-[0.06em] text-text-muted uppercase">
+                                {section.label}
+                            </p>
+                        )}
                         {section.links.map((link) => {
                             const active =
-                                url === link.href ||
-                                url.startsWith(`${link.href}/`);
+                                path === link.href ||
+                                path.startsWith(`${link.href}/`);
                             const badge =
                                 link.href === '/fees' ? feeBadge : null;
 

@@ -84,6 +84,15 @@ enum UserRole: string
     }
 
     /**
+     * Whether the role's work is in the classroom, so the portal opens
+     * on her day rather than on the school's administration.
+     */
+    public function teaches(): bool
+    {
+        return in_array($this, [self::Teacher, self::FormMaster, self::HeadOfDepartment], true);
+    }
+
+    /**
      * Whether the role may plan assessments, follow marks and publish results.
      */
     public function managesAssessments(): bool
