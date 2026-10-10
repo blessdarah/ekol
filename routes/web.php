@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AssessmentController;
+use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\StaffInvitationController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\SeriesRegistrationController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StructureController;
+use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\SubjectController;
@@ -55,9 +57,10 @@ Route::middleware(ResolveSchool::class)->group(function () {
     Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
         Route::get('/my-timetable', [TeacherTimetableController::class, 'show'])->name('my-timetable');
+        Route::get('/attendance', [AttendanceController::class, 'show'])->name('attendance');
+        Route::post('/attendance/{slot}', [AttendanceController::class, 'store'])->name('attendance.store');
 
         $teacherStubs = [
-            '/attendance' => ['Attendance', 'attendance flow'],
             '/teaching-log' => ['Teaching Log', 'teaching log flow'],
             '/lesson-notes' => ['Lesson Notes', 'lesson notes flow'],
             '/question-bank' => ['Question Bank', 'question bank flow'],
@@ -126,6 +129,8 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::get('/students/import/template', [StudentImportController::class, 'template'])->name('students.import.template');
         Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
         Route::get('/students/{student}/fees', [FeeController::class, 'studentTab'])->name('students.fees');
+        Route::get('/students/{student}/attendance', [StudentAttendanceController::class, 'show'])->name('students.attendance');
+        Route::post('/students/{student}/attendance/{attendance}/excuse', [StudentAttendanceController::class, 'excuse'])->name('students.attendance.excuse');
         Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
         Route::patch('/students/{student}', [StudentController::class, 'update'])->name('students.update');
         Route::get('/series', [SeriesRegistrationController::class, 'index'])->name('series');

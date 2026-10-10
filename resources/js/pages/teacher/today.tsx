@@ -12,6 +12,7 @@ interface Lesson {
     room: string | null;
     students: number;
     state: 'done' | 'now' | 'next' | 'later';
+    marked: boolean;
     in_minutes: number | null;
 }
 
@@ -35,6 +36,7 @@ interface TodayProps {
     hasTimetable: boolean;
     isSchoolDay: boolean;
     lessons: Lesson[];
+    unmarked: number;
     next: Lesson | null;
     sheets: SheetRow[];
     openSheets: number;
@@ -94,9 +96,10 @@ const LESSON_PILLS: Record<Lesson['state'], { label: string; pill: string }> = {
     later: { label: 'Later', pill: 'bg-surface text-text-muted' },
 };
 
-function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, next, sheets, openSheets, closesOn }: TodayProps) {
+function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmarked, next, sheets, openSheets, closesOn }: TodayProps) {
     const summary = [
         hasTimetable ? plural(lessons.length, 'lesson') + ' today' : 'no timetable published yet',
+        ...(unmarked > 0 ? [`${unmarked} attendance still to mark`] : []),
         plural(openSheets, 'mark sheet') + ' open',
     ].join(' · ');
     const upcoming = sheets.filter((sheet) => !sheet.open);
@@ -137,7 +140,7 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, next,
                             </p>
                         </div>
                         <div className="flex gap-3">
-                            <Link href="/attendance" className="flex h-9 items-center rounded-md bg-primary px-4 text-[14px] leading-[18px] font-medium text-white hover:bg-primary-hover">
+                            <Link href={`/attendance?lesson=${next.id}`} className="flex h-9 items-center rounded-md bg-primary px-4 text-[14px] leading-[18px] font-medium text-white hover:bg-primary-hover">
                                 Take attendance
                             </Link>
                             <Link href="/teaching-log" className="flex h-9 items-center rounded-md border border-solid border-[#C9DED4] bg-white px-4 text-[14px] leading-[18px] font-medium text-text hover:bg-surface">
@@ -251,12 +254,17 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, next,
                     ) : (
                         lessons.map((lesson, position) => {
                             const focus = lesson.id === next?.id;
-                            const pill = LESSON_PILLS[lesson.state];
+                            const pill = lesson.marked
+                                ? { label: 'Marked', pill: 'bg-success-tint text-success' }
+                                : lesson.state === 'done'
+                                  ? { label: 'Not marked', pill: 'bg-warning-tint text-[#8A5A12]' }
+                                  : LESSON_PILLS[lesson.state];
 
                             return (
-                                <div
+                                <Link
                                     key={lesson.id}
-                                    className={`flex items-center gap-3 px-4 py-[11px] ${focus ? 'bg-[#EDF4F0]' : position > 0 ? 'border-t border-solid border-border' : ''}`}
+                                    href={`/attendance?lesson=${lesson.id}`}
+                                    className={`flex items-center gap-3 px-4 py-[11px] hover:bg-surface ${focus ? 'bg-[#EDF4F0]' : position > 0 ? 'border-t border-solid border-border' : ''}`}
                                 >
                                     <span className={`w-11 shrink-0 font-mono text-[13px] leading-4 ${focus ? 'text-primary' : 'text-text-muted'}`}>{lesson.starts_at}</span>
                                     <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
@@ -268,7 +276,7 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, next,
                                         </span>
                                     </span>
                                     <span className={`shrink-0 rounded-full px-2 py-[3px] text-[12px] leading-4 font-medium ${pill.pill}`}>{pill.label}</span>
-                                </div>
+                                </Link>
                             );
                         })
                     )}

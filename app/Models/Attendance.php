@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $date
  * @property AttendanceStatus $status
  * @property string|null $marked_by
+ * @property string|null $note
  */
 class Attendance extends Model
 {
@@ -29,6 +30,7 @@ class Attendance extends Model
         'status',
         'marked_by',
         'marked_at',
+        'note',
     ];
 
     /**
@@ -49,6 +51,14 @@ class Attendance extends Model
     public function timetableSlot(): BelongsTo
     {
         return $this->belongsTo(TimetableSlot::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function marker(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'marked_by');
     }
 
     /**

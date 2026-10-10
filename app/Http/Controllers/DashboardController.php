@@ -7,6 +7,7 @@ use App\Enums\EnrolmentStatus;
 use App\Enums\Gender;
 use App\Models\AssessmentPlan;
 use App\Models\AssessmentSubject;
+use App\Models\Attendance;
 use App\Models\Enrolment;
 use App\Models\Period;
 use App\Models\School;
@@ -63,6 +64,7 @@ class DashboardController extends Controller
             'hasTimetable' => $live !== null,
             'isSchoolDay' => ($school->school_days & (1 << ($now->dayOfWeekIso - 1))) !== 0,
             'lessons' => $lessons,
+            'unmarked' => collect($lessons)->filter(fn (array $lesson) => ! $lesson['marked'] && in_array($lesson['state'], ['done', 'now'], true))->count(),
             'next' => $next,
             'sheets' => $sheets,
             'openSheets' => $open->count(),
@@ -71,7 +73,7 @@ class DashboardController extends Controller
     }
 
     /**
-     * @return list<array{id: string, starts_at: string, ends_at: string, class: string, subject: string, room: string|null, students: int, state: string, in_minutes: int|null}>
+     * @return list<array{id: string, starts_at: string, ends_at: string, class: string, subject: string, room: string|null, students: int, state: string, marked: bool, in_minutes: int|null}>
      */
     protected function lessons(User $teacher, School $school, TimetableVersion $live, CarbonInterface $now): array
     {
@@ -87,6 +89,11 @@ class DashboardController extends Controller
             ->where('status', '!=', EnrolmentStatus::Left)
             ->get(['school_class_id'])
             ->countBy('school_class_id');
+        $registers = Attendance::whereIn('timetable_slot_id', $slots->modelKeys())
+            ->whereDate('date', $now->toDateString())
+            ->distinct()
+            ->pluck('timetable_slot_id')
+            ->all();
         $clock = $now->format('H:i:s');
         $upcoming = false;
         $lessons = [];
@@ -116,6 +123,7 @@ class DashboardController extends Controller
                 'room' => $slot->room?->code,
                 'students' => (int) $sizes->get($slot->school_class_id, 0),
                 'state' => $state,
+                'marked' => in_array($slot->id, $registers, true),
                 'in_minutes' => $state === 'next' ? max(0, ($hour * 60 + $minute) - ($now->hour * 60 + $now->minute)) : null,
             ];
         }

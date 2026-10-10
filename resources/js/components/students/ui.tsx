@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { studentTab } from '@/actions/App/Http/Controllers/FeeController';
+import { show as attendanceTab } from '@/actions/App/Http/Controllers/StudentAttendanceController';
 import { index, show } from '@/actions/App/Http/Controllers/StudentController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 
@@ -110,7 +111,7 @@ export function StudentTabs({
     overview = true,
 }: {
     studentId: string;
-    active: 'overview' | 'fees';
+    active: 'overview' | 'fees' | 'attendance';
     /** False for roles that handle fees but do not keep student records. */
     overview?: boolean;
 }) {
@@ -118,7 +119,7 @@ export function StudentTabs({
         { key: 'overview', label: 'Overview', href: overview ? show.url(studentId) : null, arrives: null },
         { key: 'academics', label: 'Academics', href: null, arrives: 'Sequences & Exams' },
         { key: 'fees', label: 'Fees', href: studentTab.url(studentId), arrives: null },
-        { key: 'attendance', label: 'Attendance', href: null, arrives: 'attendance' },
+        { key: 'attendance', label: 'Attendance', href: overview ? attendanceTab.url(studentId) : null, arrives: null },
     ];
 
     return (

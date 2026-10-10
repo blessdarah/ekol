@@ -1,12 +1,14 @@
 <?php
 
 use App\Enums\AcademicYearStatus;
+use App\Enums\AttendanceStatus;
 use App\Enums\EnrolmentStatus;
 use App\Enums\SchoolCycle;
 use App\Enums\TimetableStatus;
 use App\Enums\UserRole;
 use App\Models\AcademicYear;
 use App\Models\AssessmentPlan;
+use App\Models\Attendance;
 use App\Models\ClassSubject;
 use App\Models\Enrolment;
 use App\Models\Level;
@@ -162,7 +164,7 @@ test('administrators keep the school dashboard and teacher placeholders render',
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->component('dashboard')->where('shellUser.portal', 'admin'));
 
-    foreach (['/attendance', '/teaching-log', '/lesson-notes', '/question-bank'] as $uri) {
+    foreach (['/teaching-log', '/lesson-notes', '/question-bank'] as $uri) {
         $this->actingAs($world['teacher'])
             ->get("http://teacha.ekol.test{$uri}")
             ->assertOk()
@@ -245,4 +247,110 @@ test('my timetable explains itself when nothing is published', function () {
         ->get('http://teacha.ekol.test/my-timetable')
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->component('teacher/timetable')->where('week', null)->where('termLabel', 'Term 1'));
+});
+
+test('a register is saved per lesson, for every student, once the lesson has started', function () {
+    $world = teacherWorld();
+    [$first, $second] = TimetableSlot::where('weekday', 1)->with('period')->get()->sortBy('period.starts_at')->values()->all();
+    [$achu, $bih] = Student::orderBy('full_name')->get()->all();
+    $mark = fn (string $slot, array $marks, ?User $by = null) => $this->actingAs($by ?? $world['teacher'])
+        ->post("http://teacha.ekol.test/attendance/{$slot}", ['marks' => $marks]);
+
+    $this->actingAs($world['teacher'])
+        ->get('http://teacha.ekol.test/attendance')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('teacher/attendance')
+            ->where('dateLabel', 'Tuesday 7 Oct')
+            ->where('weekLabel', 'Week 6 of 16')
+            ->has('lessons', 2)
+            ->where('lessons.0.started', true)
+            ->where('lessons.0.saved', false)
+            ->where('lessons.1.started', false)
+            ->where('lesson', $first->id)
+            ->has('roll', 2)
+            ->where('roll.0.status', null));
+
+    $mark($second->id, [['student_id' => $achu->id, 'status' => 'present']])->assertSessionHasErrors('marks');
+    $mark($first->id, [['student_id' => $achu->id, 'status' => 'present']])->assertSessionHasErrors('marks');
+    $mark($first->id, [['student_id' => $achu->id, 'status' => 'excused'], ['student_id' => $bih->id, 'status' => 'present']])
+        ->assertSessionHasErrors('marks.0.status');
+
+    $other = User::factory()->create(['school_id' => $world['school']->id, 'role' => UserRole::Teacher]);
+    $mark($first->id, [['student_id' => $achu->id, 'status' => 'present'], ['student_id' => $bih->id, 'status' => 'present']], $other)
+        ->assertSessionHasErrors('marks');
+
+    $mark($first->id, [
+        ['student_id' => $achu->id, 'status' => 'present'],
+        ['student_id' => $bih->id, 'status' => 'late', 'note' => 'Arrived 08:20'],
+    ])->assertSessionHasNoErrors();
+
+    expect(Attendance::count())->toBe(2)
+        ->and(Attendance::where('student_id', $bih->id)->firstOrFail()->note)->toBe('Arrived 08:20');
+
+    $mark($first->id, [
+        ['student_id' => $achu->id, 'status' => 'absent'],
+        ['student_id' => $bih->id, 'status' => 'present'],
+    ])->assertSessionHasNoErrors();
+
+    expect(Attendance::count())->toBe(2)
+        ->and(Attendance::where('student_id', $achu->id)->firstOrFail()->status)->toBe(AttendanceStatus::Absent);
+
+    $this->actingAs($world['teacher'])
+        ->get("http://teacha.ekol.test/attendance?lesson={$first->id}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('lessons.0.saved', true)
+            ->where('lessons.0.present', 1)
+            ->where('roll.0.status', 'absent'));
+
+    $this->actingAs($world['teacher'])
+        ->get('http://teacha.ekol.test/dashboard')
+        ->assertInertia(fn (Assert $page) => $page->where('lessons.0.marked', true)->where('unmarked', 0));
+});
+
+test('the student attendance tab reads the registers and the office can excuse an absence', function () {
+    $world = teacherWorld();
+    $slots = TimetableSlot::where('weekday', 1)->get();
+    $student = Student::orderBy('full_name')->firstOrFail();
+
+    foreach ($slots as $slot) {
+        Attendance::create([
+            'timetable_slot_id' => $slot->id, 'student_id' => $student->id, 'date' => '2025-10-07',
+            'status' => AttendanceStatus::Absent, 'marked_by' => $world['teacher']->id,
+        ]);
+    }
+
+    Attendance::create([
+        'timetable_slot_id' => $slots->first()->id, 'student_id' => $student->id, 'date' => '2025-09-30',
+        'status' => AttendanceStatus::Late, 'note' => 'Transport', 'marked_by' => $world['teacher']->id,
+    ]);
+
+    $this->actingAs($world['admin'])
+        ->get("http://teacha.ekol.test/students/{$student->id}/attendance")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('students/attendance')
+            ->where('stats.days', 2)
+            ->where('stats.absent', 1)
+            ->where('stats.late', 1)
+            ->where('stats.rate', 50)
+            ->where('days.2025-10-07', 'absent')
+            ->where('days.2025-09-30', 'late')
+            ->has('events', 3)
+            ->where('unexcused', 2));
+
+    $record = Attendance::whereDate('date', '2025-10-07')->firstOrFail();
+
+    $this->actingAs($world['admin'])
+        ->post("http://teacha.ekol.test/students/{$student->id}/attendance/{$record->id}/excuse", ['note' => ''])
+        ->assertSessionHasErrors('note');
+    $this->actingAs($world['admin'])
+        ->post("http://teacha.ekol.test/students/{$student->id}/attendance/{$record->id}/excuse", ['note' => 'Sick, note from the parent'])
+        ->assertSessionHasNoErrors();
+
+    expect($record->refresh()->status)->toBe(AttendanceStatus::Excused);
+
+    $this->actingAs($world['teacher'])
+        ->get("http://teacha.ekol.test/students/{$student->id}/attendance")
+        ->assertForbidden();
 });
