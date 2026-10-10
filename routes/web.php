@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
+use App\Http\Controllers\Auth\StaffInvitationController;
 use App\Http\Controllers\SetupController;
+use App\Http\Controllers\StaffController;
 use App\Http\Middleware\ResolveSchool;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +27,9 @@ Route::middleware(ResolveSchool::class)->group(function () {
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
     Route::post('/login/find-school', [LoginController::class, 'findSchool'])->name('login.find');
     Route::inertia('/forgot-password', 'auth/forgot-password')->name('password.request');
+    Route::get('/invitation/{token}', [StaffInvitationController::class, 'show'])->name('invitation.show');
+    Route::post('/invitation/{token}', [StaffInvitationController::class, 'store'])
+        ->middleware('throttle:10,1')->name('invitation.store');
 
     Route::middleware('auth')->group(function () {
         Route::inertia('/dashboard', 'dashboard')->name('dashboard');
@@ -38,6 +43,18 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::patch('/setup/installments', [SetupController::class, 'updateInstallments'])->name('setup.installments');
         Route::patch('/setup/windows', [SetupController::class, 'updateWindows'])->name('setup.windows');
         Route::patch('/setup/schoolday', [SetupController::class, 'updateSchoolday'])->name('setup.schoolday');
+
+        Route::get('/staff', [StaffController::class, 'index'])->name('staff');
+        Route::get('/staff/register', [StaffController::class, 'create'])->name('staff.create');
+        Route::post('/staff', [StaffController::class, 'store'])->name('staff.store');
+        Route::get('/staff/{staff}', [StaffController::class, 'show'])->name('staff.show');
+        Route::get('/staff/{staff}/edit', [StaffController::class, 'edit'])->name('staff.edit');
+        Route::patch('/staff/{staff}', [StaffController::class, 'update'])->name('staff.update');
+        Route::get('/staff/{staff}/access', [StaffController::class, 'access'])->name('staff.access');
+        Route::post('/staff/{staff}/access', [StaffController::class, 'saveAccess'])->name('staff.access.save');
+        Route::post('/staff/{staff}/reminder', [StaffController::class, 'remind'])->name('staff.remind');
+        Route::patch('/staff/{staff}/hours', [StaffController::class, 'updateHours'])->name('staff.hours');
+
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
         $stubs = [
@@ -48,7 +65,6 @@ Route::middleware(ResolveSchool::class)->group(function () {
             '/assessments' => ['Sequences & Exams', 'assessment flow'],
             '/timetable' => ['Timetable', 'timetable flow'],
             '/fees' => ['Fees', 'finance flow'],
-            '/staff' => ['Teachers & Staff', 'staff management flow'],
         ];
 
         foreach ($stubs as $uri => [$section, $flow]) {

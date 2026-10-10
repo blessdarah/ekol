@@ -1,4 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
+import { logout } from '@/actions/App/Http/Controllers/Auth/LoginController';
 import { Icons, NAV_SECTIONS } from './nav';
 
 export interface ShellSchool {
@@ -117,7 +118,7 @@ export default function Sidebar({
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint text-[12px] font-bold text-primary">
                     {user ? initialsOf(user.full_name) : '··'}
                 </span>
-                <span className="flex min-w-0 flex-col">
+                <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-[13px] font-medium text-text">
                         {user?.full_name ?? '…'}
                     </span>
@@ -125,6 +126,27 @@ export default function Sidebar({
                         {user?.roleLabel ?? ''}
                     </span>
                 </span>
+                <Link
+                    href={logout.url()}
+                    method="post"
+                    as="button"
+                    aria-label="Sign out"
+                    title="Sign out"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted hover:bg-white hover:text-text"
+                >
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+                    </svg>
+                </Link>
             </div>
         </aside>
     );

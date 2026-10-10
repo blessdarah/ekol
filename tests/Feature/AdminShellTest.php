@@ -69,7 +69,7 @@ test('every stub destination renders inside the shell', function () {
         '/assessments' => 'shell/stub',
         '/timetable' => 'shell/stub',
         '/fees' => 'shell/stub',
-        '/staff' => 'shell/stub',
+        '/staff' => 'staff/roster',
         '/setup' => 'setup',
     ];
 
