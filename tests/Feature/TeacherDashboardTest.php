@@ -162,10 +162,87 @@ test('administrators keep the school dashboard and teacher placeholders render',
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page->component('dashboard')->where('shellUser.portal', 'admin'));
 
-    foreach (['/my-timetable', '/attendance', '/teaching-log', '/lesson-notes', '/question-bank'] as $uri) {
+    foreach (['/attendance', '/teaching-log', '/lesson-notes', '/question-bank'] as $uri) {
         $this->actingAs($world['teacher'])
             ->get("http://teacha.ekol.test{$uri}")
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('shell/stub'));
     }
+});
+
+test('my timetable shows the week from the live version with the summary', function () {
+    $world = teacherWorld();
+
+    $this->actingAs($world['teacher'])
+        ->get('http://teacha.ekol.test/my-timetable')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('teacher/timetable')
+            ->where('week.number', 6)
+            ->where('week.start', '2025-10-06')
+            ->where('week.label', 'Mon 6 – Fri 10 October')
+            ->where('week.isCurrent', true)
+            ->where('week.previous', '2025-09-29')
+            ->where('version.number', 1)
+            ->where('summary.periods', 3)
+            ->where('summary.classes', 1)
+            ->where('summary.subjects', 1)
+            ->where('summary.free', 7)
+            ->has('days', 5)
+            ->where('days.1.today', true)
+            ->has('periods', 2)
+            ->has('cells', 3));
+
+    $this->actingAs($world['teacher'])
+        ->get('http://teacha.ekol.test/my-timetable?week=2024-01-01')
+        ->assertInertia(fn (Assert $page) => $page->where('week.number', 1)->where('week.previous', null));
+});
+
+test('logged changes show on the week they apply to', function () {
+    $world = teacherWorld();
+    $live = TimetableVersion::firstOrFail();
+    $cover = User::factory()->create(['school_id' => $world['school']->id, 'role' => UserRole::Teacher, 'full_name' => 'Grace Tebo']);
+    $slot = TimetableSlot::where('weekday', 2)->firstOrFail();
+    $newRoom = Room::create(['school_id' => $world['school']->id, 'code' => 'Lab 1', 'name' => 'Lab 1', 'capacity' => 30, 'kind' => 'laboratory']);
+    $tuesday = TimetableSlot::where('weekday', 1)->orderBy('id')->firstOrFail();
+
+    $this->actingAs($world['admin'])->post('http://teacha.ekol.test/timetable/changes', [
+        'kind' => 'cover', 'date' => '2025-10-08', 'covers' => [['slot_id' => $slot->id, 'staff_id' => $cover->id]],
+    ])->assertSessionHasNoErrors();
+    $this->actingAs($world['admin'])->post('http://teacha.ekol.test/timetable/changes', [
+        'kind' => 'room', 'date' => '2025-10-07', 'slot_id' => $tuesday->id, 'room_id' => $newRoom->id,
+    ])->assertSessionHasNoErrors();
+
+    $key = "2|{$slot->period_id}";
+
+    $this->actingAs($world['teacher'])
+        ->get('http://teacha.ekol.test/my-timetable')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where("cells.{$key}.0.tone", 'away')
+            ->where("cells.{$key}.0.note", 'Covered by Grace Tebo')
+            ->where("cells.1|{$tuesday->period_id}.0.room", 'Lab 1')
+            ->where("cells.1|{$tuesday->period_id}.0.note", 'Room changed'));
+
+    $this->actingAs($cover)
+        ->get('http://teacha.ekol.test/my-timetable')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('summary.periods', 0)
+            ->where("cells.{$key}.0.tone", 'cover')
+            ->where("cells.{$key}.0.note", 'Cover for Peter Tanjong'));
+
+    $this->actingAs($world['teacher'])
+        ->get('http://teacha.ekol.test/my-timetable?week=2025-10-13')
+        ->assertInertia(fn (Assert $page) => $page->where("cells.{$key}.0.tone", 'lesson')->where("cells.{$key}.0.note", null));
+
+    expect($live->changes()->count())->toBe(2);
+});
+
+test('my timetable explains itself when nothing is published', function () {
+    $world = teacherWorld();
+    TimetableVersion::query()->update(['status' => TimetableStatus::Draft]);
+
+    $this->actingAs($world['teacher'])
+        ->get('http://teacha.ekol.test/my-timetable')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('teacher/timetable')->where('week', null)->where('termLabel', 'Term 1'));
 });

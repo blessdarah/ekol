@@ -20,6 +20,7 @@ use App\Http\Controllers\StructureController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\TeacherTimetableController;
 use App\Http\Controllers\TermResultController;
 use App\Http\Controllers\TimetableChangeController;
 use App\Http\Controllers\TimetableController;
@@ -53,9 +54,9 @@ Route::middleware(ResolveSchool::class)->group(function () {
 
     Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
+        Route::get('/my-timetable', [TeacherTimetableController::class, 'show'])->name('my-timetable');
 
         $teacherStubs = [
-            '/my-timetable' => ['My Timetable', 'teacher timetable flow'],
             '/attendance' => ['Attendance', 'attendance flow'],
             '/teaching-log' => ['Teaching Log', 'teaching log flow'],
             '/lesson-notes' => ['Lesson Notes', 'lesson notes flow'],
