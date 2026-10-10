@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\StaffInvitationController;
+use App\Http\Controllers\EnrolmentController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SeriesRegistrationController;
 use App\Http\Controllers\SetupController;
@@ -106,10 +108,27 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::post('/series/bulk', [SeriesRegistrationController::class, 'bulkStore'])->name('series.bulk.store');
         Route::get('/series/students/{student}/change', [SeriesRegistrationController::class, 'change'])->name('series.change');
         Route::post('/series/students/{student}/change', [SeriesRegistrationController::class, 'changeStore'])->name('series.change.store');
+        Route::get('/enrolment', [EnrolmentController::class, 'index'])->name('enrolment');
+        Route::post('/enrolment/classes', [EnrolmentController::class, 'copyClasses'])->name('enrolment.classes.copy');
+        Route::post('/enrolment/levels/{level}/classes', [EnrolmentController::class, 'storeClass'])->name('enrolment.classes.store');
+        Route::get('/enrolment/applications', [ApplicationController::class, 'index'])->name('enrolment.applications');
+        Route::get('/enrolment/applications/new', [ApplicationController::class, 'create'])->name('enrolment.applications.create');
+        Route::post('/enrolment/applications', [ApplicationController::class, 'store'])->name('enrolment.applications.store');
+        Route::get('/enrolment/applications/{application}', [ApplicationController::class, 'show'])->name('enrolment.applications.show');
+        Route::patch('/enrolment/applications/{application}/documents', [ApplicationController::class, 'documents'])->name('enrolment.applications.documents');
+        Route::post('/enrolment/applications/{application}/decision', [ApplicationController::class, 'decide'])->name('enrolment.applications.decide');
+        Route::get('/enrolment/re-enrolment', [EnrolmentController::class, 'reEnrolment'])->name('enrolment.re-enrolment');
+        Route::post('/enrolment/re-enrolment', [EnrolmentController::class, 'decide'])->name('enrolment.re-enrolment.decide');
+        Route::post('/enrolment/re-enrolment/promote', [EnrolmentController::class, 'promoteClass'])->name('enrolment.re-enrolment.promote');
+        Route::get('/enrolment/placement', [EnrolmentController::class, 'placement'])->name('enrolment.placement');
+        Route::post('/enrolment/placement', [EnrolmentController::class, 'place'])->name('enrolment.placement.place');
+        Route::post('/enrolment/placement/all', [EnrolmentController::class, 'placeAll'])->name('enrolment.placement.all');
+        Route::post('/enrolment/placement/clear', [EnrolmentController::class, 'clearClass'])->name('enrolment.placement.clear');
+        Route::get('/enrolment/confirm', [EnrolmentController::class, 'confirm'])->name('enrolment.confirm');
+        Route::post('/enrolment/confirm', [EnrolmentController::class, 'storeConfirmation'])->name('enrolment.confirm.store');
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
         $stubs = [
-            '/enrolment' => ['Enrolment', 'enrolment flow'],
             '/assessments' => ['Sequences & Exams', 'assessment flow'],
             '/timetable' => ['Timetable', 'timetable flow'],
             '/fees' => ['Fees', 'finance flow'],

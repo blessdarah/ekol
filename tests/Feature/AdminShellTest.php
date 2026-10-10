@@ -63,7 +63,7 @@ test('every stub destination renders inside the shell', function () {
     $pages = [
         '/dashboard' => 'dashboard',
         '/students' => 'students/roster',
-        '/enrolment' => 'shell/stub',
+        '/enrolment' => 'enrolment/overview',
         '/classes' => 'structure/levels',
         '/series' => 'series/overview',
         '/assessments' => 'shell/stub',

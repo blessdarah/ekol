@@ -11,12 +11,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * One row per student per year. Lifecycle: Admitted creates the row,
  * Class placement sets school_class_id, Re-enrolment sets decision,
- * Confirm enrolment moves every placed row to enrolled.
+ * Confirm enrolment moves every placed row to enrolled. A row for a
+ * coming year carries level_id: the level the student is headed for
+ * before a class is chosen.
  *
  * @property string $id
  * @property string $student_id
  * @property string $academic_year_id
  * @property string|null $school_class_id
+ * @property string|null $level_id
  * @property EnrolmentStatus $status
  * @property EnrolmentDecision|null $decision
  */
@@ -30,6 +33,7 @@ class Enrolment extends Model
         'student_id',
         'academic_year_id',
         'school_class_id',
+        'level_id',
         'status',
         'decision',
     ];
@@ -59,6 +63,14 @@ class Enrolment extends Model
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
+    }
+
+    /**
+     * @return BelongsTo<Level, $this>
+     */
+    public function level(): BelongsTo
+    {
+        return $this->belongsTo(Level::class);
     }
 
     /**

@@ -121,6 +121,27 @@ class Student extends Model
     }
 
     /**
+     * Create the student record with its matricule and parents, without
+     * a place in any year. The matricule takes its year from the date.
+     *
+     * @param  array<string, mixed>  $profile
+     * @param  list<array{relation: string, name: string, phone: string|null, occupation: string|null, is_main: bool}>  $guardians
+     */
+    public static function register(School $school, array $profile, array $guardians, \DateTimeInterface $matriculeDate): self
+    {
+        $student = new self([
+            ...$profile,
+            'school_id' => $school->id,
+            'admission_no' => static::nextMatricule($school, $matriculeDate),
+            'admitted_on' => today(),
+        ]);
+        $student->applyMainContact($guardians)->save();
+        $student->guardians()->createMany($guardians);
+
+        return $student;
+    }
+
+    /**
      * Admit a student: matricule, parents, a place in a class, an
      * optional series, and the year's fee plan when the level has one.
      *
@@ -137,14 +158,7 @@ class Student extends Model
         ?Series $series = null,
     ): self {
         return DB::transaction(function () use ($school, $year, $term, $class, $profile, $guardians, $series) {
-            $student = new self([
-                ...$profile,
-                'school_id' => $school->id,
-                'admission_no' => static::nextMatricule($school, today()),
-                'admitted_on' => today(),
-            ]);
-            $student->applyMainContact($guardians)->save();
-            $student->guardians()->createMany($guardians);
+            $student = static::register($school, $profile, $guardians, today());
 
             Enrolment::create([
                 'student_id' => $student->id,

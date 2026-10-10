@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon $ends_on
  * @property AcademicYearStatus $status
  * @property Carbon $created_at
+ * @property Carbon|null $enrolment_confirmed_at
  */
 class AcademicYear extends Model
 {
@@ -33,6 +34,7 @@ class AcademicYear extends Model
         'ends_on',
         'status',
         'created_at',
+        'enrolment_confirmed_at',
     ];
 
     /**
@@ -45,6 +47,7 @@ class AcademicYear extends Model
             'ends_on' => 'date',
             'status' => AcademicYearStatus::class,
             'created_at' => 'datetime',
+            'enrolment_confirmed_at' => 'datetime',
         ];
     }
 
