@@ -147,6 +147,16 @@ function Register({
             <Head title={member ? 'Edit a staff record' : 'Register a staff member'} />
             <PageHeader
                 crumb={member ? 'Edit' : 'Register'}
+                parents={
+                    member
+                        ? [
+                              {
+                                  label: `${member.given_name} ${member.family_name}`.trim(),
+                                  href: show.url(member.id),
+                              },
+                          ]
+                        : []
+                }
                 title={member ? 'Edit a staff record' : 'Register a staff member'}
                 tag={`${member ? 'Record' : 'Registration'}${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={

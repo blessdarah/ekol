@@ -156,7 +156,7 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
         <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title="The subject roster" />
             <StructureHeader
-                path="Subjects / Roster"
+                trail={[{ label: 'Subjects' }]}
                 title="The subject roster"
                 tag={`Subjects${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={`${plural(counts.total, 'subject', 'subjects')} · ${plural(counts.departments, 'department', 'departments')} · ${counts.needs_teacher} ${counts.needs_teacher === 1 ? 'needs' : 'need'} a teacher`}

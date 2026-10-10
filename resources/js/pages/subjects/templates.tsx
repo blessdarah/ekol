@@ -11,6 +11,7 @@ import {
     capsLabelClass,
     outlineButtonClass,
     solidButtonClass,
+    subjectsCrumb,
 } from '../../components/structure/ui';
 import {
     ClassTable,
@@ -231,7 +232,7 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
         <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title={TITLES[step]} />
             <StructureHeader
-                path="Subjects / Templates"
+                trail={[subjectsCrumb, { label: 'Templates' }]}
                 title={TITLES[step]}
                 tag={`Subject setup${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import {
     edit,
     saveAccess,
+    show,
 } from '@/actions/App/Http/Controllers/StaffController';
 import {
     FieldError,
@@ -72,6 +73,9 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
             <Head title="Portal access" />
             <PageHeader
                 crumb="Portal access"
+                parents={[
+                    { label: member.formal_name, href: show.url(member.id) },
+                ]}
                 title="Portal access"
                 tag={`Registration${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={`${member.formal_name} · ${selectedRole?.label ?? 'Teacher'} · ${member.has_account ? 'portal on' : 'no account yet'}`}

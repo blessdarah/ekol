@@ -11,6 +11,7 @@ import {
     StructureHeader,
     StructureTabs,
     solidButtonClass,
+    levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
 
@@ -95,6 +96,7 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
         <div className="flex flex-col gap-7">
             <Head title="Series setup" />
             <StructureHeader
+                trail={[levelsCrumb, { label: 'Series setup' }]}
                 title="Levels and series"
                 tag={`Structure${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={

@@ -12,6 +12,7 @@ import {
     capsLabelClass,
     outlineButtonClass,
     solidButtonClass,
+    levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
 
@@ -93,7 +94,7 @@ function LevelTemplates({
         <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title="Start from a standard structure" />
             <StructureHeader
-                crumb="Standard structure"
+                trail={[levelsCrumb, { label: 'Standard structure' }]}
                 title="Start from a standard structure"
                 tag={`Structure${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta="create every level and its classes in one go"

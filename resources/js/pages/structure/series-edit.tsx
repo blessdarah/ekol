@@ -16,6 +16,7 @@ import {
     fieldLabelClass,
     outlineButtonClass,
     solidButtonClass,
+    levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
 
@@ -108,7 +109,14 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
         <form onSubmit={submit} className="flex flex-col gap-6">
             <Head title={series ? `Configure series ${series.code}` : 'Add a series'} />
             <StructureHeader
-                crumb={`${level.name} / ${series?.code ?? 'New series'}`}
+                trail={[
+                    levelsCrumb,
+                    {
+                        label: level.name,
+                        href: index.url({ query: { level: level.id } }),
+                    },
+                    { label: series?.code ?? 'New series' },
+                ]}
                 title={series ? `Configure series ${series.code}` : 'Add a series'}
                 tag={`Series${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta="choose the core subjects and the electives students can pick from"

@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { index as staffIndex } from '@/actions/App/Http/Controllers/StaffController';
+import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 
 export const GENDER_LABELS: Record<string, string> = {
     female: 'Female',
@@ -94,20 +96,28 @@ export function capitalise(text: string): string {
 
 export function PageHeader({
     crumb,
+    parents = [],
     title,
     tag,
     meta,
 }: {
+    /** The page you are on. */
     crumb: string;
+    /** Steps between Teachers & Staff and this page. */
+    parents?: Crumb[];
     title: string;
     tag: string;
     meta?: string;
 }) {
     return (
         <div className="flex flex-col gap-[6px]">
-            <p className="text-[13px] leading-4 text-text-muted">
-                Teachers &amp; Staff / {crumb}
-            </p>
+            <Breadcrumbs
+                trail={[
+                    { label: 'Teachers & Staff', href: staffIndex.url() },
+                    ...parents,
+                    { label: crumb },
+                ]}
+            />
             <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
                 {title}
             </h1>

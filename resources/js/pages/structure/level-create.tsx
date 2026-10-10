@@ -15,6 +15,7 @@ import {
     outlineButtonClass,
     segmentClass,
     solidButtonClass,
+    levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
 
@@ -65,7 +66,7 @@ function LevelCreate({
         <form onSubmit={submit} className="flex flex-col gap-7">
             <Head title="Add a level" />
             <StructureHeader
-                crumb="New level"
+                trail={[levelsCrumb, { label: 'New level' }]}
                 title="Add a level"
                 tag={`Structure${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta="name it, place it in a cycle, then set up its classes"

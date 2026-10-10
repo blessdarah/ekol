@@ -15,6 +15,7 @@ import {
     fieldLabelClass,
     outlineButtonClass,
     solidButtonClass,
+    subjectsCrumb,
 } from '../../components/structure/ui';
 import {
     ClassTable,
@@ -127,7 +128,15 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
         >
             <Head title={subject ? `Edit ${subject.name}` : 'Register a subject'} />
             <StructureHeader
-                path={`Subjects / ${subject ? 'Edit' : 'Register'}`}
+                trail={
+                    subject
+                        ? [
+                              subjectsCrumb,
+                              { label: subject.name, href: show.url(subject.id) },
+                              { label: 'Edit' },
+                          ]
+                        : [subjectsCrumb, { label: 'Register' }]
+                }
                 title={subject ? 'Edit a subject' : 'Register a subject'}
                 tag={`Subject setup${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta="identity, coefficient and who teaches it in each class"

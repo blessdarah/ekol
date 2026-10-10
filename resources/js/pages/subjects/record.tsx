@@ -5,7 +5,11 @@ import {
     index,
 } from '@/actions/App/Http/Controllers/SubjectController';
 import { Note, longDate } from '../../components/staff/ui';
-import { StructureHeader, capsLabelClass } from '../../components/structure/ui';
+import {
+    StructureHeader,
+    capsLabelClass,
+    subjectsCrumb,
+} from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
 
 interface RecordProps {
@@ -58,7 +62,7 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
         <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title={subject.name} />
             <StructureHeader
-                path={`Classes & Subjects / ${subject.name}`}
+                trail={[subjectsCrumb, { label: subject.name }]}
                 title="One subject record"
                 tag={`Record${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={[

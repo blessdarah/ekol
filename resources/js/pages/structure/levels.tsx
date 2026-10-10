@@ -462,6 +462,7 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
         <div className="flex flex-col gap-7">
             <Head title="Levels and series" />
             <StructureHeader
+                trail={[{ label: 'Levels and series' }]}
                 title="Levels and series"
                 tag={`Structure${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={`${levels.length} levels · ${classCount} classes · series on ${seriesLevels} levels`}

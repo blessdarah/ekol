@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
+import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 import { index as seriesIndex } from '@/actions/App/Http/Controllers/SeriesController';
 import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
 import { index as subjectsIndex } from '@/actions/App/Http/Controllers/SubjectController';
@@ -84,16 +85,14 @@ export function Toggle({
 }
 
 export function StructureHeader({
-    crumb,
-    path,
+    trail = [],
     title,
     tag,
     meta,
     action,
 }: {
-    crumb?: string;
-    /** The whole breadcrumb, for pages outside Levels and series. */
-    path?: string;
+    /** Steps after Classes & Subjects; the last one is the page you are on. */
+    trail?: Crumb[];
     title: string;
     tag: string;
     meta?: string;
@@ -102,10 +101,12 @@ export function StructureHeader({
     return (
         <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex flex-col gap-[6px]">
-                <p className="text-[13px] leading-4 text-text-muted">
-                    {path ??
-                        `Classes & Subjects / Levels and series${crumb ? ` / ${crumb}` : ''}`}
-                </p>
+                <Breadcrumbs
+                    trail={[
+                        { label: 'Classes & Subjects', href: levelsIndex.url() },
+                        ...trail,
+                    ]}
+                />
                 <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
                     {title}
                 </h1>
@@ -233,3 +234,15 @@ export function ChipPicker({
         </div>
     );
 }
+
+/** The Levels and series step, linked for pages beneath it. */
+export const levelsCrumb: Crumb = {
+    label: 'Levels and series',
+    href: levelsIndex.url(),
+};
+
+/** The Subjects step, linked for pages beneath the roster. */
+export const subjectsCrumb: Crumb = {
+    label: 'Subjects',
+    href: subjectsIndex.url(),
+};
