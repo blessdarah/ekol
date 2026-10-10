@@ -239,6 +239,95 @@ class SetupController extends Controller
         return back();
     }
 
+    public function updateYear(Request $request, string $year): RedirectResponse
+    {
+        $school = $this->school($request);
+        $target = AcademicYear::where('school_id', $school->id)
+            ->where('id', $year)
+            ->firstOrFail();
+
+        $data = $request->validate([
+            'label' => [
+                'required', 'string', 'max:255',
+                Rule::unique('academic_years')->where('school_id', $school->id)->ignore($target->id),
+            ],
+            'starts_on' => ['required', 'date'],
+            'ends_on' => ['required', 'date', 'after:starts_on'],
+        ]);
+
+        $outside = Term::where('academic_year_id', $target->id)
+            ->where(fn ($query) => $query
+                ->whereDate('starts_on', '<', $data['starts_on'])
+                ->orWhereDate('ends_on', '>', $data['ends_on']))
+            ->orderBy('sequence')
+            ->first();
+
+        if ($outside) {
+            throw ValidationException::withMessages([
+                'starts_on' => "{$outside->label} falls outside these dates. Change the term first.",
+            ]);
+        }
+
+        $before = $this->yearPayload($target);
+        $target->update($data);
+
+        $this->audit($request, 'academic_year', $target->id, 'updated', [
+            'before' => $before,
+            'after' => $this->yearPayload($target),
+        ]);
+
+        return back();
+    }
+
+    /**
+     * Make a year the school's current one. The year it replaces closes
+     * when it lies in the past and returns to planned otherwise, and the
+     * active term moves into the new year (today's term, else the first).
+     */
+    public function activateYear(Request $request, string $year): RedirectResponse
+    {
+        $school = $this->school($request);
+        $target = AcademicYear::where('school_id', $school->id)
+            ->where('id', $year)
+            ->firstOrFail();
+
+        if ($target->status === AcademicYearStatus::Current) {
+            return back();
+        }
+
+        DB::transaction(function () use ($school, $target) {
+            $previous = AcademicYear::where('school_id', $school->id)
+                ->where('status', AcademicYearStatus::Current)
+                ->first();
+
+            $previous?->update([
+                'status' => $previous->starts_on->lt($target->starts_on)
+                    ? AcademicYearStatus::Closed
+                    : AcademicYearStatus::Planned,
+            ]);
+
+            $target->update(['status' => AcademicYearStatus::Current]);
+
+            Term::where('school_id', $school->id)
+                ->where('is_current', true)
+                ->update(['is_current' => false]);
+
+            $terms = Term::where('academic_year_id', $target->id)->orderBy('sequence')->get();
+            $term = $terms->first(fn (Term $term) => today()->between($term->starts_on, $term->ends_on))
+                ?? $terms->first();
+
+            if ($term) {
+                Term::whereKey($term->id)->update(['is_current' => true]);
+            }
+        });
+
+        $this->audit($request, 'academic_year', $target->id, 'activated', [
+            'label' => $target->label,
+        ]);
+
+        return back();
+    }
+
     public function updateInstallments(Request $request): RedirectResponse
     {
         $school = $this->school($request);

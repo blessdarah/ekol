@@ -399,3 +399,66 @@ test('setup page sends form-ready dates, times and grouped windows', function ()
             ->has('assessments.0.ids', 2)
             ->where('assessments.0.window_status', 'open'));
 });
+
+test('an academic year can be edited but not shrunk past its terms', function () {
+    $school = setupSchool();
+    $admin = setupAdmin($school);
+    $year = setupYear($school);
+    Term::create([
+        'school_id' => $school->id, 'academic_year_id' => $year->id,
+        'label' => 'Term 1', 'sequence' => 1,
+        'starts_on' => '2025-09-01', 'ends_on' => '2025-12-19',
+        'week_count' => 16,
+    ]);
+
+    $this->actingAs($admin)
+        ->patch("http://setupa.ekol.test/setup/years/{$year->id}", [
+            'label' => '2025/2026', 'starts_on' => '2025-09-01', 'ends_on' => '2026-06-30',
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($year->fresh()->label)->toBe('2025/2026')
+        ->and($year->fresh()->ends_on->toDateString())->toBe('2026-06-30');
+
+    $this->actingAs($admin)
+        ->patch("http://setupa.ekol.test/setup/years/{$year->id}", [
+            'label' => '2025/2026', 'starts_on' => '2025-10-01', 'ends_on' => '2026-06-30',
+        ])
+        ->assertSessionHasErrors('starts_on');
+
+    expect($year->fresh()->starts_on->toDateString())->toBe('2025-09-01');
+});
+
+test('making a year active closes the old one and moves the active term', function () {
+    $this->travelTo('2026-10-10');
+    $school = setupSchool();
+    $admin = setupAdmin($school);
+    $old = setupYear($school);
+    $oldTerm = Term::create([
+        'school_id' => $school->id, 'academic_year_id' => $old->id,
+        'label' => 'Term 3', 'sequence' => 3,
+        'starts_on' => '2026-04-13', 'ends_on' => '2026-06-26',
+        'week_count' => 11, 'is_current' => true,
+    ]);
+    $next = AcademicYear::create([
+        'school_id' => $school->id, 'label' => '2026/27',
+        'starts_on' => '2026-09-01', 'ends_on' => '2027-07-31',
+        'status' => AcademicYearStatus::Planned,
+    ]);
+    $nextTerm = Term::create([
+        'school_id' => $school->id, 'academic_year_id' => $next->id,
+        'label' => 'Term 1', 'sequence' => 1,
+        'starts_on' => '2026-09-01', 'ends_on' => '2026-12-18',
+        'week_count' => 16,
+    ]);
+
+    $this->actingAs($admin)
+        ->patch("http://setupa.ekol.test/setup/years/{$next->id}/active")
+        ->assertRedirect();
+
+    expect($next->fresh()->status)->toBe(AcademicYearStatus::Current)
+        ->and($old->fresh()->status)->toBe(AcademicYearStatus::Closed)
+        ->and($nextTerm->fresh()->is_current)->toBeTrue()
+        ->and($oldTerm->fresh()->is_current)->toBeFalse();
+});

@@ -9,6 +9,7 @@ import {
 } from 'react';
 import {
     activateTerm,
+    activateYear,
     show,
     storeYear,
     updateInstallments,
@@ -16,7 +17,12 @@ import {
     updateSchoolday,
     updateTerms,
     updateWindows,
+    updateYear,
 } from '@/actions/App/Http/Controllers/SetupController';
+import LogoCropper, {
+    LOGO_MIN_SIDE,
+    loadImage,
+} from '../components/setup/logo-cropper';
 import { withAppShell } from '../layouts/app-layout';
 
 interface SchoolProp {
@@ -254,7 +260,39 @@ function ProfileZone({ school }: { school: SchoolProp }) {
     const [preview, setPreview] = useState<string | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [cropping, setCropping] = useState<HTMLImageElement | null>(null);
     const logo = preview ?? school.logo_url;
+
+    /**
+     * SVGs and already-square images upload as they are; any other
+     * image that is large enough goes through the cropper first.
+     */
+    async function chooseLogo(file: File) {
+        setUploadError(null);
+
+        if (file.name.toLowerCase().endsWith('.svg')) {
+            uploadLogo(file);
+
+            return;
+        }
+
+        try {
+            const image = await loadImage(file);
+            const shortest = Math.min(image.naturalWidth, image.naturalHeight);
+
+            if (shortest < LOGO_MIN_SIDE) {
+                setUploadError(
+                    `Logo must be at least ${LOGO_MIN_SIDE}px on its shortest side.`,
+                );
+            } else if (image.naturalWidth === image.naturalHeight) {
+                uploadLogo(file);
+            } else {
+                setCropping(image);
+            }
+        } catch {
+            setUploadError('That file could not be read. Use a PNG or SVG.');
+        }
+    }
 
     function uploadLogo(file: File) {
         if (file.size > 2 * 1024 * 1024) {
@@ -327,7 +365,7 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
-                                        uploadLogo(file);
+                                        void chooseLogo(file);
                                     }
                                     e.target.value = '';
                                 }}
@@ -340,6 +378,16 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                     <ZoneError message={uploadError ?? error} />
                 </div>
             </div>
+            {cropping && (
+                <LogoCropper
+                    image={cropping}
+                    onCancel={() => setCropping(null)}
+                    onCrop={(file) => {
+                        setCropping(null);
+                        uploadLogo(file);
+                    }}
+                />
+            )}
         </Zone>
     );
 }
@@ -405,6 +453,13 @@ function TermCard({
             {editing ? (
                 <div className="flex flex-wrap items-center gap-1">
                     <input
+                        type="text"
+                        aria-label="Term name"
+                        value={term.label}
+                        onChange={(e) => onChange({ label: e.target.value })}
+                        className={`${dateInputClass} w-full font-sans`}
+                    />
+                    <input
                         type="date"
                         aria-label={`${term.label} starts`}
                         value={term.starts_on}
@@ -437,7 +492,7 @@ function TermCard({
                     title={
                         locked
                             ? 'This term already has marks, so its dates are locked.'
-                            : 'Change dates'
+                            : 'Edit term'
                     }
                     onClick={() => setEditing(true)}
                     className={`self-start font-mono text-[12px] leading-4 enabled:hover:underline disabled:cursor-not-allowed ${active ? 'text-[#CFE3D8]' : 'text-text-muted'}`}
@@ -465,7 +520,7 @@ function YearZone({
         { terms },
         (props) => ({ terms: props.terms }),
     );
-    const [creating, setCreating] = useState(false);
+    const [mode, setMode] = useState<'create' | 'edit' | null>(null);
     const [draft, setDraft] = useState({ label: '', starts_on: '', ends_on: '' });
     const [actionError, setActionError] = useState<string | null>(null);
 
@@ -522,18 +577,53 @@ function YearZone({
         );
     }
 
-    function createYear() {
-        router.post(storeYear.url(), draft, {
+    function openForm(next: 'create' | 'edit') {
+        setDraft(
+            next === 'edit' && year
+                ? {
+                      label: year.label,
+                      starts_on: year.starts_on,
+                      ends_on: year.ends_on,
+                  }
+                : { label: '', starts_on: '', ends_on: '' },
+        );
+        setActionError(null);
+        setMode(next);
+    }
+
+    function submitYear() {
+        const options = {
             preserveState: true,
             preserveScroll: true,
             onSuccess: () => {
-                setDraft({ label: '', starts_on: '', ends_on: '' });
-                setCreating(false);
+                setMode(null);
                 setActionError(null);
             },
-            onError: (failed) =>
+            onError: (failed: Record<string, string>) =>
                 setActionError(Object.values(failed)[0] ?? null),
-        });
+        };
+
+        if (mode === 'edit' && year) {
+            router.patch(updateYear.url(year.id), draft, options);
+        } else {
+            router.post(storeYear.url(), draft, options);
+        }
+    }
+
+    function makeYearActive() {
+        if (!year) {
+            return;
+        }
+
+        router.patch(
+            activateYear.url(year.id),
+            {},
+            {
+                preserveScroll: true,
+                onError: (failed) =>
+                    setActionError(Object.values(failed)[0] ?? null),
+            },
+        );
     }
 
     return (
@@ -582,18 +672,44 @@ function YearZone({
                         ? `${longDate(year.starts_on)} – ${longDate(year.ends_on)}`
                         : 'No academic year yet.'}
                 </span>
+                {year?.status === 'current' && (
+                    <span className="flex h-6 items-center gap-[6px] rounded-full bg-primary-tint px-[10px] text-[12px] leading-4 font-medium text-primary">
+                        <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-primary" />
+                        Active
+                    </span>
+                )}
                 <span className="flex-1" />
-                {!creating && (
-                    <button
-                        type="button"
-                        onClick={() => setCreating(true)}
-                        className={linkClass}
-                    >
-                        + New academic year
-                    </button>
+                {!mode && (
+                    <span className="flex items-center gap-4">
+                        {year && year.status !== 'current' && (
+                            <button
+                                type="button"
+                                onClick={makeYearActive}
+                                className={linkClass}
+                            >
+                                Set active
+                            </button>
+                        )}
+                        {year && (
+                            <button
+                                type="button"
+                                onClick={() => openForm('edit')}
+                                className={linkClass}
+                            >
+                                Edit year
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => openForm('create')}
+                            className={linkClass}
+                        >
+                            + New academic year
+                        </button>
+                    </span>
                 )}
             </div>
-            {creating && (
+            {mode && (
                 <div className="flex flex-wrap items-center gap-2">
                     <input
                         type="text"
@@ -626,17 +742,17 @@ function YearZone({
                     />
                     <button
                         type="button"
-                        onClick={createYear}
+                        onClick={submitYear}
                         disabled={
                             !draft.label || !draft.starts_on || !draft.ends_on
                         }
                         className="h-[34px] rounded-md bg-primary px-3 text-[13px] font-medium text-white hover:bg-primary-hover disabled:opacity-40"
                     >
-                        Create year
+                        {mode === 'edit' ? 'Save year' : 'Create year'}
                     </button>
                     <button
                         type="button"
-                        onClick={() => setCreating(false)}
+                        onClick={() => setMode(null)}
                         className="px-1 text-[13px] font-medium text-text-muted hover:underline"
                     >
                         Cancel

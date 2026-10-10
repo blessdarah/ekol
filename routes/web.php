@@ -31,6 +31,8 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::get('/setup', [SetupController::class, 'show'])->name('setup');
         Route::patch('/setup/profile', [SetupController::class, 'updateProfile'])->name('setup.profile');
         Route::post('/setup/years', [SetupController::class, 'storeYear'])->name('setup.years.store');
+        Route::patch('/setup/years/{year}', [SetupController::class, 'updateYear'])->name('setup.years.update');
+        Route::patch('/setup/years/{year}/active', [SetupController::class, 'activateYear'])->name('setup.years.activate');
         Route::patch('/setup/terms', [SetupController::class, 'updateTerms'])->name('setup.terms');
         Route::patch('/setup/terms/{term}/active', [SetupController::class, 'activateTerm'])->name('setup.terms.activate');
         Route::patch('/setup/installments', [SetupController::class, 'updateInstallments'])->name('setup.installments');
