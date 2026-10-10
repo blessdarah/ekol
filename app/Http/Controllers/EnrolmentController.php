@@ -315,7 +315,7 @@ class EnrolmentController extends Controller
 
         $rows = $class
             ? Enrolment::whereIn('id', $continuing->where('school_class_id', $class->id)->modelKeys())
-                ->with(['student.invoices.payments'])
+                ->with(['student.invoices.payments', 'student.invoices.exemption'])
                 ->get()
                 ->sortBy(fn (Enrolment $enrolment) => $enrolment->student?->full_name)
                 ->values()
@@ -824,7 +824,7 @@ class EnrolmentController extends Controller
     {
         $student = $enrolment->student;
         $invoices = $student ? $student->invoices : new Collection;
-        $due = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->amount_due);
+        $due = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->amount_due - $invoice->exempted());
         $paid = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->payments->sum(fn (Payment $payment) => (float) $payment->amount));
 
         return max(0.0, $due - $paid);

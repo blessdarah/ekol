@@ -41,7 +41,7 @@ export default function Sidebar({
     const { url } = usePage();
 
     return (
-        <aside className="font-auth sticky top-0 flex h-screen w-[248px] shrink-0 flex-col border-r border-solid border-border bg-surface antialiased">
+        <aside className="font-auth sticky top-0 flex h-screen print:hidden w-[248px] shrink-0 flex-col border-r border-solid border-border bg-surface antialiased">
             <div className="flex items-center gap-3 px-5 pt-6 pb-5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-[14px] font-extrabold text-white">
                     {school ? school.code.slice(0, 2).toUpperCase() : '··'}

@@ -83,6 +83,7 @@ class StudentController extends Controller
             ->with([
                 'studentSeries' => fn ($query) => $query->where('term_id', $term?->id)->with('series:id,code,stream'),
                 'invoices.payments',
+                'invoices.exemption',
             ])
             ->when($tab === 'overdue', $overdue)
             ->when($tab === 'no_series', $noSeries)
@@ -221,7 +222,7 @@ class StudentController extends Controller
         $school = static::schoolFor($request);
         $year = StructureController::currentYear($school);
         $term = static::currentTerm($school);
-        $target = $this->student($school, $student)->load(['guardians', 'invoices.payments']);
+        $target = $this->student($school, $student)->load(['guardians', 'invoices.payments', 'invoices.exemption']);
         $private = (bool) $request->user()?->role->seesPrivateStudentDetails();
 
         $enrolment = $year
@@ -657,7 +658,7 @@ class StudentController extends Controller
             return ['status' => null, 'balance' => 0.0, 'due' => 0.0];
         }
 
-        $due = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->amount_due);
+        $due = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->amount_due - $invoice->exempted());
         $paid = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->payments->sum(fn (Payment $payment) => (float) $payment->amount));
         $balance = max(0.0, $due - $paid);
 

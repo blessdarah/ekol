@@ -84,6 +84,14 @@ enum UserRole: string
     }
 
     /**
+     * Whether the role may set fees and record payments.
+     */
+    public function managesFees(): bool
+    {
+        return in_array($this, [self::Admin, self::Principal, self::Bursar, self::Accountant], true);
+    }
+
+    /**
      * Whether the role may register and manage other staff.
      */
     public function managesStaff(): bool

@@ -68,7 +68,7 @@ test('every stub destination renders inside the shell', function () {
         '/series' => 'series/overview',
         '/assessments' => 'shell/stub',
         '/timetable' => 'timetable/overview',
-        '/fees' => 'shell/stub',
+        '/fees' => 'fees/index',
         '/staff' => 'staff/roster',
         '/setup' => 'setup',
     ];
@@ -130,7 +130,7 @@ test('shell props carry live school, term week, user and badge data', function (
             ->where('shellUser.full_name', 'Shell Admin')
             ->where('shellUser.roleLabel', 'Admin')
             ->where('feeBadge', 1)
-            ->where('section', 'Fees'));
+            ->component('fees/index'));
 });
 
 test('term chip hides without a current term and badge hides at zero', function () {

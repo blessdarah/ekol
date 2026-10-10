@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\StaffInvitationController;
 use App\Http\Controllers\EnrolmentController;
+use App\Http\Controllers\FeeController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SeriesRegistrationController;
 use App\Http\Controllers\SetupController;
@@ -103,6 +104,7 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::get('/students/import/problems', [StudentImportController::class, 'problems'])->name('students.import.problems');
         Route::get('/students/import/template', [StudentImportController::class, 'template'])->name('students.import.template');
         Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
+        Route::get('/students/{student}/fees', [FeeController::class, 'studentTab'])->name('students.fees');
         Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
         Route::patch('/students/{student}', [StudentController::class, 'update'])->name('students.update');
         Route::get('/series', [SeriesRegistrationController::class, 'index'])->name('series');
@@ -147,11 +149,19 @@ Route::middleware(ResolveSchool::class)->group(function () {
         Route::post('/timetable/publish', [TimetableController::class, 'publish'])->name('timetable.publish.store');
         Route::get('/timetable/changes', [TimetableChangeController::class, 'index'])->name('timetable.changes');
         Route::post('/timetable/changes', [TimetableChangeController::class, 'store'])->name('timetable.changes.store');
+        Route::get('/fees', [FeeController::class, 'index'])->name('fees');
+        Route::get('/fees/structure', [FeeController::class, 'structure'])->name('fees.structure');
+        Route::patch('/fees/structure', [FeeController::class, 'updateStructure'])->name('fees.structure.update');
+        Route::post('/fees/structure/bill', [FeeController::class, 'bill'])->name('fees.structure.bill');
+        Route::get('/fees/students/{student}', [FeeController::class, 'student'])->name('fees.student');
+        Route::post('/fees/students/{student}/payments', [FeeController::class, 'pay'])->name('fees.pay');
+        Route::post('/fees/invoices/{invoice}/exemption', [FeeController::class, 'exempt'])->name('fees.exemption');
+        Route::delete('/fees/invoices/{invoice}/exemption', [FeeController::class, 'removeExemption'])->name('fees.exemption.remove');
+        Route::get('/fees/payments/{payment}/receipt', [FeeController::class, 'receipt'])->name('fees.receipt');
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
         $stubs = [
             '/assessments' => ['Sequences & Exams', 'assessment flow'],
-            '/fees' => ['Fees', 'finance flow'],
         ];
 
         foreach ($stubs as $uri => [$section, $flow]) {

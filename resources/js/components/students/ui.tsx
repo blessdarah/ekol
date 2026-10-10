@@ -1,5 +1,7 @@
+import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { index } from '@/actions/App/Http/Controllers/StudentController';
+import { studentTab } from '@/actions/App/Http/Controllers/FeeController';
+import { index, show } from '@/actions/App/Http/Controllers/StudentController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 
 export const GENDER_LABELS: Record<string, string> = {
@@ -98,5 +100,57 @@ export function StudentHeader({
             </div>
             {action}
         </div>
+    );
+}
+
+/** The tabs of one student record. Academics and Attendance are not built yet. */
+export function StudentTabs({
+    studentId,
+    active,
+    overview = true,
+}: {
+    studentId: string;
+    active: 'overview' | 'fees';
+    /** False for roles that handle fees but do not keep student records. */
+    overview?: boolean;
+}) {
+    const tabs = [
+        { key: 'overview', label: 'Overview', href: overview ? show.url(studentId) : null, arrives: null },
+        { key: 'academics', label: 'Academics', href: null, arrives: 'Sequences & Exams' },
+        { key: 'fees', label: 'Fees', href: studentTab.url(studentId), arrives: null },
+        { key: 'attendance', label: 'Attendance', href: null, arrives: 'attendance' },
+    ];
+
+    return (
+        <nav aria-label="Student record" className="flex gap-6 border-b border-solid border-border">
+            {tabs.map((tab) =>
+                tab.key === active ? (
+                    <span
+                        key={tab.key}
+                        aria-current="page"
+                        className="-mb-px border-b-2 border-solid border-primary pb-[10px] text-[14px] leading-[18px] font-semibold text-text"
+                    >
+                        {tab.label}
+                    </span>
+                ) : tab.href ? (
+                    <Link
+                        key={tab.key}
+                        href={tab.href}
+                        className="pb-[10px] text-[14px] leading-[18px] font-medium text-text-muted hover:text-text"
+                    >
+                        {tab.label}
+                    </Link>
+                ) : (
+                    <span
+                        key={tab.key}
+                        aria-disabled="true"
+                        title={tab.arrives ? `Arrives with ${tab.arrives}` : 'Not open to your role'}
+                        className="cursor-not-allowed pb-[10px] text-[14px] leading-[18px] font-medium text-text-muted opacity-60"
+                    >
+                        {tab.label}
+                    </span>
+                ),
+            )}
+        </nav>
     );
 }

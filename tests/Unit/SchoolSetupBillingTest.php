@@ -114,6 +114,7 @@ test('rounding remainder lands on the last installment', function () {
 });
 
 test('payments fill the oldest unpaid installment and move status', function () {
+    $this->travelTo('2025-09-05');
     $school = billingSchool();
     $year = billingYear($school);
     billingTemplate($school, $year);

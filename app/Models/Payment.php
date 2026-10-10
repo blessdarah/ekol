@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $reference
  * @property Carbon $received_at
  * @property string|null $received_by
+ * @property string|null $receipt_no
  */
 class Payment extends Model
 {
@@ -35,6 +36,7 @@ class Payment extends Model
         'reference',
         'received_at',
         'received_by',
+        'receipt_no',
     ];
 
     /**
@@ -46,6 +48,30 @@ class Payment extends Model
             'method' => PaymentMethod::class,
             'received_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The next receipt number for a school and year, like RC-25-0388.
+     */
+    public static function nextReceipt(string $schoolId, \DateTimeInterface $receivedAt): string
+    {
+        $prefix = 'RC-'.$receivedAt->format('y').'-';
+
+        $last = static::where('receipt_no', 'like', $prefix.'%')
+            ->whereHas('invoice.student', fn ($query) => $query->withTrashed()->where('school_id', $schoolId))
+            ->pluck('receipt_no')
+            ->map(fn (?string $number) => (int) substr((string) $number, strlen($prefix)))
+            ->max();
+
+        return $prefix.str_pad((string) (((int) $last) + 1), 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function receiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by');
     }
 
     /**

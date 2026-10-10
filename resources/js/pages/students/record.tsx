@@ -4,6 +4,7 @@ import {
     change as changeSeries,
     one as chooseSeries,
 } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
+import { studentTab as feesTab } from '@/actions/App/Http/Controllers/FeeController';
 import { edit } from '@/actions/App/Http/Controllers/StudentController';
 import {
     StreamChip,
@@ -15,6 +16,7 @@ import {
     GENDER_LABELS,
     RELATION_LABELS,
     StudentHeader,
+    StudentTabs,
     fullDate,
     money,
 } from '../../components/students/ui';
@@ -51,12 +53,6 @@ interface RecordProps {
         fees: { status: string | null; balance: number; due: number } | null;
     };
 }
-
-const LATER_TABS = [
-    { label: 'Academics', arrives: 'Sequences & Exams' },
-    { label: 'Fees', arrives: 'Fees' },
-    { label: 'Attendance', arrives: 'the timetable' },
-];
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
     return (
@@ -99,24 +95,7 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                 }
             />
 
-            <div className="flex gap-6 border-b border-solid border-border">
-                <span
-                    aria-current="page"
-                    className="-mb-px border-b-2 border-solid border-primary pb-[10px] text-[14px] leading-[18px] font-semibold text-text"
-                >
-                    Overview
-                </span>
-                {LATER_TABS.map((tab) => (
-                    <span
-                        key={tab.label}
-                        aria-disabled="true"
-                        title={`Arrives with ${tab.arrives}`}
-                        className="cursor-not-allowed pb-[10px] text-[14px] leading-[18px] font-medium text-text-muted opacity-60"
-                    >
-                        {tab.label}
-                    </span>
-                ))}
-            </div>
+            <StudentTabs studentId={student.id} active="overview" />
 
             <div className="flex flex-1 flex-col gap-8 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-[22px]">
@@ -255,7 +234,10 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                                 />
                             </div>
                             <p className="text-[12px] leading-[18px] text-text-muted">
-                                Payments are recorded in Fees.
+                                Payments are recorded in Fees.{' '}
+                                <Link href={feesTab.url(student.id)} className="font-medium text-primary hover:underline">
+                                    Open the Fees tab →
+                                </Link>
                             </p>
                         </div>
                     ) : (
