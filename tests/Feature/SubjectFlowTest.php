@@ -9,6 +9,7 @@ use App\Models\Coefficient;
 use App\Models\Level;
 use App\Models\School;
 use App\Models\SchoolClass;
+use App\Models\Series;
 use App\Models\Subject;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -252,4 +253,47 @@ test('subjects cannot use another school classes or staff, and teachers are kept
     $this->actingAs($world['admin'])
         ->get("http://subjecta.ekol.test/classes/subjects/{$foreign->id}")
         ->assertNotFound();
+});
+
+test('a series subject a class of its level does not take counts as needing a teacher', function () {
+    $world = subjectWorld();
+    $teacher = subjectTeacher($world['school'], 'Gabriel', 'Ngonda');
+    [$form1a, $form1b, $form2a] = $world['classes'];
+
+    $this->actingAs($world['admin'])
+        ->post('http://subjecta.ekol.test/classes/subjects', subjectPayload([
+            ['class_id' => $form1a->id, 'staff_id' => $teacher->id, 'weekly_periods' => 5],
+        ]));
+    $maths = Subject::firstOrFail();
+
+    $this->actingAs($world['admin'])
+        ->get('http://subjecta.ekol.test/classes/subjects?needs=1')
+        ->assertInertia(fn (Assert $page) => $page->where('counts.needs_teacher', 0)->has('subjects.rows', 0));
+
+    $series = Series::create([
+        'school_id' => $world['school']->id, 'level_id' => $world['levels'][1]->id,
+        'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science',
+    ]);
+    $series->subjects()->sync([$maths->id => ['kind' => 'core']]);
+
+    $this->actingAs($world['admin'])
+        ->get('http://subjecta.ekol.test/classes/subjects?needs=1')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('counts.needs_teacher', 1)
+            ->has('subjects.rows', 1)
+            ->where('subjects.rows.0.name', 'Mathematics')
+            ->where('subjects.rows.0.not_taught', ['Form 2 A']));
+
+    $this->actingAs($world['admin'])
+        ->patch("http://subjecta.ekol.test/classes/subjects/{$maths->id}", subjectPayload([
+            ['class_id' => $form1a->id, 'staff_id' => $teacher->id, 'weekly_periods' => 5],
+            ['class_id' => $form2a->id, 'staff_id' => $teacher->id, 'weekly_periods' => 5],
+        ]))
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($world['admin'])
+        ->get('http://subjecta.ekol.test/classes/subjects?needs=1')
+        ->assertInertia(fn (Assert $page) => $page->where('counts.needs_teacher', 0)->has('subjects.rows', 0));
+
+    expect($form1b->id)->not->toBe($form2a->id);
 });

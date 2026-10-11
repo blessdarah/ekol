@@ -11,6 +11,7 @@ use App\Models\Enrolment;
 use App\Models\Level;
 use App\Models\School;
 use App\Models\SchoolClass;
+use App\Models\Series;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,9 +40,11 @@ class SubjectController extends Controller
         $levelId = (string) $request->query('level', '');
         $search = trim((string) $request->query('q', ''));
 
+        $gaps = $this->seriesGaps($school, $year);
         $unstaffed = fn (Builder $query) => $query
             ->whereHas('classSubjects', fn (Builder $rows) => $rows->whereNull('staff_id'))
-            ->orDoesntHave('classSubjects');
+            ->orDoesntHave('classSubjects')
+            ->orWhereIn('id', array_keys($gaps));
 
         $subjects = Subject::where('school_id', $school->id)
             ->with(['classSubjects.schoolClass.level:id,code,name,ordinal', 'series:id,stream'])
@@ -83,7 +86,10 @@ class SubjectController extends Controller
                 'q' => $search,
             ],
             'subjects' => [
-                'rows' => collect($subjects->items())->map(fn (Subject $subject) => $this->summary($subject)),
+                'rows' => collect($subjects->items())->map(fn (Subject $subject) => [
+                    ...$this->summary($subject),
+                    'not_taught' => $gaps[$subject->id] ?? [],
+                ]),
                 'page' => $subjects->currentPage(),
                 'lastPage' => $subjects->lastPage(),
                 'total' => $subjects->total(),
@@ -478,6 +484,43 @@ class SubjectController extends Controller
         }
 
         return $subject;
+    }
+
+    /**
+     * Series subjects that a class of the series' level does not take
+     * at all, so nobody teaches them there: subject id to class names.
+     * Students of that class can register for the series, and their
+     * marks would have no sheet.
+     *
+     * @return array<string, list<string>>
+     */
+    protected function seriesGaps(School $school, ?AcademicYear $year): array
+    {
+        if (! $year) {
+            return [];
+        }
+
+        $classes = SchoolClass::where('school_id', $school->id)
+            ->where('academic_year_id', $year->id)
+            ->orderBy('name')
+            ->get(['id', 'name', 'level_id'])
+            ->groupBy('level_id');
+        $taken = ClassSubject::where('school_id', $school->id)
+            ->get(['school_class_id', 'subject_id'])
+            ->mapWithKeys(fn (ClassSubject $row) => ["{$row->school_class_id}|{$row->subject_id}" => true]);
+        $gaps = [];
+
+        foreach (Series::where('school_id', $school->id)->with('subjects:id')->get() as $series) {
+            foreach ($classes->get($series->level_id, []) as $class) {
+                foreach ($series->subjects as $subject) {
+                    if (! $taken->has("{$class->id}|{$subject->id}") && ! in_array($class->name, $gaps[$subject->id] ?? [], true)) {
+                        $gaps[$subject->id][] = $class->name;
+                    }
+                }
+            }
+        }
+
+        return $gaps;
     }
 
     /**

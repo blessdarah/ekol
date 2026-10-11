@@ -27,6 +27,7 @@ interface SubjectRow {
     classes: number;
     teachers: number;
     unstaffed: number;
+    not_taught: string[];
     periods: number;
 }
 
@@ -72,6 +73,18 @@ function Staffing({ row }: { row: SubjectRow }) {
             <span className="flex items-center gap-[6px] text-[13px] leading-4 text-text">
                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                 No classes yet
+            </span>
+        );
+    }
+
+    if (row.not_taught.length > 0 && row.unstaffed === 0) {
+        return (
+            <span className="flex items-start gap-[6px] text-[13px] leading-4 text-text">
+                <span className="mt-[5px] h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
+                <span>
+                    {plural(row.classes, 'class', 'classes')} · in a series but not taught in{' '}
+                    {row.not_taught.join(', ')}
+                </span>
             </span>
         );
     }
