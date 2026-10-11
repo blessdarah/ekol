@@ -8,6 +8,7 @@ import {
     PasswordField,
     PrimaryButton,
     inputClass,
+    submitOnEnter,
 } from '../../components/auth/field';
 
 function initialsOf(name: string): string {
@@ -50,7 +51,7 @@ export default function Login({
                         sub={`Sign in to manage ${school.name}.`}
                     />
                 </div>
-                <Form action="/login" method="post">
+                <Form action="/login" method="post" onKeyDown={submitOnEnter}>
                     {({ errors, processing }) => (
                         <div className="flex flex-col gap-4">
                             {errors.identifier && (

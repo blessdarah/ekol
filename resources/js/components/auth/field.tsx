@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type KeyboardEvent, type ReactNode } from 'react';
 
 export function Eyebrow({ children }: { children: ReactNode }) {
     return (
@@ -53,6 +53,27 @@ export function Field({
 export const inputClass =
     'h-9 rounded-lg border border-solid border-border bg-white px-3 text-[14px] font-normal text-text outline-none focus:border-primary';
 
+/**
+ * Submit a form when Enter is pressed in one of its text fields.
+ * Browsers normally do this themselves, but Safari's password
+ * suggestions can swallow the key, so the forms ask for it outright.
+ */
+export function submitOnEnter(event: KeyboardEvent<HTMLFormElement>) {
+    const target = event.target;
+
+    if (
+        event.key !== 'Enter' ||
+        event.nativeEvent.isComposing ||
+        !(target instanceof HTMLInputElement) ||
+        ['checkbox', 'radio', 'button', 'submit', 'file'].includes(target.type)
+    ) {
+        return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.requestSubmit();
+}
+
 export function PrimaryButton({
     children,
     disabled,
@@ -63,8 +84,9 @@ export function PrimaryButton({
     return (
         <button
             type="submit"
+            tabIndex={0}
             disabled={disabled}
-            className="inline-flex h-9 items-center gap-2 self-start rounded-lg bg-primary px-4 text-[14px] font-medium text-white hover:bg-primary-hover disabled:opacity-50"
+            className="inline-flex h-9 items-center gap-2 self-start rounded-lg bg-primary px-4 text-[14px] font-medium text-white hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
         >
             {children}
             <svg

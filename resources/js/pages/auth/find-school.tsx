@@ -1,6 +1,13 @@
 import { Form, Head } from '@inertiajs/react';
 import AuthLayout, { TopBar } from '../../layouts/auth-layout';
-import { Eyebrow, Field, Heading, PrimaryButton, inputClass } from '../../components/auth/field';
+import {
+    Eyebrow,
+    Field,
+    Heading,
+    PrimaryButton,
+    inputClass,
+    submitOnEnter,
+} from '../../components/auth/field';
 
 export default function FindSchool() {
     return (
@@ -27,7 +34,7 @@ export default function FindSchool() {
                         sub="Enter your school's workspace address to continue."
                     />
                 </div>
-                <Form action="/login/find-school" method="post">
+                <Form action="/login/find-school" method="post" onKeyDown={submitOnEnter}>
                     {({ errors, processing }) => (
                         <div className="flex flex-col gap-4">
                             <Field

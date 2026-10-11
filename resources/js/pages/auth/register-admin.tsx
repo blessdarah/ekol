@@ -8,6 +8,7 @@ import {
     PasswordField,
     PrimaryButton,
     inputClass,
+    submitOnEnter,
 } from '../../components/auth/field';
 
 const STEPS = [
@@ -52,7 +53,7 @@ export default function RegisterAdmin({
                         sub={`You will manage ${schoolName} from this account.`}
                     />
                 </div>
-                <Form action="/register/admin" method="post">
+                <Form action="/register/admin" method="post" onKeyDown={submitOnEnter}>
                     {({ errors, processing }) => (
                         <div className="flex flex-col gap-4">
                             <div className="grid grid-cols-[1fr_200px] gap-4">

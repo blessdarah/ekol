@@ -8,6 +8,7 @@ import {
     Heading,
     PrimaryButton,
     inputClass,
+    submitOnEnter,
 } from '../../components/auth/field';
 import { useHttp } from '@inertiajs/react';
 
@@ -79,7 +80,7 @@ export default function RegisterSchool({
                         sub="Create a private workspace for your school. You will be its first administrator."
                     />
                 </div>
-                <Form action="/register/school" method="post">
+                <Form action="/register/school" method="post" onKeyDown={submitOnEnter}>
                     {({ errors, processing }) => (
                         <div className="flex flex-col gap-4">
                             <Field label="School name" error={errors.name}>
