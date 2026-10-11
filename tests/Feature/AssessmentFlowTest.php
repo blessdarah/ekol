@@ -485,3 +485,51 @@ test('an exam schedule needs a paper per subject and no clash before it is publi
     expect(ExamPaper::count())->toBe(2)
         ->and($plan->refresh()->schedule_published_at)->not->toBeNull();
 });
+
+test('the student academics tab shows marks, average and position for the term', function () {
+    $world = examWorld();
+    $plan = schedulePlan($world);
+    enterMarks($world, $plan, 'Mathematics', [16, 10, 8]);
+    enterMarks($world, $plan, 'English', [13, 10, null], false);
+    schedulePlan($world, [
+        'name' => 'Sequence 2', 'held_from' => '2025-11-10', 'held_until' => '2025-11-21',
+        'window_starts_on' => '2025-11-10', 'window_ends_on' => '2025-11-24',
+    ]);
+    [$achu, , $che] = $world['students'];
+
+    $this->actingAs($world['admin'])
+        ->get("http://exama.ekol.test/students/{$achu->id}/academics")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('students/academics')
+            ->where('term.label', 'Term 1')
+            ->has('columns', 2)
+            ->where('columns.0.name', 'Sequence 1')
+            ->where('columns.0.average', 15)
+            ->where('columns.0.position', 1)
+            ->where('columns.0.of', 3)
+            ->where('columns.1.state', 'scheduled')
+            ->where('columns.1.average', null)
+            ->where('focus.name', 'Sequence 1')
+            ->has('subjects', 2)
+            ->where('subjects.0.subject', 'English')
+            ->where('subjects.0.coefficient', 2)
+            ->where("subjects.0.marks.{$plan->id}", 13)
+            ->where('subjects.0.teacher', $world['teachers']['English']->formalName())
+            ->where('coefficients', 6)
+            ->where('remark.grade', 'B · Very good')
+            ->where('termComplete', false)
+            ->where('termAverage', null));
+
+    $this->actingAs($world['admin'])
+        ->get("http://exama.ekol.test/students/{$che->id}/academics")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('columns.0.average', 8)
+            ->where('columns.0.complete', false)
+            ->where('columns.0.position', null)
+            ->where("subjects.0.marks.{$plan->id}", null));
+
+    $this->actingAs($world['teachers']['English'])
+        ->get("http://exama.ekol.test/students/{$achu->id}/academics")
+        ->assertForbidden();
+});

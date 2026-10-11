@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { studentTab } from '@/actions/App/Http/Controllers/FeeController';
+import { show as academicsTab } from '@/actions/App/Http/Controllers/StudentAcademicsController';
 import { show as attendanceTab } from '@/actions/App/Http/Controllers/StudentAttendanceController';
 import { index, show } from '@/actions/App/Http/Controllers/StudentController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
@@ -104,20 +105,20 @@ export function StudentHeader({
     );
 }
 
-/** The tabs of one student record. Academics and Attendance are not built yet. */
+/** The tabs of one student record. */
 export function StudentTabs({
     studentId,
     active,
     overview = true,
 }: {
     studentId: string;
-    active: 'overview' | 'fees' | 'attendance';
+    active: 'overview' | 'academics' | 'fees' | 'attendance';
     /** False for roles that handle fees but do not keep student records. */
     overview?: boolean;
 }) {
     const tabs = [
         { key: 'overview', label: 'Overview', href: overview ? show.url(studentId) : null, arrives: null },
-        { key: 'academics', label: 'Academics', href: null, arrives: 'Sequences & Exams' },
+        { key: 'academics', label: 'Academics', href: overview ? academicsTab.url(studentId) : null, arrives: null },
         { key: 'fees', label: 'Fees', href: studentTab.url(studentId), arrives: null },
         { key: 'attendance', label: 'Attendance', href: overview ? attendanceTab.url(studentId) : null, arrives: null },
     ];
