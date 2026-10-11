@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\AcademicYear;
 use App\Models\Enrolment;
 use App\Models\FeeInstallmentTemplate;
+use App\Models\FeeItem;
 use App\Models\FeePlan;
 use App\Models\Invoice;
 use App\Models\Level;
@@ -85,10 +86,36 @@ function feeWorld(string $slug = 'feesa'): array
     return compact('school', 'admin', 'year', 'term', 'levels', 'classes', 'students');
 }
 
+/**
+ * The structure payload for a list of fee items, keeping the ids of
+ * the items the year already has.
+ *
+ * @param  list<array{name: string, amounts: array<string, mixed>, spread?: bool, new_only?: bool}>  $items
+ * @return array<string, mixed>
+ */
+function feeItems(array $world, array $items): array
+{
+    $ids = FeeItem::where('academic_year_id', $world['year']->id)->pluck('id', 'name');
+
+    return [
+        'year_id' => $world['year']->id,
+        'items' => array_map(fn (array $item) => [
+            'id' => $ids[$item['name']] ?? null,
+            'name' => $item['name'],
+            'spread' => $item['spread'] ?? true,
+            'new_only' => $item['new_only'] ?? false,
+            'amounts' => $item['amounts'],
+        ], $items),
+    ];
+}
+
+/**
+ * Set the year's fees to school fees alone, by level.
+ */
 function setFees(array $world, array $amounts): void
 {
     test()->actingAs($world['admin'])
-        ->patch('http://feesa.ekol.test/fees/structure', ['year_id' => $world['year']->id, 'amounts' => $amounts])
+        ->patch('http://feesa.ekol.test/fees/structure', feeItems($world, [['name' => 'School fees', 'amounts' => $amounts]]))
         ->assertSessionHasNoErrors();
 }
 
@@ -127,17 +154,18 @@ test('the fee structure sets what each level costs for the year', function () {
             ->where('year.label', '2025/26')
             ->where('billingTerm', 'Term 1')
             ->has('installments', 3)
-            ->where('levels.0.amount', 60000)
+            ->has('items', 1)
+            ->where('items.0.name', 'School fees')
+            ->where('items.0.spread', true)
+            ->where("items.0.amounts.{$world['levels'][1]->id}", 60000)
+            ->where('levels.0.has_fee', true)
             ->where('levels.0.students', 2)
             ->where('levels.0.billed', 0)
-            ->where('levels.1.amount', null));
+            ->where('levels.1.has_fee', false));
 
     $this->actingAs($world['admin'])
-        ->patch('http://feesa.ekol.test/fees/structure', [
-            'year_id' => $world['year']->id,
-            'amounts' => [$world['levels'][1]->id => -5],
-        ])
-        ->assertSessionHasErrors("amounts.{$world['levels'][1]->id}");
+        ->patch('http://feesa.ekol.test/fees/structure', feeItems($world, [['name' => 'School fees', 'amounts' => [$world['levels'][1]->id => -5]]]))
+        ->assertSessionHasErrors("items.0.amounts.{$world['levels'][1]->id}");
 });
 
 test('billing issues one invoice per student in levels with a fee', function () {
@@ -166,11 +194,8 @@ test('changing a fee leaves issued invoices alone and a billed fee cannot be rem
         ->and(Invoice::pluck('amount_due')->map(fn ($amount) => (float) $amount)->unique()->all())->toBe([60000.0]);
 
     $this->actingAs($world['admin'])
-        ->patch('http://feesa.ekol.test/fees/structure', [
-            'year_id' => $world['year']->id,
-            'amounts' => [$world['levels'][1]->id => null],
-        ])
-        ->assertSessionHasErrors("amounts.{$world['levels'][1]->id}");
+        ->patch('http://feesa.ekol.test/fees/structure', feeItems($world, [['name' => 'School fees', 'amounts' => [$world['levels'][1]->id => null]]]))
+        ->assertSessionHasErrors('items');
 });
 
 test('the fees list totals the year and flags who is overdue or not billed', function () {
@@ -375,4 +400,172 @@ test('a registrar reads the fees tab but cannot change fees', function () {
     $this->actingAs($registrar)
         ->post("http://feesa.ekol.test/fees/invoices/{$invoice->id}/exemption", ['kind' => 'percent', 'value' => 10, 'reason' => 'x'])
         ->assertForbidden();
+});
+
+/**
+ * Fees made of a PTA contribution and a registration fee paid up
+ * front, then school fees spread over the installments. Bih Glory was
+ * at the school last year, so she is not a new student.
+ */
+function setItemisedFees(array $world): void
+{
+    $last = AcademicYear::create([
+        'school_id' => $world['school']->id, 'label' => '2024/25',
+        'starts_on' => '2024-09-01', 'ends_on' => '2025-07-31',
+        'status' => AcademicYearStatus::Closed,
+    ]);
+    Enrolment::create([
+        'student_id' => $world['students'][1]->id, 'academic_year_id' => $last->id,
+        'school_class_id' => SchoolClass::create([
+            'school_id' => $world['school']->id, 'academic_year_id' => $last->id,
+            'level_id' => $world['levels'][1]->id, 'name' => 'Form 1 A', 'capacity' => 40,
+        ])->id,
+        'status' => EnrolmentStatus::Enrolled,
+    ]);
+
+    $form1 = $world['levels'][1]->id;
+
+    test()->actingAs($world['admin'])
+        ->patch('http://feesa.ekol.test/fees/structure', feeItems($world, [
+            ['name' => 'PTA contribution', 'spread' => false, 'amounts' => [$form1 => 5000]],
+            ['name' => 'Registration', 'spread' => false, 'new_only' => true, 'amounts' => [$form1 => 3000]],
+            ['name' => 'School fees', 'amounts' => [$form1 => 60000]],
+        ]))
+        ->assertSessionHasNoErrors();
+}
+
+test('a bill is made of the items of its level, with up-front items on the first installment', function () {
+    $world = feeWorld();
+    setItemisedFees($world);
+    billEveryone($world);
+
+    $new = Invoice::where('student_id', $world['students'][0]->id)->firstOrFail();
+    $returning = Invoice::where('student_id', $world['students'][1]->id)->firstOrFail();
+    $amounts = fn (Invoice $invoice) => $invoice->installments()->orderBy('seq')->pluck('amount')->map(fn ($amount) => (float) $amount)->all();
+
+    expect((float) FeePlan::firstOrFail()->annual_amount)->toBe(65000.0)
+        ->and((float) $new->amount_due)->toBe(68000.0)
+        ->and($new->lines()->orderBy('position')->pluck('name')->all())->toBe(['PTA contribution', 'Registration', 'School fees'])
+        ->and($amounts($new))->toBe([38000.0, 18000.0, 12000.0])
+        ->and((float) $returning->amount_due)->toBe(65000.0)
+        ->and($returning->lines()->orderBy('position')->pluck('name')->all())->toBe(['PTA contribution', 'School fees'])
+        ->and($amounts($returning))->toBe([35000.0, 18000.0, 12000.0])
+        ->and(Invoice::where('student_id', $world['students'][2]->id)->exists())->toBeFalse();
+});
+
+test('a payment is shared between the items in their order and the receipt says how', function () {
+    $world = feeWorld();
+    setItemisedFees($world);
+    billEveryone($world);
+
+    $student = $world['students'][1];
+    $invoice = Invoice::where('student_id', $student->id)->firstOrFail();
+    $pay = fn (int $amount) => $this->actingAs($world['admin'])
+        ->post("http://feesa.ekol.test/fees/students/{$student->id}/payments", [
+            'invoice_id' => $invoice->id, 'amount' => $amount, 'method' => 'cash', 'date' => '2025-10-01',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $pay(20000);
+    $this->travel(1)->minutes();
+    $pay(20000);
+
+    [$first, $second] = Payment::orderBy('receipt_no')->get()->all();
+
+    $this->actingAs($world['admin'])
+        ->get("http://feesa.ekol.test/fees/payments/{$first->id}/receipt")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('fees/receipt')
+            ->has('receipt.covers', 2)
+            ->where('receipt.covers.0.name', 'PTA contribution')
+            ->where('receipt.covers.0.amount', 5000)
+            ->where('receipt.covers.1.name', 'School fees')
+            ->where('receipt.covers.1.amount', 15000));
+
+    $this->actingAs($world['admin'])
+        ->get("http://feesa.ekol.test/fees/payments/{$second->id}/receipt")
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('receipt.covers', 1)
+            ->where('receipt.covers.0.name', 'School fees')
+            ->where('receipt.covers.0.amount', 20000));
+
+    $this->actingAs($world['admin'])
+        ->get("http://feesa.ekol.test/fees/students/{$student->id}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('invoice.items.0.name', 'PTA contribution')
+            ->where('invoice.items.0.upfront', true)
+            ->where('invoice.items.0.paid', 5000)
+            ->where('invoice.items.0.balance', 0)
+            ->where('invoice.items.1.name', 'School fees')
+            ->where('invoice.items.1.paid', 35000)
+            ->where('invoice.items.1.balance', 25000)
+            ->where('invoice.installments.0.state', 'paid')
+            ->where('invoice.installments.1.paid', 5000));
+
+    $this->actingAs($world['admin'])
+        ->get('http://feesa.ekol.test/fees/structure')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('items.0.name', 'PTA contribution')
+            ->where('items.0.billed', 10000)
+            ->where('items.0.collected', 5000)
+            ->where('items.1.new_only', true)
+            ->where('items.1.billed', 3000)
+            ->where('items.2.collected', 35000));
+});
+
+test('an item can be renamed, reordered and removed without touching issued bills', function () {
+    $world = feeWorld();
+    setItemisedFees($world);
+    billEveryone($world);
+
+    $form1 = $world['levels'][1]->id;
+    $ids = FeeItem::pluck('id', 'name');
+
+    $this->actingAs($world['admin'])
+        ->patch('http://feesa.ekol.test/fees/structure', [
+            'year_id' => $world['year']->id,
+            'items' => [
+                ['id' => $ids['School fees'], 'name' => 'Tuition', 'spread' => true, 'new_only' => false, 'amounts' => [$form1 => 70000]],
+                ['id' => $ids['PTA contribution'], 'name' => 'PTA contribution', 'spread' => false, 'new_only' => false, 'amounts' => [$form1 => 5000]],
+            ],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(FeeItem::orderBy('position')->pluck('name')->all())->toBe(['Tuition', 'PTA contribution'])
+        ->and((float) FeePlan::firstOrFail()->annual_amount)->toBe(75000.0)
+        ->and(Invoice::where('student_id', $world['students'][0]->id)->firstOrFail()->lines()->orderBy('position')->pluck('name')->all())
+        ->toBe(['PTA contribution', 'Registration', 'School fees']);
+
+    $this->actingAs($world['admin'])
+        ->patch('http://feesa.ekol.test/fees/structure', [
+            'year_id' => $world['year']->id,
+            'items' => [
+                ['id' => null, 'name' => 'Tuition', 'spread' => true, 'new_only' => false, 'amounts' => []],
+                ['id' => null, 'name' => 'tuition', 'spread' => true, 'new_only' => false, 'amounts' => []],
+            ],
+        ])
+        ->assertSessionHasErrors('items.0.name');
+});
+
+test('an item with an amount for some levels only is billed to those levels alone', function () {
+    $world = feeWorld();
+    [$form1, $form2] = [$world['levels'][1]->id, $world['levels'][2]->id];
+
+    $this->actingAs($world['admin'])
+        ->patch('http://feesa.ekol.test/fees/structure', feeItems($world, [
+            ['name' => 'School fees', 'amounts' => [$form1 => 60000, $form2 => 60000]],
+            ['name' => 'Mock exams', 'spread' => false, 'amounts' => [$form1 => null, $form2 => 7500]],
+        ]))
+        ->assertSessionHasNoErrors();
+    billEveryone($world);
+
+    $lower = Invoice::where('student_id', $world['students'][0]->id)->firstOrFail();
+    $exam = Invoice::where('student_id', $world['students'][2]->id)->firstOrFail();
+
+    expect((float) $lower->amount_due)->toBe(60000.0)
+        ->and($lower->lines()->pluck('name')->all())->toBe(['School fees'])
+        ->and((float) $exam->amount_due)->toBe(67500.0)
+        ->and($exam->lines()->orderBy('position')->pluck('name')->all())->toBe(['School fees', 'Mock exams'])
+        ->and((float) $exam->installments()->orderBy('seq')->value('amount'))->toBe(37500.0);
 });

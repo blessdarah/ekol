@@ -82,6 +82,14 @@ class Invoice extends Model
     }
 
     /**
+     * @return HasMany<InvoiceLine, $this>
+     */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(InvoiceLine::class);
+    }
+
+    /**
      * @return HasMany<Payment, $this>
      */
     public function payments(): HasMany
@@ -106,10 +114,12 @@ class Invoice extends Model
     }
 
     /**
-     * Issue an invoice, materializing installments from the school year's
-     * template as amount_due × percent, due on the template's date (or
-     * the issue date when none is set). Cents lost to rounding land on
-     * the last row so the parts always sum to the whole.
+     * Issue an invoice with the lines it is billed for, and materialize
+     * its installments from the school year's template, due on the
+     * template's date (or the issue date when none is set). Without
+     * lines the whole amount is billed as school fees.
+     *
+     * @param  list<array{fee_item_id?: string|null, name: string, position: int, is_spread: bool, amount: string}>|null  $lines
      */
     public static function issue(
         Student $student,
@@ -117,8 +127,11 @@ class Invoice extends Model
         FeePlan $feePlan,
         string $amountDue,
         ?string $issuedOn = null,
+        ?array $lines = null,
     ): self {
-        return DB::transaction(function () use ($student, $term, $feePlan, $amountDue, $issuedOn) {
+        return DB::transaction(function () use ($student, $term, $feePlan, $amountDue, $issuedOn, $lines) {
+            $lines ??= [['name' => FeeItem::TUITION, 'position' => 1, 'is_spread' => true, 'amount' => $amountDue]];
+
             $invoice = static::create([
                 'student_id' => $student->id,
                 'term_id' => $term->id,
@@ -127,20 +140,17 @@ class Invoice extends Model
                 'issued_on' => $issuedOn ?? today()->toDateString(),
             ]);
 
+            foreach ($lines as $line) {
+                $invoice->lines()->create($line);
+            }
+
             $templates = FeeInstallmentTemplate::where('school_id', $student->school_id)
                 ->where('academic_year_id', $term->academic_year_id)
                 ->orderBy('seq')
                 ->get();
 
-            $dueCents = (int) round((float) $amountDue * 100);
-            $madeCents = 0;
-
-            foreach ($templates as $index => $template) {
-                $last = $index === $templates->count() - 1;
-                $cents = $last
-                    ? $dueCents - $madeCents
-                    : (int) round($dueCents * (float) $template->percent / 100);
-                $madeCents += $cents;
+            foreach (static::schedule($lines, array_values($templates->map(fn (FeeInstallmentTemplate $template) => (float) $template->percent)->all())) as $index => $cents) {
+                $template = $templates[$index];
 
                 $invoice->installments()->create([
                     'seq' => $template->seq,
@@ -153,6 +163,38 @@ class Invoice extends Model
 
             return $invoice;
         });
+    }
+
+    /**
+     * Share a bill out over installments, in cents. Lines that are
+     * spread follow each installment's percent; lines paid up front
+     * land whole on the first. Cents lost to rounding go to the last
+     * installment so the parts always sum to the whole.
+     *
+     * @param  array<int, array{is_spread: bool, amount: string|float, ...}>  $lines
+     * @param  list<float>  $percents
+     * @return list<int>
+     */
+    public static function schedule(array $lines, array $percents): array
+    {
+        $spread = 0;
+        $upfront = 0;
+
+        foreach ($lines as $line) {
+            $cents = (int) round((float) $line['amount'] * 100);
+            $line['is_spread'] ? $spread += $cents : $upfront += $cents;
+        }
+
+        $made = 0;
+        $parts = [];
+
+        foreach ($percents as $index => $percent) {
+            $cents = $index === count($percents) - 1 ? $spread - $made : (int) round($spread * $percent / 100);
+            $made += $cents;
+            $parts[] = $cents + ($index === 0 ? $upfront : 0);
+        }
+
+        return $parts;
     }
 
     /**
@@ -191,10 +233,12 @@ class Invoice extends Model
 
     /**
      * The invoice as the bursar reads it: each installment with what
-     * has been paid towards it. Payments fill installments in order,
-     * oldest first, whatever installment a receipt was written against.
+     * has been paid towards it, and each item on the bill with what
+     * has gone to it. Payments fill installments in order, oldest
+     * first, and inside an installment the items in their set order,
+     * whatever installment a receipt was written against.
      *
-     * @return array{gross: float, exempted: float, due: float, paid: float, balance: float, overdue: float, installments: list<array{seq: int, label: string, due_on: string, amount: float, paid: float, state: string, days_late: int}>}
+     * @return array{gross: float, exempted: float, due: float, paid: float, balance: float, overdue: float, installments: list<array{seq: int, label: string, due_on: string, amount: float, paid: float, state: string, days_late: int}>, items: list<array{name: string, upfront: bool, billed: float, amount: float, paid: float, balance: float}>}
      */
     public function ledger(): array
     {
@@ -202,35 +246,15 @@ class Invoice extends Model
         $exempted = $this->exempted();
         $due = $gross - $exempted;
         $paid = (float) $this->payments->sum(fn (Payment $payment) => (float) $payment->amount);
-        $left = $paid;
+        $lines = $this->billed();
+        $parts = $this->parts();
+        $cells = $this->cells($parts, $lines);
+        $poured = $this->pour($cells, (int) round($paid * 100));
         $overdue = 0.0;
         $rows = [];
 
-        $installments = $this->installments->sortBy('seq')->values();
-        $parts = $installments->isEmpty()
-            ? [['seq' => 1, 'label' => 'Annual fees', 'amount' => $gross, 'due_on' => $this->issued_on]]
-            : $installments->map(fn (Installment $installment) => [
-                'seq' => $installment->seq,
-                'label' => static::ordinal($installment->seq).' installment',
-                'amount' => (float) $installment->amount,
-                'due_on' => $installment->due_on,
-            ])->all();
-
-        if ($exempted > 0 && $gross > 0) {
-            $spread = 0.0;
-            $final = count($parts) - 1;
-
-            foreach ($parts as $position => $part) {
-                $parts[$position]['amount'] = $position === $final
-                    ? round($due - $spread, 2)
-                    : round($part['amount'] * $due / $gross);
-                $spread += $parts[$position]['amount'];
-            }
-        }
-
-        foreach ($parts as $part) {
-            $covered = min($left, $part['amount']);
-            $left -= $covered;
+        foreach ($parts as $index => $part) {
+            $covered = array_sum($poured[$index]) / 100;
             $short = $part['amount'] - $covered;
             $late = $short > 0 && $part['due_on']->lt(today());
 
@@ -254,6 +278,22 @@ class Invoice extends Model
             ];
         }
 
+        $items = [];
+
+        foreach ($lines as $key => $line) {
+            $amount = array_sum(array_column($cells, $key)) / 100;
+            $covered = array_sum(array_column($poured, $key)) / 100;
+
+            $items[] = [
+                'name' => $line['name'],
+                'upfront' => ! $line['is_spread'],
+                'billed' => $line['amount'],
+                'amount' => $amount,
+                'paid' => $covered,
+                'balance' => max(0.0, $amount - $covered),
+            ];
+        }
+
         return [
             'gross' => $gross,
             'exempted' => $exempted,
@@ -262,7 +302,190 @@ class Invoice extends Model
             'balance' => max(0.0, $due - $paid),
             'overdue' => $overdue,
             'installments' => $rows,
+            'items' => $items,
         ];
+    }
+
+    /**
+     * How one payment was shared between the items on the bill: what
+     * each item had received after it, less what it had before.
+     *
+     * @return list<array{name: string, amount: float}>
+     */
+    public function split(Payment $payment): array
+    {
+        $lines = $this->billed();
+        $cells = $this->cells($this->parts(), $lines);
+        $before = (int) round(100 * (float) $this->payments
+            ->filter(fn (Payment $other) => $other->id !== $payment->id
+                && [$other->received_at, $other->receipt_no] < [$payment->received_at, $payment->receipt_no])
+            ->sum(fn (Payment $other) => (float) $other->amount));
+        $earlier = $this->pour($cells, $before);
+        $after = $this->pour($cells, $before + (int) round((float) $payment->amount * 100));
+        $shares = [];
+
+        foreach ($lines as $key => $line) {
+            $cents = array_sum(array_column($after, $key)) - array_sum(array_column($earlier, $key));
+
+            if ($cents > 0) {
+                $shares[] = ['name' => $line['name'], 'amount' => $cents / 100];
+            }
+        }
+
+        return $shares;
+    }
+
+    /**
+     * The items on the bill, in the order money is shared out. An
+     * invoice from before items existed is one line of school fees.
+     *
+     * @return list<array{name: string, is_spread: bool, amount: float}>
+     */
+    protected function billed(): array
+    {
+        if ($this->lines->isEmpty()) {
+            return [['name' => FeeItem::TUITION, 'is_spread' => true, 'amount' => (float) $this->amount_due]];
+        }
+
+        return array_values($this->lines->sortBy('position')->map(fn (InvoiceLine $line) => [
+            'name' => $line->name,
+            'is_spread' => $line->is_spread,
+            'amount' => (float) $line->amount,
+        ])->all());
+    }
+
+    /**
+     * The installments as they are owed: what each was billed, and
+     * what it comes to once any exemption is spread across them.
+     *
+     * @return list<array{seq: int, label: string, gross: float, amount: float, due_on: Carbon}>
+     */
+    protected function parts(): array
+    {
+        $gross = (float) $this->amount_due;
+        $due = $gross - $this->exempted();
+        $installments = $this->installments->sortBy('seq')->values();
+        $parts = $installments->isEmpty()
+            ? [['seq' => 1, 'label' => 'Annual fees', 'gross' => $gross, 'amount' => $gross, 'due_on' => $this->issued_on]]
+            : array_values($installments->map(fn (Installment $installment) => [
+                'seq' => $installment->seq,
+                'label' => static::ordinal($installment->seq).' installment',
+                'gross' => (float) $installment->amount,
+                'amount' => (float) $installment->amount,
+                'due_on' => $installment->due_on,
+            ])->all());
+
+        if ($due < $gross && $gross > 0) {
+            $spread = 0.0;
+            $final = count($parts) - 1;
+
+            foreach ($parts as $position => $part) {
+                $parts[$position]['amount'] = $position === $final
+                    ? round($due - $spread, 2)
+                    : round($part['gross'] * $due / $gross);
+                $spread += $parts[$position]['amount'];
+            }
+        }
+
+        return $parts;
+    }
+
+    /**
+     * What each installment holds of each item, in cents: a row per
+     * installment, a column per line. Up-front lines sit whole in the
+     * first installment; the rest of every installment is shared
+     * between the spread lines by what they still have to place. An
+     * exemption shrinks every cell of an installment alike.
+     *
+     * @param  list<array{gross: float, amount: float, ...}>  $parts
+     * @param  list<array{is_spread: bool, amount: float, ...}>  $lines
+     * @return array<int, array<int, int>>
+     */
+    protected function cells(array $parts, array $lines): array
+    {
+        $left = array_map(fn (array $line) => (int) round($line['amount'] * 100), $lines);
+        $final = count($parts) - 1;
+        $cells = [];
+
+        foreach ($parts as $index => $part) {
+            $room = (int) round($part['gross'] * 100);
+            $row = array_fill(0, count($lines), 0);
+
+            if ($index === $final) {
+                $row = $left;
+            } else {
+                foreach ($lines as $key => $line) {
+                    if ($index === 0 && ! $line['is_spread']) {
+                        $row[$key] = min($left[$key], $room);
+                        $room -= $row[$key];
+                    }
+                }
+
+                $spread = array_keys(array_filter($lines, fn (array $line) => $line['is_spread']));
+                $pool = array_sum(array_map(fn (int $key) => $left[$key], $spread));
+                $share = $room;
+
+                foreach ($spread as $place => $key) {
+                    $take = $place === count($spread) - 1
+                        ? $room
+                        : ($pool > 0 ? (int) round($share * $left[$key] / $pool) : 0);
+                    $row[$key] = max(0, min($take, $left[$key], $room));
+                    $room -= $row[$key];
+                }
+            }
+
+            foreach ($row as $key => $cents) {
+                $left[$key] -= $cents;
+            }
+
+            $cells[] = $this->shrink($row, (int) round($part['amount'] * 100));
+        }
+
+        return $cells;
+    }
+
+    /**
+     * Scale a row of cents down to a smaller total, the last filled
+     * cell taking what rounding leaves.
+     *
+     * @param  array<int, int>  $row
+     * @return array<int, int>
+     */
+    protected function shrink(array $row, int $total): array
+    {
+        $whole = array_sum($row);
+
+        if ($whole <= 0 || $total >= $whole) {
+            return $row;
+        }
+
+        $filled = array_keys(array_filter($row));
+        $made = 0;
+
+        foreach ($filled as $place => $key) {
+            $row[$key] = $place === count($filled) - 1 ? $total - $made : (int) round($row[$key] * $total / $whole);
+            $made += $row[$key];
+        }
+
+        return $row;
+    }
+
+    /**
+     * Pour money over the cells in order and say how much each took.
+     *
+     * @param  array<int, array<int, int>>  $cells
+     * @return array<int, array<int, int>>
+     */
+    protected function pour(array $cells, int $cents): array
+    {
+        foreach ($cells as $index => $row) {
+            foreach ($row as $key => $room) {
+                $cells[$index][$key] = min($cents, $room);
+                $cents -= $cells[$index][$key];
+            }
+        }
+
+        return $cells;
     }
 
     /**

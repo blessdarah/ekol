@@ -41,6 +41,7 @@ interface RegisterProps {
     feePlans: {
         level_id: string;
         amount: number;
+        items: { name: string; amount: number }[];
         installments: { seq: number; due_on: string | null; amount: number }[];
     }[];
     student: {
@@ -712,6 +713,12 @@ function Register(props: RegisterProps) {
                                         <span className="font-mono text-[15px] leading-5 text-text">
                                             {money(plan.amount, currency)}
                                         </span>
+                                        {plan.items.length > 1 &&
+                                            plan.items.map((item) => (
+                                                <span key={item.name} className="text-[12px] leading-4 text-text-muted">
+                                                    {item.name} · {money(item.amount)}
+                                                </span>
+                                            ))}
                                     </div>
                                     <div className="flex min-w-0 flex-1 flex-wrap gap-2">
                                         {plan.installments.map((installment) => (

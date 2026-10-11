@@ -57,6 +57,7 @@ interface StudentFeesProps {
         balance: number;
         overdue: number;
         installments: InstallmentRow[];
+        items: { name: string; upfront: boolean; billed: number; amount: number; paid: number; balance: number }[];
         exemption: Exemption | null;
         next: { amount: number; label: string; late: boolean } | null;
         payments: { id: string; on: string; method: string; by: string | null; amount: number; receipt: string | null }[];
@@ -328,6 +329,40 @@ function StudentFees({ currency, canManageFees, canManageStudents, student, invo
                                 </span>
                             </div>
                         </div>
+
+                        {invoice.items.length > 1 && (
+                            <section className="flex flex-col gap-2">
+                                <p className={capsLabelClass}>What the bill is for</p>
+                                <div className="overflow-x-auto rounded-lg border border-solid border-border">
+                                    <div className="flex min-w-[520px] flex-col">
+                                        <div className={`flex h-[34px] shrink-0 items-center gap-3 border-b border-solid border-border bg-surface px-4 ${capsLabelClass}`}>
+                                            <span className="flex-1">Item</span>
+                                            <span className="w-24 shrink-0 text-right">Amount</span>
+                                            <span className="w-20 shrink-0 text-right">Paid</span>
+                                            <span className="w-20 shrink-0 text-right">Balance</span>
+                                        </div>
+                                        {invoice.items.map((item, position) => (
+                                            <div
+                                                key={item.name}
+                                                className={`flex min-h-10 shrink-0 items-center gap-3 border-b border-solid border-border px-4 py-2 last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                            >
+                                                <span className="flex min-w-0 flex-1 flex-col">
+                                                    <span className="truncate text-[14px] leading-[18px] text-text">{item.name}</span>
+                                                    <span className="text-[12px] leading-4 text-text-muted">
+                                                        {item.upfront ? 'in full with the 1st installment' : 'spread over the installments'}
+                                                    </span>
+                                                </span>
+                                                <span className="w-24 shrink-0 text-right font-mono text-[13px] leading-4 text-text">{figure(item.amount)}</span>
+                                                <span className="w-20 shrink-0 text-right font-mono text-[13px] leading-4 text-text">{figure(item.paid)}</span>
+                                                <span className={`w-20 shrink-0 text-right font-mono text-[13px] leading-4 ${item.balance > 0 ? amberText : 'text-text-muted'}`}>
+                                                    {figure(item.balance)}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </section>
+                        )}
 
                         <section className="flex flex-col gap-2">
                             <p className={capsLabelClass}>Installments</p>

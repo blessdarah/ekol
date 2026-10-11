@@ -773,7 +773,7 @@ class EnrolmentController extends Controller
             return;
         }
 
-        Invoice::issue($student, $term, $plan, (string) $plan->annual_amount);
+        $plan->billTo($student, $term);
     }
 
     /**

@@ -181,11 +181,26 @@ class Student extends Model
                 ->first();
 
             if ($plan && $term) {
-                Invoice::issue($student, $term, $plan, (string) $plan->annual_amount);
+                $plan->billTo($student, $term);
             }
 
             return $student;
         });
+    }
+
+    /**
+     * Whether a year is the student's first at the school: they were
+     * not enrolled in any year before it.
+     */
+    public function isNewIn(string $academicYearId): bool
+    {
+        $starts = AcademicYear::whereKey($academicYearId)->value('starts_on');
+
+        return ! Enrolment::where('student_id', $this->id)
+            ->whereIn('academic_year_id', AcademicYear::where('school_id', $this->school_id)
+                ->whereDate('starts_on', '<', $starts)
+                ->select('id'))
+            ->exists();
     }
 
     /**

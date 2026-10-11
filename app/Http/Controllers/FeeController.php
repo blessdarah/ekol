@@ -14,6 +14,8 @@ use App\Models\AuditEvent;
 use App\Models\Enrolment;
 use App\Models\FeeExemption;
 use App\Models\FeeInstallmentTemplate;
+use App\Models\FeeItem;
+use App\Models\FeeItemAmount;
 use App\Models\FeePlan;
 use App\Models\Invoice;
 use App\Models\Level;
@@ -149,10 +151,9 @@ class FeeController extends Controller
 
         $plans = FeePlan::where('school_id', $school->id)->where('academic_year_id', $year->id)->get()->keyBy('level_id');
         $previous = AcademicYear::where('school_id', $school->id)->whereDate('starts_on', '<', $year->starts_on)->orderByDesc('starts_on')->first();
-        $before = $previous
-            ? FeePlan::where('school_id', $school->id)->where('academic_year_id', $previous->id)->pluck('annual_amount', 'level_id')
-            : collect();
-        $enrolled = collect($this->enrolled($school, $year))->groupBy(fn (Enrolment $enrolment) => (string) ($enrolment->level_id ?? $enrolment->schoolClass?->level_id));
+        $students = $this->enrolled($school, $year);
+        $collected = $this->collected($students);
+        $enrolled = collect($students)->groupBy(fn (Enrolment $enrolment) => (string) ($enrolment->level_id ?? $enrolment->schoolClass?->level_id));
 
         return Inertia::render('fees/structure', [
             'currency' => $school->currency,
@@ -163,6 +164,8 @@ class FeeController extends Controller
             ]),
             'year' => ['id' => $year->id, 'label' => $year->label, 'current' => $year->status === AcademicYearStatus::Current],
             'previousLabel' => $previous?->label,
+            'items' => $this->items($school, $year, $collected),
+            'previousItems' => $previous ? $this->items($school, $previous) : [],
             'billingTerm' => $this->billingTerm($school, $year)?->label,
             'installments' => FeeInstallmentTemplate::where('school_id', $school->id)
                 ->where('academic_year_id', $year->id)
@@ -174,18 +177,16 @@ class FeeController extends Controller
                     'percent' => (float) $template->percent,
                     'due_on' => $template->due_on?->toDateString(),
                 ]),
-            'levels' => Level::where('school_id', $school->id)->orderBy('ordinal')->get()->map(function (Level $level) use ($plans, $before, $enrolled) {
+            'levels' => Level::where('school_id', $school->id)->orderBy('ordinal')->get()->map(function (Level $level) use ($plans, $enrolled) {
                 $students = $enrolled->get($level->id);
                 $billed = $students
                     ? $students->filter(fn (Enrolment $enrolment) => (bool) $enrolment->student?->invoices->isNotEmpty())->count()
                     : 0;
-                $plan = $plans->get($level->id);
 
                 return [
                     'id' => $level->id,
                     'name' => $level->name,
-                    'amount' => $plan ? (float) $plan->annual_amount : null,
-                    'previous' => $before->has($level->id) ? (float) $before->get($level->id) : null,
+                    'has_fee' => $plans->has($level->id),
                     'students' => $students ? $students->count() : 0,
                     'billed' => $billed,
                 ];
@@ -199,56 +200,68 @@ class FeeController extends Controller
 
         $data = $request->validated();
 
-        $levels = Level::where('school_id', $school->id)->pluck('id')->all();
+        $levels = Level::where('school_id', $school->id)->pluck('name', 'id');
         $year = AcademicYear::whereKey($data['year_id'])->firstOrFail();
 
         if ($year->status === AcademicYearStatus::Closed) {
             throw ValidationException::withMessages(['year_id' => "{$year->label} is closed. Its fees can no longer change."]);
         }
 
-        DB::transaction(function () use ($request, $school, $year, $data, $levels) {
-            $changes = [];
+        $rows = $this->itemRows($data);
+        $charged = collect($rows)->flatMap(fn (array $row) => array_keys(array_filter($row['amounts'], fn ($amount) => (float) $amount > 0)))->unique();
+        $stranded = FeePlan::where('school_id', $school->id)
+            ->where('academic_year_id', $year->id)
+            ->whereNotIn('level_id', $charged->all())
+            ->whereHas('invoices')
+            ->pluck('level_id')
+            ->map(fn (string $levelId) => $levels->get($levelId))
+            ->filter();
 
-            foreach ($data['amounts'] as $levelId => $amount) {
-                if (! in_array($levelId, $levels, true)) {
-                    continue;
-                }
+        if ($stranded->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'items' => 'Students in '.$stranded->join(', ', ' and ').' are already billed, so the level has to keep at least one fee.',
+            ]);
+        }
 
-                $plan = FeePlan::where('school_id', $school->id)
-                    ->where('level_id', $levelId)
-                    ->where('academic_year_id', $year->id)
-                    ->first();
-                $value = $amount === null || $amount === '' ? null : number_format((float) $amount, 2, '.', '');
+        DB::transaction(function () use ($request, $school, $year, $rows, $levels) {
+            $existing = FeeItem::where('school_id', $school->id)->where('academic_year_id', $year->id)->get()->keyBy('id');
+            $kept = [];
 
-                if ($value === null) {
-                    if ($plan && Invoice::where('fee_plan_id', $plan->id)->exists()) {
-                        throw ValidationException::withMessages([
-                            "amounts.{$levelId}" => 'Students are already billed on this fee, so it cannot be removed.',
-                        ]);
+            foreach ($rows as $position => $row) {
+                $item = $existing->get((string) ($row['id'] ?? '')) ?? new FeeItem(['school_id' => $school->id, 'academic_year_id' => $year->id]);
+                $item->fill([
+                    'name' => trim($row['name']),
+                    'position' => $position + 1,
+                    'is_spread' => (bool) $row['spread'],
+                    'new_students_only' => (bool) $row['new_only'],
+                ])->save();
+                $kept[] = $item->id;
+
+                foreach ($levels->keys() as $levelId) {
+                    $amount = (float) ($row['amounts'][$levelId] ?? 0);
+
+                    if ($amount > 0) {
+                        FeeItemAmount::updateOrCreate(
+                            ['fee_item_id' => $item->id, 'level_id' => $levelId],
+                            ['amount' => number_format($amount, 2, '.', '')],
+                        );
+                    } else {
+                        FeeItemAmount::where('fee_item_id', $item->id)->where('level_id', $levelId)->delete();
                     }
-
-                    if ($plan) {
-                        $changes[$levelId] = ['from' => $plan->annual_amount, 'to' => null];
-                        $plan->delete();
-                    }
-
-                    continue;
                 }
-
-                if ($plan && number_format((float) $plan->annual_amount, 2, '.', '') === $value) {
-                    continue;
-                }
-
-                $changes[$levelId] = ['from' => $plan?->annual_amount, 'to' => $value];
-                FeePlan::updateOrCreate(
-                    ['school_id' => $school->id, 'level_id' => $levelId, 'academic_year_id' => $year->id],
-                    ['annual_amount' => $value, 'currency' => $school->currency, 'is_active' => true],
-                );
             }
 
-            if ($changes !== []) {
-                $this->audit($request, $school, 'academic_year', $year->id, 'fees_set', $changes);
-            }
+            FeeItem::where('school_id', $school->id)->where('academic_year_id', $year->id)->whereNotIn('id', $kept)->delete();
+            FeePlan::syncFor($school, $year);
+
+            $this->audit($request, $school, 'academic_year', $year->id, 'fees_set', [
+                'items' => array_map(fn (array $row) => [
+                    'name' => trim($row['name']),
+                    'spread' => (bool) $row['spread'],
+                    'new_only' => (bool) $row['new_only'],
+                    'amounts' => array_filter($row['amounts'], fn ($amount) => (float) $amount > 0),
+                ], $rows),
+            ]);
         });
 
         return back();
@@ -295,7 +308,7 @@ class FeeController extends Controller
                     continue;
                 }
 
-                Invoice::issue($student, $term, $plan, (string) $plan->annual_amount);
+                $plan->billTo($student, $term);
                 $billed++;
             }
 
@@ -317,7 +330,7 @@ class FeeController extends Controller
         $target = $this->findStudent($school, $student);
         $year = StructureController::currentYear($school);
         $invoices = Invoice::where('student_id', $target->id)
-            ->with(['installments', 'exemption.granter:id,full_name', 'payments.receiver:id,full_name', 'term.academicYear'])
+            ->with(['installments', 'lines', 'exemption.granter:id,full_name', 'payments.receiver:id,full_name', 'term.academicYear'])
             ->orderBy('issued_on')
             ->get();
         $invoice = $invoices->firstWhere('id', (string) $request->query('invoice', ''))
@@ -372,7 +385,7 @@ class FeeController extends Controller
 
         $data = $request->validated();
 
-        $invoice = Invoice::whereKey($data['invoice_id'])->with(['installments', 'payments', 'exemption'])->firstOrFail();
+        $invoice = Invoice::whereKey($data['invoice_id'])->with(['installments', 'lines', 'payments', 'exemption'])->firstOrFail();
         $balance = $invoice->ledger()['balance'];
 
         if ((float) $data['amount'] > $balance) {
@@ -410,7 +423,7 @@ class FeeController extends Controller
         $school = static::schoolFor($request);
         $target = Payment::whereKey($payment)
             ->whereHas('invoice.student', fn (Builder $query) => $query->where('school_id', $school->id))
-            ->with(['invoice.installments', 'invoice.exemption', 'invoice.payments', 'invoice.student', 'invoice.term.academicYear', 'receiver:id,full_name'])
+            ->with(['invoice.installments', 'invoice.lines', 'invoice.exemption', 'invoice.payments', 'invoice.student', 'invoice.term.academicYear', 'receiver:id,full_name'])
             ->firstOrFail();
         $invoice = $target->invoice;
         $student = $invoice?->student;
@@ -429,6 +442,7 @@ class FeeController extends Controller
                 'year' => $invoice?->term?->academicYear?->label,
                 'balance' => $invoice ? $invoice->ledger()['balance'] : 0.0,
                 'due' => $invoice ? $invoice->ledger()['due'] : 0.0,
+                'covers' => $invoice ? $invoice->split($target) : [],
             ],
             'student' => [
                 'id' => $student?->id,
@@ -460,7 +474,7 @@ class FeeController extends Controller
         $target = $this->findStudent($school, $student)->load('guardians');
         $year = StructureController::currentYear($school);
         $invoices = Invoice::where('student_id', $target->id)
-            ->with(['installments', 'exemption.granter:id,full_name', 'payments.receiver:id,full_name,role', 'term.academicYear'])
+            ->with(['installments', 'lines', 'exemption.granter:id,full_name', 'payments.receiver:id,full_name,role', 'term.academicYear'])
             ->orderBy('issued_on')
             ->get();
         $invoice = $invoices->firstWhere('id', (string) $request->query('invoice', ''))
@@ -596,7 +610,7 @@ class FeeController extends Controller
     {
         return Invoice::whereKey($id)
             ->whereHas('student', fn (Builder $query) => $query->where('school_id', $school->id))
-            ->with(['installments', 'payments', 'exemption'])
+            ->with(['installments', 'lines', 'payments', 'exemption'])
             ->firstOrFail();
     }
 
@@ -615,7 +629,7 @@ class FeeController extends Controller
             ->with([
                 'schoolClass:id,name,level_id',
                 'student' => fn ($query) => $query->with([
-                    'invoices' => fn ($invoices) => $invoices->whereIn('term_id', $terms)->with(['installments', 'payments', 'exemption']),
+                    'invoices' => fn ($invoices) => $invoices->whereIn('term_id', $terms)->with(['installments', 'lines', 'payments', 'exemption']),
                 ]),
             ])
             ->get()
@@ -633,6 +647,65 @@ class FeeController extends Controller
         return $current && $current->academic_year_id === $year->id
             ? $current
             : Term::where('academic_year_id', $year->id)->orderBy('sequence')->first();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<array{id?: string|null, name: string, spread: bool, new_only: bool, amounts: array<string, float|int|string|null>}>
+     */
+    protected function itemRows(array $data): array
+    {
+        return array_values($data['items']);
+    }
+
+    /**
+     * A year's fee items in the order money is shared out, each with
+     * its amount per level and, when asked, what it has brought in.
+     *
+     * @param  array<string, array{billed: float, collected: float}>|null  $collected
+     * @return list<array<string, mixed>>
+     */
+    protected function items(School $school, AcademicYear $year, ?array $collected = null): array
+    {
+        return array_values(FeeItem::where('school_id', $school->id)
+            ->where('academic_year_id', $year->id)
+            ->orderBy('position')
+            ->with('amounts')
+            ->get()
+            ->map(fn (FeeItem $item) => [
+                'id' => $item->id,
+                'name' => $item->name,
+                'spread' => $item->is_spread,
+                'new_only' => $item->new_students_only,
+                'amounts' => $item->amounts->mapWithKeys(fn (FeeItemAmount $amount) => [$amount->level_id => (float) $amount->amount])->all(),
+                'billed' => $collected[$item->name]['billed'] ?? 0.0,
+                'collected' => $collected[$item->name]['collected'] ?? 0.0,
+            ])
+            ->all());
+    }
+
+    /**
+     * What each item on the year's invoices was billed and has
+     * received, by item name.
+     *
+     * @param  list<Enrolment>  $enrolments
+     * @return array<string, array{billed: float, collected: float}>
+     */
+    protected function collected(array $enrolments): array
+    {
+        $totals = [];
+
+        foreach ($enrolments as $enrolment) {
+            foreach ($enrolment->student->invoices ?? [] as $invoice) {
+                foreach ($invoice->ledger()['items'] as $item) {
+                    $totals[$item['name']] ??= ['billed' => 0.0, 'collected' => 0.0];
+                    $totals[$item['name']]['billed'] += $item['amount'];
+                    $totals[$item['name']]['collected'] += $item['paid'];
+                }
+            }
+        }
+
+        return $totals;
     }
 
     protected function findStudent(School $school, string $id): Student

@@ -18,6 +18,7 @@ interface ReceiptProps {
         year: string | null;
         balance: number;
         due: number;
+        covers: { name: string; amount: number }[];
     };
     student: { id: string | null; name: string | null; matricule: string | null; class: string | null };
 }
@@ -77,7 +78,18 @@ function Receipt({ issuer, currency, receipt, student }: ReceiptProps) {
                             {[student.matricule, student.class].filter(Boolean).join(' · ')}
                         </span>
                     </Line>
-                    <Line label="For">Fees{receipt.year ? ` · ${receipt.year}` : ''}</Line>
+                    <Line label="For">
+                        Fees{receipt.year ? ` · ${receipt.year}` : ''}
+                        {receipt.covers.length > 1 &&
+                            receipt.covers.map((cover) => (
+                                <span key={cover.name} className="block font-mono text-[12px] leading-[18px] text-text-muted">
+                                    {cover.name} · {figure(cover.amount)}
+                                </span>
+                            ))}
+                        {receipt.covers.length === 1 && receipt.covers[0].name !== 'School fees' && (
+                            <span className="block text-[12px] leading-[18px] text-text-muted">{receipt.covers[0].name}</span>
+                        )}
+                    </Line>
                     <Line label="Date">{dayMonth(receipt.on)}</Line>
                     <Line label="Method">
                         {receipt.method}

@@ -19,8 +19,13 @@ class UpdateFeeStructureRequest extends SchoolRequest
     {
         return [
             'year_id' => ['required', Rule::exists('academic_years', 'id')->where('school_id', $this->school()->id)],
-            'amounts' => ['present', 'array'],
-            'amounts.*' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'items' => ['present', 'array', 'max:12'],
+            'items.*.id' => ['nullable', 'uuid'],
+            'items.*.name' => ['required', 'string', 'max:40', 'distinct:ignore_case'],
+            'items.*.spread' => ['required', 'boolean'],
+            'items.*.new_only' => ['required', 'boolean'],
+            'items.*.amounts' => ['present', 'array'],
+            'items.*.amounts.*' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
         ];
     }
 
@@ -30,8 +35,10 @@ class UpdateFeeStructureRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'amounts.*.numeric' => 'Enter the fee as a number.',
-            'amounts.*.min' => 'A fee cannot be negative.',
+            'items.*.name.required' => 'Give the item a name.',
+            'items.*.name.distinct' => 'Two items have the same name.',
+            'items.*.amounts.*.numeric' => 'Enter the fee as a number.',
+            'items.*.amounts.*.min' => 'A fee cannot be negative.',
         ];
     }
 }

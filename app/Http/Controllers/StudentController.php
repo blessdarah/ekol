@@ -67,29 +67,29 @@ class StudentController extends Controller
 
         $seriesLevels = Level::where('school_id', $school->id)->where('uses_series', true)->pluck('id');
 
-        $noSeries = fn(Builder $query) => $query
+        $noSeries = fn (Builder $query) => $query
             ->whereIn('school_classes.level_id', $seriesLevels)
-            ->whereDoesntHave('studentSeries', fn(Builder $chosen) => $chosen->where('term_id', $term?->id));
-        $overdue = fn(Builder $query) => $query
-            ->whereHas('invoices', fn(Builder $invoices) => $invoices->where('status', InvoiceStatus::Overdue));
-        $newThisTerm = fn(Builder $query) => $query
+            ->whereDoesntHave('studentSeries', fn (Builder $chosen) => $chosen->where('term_id', $term?->id));
+        $overdue = fn (Builder $query) => $query
+            ->whereHas('invoices', fn (Builder $invoices) => $invoices->where('status', InvoiceStatus::Overdue));
+        $newThisTerm = fn (Builder $query) => $query
             ->whereDate('students.admitted_on', '>=', $term ? $term->starts_on : today()->addDay());
 
-        $base = fn() => $this->rosterQuery($school, $year);
+        $base = fn () => $this->rosterQuery($school, $year);
 
         $students = $base()
             ->select('students.*', 'school_classes.name as class_name', 'school_classes.level_id as class_level_id')
             ->with([
-                'studentSeries' => fn($query) => $query->where('term_id', $term?->id)->with('series:id,code,stream'),
+                'studentSeries' => fn ($query) => $query->where('term_id', $term?->id)->with('series:id,code,stream'),
                 'invoices.payments',
                 'invoices.exemption',
             ])
             ->when($tab === 'overdue', $overdue)
             ->when($tab === 'no_series', $noSeries)
             ->when($tab === 'new', $newThisTerm)
-            ->when($levelId !== '', fn(Builder $query) => $query->where('school_classes.level_id', $levelId))
-            ->when($classId !== '', fn(Builder $query) => $query->where('school_classes.id', $classId))
-            ->when($search !== '', fn(Builder $query) => $query->where(fn(Builder $inner) => $inner
+            ->when($levelId !== '', fn (Builder $query) => $query->where('school_classes.level_id', $levelId))
+            ->when($classId !== '', fn (Builder $query) => $query->where('school_classes.id', $classId))
+            ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $inner) => $inner
                 ->whereLike('students.full_name', "%{$search}%")
                 ->orWhereLike('students.admission_no', "%{$search}%")
                 ->orWhereLike('students.guardian_phone', "%{$search}%")))
@@ -113,11 +113,11 @@ class StudentController extends Controller
             ],
             'filters' => ['tab' => $tab, 'q' => $search, 'level' => $levelId, 'class' => $classId],
             'levels' => Level::where('school_id', $school->id)->orderBy('ordinal')->get(['id', 'name']),
-            'classes' => $classes->map(fn(SchoolClass $class) => $class->only(['id', 'name', 'level_id'])),
+            'classes' => $classes->map(fn (SchoolClass $class) => $class->only(['id', 'name', 'level_id'])),
             'students' => [
                 'rows' => collect($students->items())
-                    ->filter(fn(mixed $row) => $row instanceof Student)
-                    ->map(fn(Student $student) => $this->row($student, $seriesLevels->all()))
+                    ->filter(fn (mixed $row) => $row instanceof Student)
+                    ->map(fn (Student $student) => $this->row($student, $seriesLevels->all()))
                     ->values(),
                 'page' => $students->currentPage(),
                 'lastPage' => $students->lastPage(),
@@ -226,9 +226,9 @@ class StudentController extends Controller
 
         $enrolment = $year
             ? Enrolment::where('student_id', $target->id)
-            ->where('academic_year_id', $year->id)
-            ->with('schoolClass.level')
-            ->first()
+                ->where('academic_year_id', $year->id)
+                ->with('schoolClass.level')
+                ->first()
             : null;
         $class = $enrolment?->schoolClass;
         $series = $term
@@ -251,11 +251,11 @@ class StudentController extends Controller
                 'place_of_birth' => $target->place_of_birth,
                 'religion' => $private ? $target->religion : null,
                 'disability' => $private && $target->has_disability
-                    ? trim(implode(', ', $target->disability_types ?? []) . ($target->disability_support ? " · {$target->disability_support}" : ''), ' ·')
+                    ? trim(implode(', ', $target->disability_types ?? []).($target->disability_support ? " · {$target->disability_support}" : ''), ' ·')
                     : null,
                 'admitted_on' => $target->admitted_on->toDateString(),
                 'transferred_from' => $target->transferred
-                    ? trim("{$target->previous_school}" . ($target->previous_class ? ", {$target->previous_class}" : ''))
+                    ? trim("{$target->previous_school}".($target->previous_class ? ", {$target->previous_class}" : ''))
                     : null,
                 'class' => $class ? [
                     'name' => $class->name,
@@ -271,9 +271,9 @@ class StudentController extends Controller
                     'electives' => $series->subjects->where('pivot.kind', 'elective')->count(),
                 ] : null,
                 'guardians' => $target->guardians
-                    ->sortBy(fn(StudentGuardian $guardian) => array_search($guardian->relation, StudentGuardian::RELATIONS, true))
+                    ->sortBy(fn (StudentGuardian $guardian) => array_search($guardian->relation, StudentGuardian::RELATIONS, true))
                     ->values()
-                    ->map(fn(StudentGuardian $guardian) => $guardian->only(['relation', 'name', 'phone', 'occupation', 'is_main'])),
+                    ->map(fn (StudentGuardian $guardian) => $guardian->only(['relation', 'name', 'phone', 'occupation', 'is_main'])),
                 'on_whatsapp' => $target->on_whatsapp,
                 'lives_with' => $target->lives_with,
                 'fees' => $target->invoices->isEmpty() ? null : [
@@ -298,10 +298,10 @@ class StudentController extends Controller
         }
 
         $guardian = StudentGuardian::query()
-            ->whereRaw("REPLACE(REPLACE(phone, ' ', ''), '+', '') LIKE ?", ['%' . substr($digits, -9)])
-            ->whereHas('student', fn(Builder $query) => $query
+            ->whereRaw("REPLACE(REPLACE(phone, ' ', ''), '+', '') LIKE ?", ['%'.substr($digits, -9)])
+            ->whereHas('student', fn (Builder $query) => $query
                 ->where('school_id', $school->id)
-                ->when($request->query('exclude'), fn(Builder $inner, mixed $id) => $inner->where('id', '!=', $id)))
+                ->when($request->query('exclude'), fn (Builder $inner, mixed $id) => $inner->where('id', '!=', $id)))
             ->with('student')
             ->first();
 
@@ -325,7 +325,7 @@ class StudentController extends Controller
     {
         return Student::query()
             ->where('students.school_id', $school->id)
-            ->leftJoin('enrolments', fn($join) => $join
+            ->leftJoin('enrolments', fn ($join) => $join
                 ->on('enrolments.student_id', '=', 'students.id')
                 ->where('enrolments.academic_year_id', '=', $year?->id))
             ->leftJoin('school_classes', 'school_classes.id', '=', 'enrolments.school_class_id');
@@ -392,8 +392,8 @@ class StudentController extends Controller
             'levels' => Level::where('school_id', $school->id)
                 ->orderBy('ordinal')
                 ->get()
-                ->map(fn(Level $level) => $level->only(['id', 'name', 'uses_series'])),
-            'classes' => $classes->map(fn(SchoolClass $class) => [
+                ->map(fn (Level $level) => $level->only(['id', 'name', 'uses_series'])),
+            'classes' => $classes->map(fn (SchoolClass $class) => [
                 'id' => $class->id,
                 'name' => $class->name,
                 'level_id' => $class->level_id,
@@ -404,7 +404,7 @@ class StudentController extends Controller
                 ->orderBy('stream', 'desc')
                 ->orderBy('code')
                 ->get()
-                ->map(fn(Series $series) => [
+                ->map(fn (Series $series) => [
                     'id' => $series->id,
                     'code' => $series->code,
                     'name' => $series->name,
@@ -433,7 +433,7 @@ class StudentController extends Controller
                 'lives_with' => $student->lives_with,
                 'class_id' => $enrolment?->school_class_id,
                 'series_id' => $seriesId,
-                'guardians' => $student->guardians->map(fn(StudentGuardian $guardian) => $guardian->only(['relation', 'name', 'phone', 'occupation', 'is_main'])),
+                'guardians' => $student->guardians->map(fn (StudentGuardian $guardian) => $guardian->only(['relation', 'name', 'phone', 'occupation', 'is_main'])),
             ] : null,
         ]);
     }
@@ -445,16 +445,17 @@ class StudentController extends Controller
     {
         return $year
             ? SchoolClass::where('school_id', $school->id)
-            ->where('academic_year_id', $year->id)
-            ->orderBy('name')
-            ->get()
+                ->where('academic_year_id', $year->id)
+                ->orderBy('name')
+                ->get()
             : new Collection;
     }
 
     /**
-     * The fee plan of each level, split by the year's installment schedule.
+     * What a new student of each level is billed, item by item, split
+     * by the year's installment schedule.
      *
-     * @return array<int, array{level_id: string, amount: float, installments: array<int, array{seq: int, due_on: string|null, amount: float}>}>
+     * @return array<int, array{level_id: string, amount: float, items: list<array{name: string, amount: float}>, installments: array<int, array{seq: int, due_on: string|null, amount: float}>}>
      */
     protected function feePlans(School $school, ?AcademicYear $year): array
     {
@@ -467,18 +468,26 @@ class StudentController extends Controller
             ->orderBy('seq')
             ->get();
 
+        $percents = array_values($templates->map(fn (FeeInstallmentTemplate $template) => (float) $template->percent)->all());
+
         return FeePlan::where('school_id', $school->id)
             ->where('academic_year_id', $year->id)
             ->get()
-            ->map(fn(FeePlan $plan) => [
-                'level_id' => $plan->level_id,
-                'amount' => (float) $plan->annual_amount,
-                'installments' => $templates->map(fn(FeeInstallmentTemplate $template) => [
-                    'seq' => $template->seq,
-                    'due_on' => $template->due_on?->toDateString(),
-                    'amount' => round((float) $plan->annual_amount * (float) $template->percent / 100),
-                ])->all(),
-            ])
+            ->map(function (FeePlan $plan) use ($templates, $percents) {
+                $lines = $plan->lines(true);
+                $parts = Invoice::schedule($lines, $percents);
+
+                return [
+                    'level_id' => $plan->level_id,
+                    'amount' => array_sum(array_map(fn (array $line) => (float) $line['amount'], $lines)),
+                    'items' => array_map(fn (array $line) => ['name' => $line['name'], 'amount' => (float) $line['amount']], $lines),
+                    'installments' => $templates->values()->map(fn (FeeInstallmentTemplate $template, int $index) => [
+                        'seq' => $template->seq,
+                        'due_on' => $template->due_on?->toDateString(),
+                        'amount' => ($parts[$index] ?? 0) / 100,
+                    ])->all(),
+                ];
+            })
             ->all();
     }
 
@@ -499,7 +508,7 @@ class StudentController extends Controller
 
         $class = SchoolClass::whereKey($data['class_id'])->firstOrFail();
         $taken = Enrolment::where('school_class_id', $class->id)
-            ->when($student, fn(Builder $query) => $query->where('student_id', '!=', $student?->id))
+            ->when($student, fn (Builder $query) => $query->where('student_id', '!=', $student?->id))
             ->count();
 
         if ($taken >= $class->capacity) {
@@ -514,11 +523,11 @@ class StudentController extends Controller
             ]);
         }
 
-        $fullName = trim($data['surname']) . ' ' . trim($data['given_names']);
+        $fullName = trim($data['surname']).' '.trim($data['given_names']);
         $twin = Student::where('school_id', $school->id)
             ->whereRaw('LOWER(full_name) = ?', [mb_strtolower($fullName)])
             ->whereDate('date_of_birth', $data['date_of_birth'])
-            ->when($student, fn(Builder $query) => $query->where('id', '!=', $student?->id))
+            ->when($student, fn (Builder $query) => $query->where('id', '!=', $student?->id))
             ->first();
 
         if ($twin && ! ($data['allow_duplicate'] ?? false)) {
@@ -545,7 +554,7 @@ class StudentController extends Controller
      */
     protected function guardians(array $data): array
     {
-        return array_map(fn(array $row) => [
+        return array_map(fn (array $row) => [
             'relation' => $row['relation'],
             'name' => trim($row['name']),
             'phone' => isset($row['phone']) ? trim($row['phone']) : null,
@@ -621,13 +630,13 @@ class StudentController extends Controller
             return ['status' => null, 'balance' => 0.0, 'due' => 0.0];
         }
 
-        $due = (float) $invoices->sum(fn(Invoice $invoice) => (float) $invoice->amount_due - $invoice->exempted());
-        $paid = (float) $invoices->sum(fn(Invoice $invoice) => (float) $invoice->payments->sum(fn(Payment $payment) => (float) $payment->amount));
+        $due = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->amount_due - $invoice->exempted());
+        $paid = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->payments->sum(fn (Payment $payment) => (float) $payment->amount));
         $balance = max(0.0, $due - $paid);
 
         $status = match (true) {
             $balance <= 0 => 'paid',
-            $invoices->contains(fn(Invoice $invoice) => $invoice->status === InvoiceStatus::Overdue) => 'overdue',
+            $invoices->contains(fn (Invoice $invoice) => $invoice->status === InvoiceStatus::Overdue) => 'overdue',
             $paid > 0 => 'partial',
             default => 'due',
         };
@@ -639,7 +648,7 @@ class StudentController extends Controller
     {
         $parts = preg_split('/\s+/', trim($student->full_name)) ?: [];
 
-        return mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . mb_substr($parts[1] ?? '', 0, 1));
+        return mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1).mb_substr($parts[1] ?? '', 0, 1));
     }
 
     protected function audit(Request $request, School $school, Student $student, string $action, mixed $diff): void
