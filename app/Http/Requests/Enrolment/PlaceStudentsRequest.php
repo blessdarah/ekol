@@ -1,0 +1,41 @@
+<?php
+
+namespace App\Http\Requests\Enrolment;
+
+use App\Http\Controllers\EnrolmentController;
+use App\Http\Requests\SchoolRequest;
+use Illuminate\Validation\Rule;
+
+class PlaceStudentsRequest extends SchoolRequest
+{
+    public function authorize(): bool
+    {
+        return (bool) $this->user()?->role->managesStudents();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        $school = $this->school();
+
+        return [
+            'class_id' => ['required', Rule::exists('school_classes', 'id')
+                ->where('school_id', $school->id)
+                ->where('academic_year_id', EnrolmentController::requireYear($school)->id)],
+            'enrolment_ids' => ['required', 'array', 'min:1'],
+            'enrolment_ids.*' => ['uuid', 'distinct'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'enrolment_ids.required' => 'Tick the students to place first.',
+        ];
+    }
+}

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\AcceptInvitationRequest;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -53,7 +53,7 @@ class StaffInvitationController extends Controller
         ]);
     }
 
-    public function store(Request $request, string $token): RedirectResponse
+    public function store(AcceptInvitationRequest $request, string $token): RedirectResponse
     {
         $school = $this->school();
         $member = $this->invited($school, $token);
@@ -62,11 +62,7 @@ class StaffInvitationController extends Controller
             return redirect()->route('invitation.show', $token);
         }
 
-        $data = $request->validate([
-            'password' => ['required', 'string', 'min:10', 'max:255', 'regex:/\d/'],
-        ], [
-            'password.regex' => 'The password needs at least one number.',
-        ]);
+        $data = $request->validated();
 
         $member->forceFill([
             'password' => $data['password'],

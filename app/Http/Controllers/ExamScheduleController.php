@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AssessmentKind;
 use App\Enums\AssessmentState;
+use App\Http\Requests\Assessments\SaveExamPaperRequest;
 use App\Models\AssessmentPlan;
 use App\Models\AuditEvent;
 use App\Models\ClassSubject;
@@ -18,7 +19,6 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -130,7 +130,7 @@ class ExamScheduleController extends Controller
         ]);
     }
 
-    public function save(Request $request, string $plan): RedirectResponse
+    public function save(SaveExamPaperRequest $request, string $plan): RedirectResponse
     {
         [$school] = AssessmentController::context($request);
         $target = $this->exam($school, $plan);
@@ -139,21 +139,7 @@ class ExamScheduleController extends Controller
             throw ValidationException::withMessages(['held_on' => 'This exam is published. Its schedule can no longer change.']);
         }
 
-        $data = $request->validate([
-            'level_id' => ['required', Rule::in($target->level_ids)],
-            'subject_id' => ['required', Rule::exists('subjects', 'id')->where('school_id', $school->id)],
-            'held_on' => ['required', 'date', ...($target->held_from && $target->held_until
-                ? ['after_or_equal:'.$target->held_from->toDateString(), 'before_or_equal:'.$target->held_until->toDateString()]
-                : [])],
-            'starts_at' => ['required', 'date_format:H:i'],
-            'hours' => ['required', 'numeric', 'min:0.5', 'max:6'],
-            'room_id' => ['nullable', Rule::exists('rooms', 'id')->where('school_id', $school->id)->whereNull('deleted_at')],
-            'invigilator_ids' => ['present', 'array', 'max:6'],
-            'invigilator_ids.*' => ['distinct', Rule::exists('users', 'id')->where('school_id', $school->id)],
-        ], [
-            'held_on.after_or_equal' => 'Choose a day inside the exam dates.',
-            'held_on.before_or_equal' => 'Choose a day inside the exam dates.',
-        ]);
+        $data = $request->validated();
 
         $paper = ExamPaper::updateOrCreate(
             ['assessment_plan_id' => $target->id, 'level_id' => $data['level_id'], 'subject_id' => $data['subject_id']],

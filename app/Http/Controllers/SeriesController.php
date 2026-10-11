@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Series\SaveSeriesRequest;
 use App\Models\AuditEvent;
 use App\Models\ClassSubject;
 use App\Models\Enrolment;
@@ -16,7 +17,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -103,14 +103,14 @@ class SeriesController extends Controller
         return $this->form($school, $level, $target);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SaveSeriesRequest $request): RedirectResponse
     {
         $school = StructureController::schoolFor($request);
         $level = $this->seriesLevels($school)->firstWhere('id', $request->input('level_id'));
 
         abort_unless($level !== null, 404);
 
-        $data = $this->validated($request, $school, $level, null);
+        $data = $request->validated();
 
         DB::transaction(function () use ($request, $school, $level, $data) {
             $series = Series::create([
@@ -127,12 +127,12 @@ class SeriesController extends Controller
         return redirect()->route('classes.series', ['level' => $level->id]);
     }
 
-    public function update(Request $request, string $series): RedirectResponse
+    public function update(SaveSeriesRequest $request, string $series): RedirectResponse
     {
         $school = StructureController::schoolFor($request);
         $target = Series::where('school_id', $school->id)->where('id', $series)->firstOrFail();
         $level = Level::where('school_id', $school->id)->where('id', $target->level_id)->firstOrFail();
-        $data = $this->validated($request, $school, $level, $target);
+        $data = $request->validated();
 
         DB::transaction(function () use ($request, $school, $target, $data) {
             $target->update($this->attributes($data));
@@ -208,34 +208,6 @@ class SeriesController extends Controller
     protected function subjectIds(Series $series, string $kind): array
     {
         return array_values($series->subjects->where('pivot.kind', $kind)->modelKeys());
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function validated(Request $request, School $school, Level $level, ?Series $series): array
-    {
-        $ownSubject = Rule::exists('subjects', 'id')->where('school_id', $school->id);
-
-        return $request->validate([
-            'code' => [
-                'required', 'string', 'max:10',
-                Rule::unique('series')->where('level_id', $level->id)->ignore($series?->id),
-            ],
-            'name' => [
-                'required', 'string', 'max:60',
-                Rule::unique('series')->where('level_id', $level->id)->ignore($series?->id),
-            ],
-            'stream' => ['required', Rule::in(Series::STREAMS)],
-            'min_subjects' => ['required', 'integer', 'min:1', 'max:20'],
-            'max_subjects' => ['required', 'integer', 'gte:min_subjects', 'max:20'],
-            'level_ids' => ['present', 'array'],
-            'level_ids.*' => [Rule::exists('levels', 'id')->where('school_id', $school->id)->where('uses_series', true)],
-            'core' => ['present', 'array'],
-            'core.*' => ['distinct', $ownSubject],
-            'electives' => ['present', 'array'],
-            'electives.*' => ['distinct', $ownSubject],
-        ]);
     }
 
     /**

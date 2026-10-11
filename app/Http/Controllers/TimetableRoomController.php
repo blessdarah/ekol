@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\RoomKind;
+use App\Http\Requests\Timetable\SaveRoomRequest;
 use App\Models\AuditEvent;
 use App\Models\Period;
 use App\Models\Room;
@@ -14,7 +15,6 @@ use App\Models\TimetableVersion;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -67,10 +67,10 @@ class TimetableRoomController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SaveRoomRequest $request): RedirectResponse
     {
         [$school] = TimetableController::context($request);
-        $data = $this->validated($request, $school, null);
+        $data = $this->validated($request);
 
         $room = Room::create([
             'school_id' => $school->id,
@@ -86,11 +86,11 @@ class TimetableRoomController extends Controller
         return redirect()->route('timetable.rooms', ['room' => $room->id]);
     }
 
-    public function update(Request $request, string $room): RedirectResponse
+    public function update(SaveRoomRequest $request, string $room): RedirectResponse
     {
         [$school] = TimetableController::context($request);
         $target = Room::where('school_id', $school->id)->where('id', $room)->firstOrFail();
-        $data = $this->validated($request, $school, $target);
+        $data = $this->validated($request);
 
         DB::transaction(function () use ($request, $school, $target, $data) {
             $before = $target->only(['code', 'kind', 'capacity', 'unavailable']);
@@ -149,38 +149,25 @@ class TimetableRoomController extends Controller
     /**
      * @return array{code: string, kind: string, capacity: int, unavailable: list<array{weekday: int, period_id: string, reason: string|null}>, subject_ids?: list<string>}
      */
-    protected function validated(Request $request, School $school, ?Room $room): array
+    protected function validated(SaveRoomRequest $request): array
     {
-        $data = $request->validate([
-            'code' => [
-                'required', 'string', 'max:20',
-                Rule::unique('rooms')->where('school_id', $school->id)->ignore($room?->id),
-            ],
-            'kind' => ['required', Rule::enum(RoomKind::class)],
-            'capacity' => ['required', 'integer', 'min:1', 'max:1000'],
-            'unavailable' => ['present', 'array', 'max:60'],
-            'unavailable.*.weekday' => ['required', 'integer', 'min:0', 'max:6'],
-            'unavailable.*.period_id' => ['required', Rule::exists('periods', 'id')->where('school_id', $school->id)],
-            'unavailable.*.reason' => ['nullable', 'string', 'max:100'],
-            'subject_ids' => ['sometimes', 'array'],
-            'subject_ids.*' => [Rule::exists('subjects', 'id')->where('school_id', $school->id)],
-        ], [
-            'code.unique' => 'Another room already has this name.',
-        ]);
-
-        $data['unavailable'] = array_values(array_map(fn (array $block) => [
-            'weekday' => (int) $block['weekday'],
-            'period_id' => (string) $block['period_id'],
-            'reason' => isset($block['reason']) ? trim((string) $block['reason']) : null,
-        ], $data['unavailable']));
+        $data = $request->validated();
+        $room = [
+            'code' => (string) $data['code'],
+            'kind' => (string) $data['kind'],
+            'capacity' => (int) $data['capacity'],
+            'unavailable' => array_values(array_map(fn (array $block) => [
+                'weekday' => (int) $block['weekday'],
+                'period_id' => (string) $block['period_id'],
+                'reason' => isset($block['reason']) ? trim((string) $block['reason']) : null,
+            ], $data['unavailable'])),
+        ];
 
         if (isset($data['subject_ids'])) {
-            $data['subject_ids'] = array_values($data['subject_ids']);
+            $room['subject_ids'] = array_values(array_map(strval(...), $data['subject_ids']));
         }
 
-        $data['capacity'] = (int) $data['capacity'];
-
-        return $data;
+        return $room;
     }
 
     protected function audit(Request $request, School $school, Room $room, string $action, mixed $diff): void

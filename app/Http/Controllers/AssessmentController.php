@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\AssessmentKind;
 use App\Enums\AssessmentState;
+use App\Http\Requests\Assessments\ExtendMarksWindowRequest;
+use App\Http\Requests\Assessments\SaveAssessmentPlanRequest;
 use App\Models\AcademicYear;
 use App\Models\AssessmentPlan;
 use App\Models\AssessmentSubject;
@@ -18,7 +20,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -159,10 +160,10 @@ class AssessmentController extends Controller
         return $year ? $this->form($request, $school, $year, $this->plan($school, $plan)) : redirect()->route('assessments');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SaveAssessmentPlanRequest $request): RedirectResponse
     {
-        [$school, $year] = static::context($request);
-        $data = $this->validated($request, $school, $year, null);
+        [$school] = static::context($request);
+        $data = $this->validated($request);
 
         DB::transaction(function () use ($request, $school, $data) {
             $plan = AssessmentPlan::create([...$data['fields'], 'school_id' => $school->id, 'state' => AssessmentState::Draft]);
@@ -173,9 +174,9 @@ class AssessmentController extends Controller
         return redirect()->route('assessments');
     }
 
-    public function update(Request $request, string $plan): RedirectResponse
+    public function update(SaveAssessmentPlanRequest $request, string $plan): RedirectResponse
     {
-        [$school, $year] = static::context($request);
+        [$school] = static::context($request);
         $target = $this->plan($school, $plan);
 
         if (! in_array($target->state, [AssessmentState::Draft, AssessmentState::Scheduled], true)) {
@@ -184,7 +185,7 @@ class AssessmentController extends Controller
             ]);
         }
 
-        $data = $this->validated($request, $school, $year, $target);
+        $data = $this->validated($request);
 
         DB::transaction(function () use ($request, $school, $target, $data) {
             $target->update($data['fields']);
@@ -303,11 +304,10 @@ class AssessmentController extends Controller
      * Move the day the marks window closes. Extending a closed window
      * reopens marks entry, until results are published.
      */
-    public function window(Request $request, string $plan): RedirectResponse
+    public function window(ExtendMarksWindowRequest $request, string $plan): RedirectResponse
     {
         [$school] = static::context($request);
         $target = $this->plan($school, $plan)->refreshState();
-        $ends = $target->term()->value('ends_on');
 
         if (! in_array($target->state, [AssessmentState::Scheduled, AssessmentState::MarksOpen, AssessmentState::MarksClosed], true)) {
             throw ValidationException::withMessages([
@@ -317,12 +317,7 @@ class AssessmentController extends Controller
             ]);
         }
 
-        $data = $request->validate([
-            'window_ends_on' => ['required', 'date', 'after_or_equal:today', 'after_or_equal:'.($target->window_starts_on?->toDateString() ?? 'today'), 'before_or_equal:'.$ends?->toDateString()],
-        ], [
-            'window_ends_on.after_or_equal' => 'Choose today or a later day, after the window opens.',
-            'window_ends_on.before_or_equal' => 'The window must close inside the term.',
-        ]);
+        $data = $request->validated();
 
         DB::transaction(function () use ($request, $school, $target, $data) {
             $before = $target->window_ends_on?->toDateString();
@@ -476,42 +471,10 @@ class AssessmentController extends Controller
     /**
      * @return array{fields: array<string, mixed>, schedule: bool}
      */
-    protected function validated(Request $request, School $school, ?AcademicYear $year, ?AssessmentPlan $plan): array
+    protected function validated(SaveAssessmentPlanRequest $request): array
     {
-        $schedule = $request->boolean('schedule') || $plan?->state === AssessmentState::Scheduled;
-        $term = Term::where('school_id', $school->id)
-            ->where('academic_year_id', $year?->id)
-            ->where('id', (string) $request->input('term_id'))
-            ->first();
-        $inside = $term ? ['after_or_equal:'.$term->starts_on->toDateString(), 'before_or_equal:'.$term->ends_on->toDateString()] : [];
-        $need = $schedule ? 'required' : 'nullable';
-
-        $data = $request->validate([
-            'name' => [
-                'required', 'string', 'max:60',
-                Rule::unique('assessment_plans')->where('term_id', $term?->id)->ignore($plan?->id),
-            ],
-            'kind' => ['required', Rule::enum(AssessmentKind::class)],
-            'term_id' => ['required', Rule::exists('terms', 'id')->where('school_id', $school->id)->where('academic_year_id', $year?->id)],
-            'held_from' => [$need, 'date', ...$inside],
-            'held_until' => [$need, 'date', 'after_or_equal:held_from', ...$inside],
-            'window_starts_on' => [$need, 'date', 'after_or_equal:held_from', ...$inside],
-            'window_ends_on' => [$need, 'date', 'after_or_equal:window_starts_on', 'after_or_equal:held_until', ...$inside],
-            'level_ids' => ['required', 'array', 'min:1'],
-            'level_ids.*' => ['distinct', Rule::exists('levels', 'id')->where('school_id', $school->id)->whereNull('deleted_at')],
-        ], [
-            'name.unique' => 'This term already has an assessment with that name.',
-            'held_from.required' => 'Set the dates before scheduling.',
-            'held_from.after_or_equal' => 'Keep the dates inside the term.',
-            'held_from.before_or_equal' => 'Keep the dates inside the term.',
-            'held_until.after_or_equal' => 'This must be on or after the first day, inside the term.',
-            'held_until.before_or_equal' => 'Keep the dates inside the term.',
-            'window_starts_on.after_or_equal' => 'The marks window opens with the tests, inside the term.',
-            'window_starts_on.before_or_equal' => 'Keep the dates inside the term.',
-            'window_ends_on.after_or_equal' => 'The window closes after it opens and after the last test.',
-            'window_ends_on.before_or_equal' => 'Keep the dates inside the term.',
-            'level_ids.required' => 'Choose at least one level.',
-        ]);
+        $schedule = $request->scheduling();
+        $data = $request->validated();
 
         return [
             'schedule' => $schedule,

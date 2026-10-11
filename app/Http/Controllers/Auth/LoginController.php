@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\FindSchoolRequest;
+use App\Http\Requests\Auth\SignInRequest;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -46,7 +48,7 @@ class LoginController extends Controller
         return Inertia::render('auth/find-school');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SignInRequest $request): RedirectResponse
     {
         $school = $this->currentSchool($request);
 
@@ -54,11 +56,7 @@ class LoginController extends Controller
             return redirect()->route('login');
         }
 
-        $data = $request->validate([
-            'identifier' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string'],
-            'remember' => ['sometimes', 'boolean'],
-        ]);
+        $data = $request->validated();
 
         $key = "signin:{$school->id}:".strtolower($data['identifier']);
 
@@ -97,11 +95,9 @@ class LoginController extends Controller
             : redirect()->intended(route('dashboard'));
     }
 
-    public function findSchool(Request $request): RedirectResponse
+    public function findSchool(FindSchoolRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'slug' => ['required', 'string', 'exists:schools,slug'],
-        ]);
+        $data = $request->validated();
 
         $host = $request->getHost();
 

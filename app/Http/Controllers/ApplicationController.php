@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Enums\ApplicationStage;
 use App\Enums\EnrolmentStatus;
-use App\Enums\Gender;
+use App\Http\Requests\Enrolment\DecideApplicationRequest;
+use App\Http\Requests\Enrolment\StoreApplicationRequest;
+use App\Http\Requests\Enrolment\UpdateApplicationDocumentsRequest;
 use App\Models\AcademicYear;
 use App\Models\Application;
 use App\Models\AuditEvent;
@@ -18,7 +20,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -106,35 +107,12 @@ class ApplicationController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreApplicationRequest $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
         $year = $this->requireYear($school);
 
-        $data = $request->validate([
-            'surname' => ['required', 'string', 'max:100'],
-            'given_names' => ['required', 'string', 'max:100'],
-            'date_of_birth' => ['required', 'date', 'before:today'],
-            'gender' => ['required', Rule::enum(Gender::class)],
-            'place_of_birth' => ['nullable', 'string', 'max:100'],
-            'religion' => ['nullable', Rule::in(Student::RELIGIONS)],
-            'disability' => ['nullable', 'string', 'max:255'],
-            'level_id' => ['required', Rule::exists('levels', 'id')->where('school_id', $school->id)->whereNull('deleted_at')],
-            'transferred' => ['required', 'boolean'],
-            'previous_school' => ['nullable', 'required_if_accepted:transferred', 'string', 'max:150'],
-            'previous_class' => ['nullable', 'string', 'max:60'],
-            'reason' => ['nullable', 'string', 'max:255'],
-            'guardians' => ['required', 'array', 'min:1', 'max:3'],
-            'guardians.*.relation' => ['required', 'distinct', Rule::in(StudentGuardian::RELATIONS)],
-            'guardians.*.name' => ['required', 'string', 'max:150'],
-            'guardians.*.phone' => ['nullable', 'string', 'max:30'],
-            'guardians.*.occupation' => ['nullable', 'string', 'max:100'],
-            'main_contact' => ['required', Rule::in(StudentGuardian::RELATIONS)],
-            'documents' => ['present', 'array'],
-            'documents.*' => ['distinct', Rule::in(array_keys(Application::DOCUMENTS))],
-        ], [
-            'previous_school.required_if_accepted' => 'Enter the school the applicant is coming from.',
-        ]);
+        $data = $request->validated();
 
         $guardians = $this->guardians($data);
         $main = collect($guardians)->firstWhere('is_main', true);
@@ -240,15 +218,12 @@ class ApplicationController extends Controller
     /**
      * Mark which papers have come in.
      */
-    public function documents(Request $request, string $application): RedirectResponse
+    public function documents(UpdateApplicationDocumentsRequest $request, string $application): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
         $target = $this->application($school, $application);
 
-        $data = $request->validate([
-            'documents' => ['present', 'array'],
-            'documents.*' => ['distinct', Rule::in(array_keys($target->requiredDocuments()))],
-        ]);
+        $data = $request->validated();
 
         $target->update(['documents' => array_values($data['documents'])]);
         $this->audit($request, $school, $target, 'documents_updated', ['received' => $target->documents]);
@@ -256,16 +231,13 @@ class ApplicationController extends Controller
         return back();
     }
 
-    public function decide(Request $request, string $application): RedirectResponse
+    public function decide(DecideApplicationRequest $request, string $application): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
         $year = $this->requireYear($school);
         $target = $this->application($school, $application);
 
-        $data = $request->validate([
-            'decision' => ['required', Rule::in(['admit', 'waitlist', 'decline'])],
-            'condition' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $request->validated();
 
         if ($target->stage === ApplicationStage::Admitted) {
             throw ValidationException::withMessages([

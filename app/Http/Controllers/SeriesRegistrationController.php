@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Series\BulkRegisterSeriesRequest;
+use App\Http\Requests\Series\RegisterSeriesRequest;
 use App\Models\AcademicYear;
 use App\Models\AuditEvent;
 use App\Models\ClassSubject;
@@ -167,19 +169,13 @@ class SeriesRegistrationController extends Controller
         ]);
     }
 
-    public function register(Request $request): RedirectResponse
+    public function register(RegisterSeriesRequest $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
         $year = StructureController::currentYear($school);
         $term = $this->term($school);
 
-        $data = $request->validate([
-            'student_id' => ['required', 'string'],
-            'series_id' => ['required', Rule::exists('series', 'id')->where('school_id', $school->id)],
-            'electives' => ['present', 'array'],
-            'electives.*' => ['string', 'distinct'],
-            'next_id' => ['nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $series = Series::whereKey($data['series_id'])->with('subjects:id')->firstOrFail();
         $level = Level::whereKey($series->level_id)->firstOrFail();
@@ -241,19 +237,13 @@ class SeriesRegistrationController extends Controller
         ]);
     }
 
-    public function bulkStore(Request $request): RedirectResponse
+    public function bulkStore(BulkRegisterSeriesRequest $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
         $year = StructureController::currentYear($school);
         $term = $this->term($school);
 
-        $data = $request->validate([
-            'student_ids' => ['required', 'array', 'min:1'],
-            'student_ids.*' => ['string', 'distinct'],
-            'series_id' => ['required', Rule::exists('series', 'id')->where('school_id', $school->id)],
-            'electives' => ['present', 'array'],
-            'electives.*' => ['string', 'distinct'],
-        ]);
+        $data = $request->validated();
 
         $series = Series::whereKey($data['series_id'])->with('subjects:id')->firstOrFail();
         $level = Level::whereKey($series->level_id)->firstOrFail();

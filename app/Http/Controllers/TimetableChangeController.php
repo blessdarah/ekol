@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Timetable\StoreTimetableChangeRequest;
 use App\Models\AuditEvent;
 use App\Models\ClassSubject;
 use App\Models\Period;
@@ -18,7 +19,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -119,7 +119,7 @@ class TimetableChangeController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreTimetableChangeRequest $request): RedirectResponse
     {
         [$school, $term] = TimetableController::context($request);
         $live = $term ? TimetableVersion::liveFor($term) : null;
@@ -128,21 +128,7 @@ class TimetableChangeController extends Controller
             throw ValidationException::withMessages(['change' => 'Changes apply to a published timetable, and none is live yet.']);
         }
 
-        $data = $request->validate([
-            'kind' => ['required', Rule::in(TimetableChange::KINDS)],
-            'date' => ['required', 'date', 'after_or_equal:'.$term->starts_on->toDateString(), 'before_or_equal:'.$term->ends_on->toDateString()],
-            'whole_week' => ['sometimes', 'boolean'],
-            'covers' => ['required_if:kind,cover', 'array', 'min:1'],
-            'covers.*.slot_id' => ['required', 'uuid'],
-            'covers.*.staff_id' => ['required', Rule::exists('users', 'id')->where('school_id', $school->id)],
-            'slot_id' => ['required_unless:kind,cover', 'uuid'],
-            'other_slot_id' => ['required_if:kind,swap', 'uuid', 'different:slot_id'],
-            'room_id' => ['required_if:kind,room', Rule::exists('rooms', 'id')->where('school_id', $school->id)->whereNull('deleted_at')],
-        ], [
-            'date.after_or_equal' => 'Choose a date inside the term.',
-            'date.before_or_equal' => 'Choose a date inside the term.',
-            'covers.required_if' => 'Choose who covers at least one lesson.',
-        ]);
+        $data = $request->validated();
 
         $date = Carbon::parse($data['date']);
         $week = (bool) ($data['whole_week'] ?? false);

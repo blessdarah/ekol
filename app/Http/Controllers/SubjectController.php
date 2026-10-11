@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CoefficientStatus;
+use App\Http\Requests\Subjects\SaveSubjectRequest;
+use App\Http\Requests\Subjects\StoreSubjectTemplatesRequest;
 use App\Models\AcademicYear;
 use App\Models\AuditEvent;
 use App\Models\ClassSubject;
@@ -20,7 +22,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -111,11 +112,11 @@ class SubjectController extends Controller
         return $this->form($school, $this->subject($school, $subject));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SaveSubjectRequest $request): RedirectResponse
     {
         $school = StructureController::schoolFor($request);
         $year = StructureController::currentYear($school);
-        $data = $this->validated($request, $school, $year, null);
+        $data = $this->validated($request);
 
         $subject = DB::transaction(function () use ($request, $school, $data) {
             $subject = $this->save($school, new Subject(['school_id' => $school->id]), $data);
@@ -127,11 +128,11 @@ class SubjectController extends Controller
         return redirect()->route('classes.subjects.show', $subject->id);
     }
 
-    public function update(Request $request, string $subject): RedirectResponse
+    public function update(SaveSubjectRequest $request, string $subject): RedirectResponse
     {
         $school = StructureController::schoolFor($request);
         $target = $this->subject($school, $subject);
-        $data = $this->validated($request, $school, StructureController::currentYear($school), $target);
+        $data = $this->validated($request);
 
         DB::transaction(function () use ($request, $school, $target, $data) {
             $before = $target->only(['name', 'code', 'department', 'coefficient']);
@@ -237,7 +238,7 @@ class SubjectController extends Controller
         ]);
     }
 
-    public function storeTemplates(Request $request): RedirectResponse
+    public function storeTemplates(StoreSubjectTemplatesRequest $request): RedirectResponse
     {
         $school = StructureController::schoolFor($request);
         $year = StructureController::currentYear($school);
@@ -245,12 +246,7 @@ class SubjectController extends Controller
 
         abort_unless($set !== null, 404);
 
-        $data = $request->validate([
-            'subjects' => ['required', 'array', 'min:1'],
-            'subjects.*.code' => ['required', 'string', 'distinct'],
-            'subjects.*.classes' => ['present', 'array'],
-            ...$this->classRules($school, $year, 'subjects.*.classes'),
-        ]);
+        $data = $request->validated();
 
         $catalogue = collect($set['subjects'])->keyBy(fn (array $subject) => $subject[1]);
         $registered = Subject::withTrashed()->where('school_id', $school->id)->pluck('code')->all();
@@ -384,41 +380,11 @@ class SubjectController extends Controller
     }
 
     /**
-     * @return array<string, array<int, mixed>>
-     */
-    protected function classRules(School $school, ?AcademicYear $year, string $prefix): array
-    {
-        return [
-            "{$prefix}.*.class_id" => [
-                'required',
-                Rule::exists('school_classes', 'id')
-                    ->where('school_id', $school->id)
-                    ->where('academic_year_id', $year?->id),
-            ],
-            "{$prefix}.*.staff_id" => ['nullable', Rule::exists('users', 'id')->where('school_id', $school->id)],
-            "{$prefix}.*.weekly_periods" => ['required', 'integer', 'min:1', 'max:20'],
-        ];
-    }
-
-    /**
      * @return array<string, mixed>
      */
-    protected function validated(Request $request, School $school, ?AcademicYear $year, ?Subject $subject): array
+    protected function validated(SaveSubjectRequest $request): array
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'code' => [
-                'required', 'string', 'max:20',
-                Rule::unique('subjects')->where('school_id', $school->id)->ignore($subject?->id),
-            ],
-            'coefficient' => ['required', 'numeric', 'min:0.5', 'max:10'],
-            'department' => ['required', 'string', 'max:60'],
-            'note' => ['nullable', 'string', 'max:255'],
-            'mode' => ['required', Rule::in(['draft', 'register'])],
-            'classes' => ['present', 'array'],
-            'classes.*.class_id' => ['distinct'],
-            ...$this->classRules($school, $year, 'classes'),
-        ]);
+        $data = $request->validated();
 
         if ($data['mode'] === 'register') {
             $staffed = collect($this->classRows($data))->every(fn (array $row) => ! empty($row['staff_id']));

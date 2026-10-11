@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use App\Enums\AcademicYearStatus;
 use App\Enums\EnrolmentStatus;
 use App\Enums\PaymentMethod;
+use App\Http\Requests\Fees\BillFeesRequest;
+use App\Http\Requests\Fees\ExemptInvoiceRequest;
+use App\Http\Requests\Fees\RecordPaymentRequest;
+use App\Http\Requests\Fees\UpdateFeeStructureRequest;
 use App\Models\AcademicYear;
 use App\Models\AuditEvent;
 use App\Models\Enrolment;
@@ -23,7 +27,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -190,18 +193,11 @@ class FeeController extends Controller
         ]);
     }
 
-    public function updateStructure(Request $request): RedirectResponse
+    public function updateStructure(UpdateFeeStructureRequest $request): RedirectResponse
     {
         $school = static::schoolFor($request);
 
-        $data = $request->validate([
-            'year_id' => ['required', Rule::exists('academic_years', 'id')->where('school_id', $school->id)],
-            'amounts' => ['present', 'array'],
-            'amounts.*' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
-        ], [
-            'amounts.*.numeric' => 'Enter the fee as a number.',
-            'amounts.*.min' => 'A fee cannot be negative.',
-        ]);
+        $data = $request->validated();
 
         $levels = Level::where('school_id', $school->id)->pluck('id')->all();
         $year = AcademicYear::whereKey($data['year_id'])->firstOrFail();
@@ -262,14 +258,11 @@ class FeeController extends Controller
      * Issue the year's invoice to every enrolled student who has none,
      * in the levels that have a fee.
      */
-    public function bill(Request $request): RedirectResponse
+    public function bill(BillFeesRequest $request): RedirectResponse
     {
         $school = static::schoolFor($request);
 
-        $data = $request->validate([
-            'year_id' => ['required', Rule::exists('academic_years', 'id')->where('school_id', $school->id)],
-            'level_id' => ['nullable', Rule::exists('levels', 'id')->where('school_id', $school->id)],
-        ]);
+        $data = $request->validated();
 
         $year = AcademicYear::whereKey($data['year_id'])->firstOrFail();
         $term = $this->billingTerm($school, $year);
@@ -372,21 +365,12 @@ class FeeController extends Controller
         ]);
     }
 
-    public function pay(Request $request, string $student): RedirectResponse
+    public function pay(RecordPaymentRequest $request, string $student): RedirectResponse
     {
         $school = static::schoolFor($request);
         $target = $this->findStudent($school, $student);
 
-        $data = $request->validate([
-            'invoice_id' => ['required', Rule::exists('invoices', 'id')->where('student_id', $target->id)],
-            'amount' => ['required', 'numeric', 'min:1'],
-            'method' => ['required', Rule::in([PaymentMethod::Cash->value, PaymentMethod::MobileMoney->value, PaymentMethod::BankTransfer->value])],
-            'reference' => ['nullable', 'required_unless:method,cash', 'string', 'max:60'],
-            'date' => ['required', 'date', 'before_or_equal:today'],
-        ], [
-            'reference.required_unless' => 'Enter the transaction reference.',
-            'date.before_or_equal' => 'A payment cannot be dated in the future.',
-        ]);
+        $data = $request->validated();
 
         $invoice = Invoice::whereKey($data['invoice_id'])->with(['installments', 'payments', 'exemption'])->firstOrFail();
         $balance = $invoice->ledger()['balance'];
@@ -533,19 +517,12 @@ class FeeController extends Controller
      * Grant or replace the exemption on an invoice. It can never take
      * the bill below what has already been paid.
      */
-    public function exempt(Request $request, string $invoice): RedirectResponse
+    public function exempt(ExemptInvoiceRequest $request, string $invoice): RedirectResponse
     {
         $school = static::schoolFor($request);
         $target = $this->findInvoice($school, $invoice);
 
-        $data = $request->validate([
-            'kind' => ['required', Rule::in(FeeExemption::KINDS)],
-            'value' => ['required', 'numeric', 'gt:0'],
-            'reason' => ['required', 'string', 'max:150'],
-        ], [
-            'value.gt' => 'Enter an amount above zero.',
-            'reason.required' => 'Say why, so the bursar and the principal can account for it.',
-        ]);
+        $data = $request->validated();
 
         $gross = (float) $target->amount_due;
         $paid = (float) $target->payments->sum(fn (Payment $payment) => (float) $payment->amount);

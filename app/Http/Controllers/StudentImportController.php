@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Students\UploadStudentImportRequest;
 use App\Models\AcademicYear;
 use App\Models\AuditEvent;
 use App\Models\Enrolment;
@@ -112,15 +113,9 @@ class StudentImportController extends Controller
         ]);
     }
 
-    public function upload(Request $request): RedirectResponse
+    public function upload(UploadStudentImportRequest $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
-
-        $request->validate([
-            'file' => ['required', 'file', 'mimes:csv,txt', 'max:2048'],
-        ], [
-            'file.mimes' => 'Upload a CSV file. In Excel or Google Sheets, use Save as or Download as CSV.',
-        ]);
 
         $this->forget($request);
 

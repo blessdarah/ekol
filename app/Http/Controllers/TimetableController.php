@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Enums\RoomKind;
 use App\Enums\TimetableStatus;
+use App\Http\Requests\Timetable\GenerateTimetableRequest;
+use App\Http\Requests\Timetable\PublishTimetableRequest;
 use App\Models\AuditEvent;
 use App\Models\ClassSubject;
 use App\Models\Period;
@@ -375,15 +377,12 @@ class TimetableController extends Controller
         ]);
     }
 
-    public function generate(Request $request): RedirectResponse
+    public function generate(GenerateTimetableRequest $request): RedirectResponse
     {
         [$school, $term] = static::context($request);
         $term ??= throw ValidationException::withMessages(['generate' => 'No term is active. Make one active in School Setup first.']);
 
-        $data = $request->validate([
-            'options' => ['present', 'array'],
-            'options.*' => ['boolean'],
-        ]);
+        $data = $request->validated();
 
         if (static::inputs($school, $term)['blocking'] !== []) {
             throw ValidationException::withMessages([
@@ -434,7 +433,7 @@ class TimetableController extends Controller
         ]);
     }
 
-    public function publish(Request $request): RedirectResponse
+    public function publish(PublishTimetableRequest $request): RedirectResponse
     {
         [$school, $term] = static::context($request);
         $draft = $term ? TimetableVersion::draftFor($term) : null;
@@ -443,12 +442,7 @@ class TimetableController extends Controller
             throw ValidationException::withMessages(['publish' => 'There is no draft timetable to publish.']);
         }
 
-        $data = $request->validate([
-            'effective_on' => ['required', 'date', 'after_or_equal:'.$term->starts_on->toDateString(), 'before_or_equal:'.$term->ends_on->toDateString()],
-        ], [
-            'effective_on.after_or_equal' => 'Choose a date inside the term.',
-            'effective_on.before_or_equal' => 'Choose a date inside the term.',
-        ]);
+        $data = $request->validated();
 
         if ($draft->slots->isEmpty() || $draft->toFix() > 0) {
             throw ValidationException::withMessages([

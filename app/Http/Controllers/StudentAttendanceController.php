@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AttendanceStatus;
+use App\Http\Requests\Students\ExcuseAbsenceRequest;
 use App\Models\Attendance;
 use App\Models\AuditEvent;
 use App\Models\Enrolment;
@@ -98,17 +99,13 @@ class StudentAttendanceController extends Controller
     /**
      * Excuse an absence, with the reason the family gave.
      */
-    public function excuse(Request $request, string $student, string $attendance): RedirectResponse
+    public function excuse(ExcuseAbsenceRequest $request, string $student, string $attendance): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
         $target = $this->student($school, $student);
         $record = Attendance::where('student_id', $target->id)->where('id', $attendance)->firstOrFail();
 
-        $data = $request->validate([
-            'note' => ['required', 'string', 'max:160'],
-        ], [
-            'note.required' => 'Say why the absence is excused.',
-        ]);
+        $data = $request->validated();
 
         if ($record->status !== AttendanceStatus::Absent) {
             throw ValidationException::withMessages(['note' => 'Only an absence can be excused.']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Assessments\UpdateGradingRequest;
 use App\Models\AssessmentPlan;
 use App\Models\AuditEvent;
 use App\Models\GradeBand;
@@ -43,22 +44,14 @@ class GradingController extends Controller
      * Save the pass mark and the scale. Bands must cover 0 to 20 with
      * no gap and no overlap.
      */
-    public function update(Request $request): RedirectResponse
+    public function update(UpdateGradingRequest $request): RedirectResponse
     {
         [$school] = AssessmentController::context($request);
         $user = $request->user();
         abort_unless($user !== null && $user->role->managesStaff(), 403);
         $top = AssessmentPlan::OUT_OF;
 
-        $data = $request->validate([
-            'pass_mark' => ['required', 'numeric', 'min:0', "max:{$top}"],
-            'bands' => ['required', 'array', 'min:2', 'max:10'],
-            'bands.*.letter' => ['required', 'string', 'max:2', 'distinct'],
-            'bands.*.from' => ['required', 'numeric', 'min:0', "max:{$top}"],
-            'bands.*.to' => ['required', 'numeric', 'min:0', "max:{$top}"],
-            'bands.*.meaning' => ['required', 'string', 'max:40'],
-            'bands.*.remark' => ['required', 'string', 'max:160'],
-        ]);
+        $data = $request->validated();
 
         $bands = collect($this->bandRows($data))
             ->map(fn (array $band) => [...$band, 'from' => round((float) $band['from'], 2), 'to' => round((float) $band['to'], 2)])

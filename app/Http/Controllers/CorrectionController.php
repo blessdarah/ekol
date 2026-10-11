@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AssessmentState;
+use App\Http\Requests\Assessments\DecideCorrectionRequest;
+use App\Http\Requests\Assessments\RequestCorrectionRequest;
 use App\Models\AssessmentPlan;
 use App\Models\AuditEvent;
 use App\Models\Mark;
@@ -11,7 +13,6 @@ use App\Models\School;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -55,7 +56,7 @@ class CorrectionController extends Controller
     /**
      * Ask for a published mark to be changed.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(RequestCorrectionRequest $request): RedirectResponse
     {
         $school = app()->bound('currentSchool') ? app('currentSchool') : null;
         $user = $request->user();
@@ -64,13 +65,7 @@ class CorrectionController extends Controller
             abort(404);
         }
 
-        $data = $request->validate([
-            'mark_id' => ['required', 'uuid'],
-            'new_score' => ['required', 'numeric', 'min:0'],
-            'reason' => ['required', 'string', 'max:500'],
-        ], [
-            'reason.required' => 'Say why the mark should change.',
-        ]);
+        $data = $request->validated();
 
         $mark = Mark::whereKey($data['mark_id'])
             ->whereHas('assessmentSubject.assessment', fn ($query) => $query->where('school_id', $school->id))
@@ -113,17 +108,14 @@ class CorrectionController extends Controller
         return back();
     }
 
-    public function decide(Request $request, string $correction): RedirectResponse
+    public function decide(DecideCorrectionRequest $request, string $correction): RedirectResponse
     {
         [$school] = AssessmentController::context($request);
         $user = $request->user();
         abort_unless($user !== null && $user->role->managesStaff(), 403);
 
         $target = MarkCorrection::where('school_id', $school->id)->where('id', $correction)->with('mark')->firstOrFail();
-        $data = $request->validate([
-            'decision' => ['required', Rule::in(['approve', 'decline'])],
-            'note' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $request->validated();
 
         if ($target->status !== 'pending') {
             throw ValidationException::withMessages(['decision' => 'This correction has already been decided.']);

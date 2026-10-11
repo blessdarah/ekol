@@ -6,6 +6,9 @@ use App\Enums\AcademicYearStatus;
 use App\Enums\EmploymentType;
 use App\Enums\Gender;
 use App\Enums\UserRole;
+use App\Http\Requests\Staff\SaveStaffAccessRequest;
+use App\Http\Requests\Staff\SaveStaffRequest;
+use App\Http\Requests\Staff\UpdateStaffHoursRequest;
 use App\Mail\StaffInvitationMail;
 use App\Models\AcademicYear;
 use App\Models\AuditEvent;
@@ -22,7 +25,6 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -114,10 +116,10 @@ class StaffController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SaveStaffRequest $request): RedirectResponse
     {
         $school = $this->school($request);
-        $data = $this->validatedDetails($request, $school);
+        $data = $request->validated();
 
         $member = DB::transaction(function () use ($request, $school, $data) {
             $member = User::create([
@@ -192,11 +194,11 @@ class StaffController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $staff): RedirectResponse
+    public function update(SaveStaffRequest $request, string $staff): RedirectResponse
     {
         $school = $this->school($request);
         $member = $this->member($school, $staff);
-        $data = $this->validatedDetails($request, $school, $member);
+        $data = $request->validated();
 
         DB::transaction(function () use ($request, $school, $member, $data) {
             $before = $this->details($member);
@@ -237,23 +239,12 @@ class StaffController extends Controller
         ]);
     }
 
-    public function saveAccess(Request $request, string $staff): RedirectResponse
+    public function saveAccess(SaveStaffAccessRequest $request, string $staff): RedirectResponse
     {
         $school = $this->school($request);
         $member = $this->member($school, $staff);
 
-        $data = $request->validate([
-            'role' => ['required', Rule::enum(UserRole::class)->only(UserRole::assignable())],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($member->id)],
-            'phone' => [
-                'required',
-                'string',
-                'max:30',
-                Rule::unique('users')->where('school_id', $school->id)->ignore($member->id),
-            ],
-            'channel' => ['required', Rule::in(['email', 'sms', 'both'])],
-            'create_now' => ['required', 'boolean'],
-        ]);
+        $data = $request->validated();
 
         $before = $member->only(['role', 'email', 'phone']);
         $member->update([
@@ -291,21 +282,12 @@ class StaffController extends Controller
         return back();
     }
 
-    public function updateHours(Request $request, string $staff): RedirectResponse
+    public function updateHours(UpdateStaffHoursRequest $request, string $staff): RedirectResponse
     {
         $school = $this->school($request);
         $member = $this->member($school, $staff);
 
-        $data = $request->validate([
-            'teaching_days' => ['nullable', 'integer', 'min:1', 'max:127'],
-            'max_periods_week' => ['nullable', 'integer', 'min:1', 'max:60'],
-            'max_periods_day' => ['nullable', 'integer', 'min:1', 'max:12'],
-            'unavailable_times' => ['present', 'array', 'max:20'],
-            'unavailable_times.*.weekday' => ['required', 'integer', 'min:0', 'max:6'],
-            'unavailable_times.*.from' => ['required', 'string', 'max:20'],
-            'unavailable_times.*.to' => ['required', 'string', 'max:20'],
-            'unavailable_times.*.reason' => ['nullable', 'string', 'max:100'],
-        ]);
+        $data = $request->validated();
 
         $before = $member->only(array_keys($data));
         $member->update($data);
@@ -358,29 +340,6 @@ class StaffController extends Controller
                 'staff_id' => $member->id,
             ]);
         }
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function validatedDetails(Request $request, School $school, ?User $member = null): array
-    {
-        return $request->validate([
-            'given_name' => ['required', 'string', 'max:100'],
-            'family_name' => ['required', 'string', 'max:100'],
-            'gender' => ['required', Rule::enum(Gender::class)],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($member?->id)],
-            'phone' => [
-                'required',
-                'string',
-                'max:30',
-                Rule::unique('users')->where('school_id', $school->id)->ignore($member?->id),
-            ],
-            'address' => ['required', 'string', 'max:255'],
-            'qualification' => ['required', 'string', 'max:255'],
-            'employment_type' => ['required', Rule::enum(EmploymentType::class)],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
     }
 
     /**

@@ -3,6 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AcademicYearStatus;
+use App\Http\Requests\Setup\StoreYearRequest;
+use App\Http\Requests\Setup\UpdateInstallmentsRequest;
+use App\Http\Requests\Setup\UpdateProfileRequest;
+use App\Http\Requests\Setup\UpdateSchooldayRequest;
+use App\Http\Requests\Setup\UpdateTermsRequest;
+use App\Http\Requests\Setup\UpdateWindowsRequest;
+use App\Http\Requests\Setup\UpdateYearRequest;
 use App\Models\AcademicYear;
 use App\Models\Assessment;
 use App\Models\AuditEvent;
@@ -14,7 +21,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -160,7 +166,7 @@ class SetupController extends Controller
         return today()->gt($assessment->window_ends_on) ? 'closed' : 'open';
     }
 
-    public function updateProfile(Request $request): RedirectResponse
+    public function updateProfile(UpdateProfileRequest $request): RedirectResponse
     {
         $school = $this->school($request);
 
@@ -170,26 +176,7 @@ class SetupController extends Controller
             ]);
         }
 
-        // SVGs carry no raster dimensions; the size rule applies to PNGs only.
-        $logoRules = ['sometimes', 'file', 'mimes:png,svg', 'max:2048'];
-
-        if ($request->hasFile('logo')
-            && strtolower((string) $request->file('logo')->getClientOriginalExtension()) !== 'svg'
-        ) {
-            $logoRules[] = Rule::dimensions()->minWidth(256)->minHeight(256)->ratio(1);
-        }
-
-        $data = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
-            'code' => ['sometimes', 'string', 'max:255'],
-            'ownership' => ['sometimes', Rule::in(School::OWNERSHIP_OPTIONS)],
-            'region' => ['sometimes', 'nullable', Rule::in(School::REGIONS)],
-            'town' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'subsystem' => ['sometimes', 'nullable', Rule::in(School::SUBSYSTEM_OPTIONS)],
-            'currency' => ['sometimes', 'string', 'size:3'],
-            'timezone' => ['sometimes', 'string', 'max:255'],
-            'logo' => $logoRules,
-        ]);
+        $data = $request->validated();
 
         if ($request->hasFile('logo')) {
             if ($school->logo_path) {
@@ -218,15 +205,11 @@ class SetupController extends Controller
         return back();
     }
 
-    public function storeYear(Request $request): RedirectResponse
+    public function storeYear(StoreYearRequest $request): RedirectResponse
     {
         $school = $this->school($request);
 
-        $data = $request->validate([
-            'label' => ['required', 'string', 'max:255', Rule::unique('academic_years')->where('school_id', $school->id)],
-            'starts_on' => ['required', 'date'],
-            'ends_on' => ['required', 'date', 'after:starts_on'],
-        ]);
+        $data = $request->validated();
 
         $year = AcademicYear::create([
             'school_id' => $school->id,
@@ -239,21 +222,14 @@ class SetupController extends Controller
         return back();
     }
 
-    public function updateYear(Request $request, string $year): RedirectResponse
+    public function updateYear(UpdateYearRequest $request, string $year): RedirectResponse
     {
         $school = $this->school($request);
         $target = AcademicYear::where('school_id', $school->id)
             ->where('id', $year)
             ->firstOrFail();
 
-        $data = $request->validate([
-            'label' => [
-                'required', 'string', 'max:255',
-                Rule::unique('academic_years')->where('school_id', $school->id)->ignore($target->id),
-            ],
-            'starts_on' => ['required', 'date'],
-            'ends_on' => ['required', 'date', 'after:starts_on'],
-        ]);
+        $data = $request->validated();
 
         $outside = Term::where('academic_year_id', $target->id)
             ->where(fn ($query) => $query
@@ -328,19 +304,14 @@ class SetupController extends Controller
         return back();
     }
 
-    public function updateInstallments(Request $request): RedirectResponse
+    public function updateInstallments(UpdateInstallmentsRequest $request): RedirectResponse
     {
         $school = $this->school($request);
         $year = $this->managedYear($request, $school);
 
         abort_if(! $year, 422, 'Create an academic year first.');
 
-        $data = $request->validate([
-            'templates' => ['required', 'array', 'min:1'],
-            'templates.*.seq' => ['required', 'integer', 'min:1'],
-            'templates.*.percent' => ['required', 'numeric', 'min:0', 'max:100'],
-            'templates.*.due_on' => ['nullable', 'date'],
-        ]);
+        $data = $request->validated();
 
         $total = array_sum(array_column($data['templates'], 'percent'));
 
@@ -371,16 +342,11 @@ class SetupController extends Controller
         return back();
     }
 
-    public function updateWindows(Request $request): RedirectResponse
+    public function updateWindows(UpdateWindowsRequest $request): RedirectResponse
     {
         $school = $this->school($request);
 
-        $data = $request->validate([
-            'assessments' => ['required', 'array'],
-            'assessments.*.id' => ['required', 'uuid'],
-            'assessments.*.window_starts_on' => ['nullable', 'date'],
-            'assessments.*.window_ends_on' => ['nullable', 'date', 'after_or_equal:assessments.*.window_starts_on'],
-        ]);
+        $data = $request->validated();
 
         foreach ($data['assessments'] as $row) {
             $assessment = Assessment::where('school_id', $school->id)
@@ -399,20 +365,11 @@ class SetupController extends Controller
         return back();
     }
 
-    public function updateSchoolday(Request $request): RedirectResponse
+    public function updateSchoolday(UpdateSchooldayRequest $request): RedirectResponse
     {
         $school = $this->school($request);
 
-        $data = $request->validate([
-            'school_days' => ['sometimes', 'integer', 'min:0', 'max:127'],
-            'periods' => ['sometimes', 'array'],
-            'periods.*.id' => ['nullable', 'uuid'],
-            'periods.*.label' => ['required_with:periods', 'string', 'max:255'],
-            'periods.*.starts_at' => ['required_with:periods', 'date_format:H:i'],
-            'periods.*.ends_at' => ['required_with:periods', 'date_format:H:i', 'after:periods.*.starts_at'],
-            'periods.*.is_break' => ['sometimes', 'boolean'],
-            'periods.*._delete' => ['sometimes', 'boolean'],
-        ]);
+        $data = $request->validated();
 
         DB::transaction(function () use ($school, $data) {
             if (array_key_exists('school_days', $data)) {
@@ -470,22 +427,14 @@ class SetupController extends Controller
         return back();
     }
 
-    public function updateTerms(Request $request): RedirectResponse
+    public function updateTerms(UpdateTermsRequest $request): RedirectResponse
     {
         $school = $this->school($request);
         $year = $this->managedYear($request, $school);
 
         abort_if(! $year, 422, 'Create an academic year first.');
 
-        $data = $request->validate([
-            'terms' => ['required', 'array', 'min:1'],
-            'terms.*.id' => ['nullable', 'uuid'],
-            'terms.*.label' => ['required', 'string', 'max:255'],
-            'terms.*.sequence' => ['required', 'integer', 'min:1'],
-            'terms.*.starts_on' => ['required', 'date'],
-            'terms.*.ends_on' => ['required', 'date', 'after_or_equal:terms.*.starts_on'],
-            'terms.*.week_count' => ['required', 'integer', 'min:1'],
-        ]);
+        $data = $request->validated();
 
         foreach ($data['terms'] as $row) {
             if (! empty($row['id'])) {

@@ -6,6 +6,11 @@ use App\Enums\AcademicYearStatus;
 use App\Enums\ApplicationStage;
 use App\Enums\EnrolmentDecision;
 use App\Enums\EnrolmentStatus;
+use App\Http\Requests\Enrolment\ClearClassRequest;
+use App\Http\Requests\Enrolment\DecideReEnrolmentRequest;
+use App\Http\Requests\Enrolment\PlaceLevelRequest;
+use App\Http\Requests\Enrolment\PlaceStudentsRequest;
+use App\Http\Requests\Enrolment\PromoteClassRequest;
 use App\Models\AcademicYear;
 use App\Models\Application;
 use App\Models\AuditEvent;
@@ -22,7 +27,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -212,7 +216,7 @@ class EnrolmentController extends Controller
     public function copyClasses(Request $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
-        $next = $this->requireYear($school);
+        $next = static::requireYear($school);
         $current = StructureController::currentYear($school);
 
         if (SchoolClass::where('academic_year_id', $next->id)->exists()) {
@@ -249,7 +253,7 @@ class EnrolmentController extends Controller
     public function storeClass(Request $request, string $level): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
-        $next = $this->requireYear($school);
+        $next = static::requireYear($school);
         $target = Level::where('school_id', $school->id)->where('id', $level)->firstOrFail();
 
         $taken = SchoolClass::withTrashed()
@@ -359,15 +363,12 @@ class EnrolmentController extends Controller
         ]);
     }
 
-    public function decide(Request $request): RedirectResponse
+    public function decide(DecideReEnrolmentRequest $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
-        $next = $this->requireYear($school);
+        $next = static::requireYear($school);
 
-        $data = $request->validate([
-            'enrolment_id' => ['required', 'uuid'],
-            'decision' => ['nullable', Rule::enum(EnrolmentDecision::class)],
-        ]);
+        $data = $request->validated();
 
         $enrolment = static::continuing($school)->firstWhere('id', $data['enrolment_id']);
         $successors = static::successors($school);
@@ -394,11 +395,11 @@ class EnrolmentController extends Controller
     /**
      * Promote everyone in a class who has no decision yet.
      */
-    public function promoteClass(Request $request): RedirectResponse
+    public function promoteClass(PromoteClassRequest $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
-        $next = $this->requireYear($school);
-        $data = $request->validate(['class_id' => ['required', 'uuid']]);
+        $next = static::requireYear($school);
+        $data = $request->validated();
 
         $successors = static::successors($school);
         $undecided = static::continuing($school)
@@ -484,20 +485,12 @@ class EnrolmentController extends Controller
         ]);
     }
 
-    public function place(Request $request): RedirectResponse
+    public function place(PlaceStudentsRequest $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
-        $next = $this->requireYear($school);
+        $next = static::requireYear($school);
 
-        $data = $request->validate([
-            'class_id' => ['required', Rule::exists('school_classes', 'id')
-                ->where('school_id', $school->id)
-                ->where('academic_year_id', $next->id)],
-            'enrolment_ids' => ['required', 'array', 'min:1'],
-            'enrolment_ids.*' => ['uuid', 'distinct'],
-        ], [
-            'enrolment_ids.required' => 'Tick the students to place first.',
-        ]);
+        $data = $request->validated();
 
         $class = SchoolClass::whereKey($data['class_id'])->firstOrFail();
         $enrolments = Enrolment::where('academic_year_id', $next->id)
@@ -540,13 +533,11 @@ class EnrolmentController extends Controller
      * Fill a level's classes evenly with everyone still waiting, as far
      * as the seats go.
      */
-    public function placeAll(Request $request): RedirectResponse
+    public function placeAll(PlaceLevelRequest $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
-        $next = $this->requireYear($school);
-        $data = $request->validate([
-            'level_id' => ['required', Rule::exists('levels', 'id')->where('school_id', $school->id)],
-        ]);
+        $next = static::requireYear($school);
+        $data = $request->validated();
 
         $classes = SchoolClass::where('academic_year_id', $next->id)
             ->where('level_id', $data['level_id'])
@@ -597,15 +588,11 @@ class EnrolmentController extends Controller
     /**
      * Send everyone in a class back to the waiting list.
      */
-    public function clearClass(Request $request): RedirectResponse
+    public function clearClass(ClearClassRequest $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
-        $next = $this->requireYear($school);
-        $data = $request->validate([
-            'class_id' => ['required', Rule::exists('school_classes', 'id')
-                ->where('school_id', $school->id)
-                ->where('academic_year_id', $next->id)],
-        ]);
+        $next = static::requireYear($school);
+        $data = $request->validated();
 
         if ($next->enrolment_confirmed_at) {
             throw ValidationException::withMessages([
@@ -658,7 +645,7 @@ class EnrolmentController extends Controller
     public function storeConfirmation(Request $request): RedirectResponse
     {
         $school = StudentController::schoolFor($request);
-        $next = $this->requireYear($school);
+        $next = static::requireYear($school);
         $progress = static::progress($school, $next);
 
         if ($progress['confirmed']) {
@@ -692,7 +679,7 @@ class EnrolmentController extends Controller
     /**
      * The enrolment year, or a validation error when there is none.
      */
-    protected function requireYear(School $school): AcademicYear
+    public static function requireYear(School $school): AcademicYear
     {
         return static::nextYear($school) ?? throw ValidationException::withMessages([
             'year' => 'Enrolment needs a planned academic year. Add next year in School Setup first.',

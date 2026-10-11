@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ChooseChannelRequest;
+use App\Http\Requests\Auth\StoreAdminStepRequest;
+use App\Http\Requests\Auth\StoreSchoolStepRequest;
+use App\Http\Requests\Auth\UpdatePendingEmailRequest;
+use App\Http\Requests\Auth\VerifyCodeRequest;
 use App\Mail\WorkspaceReadyMail;
 use App\Models\PendingRegistration;
 use App\Models\School;
@@ -13,7 +17,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -45,21 +48,9 @@ class RegistrationController extends Controller
         return response()->json(['available' => $available]);
     }
 
-    public function storeSchoolStep(Request $request): RedirectResponse
+    public function storeSchoolStep(StoreSchoolStepRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255', 'unique:schools,name'],
-            'code' => ['required', 'string', 'max:255'],
-            'slug' => [
-                'required', 'string', 'max:255', 'lowercase', 'alpha_dash',
-                Rule::notIn(School::RESERVED_SLUGS),
-                'unique:schools,slug',
-            ],
-            'ownership' => ['required', Rule::in(School::OWNERSHIP_OPTIONS)],
-            'region' => ['nullable', Rule::in(School::REGIONS)],
-            'town' => ['nullable', 'string', 'max:255'],
-            'subsystem' => ['nullable', Rule::in(School::SUBSYSTEM_OPTIONS)],
-        ]);
+        $data = $request->validated();
 
         session(['registration.school' => $data]);
 
@@ -79,7 +70,7 @@ class RegistrationController extends Controller
         ]);
     }
 
-    public function storeAdminStep(Request $request): RedirectResponse
+    public function storeAdminStep(StoreAdminStepRequest $request): RedirectResponse
     {
         $school = $request->session()->get('registration.school');
 
@@ -87,14 +78,7 @@ class RegistrationController extends Controller
             return redirect()->route('register.school');
         }
 
-        $validated = $request->validate([
-            'full_name' => ['required', 'string', 'max:255'],
-            'role' => ['required', Rule::enum(UserRole::class)],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:8'],
-            'authorisation' => ['accepted'],
-        ]);
+        $validated = $request->validated();
 
         unset($validated['authorisation']);
 
@@ -124,13 +108,11 @@ class RegistrationController extends Controller
         ]);
     }
 
-    public function verify(Request $request): RedirectResponse
+    public function verify(VerifyCodeRequest $request): RedirectResponse
     {
         $pending = $this->pending($request);
 
-        $data = $request->validate([
-            'code' => ['required', 'string', 'size:6'],
-        ]);
+        $data = $request->validated();
 
         if (! $pending->attempt($data['code'])) {
             return back()->withErrors(['code' => 'This code is incorrect.']);
@@ -156,14 +138,12 @@ class RegistrationController extends Controller
         return back()->with('status', 'A new code was sent.');
     }
 
-    public function channel(Request $request): RedirectResponse
+    public function channel(ChooseChannelRequest $request): RedirectResponse
     {
         $pending = $this->pending($request);
         $pending->assertNotConsumed();
 
-        $data = $request->validate([
-            'channel' => ['required', Rule::in(['email', 'sms'])],
-        ]);
+        $data = $request->validated();
 
         $pending->update(['channel' => $data['channel']]);
         $pending->reissue();
@@ -171,14 +151,12 @@ class RegistrationController extends Controller
         return back()->with('status', "Code will arrive by {$data['channel']}.");
     }
 
-    public function updateEmail(Request $request): RedirectResponse
+    public function updateEmail(UpdatePendingEmailRequest $request): RedirectResponse
     {
         $pending = $this->pending($request);
         $pending->assertNotConsumed();
 
-        $data = $request->validate([
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-        ]);
+        $data = $request->validated();
 
         $payload = $pending->admin_payload;
         $payload['email'] = $data['email'];

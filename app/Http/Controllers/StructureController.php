@@ -5,6 +5,11 @@ namespace App\Http\Controllers;
 use App\Enums\AcademicYearStatus;
 use App\Enums\RoomKind;
 use App\Enums\SchoolCycle;
+use App\Http\Requests\Structure\StoreLevelRequest;
+use App\Http\Requests\Structure\StoreLevelTemplatesRequest;
+use App\Http\Requests\Structure\StoreRoomRequest;
+use App\Http\Requests\Structure\UpdateClassRequest;
+use App\Http\Requests\Structure\UpdateLevelRequest;
 use App\Models\AcademicYear;
 use App\Models\Assessment;
 use App\Models\AuditEvent;
@@ -22,7 +27,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -145,25 +149,12 @@ class StructureController extends Controller
         ]);
     }
 
-    public function storeLevel(Request $request): RedirectResponse
+    public function storeLevel(StoreLevelRequest $request): RedirectResponse
     {
         $school = static::schoolFor($request);
         $year = static::currentYear($school);
 
-        $data = $request->validate([
-            'name' => [
-                'required', 'string', 'max:60',
-                Rule::unique('levels')->where('school_id', $school->id),
-            ],
-            'code' => [
-                'required', 'string', 'max:10',
-                Rule::unique('levels')->where('school_id', $school->id),
-            ],
-            'cycle' => ['required', Rule::in([SchoolCycle::Secondary->value, SchoolCycle::HighSchool->value])],
-            'subsystem' => ['required', Rule::in(static::SUBSYSTEMS)],
-            'uses_series' => ['required', 'boolean'],
-            'class_count' => ['required', 'integer', 'min:0', 'max:12'],
-        ]);
+        $data = $request->validated();
 
         if ($data['uses_series'] && ! static::seriesAllowed($data['cycle'], $data['subsystem'])) {
             throw ValidationException::withMessages([
@@ -236,7 +227,7 @@ class StructureController extends Controller
         ]);
     }
 
-    public function storeLevelTemplates(Request $request): RedirectResponse
+    public function storeLevelTemplates(StoreLevelTemplatesRequest $request): RedirectResponse
     {
         $school = static::schoolFor($request);
         $year = static::currentYear($school);
@@ -244,11 +235,7 @@ class StructureController extends Controller
 
         abort_unless($set !== null, 404);
 
-        $data = $request->validate([
-            'levels' => ['required', 'array', 'min:1'],
-            'levels.*.code' => ['required', 'string', 'distinct'],
-            'levels.*.class_count' => ['required', 'integer', 'min:0', 'max:12'],
-        ]);
+        $data = $request->validated();
 
         /** Requested class counts, keyed by level code. */
         $counts = Arr::pluck($data['levels'], 'class_count', 'code');
@@ -311,14 +298,12 @@ class StructureController extends Controller
         return config('level_templates');
     }
 
-    public function updateLevel(Request $request, string $level): RedirectResponse
+    public function updateLevel(UpdateLevelRequest $request, string $level): RedirectResponse
     {
         $school = static::schoolFor($request);
         $target = Level::where('school_id', $school->id)->where('id', $level)->firstOrFail();
 
-        $data = $request->validate([
-            'uses_series' => ['required', 'boolean'],
-        ]);
+        $data = $request->validated();
 
         if ($data['uses_series'] && ! static::seriesAllowed($target->cycle, $target->subsystem)) {
             throw ValidationException::withMessages([
@@ -373,31 +358,12 @@ class StructureController extends Controller
         return back();
     }
 
-    public function updateClass(Request $request, string $class): RedirectResponse
+    public function updateClass(UpdateClassRequest $request, string $class): RedirectResponse
     {
         $school = static::schoolFor($request);
         $target = SchoolClass::where('school_id', $school->id)->where('id', $class)->firstOrFail();
 
-        $data = $request->validate([
-            'name' => [
-                'required', 'string', 'max:60',
-                Rule::unique('school_classes')
-                    ->where('academic_year_id', $target->academic_year_id)
-                    ->where('level_id', $target->level_id)
-                    ->ignore($target->id),
-            ],
-            'capacity' => ['required', 'integer', 'min:1', 'max:500'],
-            'form_master_id' => ['nullable', Rule::exists('users', 'id')->where('school_id', $school->id)],
-            'home_room_id' => [
-                'nullable',
-                Rule::exists('rooms', 'id')->where('school_id', $school->id),
-                Rule::unique('school_classes', 'home_room_id')
-                    ->where('academic_year_id', $target->academic_year_id)
-                    ->ignore($target->id),
-            ],
-        ], [
-            'home_room_id.unique' => 'That room is already the home room of another class.',
-        ]);
+        $data = $request->validated();
 
         DB::transaction(function () use ($request, $school, $target, $data) {
             $before = $target->only(array_keys($data));
@@ -445,17 +411,11 @@ class StructureController extends Controller
      * A classroom added from the class panel, so a home room can be
      * chosen before the timetable's room list exists.
      */
-    public function storeRoom(Request $request): RedirectResponse
+    public function storeRoom(StoreRoomRequest $request): RedirectResponse
     {
         $school = static::schoolFor($request);
 
-        $data = $request->validate([
-            'code' => [
-                'required', 'string', 'max:20',
-                Rule::unique('rooms')->where('school_id', $school->id),
-            ],
-            'capacity' => ['required', 'integer', 'min:1', 'max:1000'],
-        ]);
+        $data = $request->validated();
 
         $room = Room::create([
             'school_id' => $school->id,

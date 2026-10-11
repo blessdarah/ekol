@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Gender;
 use App\Enums\InvoiceStatus;
+use App\Http\Requests\Students\SaveStudentRequest;
 use App\Models\AcademicYear;
 use App\Models\AuditEvent;
 use App\Models\Enrolment;
@@ -26,7 +26,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -68,29 +67,29 @@ class StudentController extends Controller
 
         $seriesLevels = Level::where('school_id', $school->id)->where('uses_series', true)->pluck('id');
 
-        $noSeries = fn (Builder $query) => $query
+        $noSeries = fn(Builder $query) => $query
             ->whereIn('school_classes.level_id', $seriesLevels)
-            ->whereDoesntHave('studentSeries', fn (Builder $chosen) => $chosen->where('term_id', $term?->id));
-        $overdue = fn (Builder $query) => $query
-            ->whereHas('invoices', fn (Builder $invoices) => $invoices->where('status', InvoiceStatus::Overdue));
-        $newThisTerm = fn (Builder $query) => $query
+            ->whereDoesntHave('studentSeries', fn(Builder $chosen) => $chosen->where('term_id', $term?->id));
+        $overdue = fn(Builder $query) => $query
+            ->whereHas('invoices', fn(Builder $invoices) => $invoices->where('status', InvoiceStatus::Overdue));
+        $newThisTerm = fn(Builder $query) => $query
             ->whereDate('students.admitted_on', '>=', $term ? $term->starts_on : today()->addDay());
 
-        $base = fn () => $this->rosterQuery($school, $year);
+        $base = fn() => $this->rosterQuery($school, $year);
 
         $students = $base()
             ->select('students.*', 'school_classes.name as class_name', 'school_classes.level_id as class_level_id')
             ->with([
-                'studentSeries' => fn ($query) => $query->where('term_id', $term?->id)->with('series:id,code,stream'),
+                'studentSeries' => fn($query) => $query->where('term_id', $term?->id)->with('series:id,code,stream'),
                 'invoices.payments',
                 'invoices.exemption',
             ])
             ->when($tab === 'overdue', $overdue)
             ->when($tab === 'no_series', $noSeries)
             ->when($tab === 'new', $newThisTerm)
-            ->when($levelId !== '', fn (Builder $query) => $query->where('school_classes.level_id', $levelId))
-            ->when($classId !== '', fn (Builder $query) => $query->where('school_classes.id', $classId))
-            ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $inner) => $inner
+            ->when($levelId !== '', fn(Builder $query) => $query->where('school_classes.level_id', $levelId))
+            ->when($classId !== '', fn(Builder $query) => $query->where('school_classes.id', $classId))
+            ->when($search !== '', fn(Builder $query) => $query->where(fn(Builder $inner) => $inner
                 ->whereLike('students.full_name', "%{$search}%")
                 ->orWhereLike('students.admission_no', "%{$search}%")
                 ->orWhereLike('students.guardian_phone', "%{$search}%")))
@@ -114,11 +113,11 @@ class StudentController extends Controller
             ],
             'filters' => ['tab' => $tab, 'q' => $search, 'level' => $levelId, 'class' => $classId],
             'levels' => Level::where('school_id', $school->id)->orderBy('ordinal')->get(['id', 'name']),
-            'classes' => $classes->map(fn (SchoolClass $class) => $class->only(['id', 'name', 'level_id'])),
+            'classes' => $classes->map(fn(SchoolClass $class) => $class->only(['id', 'name', 'level_id'])),
             'students' => [
                 'rows' => collect($students->items())
-                    ->filter(fn (mixed $row) => $row instanceof Student)
-                    ->map(fn (Student $student) => $this->row($student, $seriesLevels->all()))
+                    ->filter(fn(mixed $row) => $row instanceof Student)
+                    ->map(fn(Student $student) => $this->row($student, $seriesLevels->all()))
                     ->values(),
                 'page' => $students->currentPage(),
                 'lastPage' => $students->lastPage(),
@@ -141,7 +140,7 @@ class StudentController extends Controller
         return $this->form($request, $school, $this->student($school, $student));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(SaveStudentRequest $request): RedirectResponse
     {
         $school = static::schoolFor($request);
         $year = StructureController::currentYear($school);
@@ -152,7 +151,7 @@ class StudentController extends Controller
             ]);
         }
 
-        $data = $this->validated($request, $school, $year, null);
+        $data = $this->validated($request, $school, null);
         $class = SchoolClass::whereKey($data['class_id'])->firstOrFail();
         $series = $data['series_id'] ? Series::whereKey($data['series_id'])->first() : null;
 
@@ -181,12 +180,12 @@ class StudentController extends Controller
             : redirect()->route('students.show', $student->id);
     }
 
-    public function update(Request $request, string $student): RedirectResponse
+    public function update(SaveStudentRequest $request, string $student): RedirectResponse
     {
         $school = static::schoolFor($request);
         $year = StructureController::currentYear($school);
         $target = $this->student($school, $student);
-        $data = $this->validated($request, $school, $year, $target);
+        $data = $this->validated($request, $school, $target);
 
         DB::transaction(function () use ($request, $school, $year, $target, $data) {
             $target->update($this->profile($request, $data));
@@ -227,9 +226,9 @@ class StudentController extends Controller
 
         $enrolment = $year
             ? Enrolment::where('student_id', $target->id)
-                ->where('academic_year_id', $year->id)
-                ->with('schoolClass.level')
-                ->first()
+            ->where('academic_year_id', $year->id)
+            ->with('schoolClass.level')
+            ->first()
             : null;
         $class = $enrolment?->schoolClass;
         $series = $term
@@ -252,11 +251,11 @@ class StudentController extends Controller
                 'place_of_birth' => $target->place_of_birth,
                 'religion' => $private ? $target->religion : null,
                 'disability' => $private && $target->has_disability
-                    ? trim(implode(', ', $target->disability_types ?? []).($target->disability_support ? " · {$target->disability_support}" : ''), ' ·')
+                    ? trim(implode(', ', $target->disability_types ?? []) . ($target->disability_support ? " · {$target->disability_support}" : ''), ' ·')
                     : null,
                 'admitted_on' => $target->admitted_on->toDateString(),
                 'transferred_from' => $target->transferred
-                    ? trim("{$target->previous_school}".($target->previous_class ? ", {$target->previous_class}" : ''))
+                    ? trim("{$target->previous_school}" . ($target->previous_class ? ", {$target->previous_class}" : ''))
                     : null,
                 'class' => $class ? [
                     'name' => $class->name,
@@ -272,9 +271,9 @@ class StudentController extends Controller
                     'electives' => $series->subjects->where('pivot.kind', 'elective')->count(),
                 ] : null,
                 'guardians' => $target->guardians
-                    ->sortBy(fn (StudentGuardian $guardian) => array_search($guardian->relation, StudentGuardian::RELATIONS, true))
+                    ->sortBy(fn(StudentGuardian $guardian) => array_search($guardian->relation, StudentGuardian::RELATIONS, true))
                     ->values()
-                    ->map(fn (StudentGuardian $guardian) => $guardian->only(['relation', 'name', 'phone', 'occupation', 'is_main'])),
+                    ->map(fn(StudentGuardian $guardian) => $guardian->only(['relation', 'name', 'phone', 'occupation', 'is_main'])),
                 'on_whatsapp' => $target->on_whatsapp,
                 'lives_with' => $target->lives_with,
                 'fees' => $target->invoices->isEmpty() ? null : [
@@ -299,10 +298,10 @@ class StudentController extends Controller
         }
 
         $guardian = StudentGuardian::query()
-            ->whereRaw("REPLACE(REPLACE(phone, ' ', ''), '+', '') LIKE ?", ['%'.substr($digits, -9)])
-            ->whereHas('student', fn (Builder $query) => $query
+            ->whereRaw("REPLACE(REPLACE(phone, ' ', ''), '+', '') LIKE ?", ['%' . substr($digits, -9)])
+            ->whereHas('student', fn(Builder $query) => $query
                 ->where('school_id', $school->id)
-                ->when($request->query('exclude'), fn (Builder $inner, mixed $id) => $inner->where('id', '!=', $id)))
+                ->when($request->query('exclude'), fn(Builder $inner, mixed $id) => $inner->where('id', '!=', $id)))
             ->with('student')
             ->first();
 
@@ -326,7 +325,7 @@ class StudentController extends Controller
     {
         return Student::query()
             ->where('students.school_id', $school->id)
-            ->leftJoin('enrolments', fn ($join) => $join
+            ->leftJoin('enrolments', fn($join) => $join
                 ->on('enrolments.student_id', '=', 'students.id')
                 ->where('enrolments.academic_year_id', '=', $year?->id))
             ->leftJoin('school_classes', 'school_classes.id', '=', 'enrolments.school_class_id');
@@ -393,8 +392,8 @@ class StudentController extends Controller
             'levels' => Level::where('school_id', $school->id)
                 ->orderBy('ordinal')
                 ->get()
-                ->map(fn (Level $level) => $level->only(['id', 'name', 'uses_series'])),
-            'classes' => $classes->map(fn (SchoolClass $class) => [
+                ->map(fn(Level $level) => $level->only(['id', 'name', 'uses_series'])),
+            'classes' => $classes->map(fn(SchoolClass $class) => [
                 'id' => $class->id,
                 'name' => $class->name,
                 'level_id' => $class->level_id,
@@ -405,7 +404,7 @@ class StudentController extends Controller
                 ->orderBy('stream', 'desc')
                 ->orderBy('code')
                 ->get()
-                ->map(fn (Series $series) => [
+                ->map(fn(Series $series) => [
                     'id' => $series->id,
                     'code' => $series->code,
                     'name' => $series->name,
@@ -434,7 +433,7 @@ class StudentController extends Controller
                 'lives_with' => $student->lives_with,
                 'class_id' => $enrolment?->school_class_id,
                 'series_id' => $seriesId,
-                'guardians' => $student->guardians->map(fn (StudentGuardian $guardian) => $guardian->only(['relation', 'name', 'phone', 'occupation', 'is_main'])),
+                'guardians' => $student->guardians->map(fn(StudentGuardian $guardian) => $guardian->only(['relation', 'name', 'phone', 'occupation', 'is_main'])),
             ] : null,
         ]);
     }
@@ -446,9 +445,9 @@ class StudentController extends Controller
     {
         return $year
             ? SchoolClass::where('school_id', $school->id)
-                ->where('academic_year_id', $year->id)
-                ->orderBy('name')
-                ->get()
+            ->where('academic_year_id', $year->id)
+            ->orderBy('name')
+            ->get()
             : new Collection;
     }
 
@@ -471,10 +470,10 @@ class StudentController extends Controller
         return FeePlan::where('school_id', $school->id)
             ->where('academic_year_id', $year->id)
             ->get()
-            ->map(fn (FeePlan $plan) => [
+            ->map(fn(FeePlan $plan) => [
                 'level_id' => $plan->level_id,
                 'amount' => (float) $plan->annual_amount,
-                'installments' => $templates->map(fn (FeeInstallmentTemplate $template) => [
+                'installments' => $templates->map(fn(FeeInstallmentTemplate $template) => [
                     'seq' => $template->seq,
                     'due_on' => $template->due_on?->toDateString(),
                     'amount' => round((float) $plan->annual_amount * (float) $template->percent / 100),
@@ -486,45 +485,9 @@ class StudentController extends Controller
     /**
      * @return array<string, mixed>
      */
-    protected function validated(Request $request, School $school, ?AcademicYear $year, ?Student $student): array
+    protected function validated(SaveStudentRequest $request, School $school, ?Student $student): array
     {
-        $data = $request->validate([
-            'surname' => ['required', 'string', 'max:100'],
-            'given_names' => ['required', 'string', 'max:100'],
-            'date_of_birth' => ['required', 'date', 'before:today'],
-            'gender' => ['required', Rule::enum(Gender::class)],
-            'place_of_birth' => ['nullable', 'string', 'max:100'],
-            'religion' => ['nullable', Rule::in(Student::RELIGIONS)],
-            'has_disability' => ['required', 'boolean'],
-            'disability_types' => ['present', 'array'],
-            'disability_types.*' => [Rule::in(Student::DISABILITY_TYPES)],
-            'disability_support' => ['nullable', 'string', 'max:255'],
-            'transferred' => ['required', 'boolean'],
-            'previous_school' => ['nullable', 'required_if_accepted:transferred', 'string', 'max:150'],
-            'previous_class' => ['nullable', 'string', 'max:60'],
-            'previous_year_left' => ['nullable', 'integer', 'min:1990', 'max:'.(today()->year)],
-            'transfer_certificate_received' => ['required', 'boolean'],
-            'last_report_received' => ['required', 'boolean'],
-            'on_whatsapp' => ['required', 'boolean'],
-            'lives_with' => ['nullable', Rule::in(Student::LIVES_WITH)],
-            'class_id' => [
-                'required',
-                Rule::exists('school_classes', 'id')
-                    ->where('school_id', $school->id)
-                    ->where('academic_year_id', $year?->id),
-            ],
-            'series_id' => ['nullable', Rule::exists('series', 'id')->where('school_id', $school->id)],
-            'guardians' => ['required', 'array', 'min:1', 'max:3'],
-            'guardians.*.relation' => ['required', 'distinct', Rule::in(StudentGuardian::RELATIONS)],
-            'guardians.*.name' => ['required', 'string', 'max:150'],
-            'guardians.*.phone' => ['nullable', 'string', 'max:30'],
-            'guardians.*.occupation' => ['nullable', 'string', 'max:100'],
-            'main_contact' => ['required', Rule::in(StudentGuardian::RELATIONS)],
-            'link_sibling_id' => ['nullable', Rule::exists('students', 'id')->where('school_id', $school->id)],
-            'allow_duplicate' => ['sometimes', 'boolean'],
-        ], [
-            'previous_school.required_if_accepted' => 'Enter the school the student is transferring from.',
-        ]);
+        $data = $request->validated();
 
         $main = collect($this->guardianRows($data))->firstWhere('relation', $data['main_contact']);
 
@@ -536,7 +499,7 @@ class StudentController extends Controller
 
         $class = SchoolClass::whereKey($data['class_id'])->firstOrFail();
         $taken = Enrolment::where('school_class_id', $class->id)
-            ->when($student, fn (Builder $query) => $query->where('student_id', '!=', $student?->id))
+            ->when($student, fn(Builder $query) => $query->where('student_id', '!=', $student?->id))
             ->count();
 
         if ($taken >= $class->capacity) {
@@ -551,11 +514,11 @@ class StudentController extends Controller
             ]);
         }
 
-        $fullName = trim($data['surname']).' '.trim($data['given_names']);
+        $fullName = trim($data['surname']) . ' ' . trim($data['given_names']);
         $twin = Student::where('school_id', $school->id)
             ->whereRaw('LOWER(full_name) = ?', [mb_strtolower($fullName)])
             ->whereDate('date_of_birth', $data['date_of_birth'])
-            ->when($student, fn (Builder $query) => $query->where('id', '!=', $student?->id))
+            ->when($student, fn(Builder $query) => $query->where('id', '!=', $student?->id))
             ->first();
 
         if ($twin && ! ($data['allow_duplicate'] ?? false)) {
@@ -582,7 +545,7 @@ class StudentController extends Controller
      */
     protected function guardians(array $data): array
     {
-        return array_map(fn (array $row) => [
+        return array_map(fn(array $row) => [
             'relation' => $row['relation'],
             'name' => trim($row['name']),
             'phone' => isset($row['phone']) ? trim($row['phone']) : null,
@@ -658,13 +621,13 @@ class StudentController extends Controller
             return ['status' => null, 'balance' => 0.0, 'due' => 0.0];
         }
 
-        $due = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->amount_due - $invoice->exempted());
-        $paid = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->payments->sum(fn (Payment $payment) => (float) $payment->amount));
+        $due = (float) $invoices->sum(fn(Invoice $invoice) => (float) $invoice->amount_due - $invoice->exempted());
+        $paid = (float) $invoices->sum(fn(Invoice $invoice) => (float) $invoice->payments->sum(fn(Payment $payment) => (float) $payment->amount));
         $balance = max(0.0, $due - $paid);
 
         $status = match (true) {
             $balance <= 0 => 'paid',
-            $invoices->contains(fn (Invoice $invoice) => $invoice->status === InvoiceStatus::Overdue) => 'overdue',
+            $invoices->contains(fn(Invoice $invoice) => $invoice->status === InvoiceStatus::Overdue) => 'overdue',
             $paid > 0 => 'partial',
             default => 'due',
         };
@@ -676,7 +639,7 @@ class StudentController extends Controller
     {
         $parts = preg_split('/\s+/', trim($student->full_name)) ?: [];
 
-        return mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1).mb_substr($parts[1] ?? '', 0, 1));
+        return mb_strtoupper(mb_substr($parts[0] ?? '', 0, 1) . mb_substr($parts[1] ?? '', 0, 1));
     }
 
     protected function audit(Request $request, School $school, Student $student, string $action, mixed $diff): void
