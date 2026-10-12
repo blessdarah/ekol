@@ -35,8 +35,8 @@ class ExtendMarksWindowRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'window_ends_on.after_or_equal' => 'Choose today or a later day, after the window opens.',
-            'window_ends_on.before_or_equal' => 'The window must close inside the term.',
+            'window_ends_on.after_or_equal' => __('Choose today or a later day, after the window opens.'),
+            'window_ends_on.before_or_equal' => __('The window must close inside the term.'),
         ];
     }
 }

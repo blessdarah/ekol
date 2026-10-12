@@ -19,7 +19,7 @@ class VerificationCodeMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Your Ekol verification code');
+        return new Envelope(subject: __('Your Ekol verification code'));
     }
 
     public function content(): Content

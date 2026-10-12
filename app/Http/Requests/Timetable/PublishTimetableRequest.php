@@ -20,8 +20,8 @@ class PublishTimetableRequest extends TermRequest
     public function messages(): array
     {
         return [
-            'effective_on.after_or_equal' => 'Choose a date inside the term.',
-            'effective_on.before_or_equal' => 'Choose a date inside the term.',
+            'effective_on.after_or_equal' => __('Choose a date inside the term.'),
+            'effective_on.before_or_equal' => __('Choose a date inside the term.'),
         ];
     }
 }

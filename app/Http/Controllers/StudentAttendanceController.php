@@ -108,7 +108,7 @@ class StudentAttendanceController extends Controller
         $data = $request->validated();
 
         if ($record->status !== AttendanceStatus::Absent) {
-            throw ValidationException::withMessages(['note' => 'Only an absence can be excused.']);
+            throw ValidationException::withMessages(['note' => __('Only an absence can be excused.')]);
         }
 
         $record->update(['status' => AttendanceStatus::Excused, 'note' => trim($data['note'])]);

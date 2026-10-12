@@ -119,7 +119,7 @@ class ApplicationController extends Controller
 
         if (! $main || trim((string) $main['phone']) === '') {
             throw ValidationException::withMessages([
-                'main_contact' => 'The main contact needs a name and a phone number.',
+                'main_contact' => __('The main contact needs a name and a phone number.'),
             ]);
         }
 
@@ -245,7 +245,7 @@ class ApplicationController extends Controller
 
         if ($target->stage === ApplicationStage::Admitted) {
             throw ValidationException::withMessages([
-                'decision' => "{$target->full_name} is already admitted. Change the student record instead.",
+                'decision' => __(':full_name is already admitted. Change the student record instead.', ['full_name' => $target->full_name]),
             ]);
         }
 
@@ -382,7 +382,7 @@ class ApplicationController extends Controller
     protected function requireYear(School $school): AcademicYear
     {
         return EnrolmentController::nextYear($school) ?? throw ValidationException::withMessages([
-            'year' => 'Enrolment needs a planned academic year. Add next year in School Setup first.',
+            'year' => __('Enrolment needs a planned academic year. Add next year in School Setup first.'),
         ]);
     }
 

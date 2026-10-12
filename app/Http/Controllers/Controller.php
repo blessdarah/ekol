@@ -11,6 +11,6 @@ abstract class Controller
      */
     protected function notify(string $message, string $type = 'success'): void
     {
-        Inertia::flash('toast', ['type' => $type, 'message' => $message]);
+        Inertia::flash('toast', ['type' => $type, 'message' => __($message)]);
     }
 }

@@ -10,6 +10,7 @@ use App\Models\PendingRegistration;
 use App\Models\School;
 use App\Models\Term;
 use App\Models\User;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
@@ -421,4 +422,144 @@ test('remember-me signs in and bootstrap sends the ready email', function () {
 
     expect(auth()->check())->toBeTrue();
     auth()->logout();
+});
+
+test('the reader chooses a language and it is remembered on their account', function () {
+    $school = School::create([
+        'name' => 'Lycée Test', 'code' => 'LT', 'slug' => 'lycee',
+        'cycle' => 'secondary', 'currency' => 'XAF', 'timezone' => 'Africa/Douala', 'locale' => 'fr',
+    ]);
+    $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+    $this->get('http://lycee.ekol.test/login')
+        ->assertInertia(fn ($page) => $page->where('locale', 'fr')->where('locales.fr', 'Français'));
+
+    $this->actingAs($admin)
+        ->post('http://lycee.ekol.test/locale', ['locale' => 'en'])
+        ->assertRedirect();
+
+    expect($admin->refresh()->locale)->toBe('en');
+
+    $this->actingAs($admin)
+        ->get('http://lycee.ekol.test/setup')
+        ->assertInertia(fn ($page) => $page->where('locale', 'en'));
+
+    $this->actingAs($admin)
+        ->post('http://lycee.ekol.test/locale', ['locale' => 'de'])
+        ->assertSessionHasErrors('locale');
+
+    $admin->update(['locale' => 'fr']);
+
+    $this->actingAs($admin)
+        ->from('http://lycee.ekol.test/setup')
+        ->post('http://lycee.ekol.test/setup/years', ['label' => '2025/26', 'starts_on' => '2025-09-01', 'ends_on' => '2026-07-31'])
+        ->assertInertiaFlash('toast.message', 'Année scolaire ajoutée.');
+});
+
+test('the language chosen at sign-up becomes the school default', function () {
+    Mail::fake();
+
+    $this->post('/register/school', schoolPayload(['locale' => 'fr']))
+        ->assertRedirect(route('register.admin'));
+    $this->post('/register/admin', adminPayload())
+        ->assertRedirect(route('register.verify'));
+
+    $pending = PendingRegistration::firstOrFail();
+    $pending->bootstrap();
+
+    expect(School::firstOrFail()->locale)->toBe('fr');
+
+    $this->post('/register/school', schoolPayload(['slug' => 'other', 'name' => 'Other', 'locale' => 'xx']))
+        ->assertSessionHasErrors('locale');
+});
+
+test('sign-up and sign-in errors read in French when French is chosen', function () {
+    $this->post('/locale', ['locale' => 'fr'])->assertRedirect();
+
+    $this->post('/register/school', schoolPayload(['name' => '']))
+        ->assertSessionHasErrors(['name' => 'Le champ nom est obligatoire.']);
+
+    $school = School::create([
+        'name' => 'Lycée Test', 'code' => 'LT', 'slug' => 'lycee',
+        'cycle' => 'secondary', 'currency' => 'XAF', 'timezone' => 'Africa/Douala', 'locale' => 'fr',
+    ]);
+    User::factory()->create(['school_id' => $school->id, 'email' => 'prof@example.com']);
+
+    $response = $this->post('http://lycee.ekol.test/login', ['identifier' => 'prof@example.com', 'password' => 'wrong-password'])
+        ->assertSessionHasErrors('identifier');
+
+    expect($response->getSession()->get('errors')->getBag('default')->first('identifier'))
+        ->toStartWith('E-mail ou mot de passe incorrect.');
+});
+
+test('no French entry uses a placeholder its English text does not have', function () {
+    $lines = json_decode((string) file_get_contents(lang_path('fr.json')), true);
+
+    foreach ($lines as $english => $french) {
+        preg_match_all('/:[a-z_]+/', $english, $wanted);
+        preg_match_all('/:[a-z_]+/', $french, $found);
+
+        expect(array_diff($found[0], $wanted[0]))->toBe([], $english);
+    }
+});
+
+test('every message the server can send has a French entry', function () {
+    $lines = json_decode((string) file_get_contents(lang_path('fr.json')), true);
+    $missing = [];
+
+    foreach (File::allFiles(app_path()) as $file) {
+        preg_match_all("/(?:__|trans_choice|->notify)\\('((?:[^'\\\\]|\\\\.)*)'/", $file->getContents(), $found);
+
+        foreach ($found[1] as $english) {
+            $english = stripslashes($english);
+
+            if (! array_key_exists($english, $lines)) {
+                $missing[] = $english;
+            }
+        }
+    }
+
+    expect(array_values(array_unique($missing)))->toBe([]);
+});
+
+test('a refused action explains itself in French to a French reader', function () {
+    $school = School::create([
+        'name' => 'Lycée Test', 'code' => 'LT', 'slug' => 'lycee',
+        'cycle' => 'secondary', 'currency' => 'XAF', 'timezone' => 'Africa/Douala', 'locale' => 'fr',
+    ]);
+    $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+    $this->actingAs($admin)
+        ->patch('http://lycee.ekol.test/setup/profile', ['slug' => 'autre'])
+        ->assertSessionHasErrors(['slug' => 'L’adresse de l’espace ne peut pas être modifiée.']);
+
+    $admin->update(['locale' => 'en']);
+
+    $this->actingAs($admin)
+        ->patch('http://lycee.ekol.test/setup/profile', ['slug' => 'autre'])
+        ->assertSessionHasErrors(['slug' => 'The workspace address cannot be changed.']);
+});
+
+test('every line of text on a page has a French entry', function () {
+    $lines = json_decode((string) file_get_contents(lang_path('fr.json')), true);
+    $missing = [];
+
+    foreach (File::allFiles(resource_path('js')) as $file) {
+        if (! in_array($file->getExtension(), ['ts', 'tsx'], true) || preg_match('#/(actions|routes|wayfinder)/#', $file->getPathname())) {
+            continue;
+        }
+
+        preg_match_all("/(?<![A-Za-z0-9_.])t\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/", $file->getContents(), $found);
+
+        foreach ($found[1] as $english) {
+            $english = stripcslashes($english);
+
+            // Sample values and class names pass through untranslated on purpose.
+            if (preg_match('/[A-Za-z]{2,}/', $english) && ! preg_match('/^(text-\\[|gbhs-|eposi\\.)/', $english) && ! array_key_exists($english, $lines)) {
+                $missing[] = $english;
+            }
+        }
+    }
+
+    expect(array_values(array_unique($missing)))->toBe([]);
 });

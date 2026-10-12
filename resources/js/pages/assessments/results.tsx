@@ -14,6 +14,7 @@ import {
 } from '../../components/assessments/ui';
 import { ErrorText, capsLabelClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface ResultsProps {
     tabs: AssessmentTabs;
@@ -44,35 +45,35 @@ function Results({ tabs, plans, plan, classes, class: current, passMark, stats, 
     if (!plan) {
         return (
             <div className="flex flex-col gap-5">
-                <Head title="Results" />
-                <AssessmentHeader active="results" tabs={tabs} trail={[{ label: 'Results' }]} title="Results" />
-                <Empty title="No results yet">Results appear once an assessment has its marks open.</Empty>
+                <Head title={t('Results')} />
+                <AssessmentHeader active="results" tabs={tabs} trail={[{ label: t('Results') }]} title={t('Results')} />
+                <Empty title={t('No results yet')}>{t('Results appear once an assessment has its marks open.')}</Empty>
             </div>
         );
     }
 
     const all = current === 'all';
     const figures = [
-        { label: all ? 'School average' : 'Class average', value: score(stats.average) },
-        { label: 'Highest', value: score(stats.highest) },
-        { label: 'Lowest', value: score(stats.lowest) },
-        { label: `At ${passMark} or more`, value: stats.passed === null ? '—' : `${stats.passed}%` },
+        { label: all ? t('School average') : t('Class average'), value: score(stats.average) },
+        { label: t('Highest'), value: score(stats.highest) },
+        { label: t('Lowest'), value: score(stats.lowest) },
+        { label: t('At :pass_mark or more', { pass_mark: passMark }), value: stats.passed === null ? '—' : `${stats.passed}%` },
     ];
     const status =
         plan.state === 'published'
-            ? `${plan.name} · results published ${day(plan.published_on)}`
+            ? t(':plan · results published :published_on', { plan: plan.name, published_on: day(plan.published_on) })
             : plan.state === 'marks_closed'
-              ? `${plan.name} · marks closed ${day(plan.closed_on)} · not published`
-              : `${plan.name} · marks still open · results so far`;
+              ? t(':plan · marks closed :closed_on · not published', { plan: plan.name, closed_on: day(plan.closed_on) })
+              : t(':plan · marks still open · results so far', { plan: plan.name });
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
-            <Head title="Results" />
+            <Head title={t('Results')} />
             <AssessmentHeader
                 active="results"
                 tabs={tabs}
-                trail={[{ label: 'Results' }]}
-                title="Results"
+                trail={[{ label: t('Results') }]}
+                title={t('Results')}
                 meta={
                     <span
                         className={`flex h-[22px] items-center gap-[6px] rounded-full px-[10px] text-[12px] leading-4 font-medium ${
@@ -90,7 +91,7 @@ function Results({ tabs, plans, plan, classes, class: current, passMark, stats, 
             <div className="flex flex-1 flex-col gap-7 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-4">
                     <div className="flex flex-wrap gap-2">
-                        {[...classes, { id: 'all', name: 'All classes' }].map((option) => (
+                        {[...classes, { id: 'all', name: t('All classes') }].map((option) => (
                             <Link
                                 key={option.id}
                                 href={results.url({ query: { plan: plan.id, class: option.id } })}
@@ -113,23 +114,23 @@ function Results({ tabs, plans, plan, classes, class: current, passMark, stats, 
                                 key={figure.label}
                                 className={`flex min-w-[130px] flex-1 flex-col gap-[2px] py-[10px] ${position === 0 ? 'pr-4' : 'border-l border-solid border-border px-4'}`}
                             >
-                                <span className={capsLabelClass}>{figure.label}</span>
+                                <span className={capsLabelClass}>{t(figure.label)}</span>
                                 <span className="font-display text-[24px] leading-7 font-extrabold text-text">{figure.value}</span>
                             </div>
                         ))}
                     </div>
 
                     {rows.length === 0 ? (
-                        <Empty title="No students in this class">Results list the students enrolled in the class this year.</Empty>
+                        <Empty title={t('No students in this class')}>{t('Results list the students enrolled in the class this year.')}</Empty>
                     ) : (
                         <div className="overflow-x-auto rounded-lg border border-solid border-border">
                             <div className="flex min-w-[560px] flex-col">
                                 <div className={`flex h-8 items-center gap-4 border-b border-solid border-border bg-surface px-[14px] ${capsLabelClass}`}>
-                                    <span className="w-10 shrink-0">Rank</span>
-                                    <span className="flex-1">Student</span>
-                                    {all && <span className="w-[110px] shrink-0">Class</span>}
-                                    <span className="w-[76px] shrink-0 text-right">Marks in</span>
-                                    <span className="w-[76px] shrink-0 text-right">Average</span>
+                                    <span className="w-10 shrink-0">{t('Rank')}</span>
+                                    <span className="flex-1">{t('Student')}</span>
+                                    {all && <span className="w-[110px] shrink-0">{t('Class')}</span>}
+                                    <span className="w-[76px] shrink-0 text-right">{t('Marks in')}</span>
+                                    <span className="w-[76px] shrink-0 text-right">{t('Average')}</span>
                                 </div>
                                 {rows.map((row, position) => (
                                     <div
@@ -140,7 +141,7 @@ function Results({ tabs, plans, plan, classes, class: current, passMark, stats, 
                                         <span className="flex min-w-0 flex-1 flex-col">
                                             <span className="truncate text-[14px] leading-[18px] font-medium text-text">{row.name}</span>
                                             {row.missing.length > 0 && (
-                                                <span className={`truncate text-[12px] leading-4 ${amberText}`}>{row.missing.join(', ')} missing</span>
+                                                <span className={`truncate text-[12px] leading-4 ${amberText}`}>{row.missing.join(', ')} {t('missing')}</span>
                                             )}
                                         </span>
                                         {all && <span className="w-[110px] shrink-0 truncate text-[13px] leading-4 text-text-muted">{row.class}</span>}
@@ -161,26 +162,23 @@ function Results({ tabs, plans, plan, classes, class: current, passMark, stats, 
                         </div>
                     )}
                     <p className="text-[12px] leading-[17px] text-text-muted">
-                        * Average of the marks entered so far. A student with a
-                        missing mark is not ranked until it is in. Equal
-                        averages share a rank. A subject marked ABS is left out
-                        of that student’s average.
+                        {t('* Average of the marks entered so far. A student with a missing mark is not ranked until it is in. Equal averages share a rank. A subject marked ABS is left out of that student’s average.')}
                     </p>
                 </div>
 
                 <aside className="flex shrink-0 flex-col gap-4 border-solid border-border lg:w-[300px] lg:border-l lg:pl-7">
                     <div className="flex flex-col gap-3 rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>{plan.state === 'published' ? 'Published' : `Publish ${plan.name}`}</p>
+                        <p className={capsLabelClass}>{plan.state === 'published' ? t('Published') : t('Publish :plan', { plan: plan.name })}</p>
                         <ul className="flex flex-col gap-[10px]">
                             <li className="flex items-start gap-2 text-[13px] leading-[18px] text-text">
                                 <span className={`mt-[6px] h-[6px] w-[6px] shrink-0 rounded-full ${plan.state === 'marks_open' ? 'bg-warning' : 'bg-success'}`} />
-                                {plan.state === 'marks_open' ? 'The marks window is still open' : 'The marks window is closed'}
+                                {plan.state === 'marks_open' ? t('The marks window is still open') : t('The marks window is closed')}
                             </li>
                             <li className="flex items-start gap-2 text-[13px] leading-[18px] text-text">
                                 <span className={`mt-[6px] h-[6px] w-[6px] shrink-0 rounded-full ${missing > 0 ? 'bg-warning' : 'bg-success'}`} />
                                 {missing > 0
-                                    ? `${missing} ${missing === 1 ? 'mark is' : 'marks are'} still missing ${all ? 'across the school' : 'in this class'}. They show as dashes and are left out of averages.`
-                                    : `No mark is missing ${all ? 'in the school' : 'in this class'}`}
+                                    ? t(':missing :are still missing :class. They show as dashes and are left out of averages.', { missing, are: missing === 1 ? 'mark is' : 'marks are', class: all ? 'across the school' : 'in this class' })
+                                    : t('No mark is missing :class', { class: all ? 'in the school' : 'in this class' })}
                             </li>
                         </ul>
                         {plan.state === 'published' ? (
@@ -188,39 +186,36 @@ function Results({ tabs, plans, plan, classes, class: current, passMark, stats, 
                                 href={reports.url({ query: { plan: plan.id } })}
                                 className="flex h-10 items-center justify-center rounded-md bg-primary text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover"
                             >
-                                Open report cards →
+                                {t('Open report cards →')}
                             </Link>
                         ) : (
                             <>
                                 <p className="text-[13px] leading-[19px] text-text-muted">
-                                    Publishing locks the marks for every class.
-                                    A later change needs a correction approved
-                                    by the principal.
+                                    {t('Publishing locks the marks for every class. A later change needs a correction approved by the principal.')}
                                 </p>
                                 <button
                                     type="button"
                                     disabled={plan.state !== 'marks_closed'}
                                     onClick={() => {
-                                        if (window.confirm(`Publish ${plan.name} for every class? Marks are locked afterwards.`)) {
+                                        if (window.confirm(t('Publish :plan for every class? Marks are locked afterwards.', { plan: plan.name }))) {
                                             router.post(publish.url(plan.id));
                                         }
                                     }}
                                     className="flex h-10 items-center justify-center rounded-md bg-primary text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-40"
                                 >
-                                    Publish results, all classes
+                                    {t('Publish results, all classes')}
                                 </button>
                             </>
                         )}
                         <ErrorText message={errors.publish} />
                         <Link href={progress.url({ query: { plan: plan.id } })} className={quietClass}>
-                            ← Back to marks progress
+                            {t('← Back to marks progress')}
                         </Link>
                     </div>
                     <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-4">
-                        <p className="text-[13px] leading-4 font-semibold text-text">What comes next</p>
+                        <p className="text-[13px] leading-4 font-semibold text-text">{t('What comes next')}</p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            Once published, report cards can be opened for every
-                            class on the Report cards tab.
+                            {t('Once published, report cards can be opened for every class on the Report cards tab.')}
                         </p>
                     </div>
                 </aside>

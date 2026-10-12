@@ -2,11 +2,12 @@ import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { index, structure } from '@/actions/App/Http/Controllers/FeeController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { numberLocale, t } from '../../lib/i18n';
 
 export const amberText = 'text-[#8A5A12]';
 
 export function figure(amount: number): string {
-    return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat(numberLocale(), { maximumFractionDigits: 0 }).format(amount);
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -19,7 +20,7 @@ export function dayMonth(iso: string | null, withYear = true): string {
 
     const [year, month, day] = iso.split('-');
 
-    return `${Number(day)} ${MONTHS[Number(month) - 1]}${withYear ? ` ${year}` : ''}`;
+    return `${Number(day)} ${t(MONTHS[Number(month) - 1])}${withYear ? ` ${year}` : ''}`;
 }
 
 export const FEE_STATES: Record<string, { label: string; pill: string }> = {
@@ -36,7 +37,7 @@ export function StatePill({ state }: { state: string }) {
 
     return (
         <span className={`flex h-6 shrink-0 items-center rounded-full px-[10px] text-[12px] leading-4 font-medium ${style.pill}`}>
-            {style.label}
+            {t(style.label)}
         </span>
     );
 }
@@ -58,15 +59,15 @@ export function FeesHeader({
     action?: ReactNode;
 }) {
     const tabs = [
-        { key: 'students', label: 'Students', href: index.url() },
-        { key: 'structure', label: 'Fee structure', href: structure.url() },
+        { key: 'students', label: t('Students'), href: index.url() },
+        { key: 'structure', label: t('Fee structure'), href: structure.url() },
     ];
 
     return (
         <>
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex min-w-0 flex-col gap-[6px]">
-                    <Breadcrumbs trail={trail.length > 0 ? [{ label: 'Fees', href: index.url() }, ...trail] : [{ label: 'Fees' }]} />
+                    <Breadcrumbs trail={trail.length > 0 ? [{ label: t('Fees'), href: index.url() }, ...trail] : [{ label: t('Fees') }]} />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {title}
                     </h1>
@@ -91,7 +92,7 @@ export function FeesHeader({
                                 : 'border-transparent font-medium text-text-muted hover:text-text'
                         }`}
                     >
-                        {tab.label}
+                        {t(tab.label)}
                     </Link>
                 ))}
             </nav>

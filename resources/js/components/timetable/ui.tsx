@@ -10,6 +10,7 @@ import {
 } from '@/actions/App/Http/Controllers/TimetableController';
 import { show as review } from '@/actions/App/Http/Controllers/TimetableReviewController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { numberLocale, t } from '../../lib/i18n';
 
 /** Where the term's timetable stands; every timetable page receives it. */
 export interface TimetablePhase {
@@ -44,7 +45,7 @@ export const quietActionClass =
     'flex h-9 items-center justify-center gap-2 rounded-md border border-solid border-border bg-white px-4 text-[13px] leading-4 font-medium text-text hover:bg-surface disabled:opacity-40';
 
 export function plural(count: number, one: string, many = `${one}s`): string {
-    return `${new Intl.NumberFormat('en-US').format(count)} ${count === 1 ? one : many}`;
+    return `${new Intl.NumberFormat(numberLocale()).format(count)} ${count === 1 ? t(one) : t(many)}`;
 }
 
 export function CheckMark({ size = 12, tone = '#FFFFFF' }: { size?: number; tone?: string }) {
@@ -91,38 +92,38 @@ export function TickBox({
 function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase }) {
     const allDone = !phase.has_draft && phase.live !== null;
     const steps: { key: StepKey; label: string; href: string; done: boolean; badge?: ReactNode }[] = [
-        { key: 'setup', label: 'Setup', href: setup.url(), done: phase.setup },
+        { key: 'setup', label: t('Setup'), href: setup.url(), done: phase.setup },
         {
             key: 'checks',
-            label: 'Check inputs',
+            label: t('Check inputs'),
             href: checks.url(),
             done: phase.checks,
             badge:
                 page === 'checks' && phase.blocking > 0 ? (
                     <span className="flex h-[18px] items-center rounded-full bg-danger-tint px-[6px] font-mono text-[11px] leading-[14px] text-danger">
-                        {phase.blocking} to fix
+                        {t(':blocking to fix', { blocking: phase.blocking })}
                     </span>
                 ) : null,
         },
-        { key: 'generate', label: 'Generate', href: generator.url(), done: phase.generated },
+        { key: 'generate', label: t('Generate'), href: generator.url(), done: phase.generated },
         {
             key: 'review',
-            label: 'Review',
+            label: t('Review'),
             href: review.url(),
             done: phase.reviewed,
             badge:
                 phase.to_fix !== null && phase.to_fix > 0 ? (
                     <span className={`flex h-[18px] items-center rounded-full bg-warning-tint px-[6px] font-mono text-[11px] leading-[14px] ${amberText}`}>
-                        {phase.to_fix} to fix
+                        {t(':to_fix to fix', { to_fix: phase.to_fix })}
                     </span>
                 ) : null,
         },
-        { key: 'publish', label: 'Publish', href: phase.has_draft ? publishing.url() : index.url(), done: false },
+        { key: 'publish', label: t('Publish'), href: phase.has_draft ? publishing.url() : index.url(), done: false },
     ];
 
     return (
         <nav
-            aria-label="Timetable phases"
+            aria-label={t('Timetable phases')}
             className="flex flex-wrap items-center gap-x-[10px] gap-y-2 border-b border-solid border-border pb-[14px]"
         >
             <Link
@@ -134,7 +135,7 @@ function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase 
                         : 'border-border font-medium text-text hover:bg-surface'
                 }`}
             >
-                Overview
+                {t('Overview')}
             </Link>
             <span className="mx-[6px] h-[22px] w-px shrink-0 bg-border" />
             {steps.map((step, position) => {
@@ -176,7 +177,7 @@ function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase 
                                             : 'font-medium text-text-muted'
                                 }`}
                             >
-                                {step.label}
+                                {t(step.label)}
                             </span>
                             {step.badge}
                         </Link>
@@ -184,7 +185,7 @@ function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase 
                 );
             })}
             <span className="flex-1" />
-            <span className="text-[12px] leading-4 text-text-muted">After publishing</span>
+            <span className="text-[12px] leading-4 text-text-muted">{t('After publishing')}</span>
             <Link
                 href={changes.url()}
                 aria-current={page === 'changes' ? 'page' : undefined}
@@ -194,7 +195,7 @@ function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase 
                         : 'border-dashed border-border font-medium text-text-muted hover:text-text'
                 }`}
             >
-                Changes
+                {t('Changes')}
             </Link>
         </nav>
     );
@@ -223,8 +224,8 @@ export function TimetableHeader({
                     <Breadcrumbs
                         trail={
                             trail.length > 0
-                                ? [{ label: 'Timetable', href: index.url() }, ...trail]
-                                : [{ label: 'Timetable' }]
+                                ? [{ label: t('Timetable'), href: index.url() }, ...trail]
+                                : [{ label: t('Timetable') }]
                         }
                     />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
@@ -242,13 +243,12 @@ export function TimetableHeader({
 export function NoTerm({ setupHref }: { setupHref: string }) {
     return (
         <div className="flex flex-col gap-3 rounded-md bg-surface p-5">
-            <p className="text-[14px] leading-[18px] font-semibold text-text">No term is active</p>
+            <p className="text-[14px] leading-[18px] font-semibold text-text">{t('No term is active')}</p>
             <p className="max-w-[640px] text-[13px] leading-[19px] text-text">
-                A timetable is built for a term. Make a term active in School
-                Setup and the timetable opens here.
+                {t('A timetable is built for a term. Make a term active in School Setup and the timetable opens here.')}
             </p>
             <Link href={setupHref} className={linkClass}>
-                Open School Setup →
+                {t('Open School Setup →')}
             </Link>
         </div>
     );

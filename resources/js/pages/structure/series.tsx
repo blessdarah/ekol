@@ -14,6 +14,7 @@ import {
     levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface SeriesCard {
     id: string;
@@ -58,12 +59,12 @@ function Card({ item, tone, tint }: { item: SeriesCard; tone: string; tint: stri
                 {complete ? (
                     <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
                         <span className="h-[6px] w-[6px] rounded-full bg-success" />
-                        Complete
+                        {t('Complete')}
                     </span>
                 ) : (
                     <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-warning-tint px-2 text-[12px] leading-4 font-medium text-[#8A5A12]">
                         <span className="h-[6px] w-[6px] rounded-full bg-warning" />
-                        Needs setup
+                        {t('Needs setup')}
                     </span>
                 )}
             </span>
@@ -74,15 +75,15 @@ function Card({ item, tone, tint }: { item: SeriesCard; tone: string; tint: stri
                 <span
                     className={`text-[13px] leading-[18px] ${complete ? 'text-text-muted' : 'text-[#8A5A12]'}`}
                 >
-                    {complete ? item.core.join(', ') : 'No core subjects set yet'}
+                    {complete ? item.core.join(', ') : t('No core subjects set yet')}
                 </span>
             </span>
             <span className="flex items-center justify-between border-t border-solid border-border pt-[10px]">
                 <span className="font-mono text-[12px] leading-4 text-text">
-                    {item.core.length} core · {item.electives} electives
+                    {t(':core core · :electives electives', { core: item.core.length, electives: item.electives })}
                 </span>
                 <span className="text-[12px] leading-4 text-text-muted">
-                    {item.students} students
+                    {t(':students students', { students: item.students })}
                 </span>
             </span>
         </Link>
@@ -94,15 +95,15 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
 
     return (
         <div className="flex flex-col gap-7">
-            <Head title="Series setup" />
+            <Head title={t('Series setup')} />
             <StructureHeader
-                trail={[levelsCrumb, { label: 'Series setup' }]}
-                title="Levels and series"
-                tag={`Structure${yearLabel ? ` · ${yearLabel}` : ''}`}
+                trail={[levelsCrumb, { label: t('Series setup') }]}
+                title={t('Levels and series')}
+                tag={t('Structure:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
                 meta={
                     level
-                        ? `${level.name} · ${series.length} series · ${registered} of ${enrolled} students registered`
-                        : 'no level uses series yet'
+                        ? t(':level · :series series · :registered of :enrolled students registered', { level: level.name, series: series.length, registered, enrolled })
+                        : t('no level uses series yet')
                 }
                 action={
                     level && (
@@ -111,7 +112,7 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
                             className={solidButtonClass}
                         >
                             <PlusIcon />
-                            Add series
+                            {t('Add series')}
                         </Link>
                     )
                 }
@@ -120,18 +121,17 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
 
             {!level ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    Series are for high school levels in the GCE subsystem.
-                    Turn “Uses series” on for a level under{' '}
+                    {t('Series are for high school levels in the GCE subsystem. Turn “Uses series” on for a level under')}{' '}
                     <Link href={levelsIndex.url()} className="font-medium text-primary hover:underline">
-                        Levels
+                        {t('Levels')}
                     </Link>{' '}
-                    and it appears here.
+                    {t('and it appears here.')}
                 </p>
             ) : (
                 <>
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="text-[13px] leading-4 font-medium text-text">
-                            Level
+                            {t('Level')}
                         </span>
                         <div className="flex flex-wrap gap-2">
                             {levels.map((option) => {
@@ -156,14 +156,13 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
                         <span className="flex-1" />
                         <span className="flex items-center gap-[6px] text-[13px] leading-4 text-text-muted">
                             <LockIcon />
-                            GCE high school levels only
+                            {t('GCE high school levels only')}
                         </span>
                     </div>
 
                     {series.length === 0 && (
                         <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                            No series yet for {level.name}. Add the first one,
-                            such as S1 · Science 1.
+                            {t('No series yet for :level. Add the first one, such as S1 · Science 1.', { level: level.name })}
                         </p>
                     )}
 
@@ -180,10 +179,10 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
                                     <span
                                         className={`text-[12px] leading-4 font-semibold tracking-[0.06em] uppercase ${stream.tone}`}
                                     >
-                                        {stream.label}
+                                        {t(stream.label)}
                                     </span>
                                     <span className="text-[13px] leading-4 text-text-muted">
-                                        {group.length} series
+                                        {t(':group series', { group: group.length })}
                                     </span>
                                 </p>
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -203,15 +202,13 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
                     {unassigned > 0 && (
                         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface px-4 py-3">
                             <p className="text-[14px] leading-[18px] text-text">
-                                {unassigned} {level.name} students have no
-                                series yet. They are registered in Series
-                                Registration.
+                                {t(':unassigned :level students have no series yet. They are registered in Series Registration.', { unassigned, level: level.name })}
                             </p>
                             <Link
                                 href="/series"
                                 className="text-[13px] leading-4 font-medium text-primary hover:underline"
                             >
-                                Open Series Registration
+                                {t('Open Series Registration')}
                             </Link>
                         </div>
                     )}

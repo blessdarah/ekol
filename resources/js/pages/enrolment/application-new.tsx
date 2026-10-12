@@ -12,6 +12,7 @@ import {
     solidButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 type Relation = 'father' | 'mother' | 'guardian';
 
@@ -105,22 +106,22 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
             }}
             className="flex flex-col gap-5"
         >
-            <Head title="Add an application" />
+            <Head title={t('Add an application')} />
             <EnrolmentHeader
                 active="applications"
                 progress={enrolment}
-                trail={[{ label: 'Applications', href: index.url() }, { label: 'Add an application' }]}
-                title="Add an application"
-                meta="it gets a reference and waits under To review"
+                trail={[{ label: t('Applications'), href: index.url() }, { label: t('Add an application') }]}
+                title={t('Add an application')}
+                meta={t('it gets a reference and waits under To review')}
             />
 
             <div className="flex flex-col gap-8 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-7">
                     <section className="flex flex-col gap-[14px]">
-                        <p className={capsLabelClass}>Applicant</p>
+                        <p className={capsLabelClass}>{t('Applicant')}</p>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Surname
+                                {t('Surname')}
                                 <input
                                     type="text"
                                     value={data.surname}
@@ -130,7 +131,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                 <ErrorText message={errors.surname} />
                             </label>
                             <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Given names
+                                {t('Given names')}
                                 <input
                                     type="text"
                                     value={data.given_names}
@@ -140,7 +141,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                 <ErrorText message={errors.given_names} />
                             </label>
                             <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Date of birth
+                                {t('Date of birth')}
                                 <input
                                     type="date"
                                     value={data.date_of_birth}
@@ -150,7 +151,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                 <ErrorText message={errors.date_of_birth} />
                             </label>
                             <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Place of birth
+                                {t('Place of birth')}
                                 <input
                                     type="text"
                                     value={data.place_of_birth}
@@ -160,11 +161,11 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                 <ErrorText message={errors.place_of_birth} />
                             </label>
                             <div className="flex flex-col gap-[6px]">
-                                <span className={fieldLabelClass}>Gender</span>
-                                <div role="radiogroup" aria-label="Gender" className="flex gap-2">
+                                <span className={fieldLabelClass}>{t('Gender')}</span>
+                                <div role="radiogroup" aria-label={t('Gender')} className="flex gap-2">
                                     {[
-                                        { value: 'female', label: 'Girl' },
-                                        { value: 'male', label: 'Boy' },
+                                        { value: 'female', label: t('Girl') },
+                                        { value: 'male', label: t('Boy') },
                                     ].map((option) => (
                                         <button
                                             key={option.value}
@@ -174,20 +175,20 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                             onClick={() => setData('gender', option.value)}
                                             className={segmentClass(data.gender === option.value)}
                                         >
-                                            {option.label}
+                                            {t(option.label)}
                                         </button>
                                     ))}
                                 </div>
                                 <ErrorText message={errors.gender} />
                             </div>
                             <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Applying to
+                                {t('Applying to')}
                                 <select
                                     value={data.level_id}
                                     onChange={(e) => setData('level_id', e.target.value)}
                                     className={fieldInputClass}
                                 >
-                                    <option value="">Choose a level</option>
+                                    <option value="">{t('Choose a level')}</option>
                                     {levels.map((level) => (
                                         <option key={level.id} value={level.id}>
                                             {level.name}
@@ -199,13 +200,13 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                             {canSeePrivate && (
                                 <>
                                     <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                        Religion
+                                        {t('Religion')}
                                         <select
                                             value={data.religion}
                                             onChange={(e) => setData('religion', e.target.value)}
                                             className={fieldInputClass}
                                         >
-                                            <option value="">Not given</option>
+                                            <option value="">{t('Not given')}</option>
                                             {religions.map((religion) => (
                                                 <option key={religion} value={religion}>
                                                     {religion}
@@ -215,12 +216,12 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                         <ErrorText message={errors.religion} />
                                     </label>
                                     <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                        Disability or support needed
+                                        {t('Disability or support needed')}
                                         <input
                                             type="text"
                                             value={data.disability}
                                             onChange={(e) => setData('disability', e.target.value)}
-                                            placeholder="Leave empty for none"
+                                            placeholder={t('Leave empty for none')}
                                             className={fieldInputClass}
                                         />
                                         <ErrorText message={errors.disability} />
@@ -231,10 +232,10 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                     </section>
 
                     <section className="flex flex-col gap-[14px]">
-                        <p className={capsLabelClass}>Coming from</p>
+                        <p className={capsLabelClass}>{t('Coming from')}</p>
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            <span className={fieldLabelClass}>Transferring from another secondary school?</span>
-                            <div role="radiogroup" aria-label="Transferring" className="flex w-[200px] shrink-0 gap-2">
+                            <span className={fieldLabelClass}>{t('Transferring from another secondary school?')}</span>
+                            <div role="radiogroup" aria-label={t('Transferring')} className="flex w-[200px] shrink-0 gap-2">
                                 {[false, true].map((option) => (
                                     <button
                                         key={String(option)}
@@ -244,14 +245,14 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                         onClick={() => setData('transferred', option)}
                                         className={`${segmentClass(data.transferred === option)} h-[34px]`}
                                     >
-                                        {option ? 'Yes' : 'No'}
+                                        {option ? t('Yes') : t('No')}
                                     </button>
                                 ))}
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                {data.transferred ? 'School transferring from' : 'Last school attended'}
+                                {data.transferred ? t('School transferring from') : t('Last school attended')}
                                 <input
                                     type="text"
                                     value={data.previous_school}
@@ -261,7 +262,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                 <ErrorText message={errors.previous_school} />
                             </label>
                             <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Class there
+                                {t('Class there')}
                                 <input
                                     type="text"
                                     value={data.previous_class}
@@ -271,7 +272,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                 <ErrorText message={errors.previous_class} />
                             </label>
                             <label className={`flex flex-col gap-[6px] sm:col-span-2 ${fieldLabelClass}`}>
-                                Reason for applying
+                                {t('Reason for applying')}
                                 <input
                                     type="text"
                                     value={data.reason}
@@ -284,7 +285,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                     </section>
 
                     <section className="flex flex-col gap-[14px]">
-                        <p className={capsLabelClass}>Parents and guardian</p>
+                        <p className={capsLabelClass}>{t('Parents and guardian')}</p>
                         <div className="flex flex-col gap-4 md:flex-row">
                             {RELATIONS.map(({ key, title }) => (
                                 <fieldset
@@ -297,7 +298,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                         </legend>
                                         {data.main_contact === key ? (
                                             <span className="flex h-[22px] items-center rounded-full bg-primary-tint px-2 text-[12px] leading-4 font-medium text-primary">
-                                                Main contact
+                                                {t('Main contact')}
                                             </span>
                                         ) : (
                                             <button
@@ -305,12 +306,12 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                                 onClick={() => setData('main_contact', key)}
                                                 className="text-[13px] leading-4 font-medium text-primary hover:underline"
                                             >
-                                                Make main contact
+                                                {t('Make main contact')}
                                             </button>
                                         )}
                                     </div>
                                     <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                        Surname and name
+                                        {t('Surname and name')}
                                         <input
                                             type="text"
                                             value={guardians[key].name}
@@ -319,7 +320,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                         />
                                     </label>
                                     <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                        Phone
+                                        {t('Phone')}
                                         <input
                                             type="tel"
                                             value={guardians[key].phone}
@@ -328,7 +329,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                         />
                                     </label>
                                     <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                        Occupation
+                                        {t('Occupation')}
                                         <input
                                             type="text"
                                             value={guardians[key].occupation}
@@ -345,7 +346,7 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
 
                 <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     <div className="flex flex-col gap-[14px] rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>Documents received</p>
+                        <p className={capsLabelClass}>{t('Documents received')}</p>
                         <div className="flex flex-col gap-[10px]">
                             {asked.map(([key, label]) => (
                                 <label key={key} className="flex cursor-pointer items-center gap-[10px] text-[13px] leading-[18px] text-text">
@@ -360,23 +361,21 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                             ))}
                         </div>
                         <p className="text-[13px] leading-[18px] text-text-muted">
-                            Tick what the family has handed in. The rest shows
-                            as missing and can be ticked later.
+                            {t('Tick what the family has handed in. The rest shows as missing and can be ticked later.')}
                         </p>
                         <div className="flex flex-col gap-2">
                             <button type="submit" disabled={processing} className={`${solidButtonClass} h-10 text-[14px]`}>
-                                Save application
+                                {t('Save application')}
                             </button>
                             <Link href={index.url()} className={outlineButtonClass}>
-                                Cancel
+                                {t('Cancel')}
                             </Link>
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-white p-4">
-                        <p className="text-[13px] leading-4 font-semibold text-text">Not a student yet</p>
+                        <p className="text-[13px] leading-4 font-semibold text-text">{t('Not a student yet')}</p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            Saving creates no student and no matricule. That
-                            happens when the application is admitted.
+                            {t('Saving creates no student and no matricule. That happens when the application is admitted.')}
                         </p>
                     </div>
                 </aside>

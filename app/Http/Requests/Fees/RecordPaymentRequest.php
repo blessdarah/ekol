@@ -33,8 +33,8 @@ class RecordPaymentRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'reference.required_unless' => 'Enter the transaction reference.',
-            'date.before_or_equal' => 'A payment cannot be dated in the future.',
+            'reference.required_unless' => __('Enter the transaction reference.'),
+            'date.before_or_equal' => __('A payment cannot be dated in the future.'),
         ];
     }
 }

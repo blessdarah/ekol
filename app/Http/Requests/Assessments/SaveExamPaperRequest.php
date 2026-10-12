@@ -45,8 +45,8 @@ class SaveExamPaperRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'held_on.after_or_equal' => 'Choose a day inside the exam dates.',
-            'held_on.before_or_equal' => 'Choose a day inside the exam dates.',
+            'held_on.after_or_equal' => __('Choose a day inside the exam dates.'),
+            'held_on.before_or_equal' => __('Choose a day inside the exam dates.'),
         ];
     }
 }

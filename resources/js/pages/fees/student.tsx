@@ -12,6 +12,7 @@ import { StatePill, amberText, dayMonth, figure } from '../../components/fees/ui
 import Breadcrumbs from '../../components/shell/breadcrumbs';
 import { ErrorText, capsLabelClass, outlineButtonClass, solidButtonClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface InstallmentRow {
     seq: number;
@@ -130,7 +131,7 @@ function PaymentDrawer({
             <form
                 role="dialog"
                 aria-modal="true"
-                aria-label="Record payment"
+                aria-label={t('Record payment')}
                 onClick={(event) => event.stopPropagation()}
                 onSubmit={(event) => {
                     event.preventDefault();
@@ -144,8 +145,8 @@ function PaymentDrawer({
                 className="flex h-full w-full max-w-[400px] flex-col border-l border-solid border-border bg-white shadow-[-12px_0_32px_#1019150F]"
             >
                 <div className="flex items-center justify-between border-b border-solid border-border px-6 pt-6 pb-5">
-                    <h2 className="font-display text-[20px] leading-6 font-bold tracking-[-0.01em] text-text">Record payment</h2>
-                    <button type="button" aria-label="Close" onClick={onClose} className="rounded-sm p-1 hover:bg-surface">
+                    <h2 className="font-display text-[20px] leading-6 font-bold tracking-[-0.01em] text-text">{t('Record payment')}</h2>
+                    <button type="button" aria-label={t('Close')} onClick={onClose} className="rounded-sm p-1 hover:bg-surface">
                         <svg width="18" height="18" viewBox="0 0 24 24">
                             <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="#56625C" strokeWidth="2" strokeLinecap="round" />
                         </svg>
@@ -155,7 +156,7 @@ function PaymentDrawer({
                 <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-6">
                     <div className="flex flex-col gap-[6px]">
                         <label htmlFor="payment-amount" className="text-[13px] leading-4 font-medium text-text">
-                            Amount received
+                            {t('Amount received')}
                         </label>
                         <div className={`flex h-[52px] shrink-0 items-center justify-between rounded-md border-2 border-solid px-[14px] ${over || errors.amount ? 'border-danger' : 'border-primary'}`}>
                             <input
@@ -176,7 +177,7 @@ function PaymentDrawer({
                                     onClick={() => setData('amount', String(invoice.overdue))}
                                     className="flex h-[26px] items-center rounded-full border border-solid border-border px-[10px] text-[12px] leading-4 text-text hover:bg-surface"
                                 >
-                                    Overdue · {figure(invoice.overdue)}
+                                    {t('Overdue · :overdue', { overdue: figure(invoice.overdue) })}
                                 </button>
                             )}
                             <button
@@ -184,32 +185,32 @@ function PaymentDrawer({
                                 onClick={() => setData('amount', String(invoice.balance))}
                                 className="flex h-[26px] items-center rounded-full border border-solid border-border px-[10px] text-[12px] leading-4 text-text hover:bg-surface"
                             >
-                                Full balance · {figure(invoice.balance)}
+                                {t('Full balance · :balance', { balance: figure(invoice.balance) })}
                             </button>
                         </div>
                         <ErrorText message={errors.amount ?? (over ? `That is more than the ${figure(invoice.balance)} still owed.` : undefined)} />
                     </div>
 
                     <div className="flex flex-col gap-2 rounded-md bg-surface p-[14px]">
-                        <p className={capsLabelClass}>Applied to</p>
+                        <p className={capsLabelClass}>{t('Applied to')}</p>
                         {target && (
                             <div className="flex justify-between">
-                                <span className="text-[13px] leading-4 text-text">{target.label}</span>
+                                <span className="text-[13px] leading-4 text-text">{t(target.label)}</span>
                                 <span className="font-mono text-[13px] leading-4 text-text">
                                     {figure(applied)} / {figure(target.amount)}
                                 </span>
                             </div>
                         )}
                         <div className="flex justify-between">
-                            <span className="text-[13px] leading-4 text-text-muted">Still owed after this</span>
+                            <span className="text-[13px] leading-4 text-text-muted">{t('Still owed after this')}</span>
                             <span className={`font-mono text-[13px] leading-4 ${after > 0 ? 'text-warning' : 'text-success'}`}>{figure(after)}</span>
                         </div>
-                        <p className="text-[12px] leading-[18px] text-text-muted">Payments fill the oldest unpaid installment first.</p>
+                        <p className="text-[12px] leading-[18px] text-text-muted">{t('Payments fill the oldest unpaid installment first.')}</p>
                     </div>
 
                     <div className="flex flex-col gap-[6px]">
-                        <span className="text-[13px] leading-4 font-medium text-text">Method</span>
-                        <div role="radiogroup" aria-label="Method" className="flex rounded-md bg-surface p-[3px]">
+                        <span className="text-[13px] leading-4 font-medium text-text">{t('Method')}</span>
+                        <div role="radiogroup" aria-label={t('Method')} className="flex rounded-md bg-surface p-[3px]">
                             {methods.map((method) => {
                                 const on = data.method === method.value;
 
@@ -224,7 +225,7 @@ function PaymentDrawer({
                                             method.value === 'mobile_money' ? 'flex-[1.4]' : 'flex-1'
                                         } ${on ? 'bg-white font-semibold text-text shadow-[0_1px_2px_#10191514]' : 'font-medium text-text-muted hover:text-text'}`}
                                     >
-                                        {method.label}
+                                        {t(method.label)}
                                     </button>
                                 );
                             })}
@@ -233,7 +234,7 @@ function PaymentDrawer({
 
                     <div className="flex gap-3">
                         <label className="flex min-w-0 flex-[1.3] flex-col gap-[6px] text-[13px] leading-4 font-medium text-text">
-                            {data.method === 'cash' ? 'Note (optional)' : 'Transaction ref'}
+                            {data.method === 'cash' ? t('Note (optional)') : t('Transaction ref')}
                             <input
                                 type="text"
                                 value={data.reference}
@@ -242,7 +243,7 @@ function PaymentDrawer({
                             />
                         </label>
                         <label className="flex min-w-0 flex-1 flex-col gap-[6px] text-[13px] leading-4 font-medium text-text">
-                            Date
+                            {t('Date')}
                             <input
                                 type="date"
                                 value={data.date}
@@ -257,14 +258,14 @@ function PaymentDrawer({
 
                 <div className="flex justify-end gap-2 border-t border-solid border-border px-6 py-4">
                     <button type="button" onClick={onClose} className="flex h-9 items-center rounded-md px-[14px] text-[14px] leading-[18px] font-medium text-primary hover:bg-surface">
-                        Cancel
+                        {t('Cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={processing || amount <= 0 || over}
                         className="flex h-9 items-center rounded-md bg-primary px-4 text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-40"
                     >
-                        Save &amp; print receipt
+                        {t('Save & print receipt')}
                     </button>
                 </div>
             </form>
@@ -281,11 +282,11 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
 
     return (
         <div className="flex flex-col gap-7">
-            <Head title={`${student.name} · Fees`} />
+            <Head title={t(':student · Fees', { student: student.name })} />
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex min-w-0 flex-col gap-[6px]">
                     <Breadcrumbs
-                        trail={[{ label: 'Fees', href: feesIndex.url() }, ...trail.slice(0, -1).map((label) => ({ label })), { label: trail[trail.length - 1] ?? student.name }]}
+                        trail={[{ label: t('Fees'), href: feesIndex.url() }, ...trail.slice(0, -1).map((label) => ({ label })), { label: trail[trail.length - 1] ?? student.name }]}
                     />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {student.name}
@@ -293,17 +294,17 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
                     <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-4 text-text-muted">
                         <span className="font-mono">{student.matricule}</span>
                         <span>
-                            · Guardian: {student.guardian} · {student.phone}
+                            {t('· Guardian: :guardian · :phone', { guardian: student.guardian, phone: student.phone })}
                         </span>
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Link href={feesTab.url(student.id)} className={outlineButtonClass}>
-                        Student record
+                        {t('Student record')}
                     </Link>
                     {invoice && invoice.balance > 0 && (
                         <button type="button" onClick={() => setPaying(true)} className={solidButtonClass}>
-                            Record payment
+                            {t('Record payment')}
                         </button>
                     )}
                 </div>
@@ -311,14 +312,13 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
 
             {!invoice ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-5">
-                    <p className="text-[14px] leading-[18px] font-semibold text-text">Not billed yet</p>
+                    <p className="text-[14px] leading-[18px] font-semibold text-text">{t('Not billed yet')}</p>
                     <p className="max-w-[560px] text-[13px] leading-[19px] text-text">
-                        {student.name} has no invoice. Set a fee for{' '}
-                        {student.level ?? 'the level'} and bill its students
-                        under Fee structure.
+                        {student.name} {t('has no invoice. Set a fee for')}{' '}
+                        {student.level ?? t('the level')} {t('and bill its students under Fee structure.')}
                     </p>
                     <Link href={structure.url()} className="text-[13px] leading-4 font-medium text-primary hover:underline">
-                        Open Fee structure →
+                        {t('Open Fee structure →')}
                     </Link>
                 </div>
             ) : (
@@ -338,7 +338,7 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
                                 >
                                     {option.year}
                                     <span className={`font-mono text-[12px] font-normal ${option.balance > 0 ? amberText : 'text-text-muted'}`}>
-                                        {option.balance > 0 ? `${figure(option.balance)} owed` : 'paid'}
+                                        {option.balance > 0 ? t(':balance owed', { balance: figure(option.balance) }) : t('paid')}
                                     </span>
                                 </Link>
                             ))}
@@ -347,7 +347,7 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
 
                     <div className="flex flex-wrap items-end gap-x-12 gap-y-4 border-b border-solid border-border pb-6">
                         <div className="flex flex-col gap-1">
-                            <p className={capsLabelClass}>Outstanding{invoice.year ? ` · ${invoice.year}` : ''}</p>
+                            <p className={capsLabelClass}>{t('Outstanding')}{invoice.year ? ` · ${invoice.year}` : ''}</p>
                             <p className="flex items-baseline gap-[6px]">
                                 <span className="font-display text-[56px] leading-[56px] font-extrabold tracking-[-0.03em] text-text">
                                     {figure(invoice.balance)}
@@ -356,20 +356,20 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
                             </p>
                         </div>
                         <div className="flex flex-col gap-1 pb-[6px]">
-                            <span className="text-[13px] leading-4 text-text-muted">Paid</span>
+                            <span className="text-[13px] leading-4 text-text-muted">{t('Paid')}</span>
                             <span className="font-mono text-[16px] leading-5 text-success">{figure(invoice.paid)}</span>
                         </div>
                         <div className="flex flex-col gap-1 pb-[6px]">
-                            <span className="text-[13px] leading-4 text-text-muted">Annual fees</span>
+                            <span className="text-[13px] leading-4 text-text-muted">{t('Annual fees')}</span>
                             <span className="font-mono text-[16px] leading-5 text-text">{figure(invoice.due)}</span>
                         </div>
                         {invoice.exempted > 0 && (
                             <div className="flex flex-col gap-1 pb-[6px]">
                                 <span className="text-[13px] leading-4 text-text-muted">
-                                    Exemption{invoice.exemption ? ` · ${invoice.exemption.reason}` : ''}
+                                    {t('Exemption')}{invoice.exemption ? ` · ${invoice.exemption.reason}` : ''}
                                 </span>
                                 <span className="font-mono text-[16px] leading-5 text-text">
-                                    −{figure(invoice.exempted)} of {figure(invoice.gross)}
+                                    {t('−:exempted of :gross', { exempted: figure(invoice.exempted), gross: figure(invoice.gross) })}
                                 </span>
                             </div>
                         )}
@@ -378,23 +378,23 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
                                 <span className="h-2 rounded-full bg-success" style={{ width: `${share}%` }} />
                             </span>
                             <span className="text-right text-[12px] leading-4 text-text-muted">
-                                {share}% paid
-                                {invoice.overdue > 0 ? ` · ${figure(invoice.overdue)} of it overdue` : invoice.balance > 0 ? ' · nothing overdue' : ''}
+                                {share}{t('% paid')}
+                                {invoice.overdue > 0 ? t(' · :overdue of it overdue', { overdue: figure(invoice.overdue) }) : invoice.balance > 0 ? t(' · nothing overdue') : ''}
                             </span>
                         </div>
                     </div>
 
                     <section className="flex flex-col gap-3">
-                        <h2 className="font-display text-[20px] leading-6 font-bold tracking-[-0.01em] text-text">Installments</h2>
+                        <h2 className="font-display text-[20px] leading-6 font-bold tracking-[-0.01em] text-text">{t('Installments')}</h2>
                         <ul className="flex flex-col">
                             {invoice.installments.map((row) => (
                                 <li key={row.seq} className="flex min-h-14 shrink-0 items-center gap-4 border-b border-solid border-border py-2 last:border-b-0">
                                     <Marker state={row.state} current={row.seq === currentSeq} />
                                     <span className="flex min-w-0 flex-1 flex-col">
-                                        <span className="text-[14px] leading-[18px] font-medium text-text">{row.label}</span>
+                                        <span className="text-[14px] leading-[18px] font-medium text-text">{t(row.label)}</span>
                                         <span className={`text-[12px] leading-4 ${row.state === 'overdue' ? 'text-danger' : 'text-text-muted'}`}>
-                                            Due {dayMonth(row.due_on)}
-                                            {row.state === 'overdue' && ` · ${row.days_late} ${row.days_late === 1 ? 'day' : 'days'} late`}
+                                            {t('Due')} {dayMonth(row.due_on)}
+                                            {row.state === 'overdue' && t(' · :days_late :days late', { days_late: row.days_late, days: row.days_late === 1 ? 'day' : 'days' })}
                                         </span>
                                     </span>
                                     <span className={`shrink-0 text-right font-mono text-[14px] leading-[18px] ${row.state === 'overdue' || row.state === 'partial' ? 'text-text' : 'text-text-muted'}`}>
@@ -410,15 +410,15 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
 
                     {invoice.items.length > 1 && (
                         <section className="flex flex-col gap-3">
-                            <h2 className="font-display text-[20px] leading-6 font-bold tracking-[-0.01em] text-text">What the bill is for</h2>
+                            <h2 className="font-display text-[20px] leading-6 font-bold tracking-[-0.01em] text-text">{t('What the bill is for')}</h2>
                             <ul className="flex flex-col">
                                 {invoice.items.map((item) => (
                                     <li key={item.name} className="flex min-h-11 shrink-0 items-center gap-4 border-b border-solid border-border py-2 last:border-b-0">
                                         <span className="flex min-w-0 flex-1 flex-col">
                                             <span className="text-[14px] leading-[18px] font-medium text-text">{item.name}</span>
                                             <span className="text-[12px] leading-4 text-text-muted">
-                                                {item.upfront ? 'In full with the 1st installment' : 'Spread over the installments'}
-                                                {item.amount < item.billed && ` · ${figure(item.billed)} before the exemption`}
+                                                {item.upfront ? t('In full with the 1st installment') : t('Spread over the installments')}
+                                                {item.amount < item.billed && t(' · :billed before the exemption', { billed: figure(item.billed) })}
                                             </span>
                                         </span>
                                         <span className={`shrink-0 text-right font-mono text-[14px] leading-[18px] ${item.balance > 0 ? 'text-text' : 'text-text-muted'}`}>
@@ -431,15 +431,15 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
                                 ))}
                             </ul>
                             <p className="text-[12px] leading-[17px] text-text-muted">
-                                Each payment goes to the installment due first, and inside it to these items from the top down.
+                                {t('Each payment goes to the installment due first, and inside it to these items from the top down.')}
                             </p>
                         </section>
                     )}
 
                     <section className="flex flex-col gap-3">
-                        <h2 className="font-display text-[20px] leading-6 font-bold tracking-[-0.01em] text-text">Payment history</h2>
+                        <h2 className="font-display text-[20px] leading-6 font-bold tracking-[-0.01em] text-text">{t('Payment history')}</h2>
                         {invoice.payments.length === 0 ? (
-                            <p className="text-[13px] leading-[19px] text-text-muted">No payment has been recorded yet.</p>
+                            <p className="text-[13px] leading-[19px] text-text-muted">{t('No payment has been recorded yet.')}</p>
                         ) : (
                             <ul className="flex flex-col">
                                 {invoice.payments.map((payment) => (
@@ -447,12 +447,12 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
                                         <span className="w-24 shrink-0 font-mono text-[13px] leading-4 text-text-muted">{dayMonth(payment.on, false)}</span>
                                         <span className="min-w-0 flex-1 text-[14px] leading-[18px] text-text">
                                             {payment.method}
-                                            {payment.reference ? ` · ref ${payment.reference}` : ''}
+                                            {payment.reference ? t(' · ref :reference', { reference: payment.reference }) : ''}
                                             {payment.by ? ` · ${payment.by}` : ''}
                                         </span>
                                         <span className="w-[120px] shrink-0 text-right font-mono text-[14px] leading-[18px] text-text">{figure(payment.amount)}</span>
                                         <Link href={receipt.url(payment.id)} className="w-[130px] shrink-0 text-right text-[13px] leading-4 font-medium text-primary hover:underline">
-                                            Receipt {payment.receipt ?? ''}
+                                            {t('Receipt')} {payment.receipt ?? ''}
                                         </Link>
                                     </li>
                                 ))}

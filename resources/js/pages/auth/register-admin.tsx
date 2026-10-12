@@ -1,3 +1,4 @@
+import { useT } from '../../lib/i18n';
 import { Form, Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import AuthLayout, { TopBar } from '../../layouts/auth-layout';
@@ -32,33 +33,34 @@ export default function RegisterAdmin({
     schoolName: string;
 }) {
     const [role, setRole] = useState('admin');
+    const t = useT();
 
     return (
         <AuthLayout
             middle={{ variant: 'stepper', steps: STEPS, active: 1 }}
             topbar={
                 <TopBar
-                    text="Already registered?"
-                    linkText="Sign in"
+                    text={t('Already registered?')}
+                    linkText={t('Sign in')}
                     href="/login"
                 />
             }
         >
-            <Head title="Create your account" />
+            <Head title={t('Create your account')} />
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                    <Eyebrow>Step 2 of 3</Eyebrow>
+                    <Eyebrow>{t('Step :step of :total', { step: 2, total: 3 })}</Eyebrow>
                     <Heading
-                        title="Create your account"
-                        sub={`You will manage ${schoolName} from this account.`}
+                        title={t('Create your account')}
+                        sub={t('You will manage :school from this account.', { school: schoolName })}
                     />
                 </div>
                 <Form action="/register/admin" method="post" onKeyDown={submitOnEnter}>
                     {({ errors, processing }) => (
                         <div className="flex flex-col gap-4">
-                            <div className="grid grid-cols-[1fr_200px] gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_200px]">
                                 <Field
-                                    label="Full name"
+                                    label={t('Full name')}
                                     error={errors.full_name}
                                 >
                                     <input
@@ -67,7 +69,7 @@ export default function RegisterAdmin({
                                         className={inputClass}
                                     />
                                 </Field>
-                                <Field label="Role" error={errors.role}>
+                                <Field label={t('Role')} error={errors.role}>
                                     <select
                                         name="role"
                                         value={role}
@@ -81,21 +83,21 @@ export default function RegisterAdmin({
                                                 key={option}
                                                 value={option}
                                             >
-                                                {option}
+                                                {t(option.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))}
                                             </option>
                                         ))}
                                     </select>
                                 </Field>
                             </div>
-                            <div className="grid grid-cols-[1fr_200px] gap-4">
-                                <Field label="Email" error={errors.email}>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_200px]">
+                                <Field label={t('Email')} error={errors.email}>
                                     <input
                                         type="email"
                                         name="email"
                                         className={inputClass}
                                     />
                                 </Field>
-                                <Field label="Phone" error={errors.phone}>
+                                <Field label={t('Phone')} error={errors.phone}>
                                     <input
                                         type="tel"
                                         name="phone"
@@ -112,8 +114,7 @@ export default function RegisterAdmin({
                                     className="mt-[2px] h-[18px] w-[18px] shrink-0 accent-primary"
                                 />
                                 <span>
-                                    I am authorised to register this school,
-                                    and I agree to the terms of use.
+                                    {t('I am authorised to register this school, and I agree to the terms of use.')}
                                 </span>
                             </label>
                             {errors.authorisation && (
@@ -123,13 +124,13 @@ export default function RegisterAdmin({
                             )}
                             <div className="flex items-center gap-3 pt-2">
                                 <PrimaryButton disabled={processing}>
-                                    Send verification code
+                                    {t('Send verification code')}
                                 </PrimaryButton>
                                 <Link
                                     href="/register"
                                     className="inline-flex h-9 items-center rounded-lg border border-solid border-border px-4 text-[14px] font-medium text-text"
                                 >
-                                    Back
+                                    {t('Back')}
                                 </Link>
                             </div>
                         </div>

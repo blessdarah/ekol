@@ -25,6 +25,7 @@ import {
 } from '../../components/assessments/ui';
 import { ErrorText, capsLabelClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface ProgressProps {
     tabs: AssessmentTabs;
@@ -60,12 +61,12 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
     if (!plan) {
         return (
             <div className="flex flex-col gap-5">
-                <Head title="Marks progress" />
-                <AssessmentHeader active="progress" tabs={tabs} trail={[{ label: 'Marks progress' }]} title="Marks progress" meta="Who has handed in marks for the assessment you pick." />
-                <Empty title="Nothing is scheduled yet">
-                    Marks progress follows an assessment once it is scheduled.{' '}
+                <Head title={t('Marks progress')} />
+                <AssessmentHeader active="progress" tabs={tabs} trail={[{ label: t('Marks progress') }]} title={t('Marks progress')} meta={t('Who has handed in marks for the assessment you pick.')} />
+                <Empty title={t('Nothing is scheduled yet')}>
+                    {t('Marks progress follows an assessment once it is scheduled.')}{' '}
                     <Link href={index.url()} className="font-medium text-primary hover:underline">
-                        Open the calendar →
+                        {t('Open the calendar →')}
                     </Link>
                 </Empty>
             </div>
@@ -86,17 +87,17 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title="Marks progress" />
+            <Head title={t('Marks progress')} />
             <AssessmentHeader
                 active="progress"
                 tabs={tabs}
-                trail={[{ label: 'Marks progress' }]}
-                title="Marks progress"
-                meta="Who has handed in marks for the assessment you pick."
+                trail={[{ label: t('Marks progress') }]}
+                title={t('Marks progress')}
+                meta={t('Who has handed in marks for the assessment you pick.')}
                 action={
                     canExtend && (
                         <button type="button" onClick={() => setExtending(!extending)} className={quietClass}>
-                            {plan.state === 'marks_closed' ? 'Reopen marks entry' : 'Extend the marks window'}
+                            {plan.state === 'marks_closed' ? t('Reopen marks entry') : t('Extend the marks window')}
                         </button>
                     )
                 }
@@ -113,7 +114,7 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
                     className="flex flex-wrap items-end gap-3 rounded-md border border-solid border-border bg-surface p-4"
                 >
                     <label className="flex flex-col gap-[6px] text-[13px] leading-4 font-medium text-text">
-                        Marks close on
+                        {t('Marks close on')}
                         <input
                             type="date"
                             value={until}
@@ -123,15 +124,15 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
                         />
                     </label>
                     <button type="submit" disabled={!until} className={primaryClass}>
-                        Save the new date
+                        {t('Save the new date')}
                     </button>
                     <button type="button" onClick={() => setExtending(false)} className={quietClass}>
-                        Cancel
+                        {t('Cancel')}
                     </button>
                     <p className="basis-full text-[13px] leading-[18px] text-text-muted">
                         {plan.state === 'marks_closed'
-                            ? 'Saving reopens marks entry for teachers until this day.'
-                            : 'Teachers can enter marks until the end of this day.'}
+                            ? t('Saving reopens marks entry for teachers until this day.')
+                            : t('Teachers can enter marks until the end of this day.')}
                     </p>
                     <ErrorText message={errors.window_ends_on} />
                 </form>
@@ -160,7 +161,7 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
                                     ) : null}
                                 </span>
                                 <span className="flex flex-col">
-                                    <span className={`text-[13px] leading-4 ${done || now ? 'font-semibold text-text' : 'font-medium text-text-muted'}`}>{step.label}</span>
+                                    <span className={`text-[13px] leading-4 ${done || now ? 'font-semibold text-text' : 'font-medium text-text-muted'}`}>{t(step.label)}</span>
                                     <span className="font-mono text-[11px] leading-[14px] text-text-muted">{sub[position]}</span>
                                 </span>
                             </li>
@@ -170,10 +171,10 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
                 {plan.kind === 'exam' && (
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-dashed border-border pt-3">
                         <p className="text-[13px] leading-4 text-text-muted">
-                            An exam adds a step first: its schedule, with one paper per subject and level.
+                            {t('An exam adds a step first: its schedule, with one paper per subject and level.')}
                         </p>
                         <Link href={schedule.url({ query: { plan: plan.id } })} className={`${quietClass} h-8`}>
-                            {plan.has_schedule ? 'Open the exam schedule →' : `Set the ${plan.name} schedule →`}
+                            {plan.has_schedule ? t('Open the exam schedule →') : t('Set the :plan schedule →', { plan: plan.name })}
                         </Link>
                     </div>
                 )}
@@ -181,27 +182,27 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
 
             <div className="flex flex-wrap border-y border-solid border-border">
                 <div className="flex min-w-[200px] flex-1 flex-col gap-[2px] py-[10px] pr-4">
-                    <span className={capsLabelClass}>Mark sheets submitted</span>
+                    <span className={capsLabelClass}>{t('Mark sheets submitted')}</span>
                     <span className="flex items-baseline gap-2">
                         <span className="font-display text-[24px] leading-7 font-extrabold text-text">{stats.submitted}</span>
                         <span className="font-mono text-[12px] leading-4 text-text-muted">
-                            of {stats.total} · {share}%
+                            {t('of :total · :share%', { total: stats.total, share })}
                         </span>
                     </span>
                 </div>
                 <div className="flex min-w-[200px] flex-1 flex-col gap-[2px] border-l border-solid border-border px-4 py-[10px]">
-                    <span className={capsLabelClass}>Teachers still to submit</span>
+                    <span className={capsLabelClass}>{t('Teachers still to submit')}</span>
                     <span className={`font-display text-[24px] leading-7 font-extrabold ${stats.teachers > 0 ? amberText : 'text-text'}`}>{stats.teachers}</span>
                 </div>
                 <div className="flex min-w-[200px] flex-1 flex-col gap-[2px] border-l border-solid border-border py-[10px] pl-4">
-                    <span className={capsLabelClass}>{plan.state === 'scheduled' ? 'Window opens' : 'Window closes'}</span>
+                    <span className={capsLabelClass}>{plan.state === 'scheduled' ? t('Window opens') : t('Window closes')}</span>
                     <span className="flex items-baseline gap-2">
                         <span className="font-display text-[24px] leading-7 font-extrabold text-text">
                             {day(plan.state === 'scheduled' ? plan.window_starts_on : plan.window_ends_on)}
                         </span>
                         {plan.state === 'marks_open' && plan.days_left !== null && (
                             <span className={`font-mono text-[12px] leading-4 ${plan.days_left < 0 ? 'text-danger' : 'text-text-muted'}`}>
-                                {plan.days_left < 0 ? 'ended' : plan.days_left === 0 ? 'today' : `in ${plan.days_left} ${plan.days_left === 1 ? 'day' : 'days'}`}
+                                {plan.days_left < 0 ? t('ended') : plan.days_left === 0 ? t('today') : t('in :days_left :days', { days_left: plan.days_left, days: plan.days_left === 1 ? t('day') : t('days') })}
                             </span>
                         )}
                     </span>
@@ -209,19 +210,17 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
             </div>
 
             {classes.length === 0 ? (
-                <Empty title="No mark sheets yet">
-                    Sheets are made for every class in the assessment’s levels,
-                    one per subject the class takes. None of those classes has
-                    subjects yet.
+                <Empty title={t('No mark sheets yet')}>
+                    {t('Sheets are made for every class in the assessment’s levels, one per subject the class takes. None of those classes has subjects yet.')}
                 </Empty>
             ) : (
                 <div className="overflow-x-auto rounded-lg border border-solid border-border">
                     <div className="flex min-w-[820px] flex-col">
                         <div className={`flex h-[34px] items-center gap-4 border-b border-solid border-border bg-surface px-4 ${capsLabelClass}`}>
-                            <span className="w-[130px] shrink-0">Class</span>
-                            <span className="w-[130px] shrink-0">Form master</span>
-                            <span className="w-[230px] shrink-0">Sheets submitted</span>
-                            <span className="flex-1">Still missing from</span>
+                            <span className="w-[130px] shrink-0">{t('Class')}</span>
+                            <span className="w-[130px] shrink-0">{t('Form master')}</span>
+                            <span className="w-[230px] shrink-0">{t('Sheets submitted')}</span>
+                            <span className="flex-1">{t('Still missing from')}</span>
                         </div>
                         {classes.map((row, position) => {
                             const ratio = row.total > 0 ? row.submitted / row.total : 0;
@@ -246,7 +245,7 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
                                     </span>
                                     <span className="flex min-w-0 flex-1 flex-wrap gap-x-2 gap-y-1 text-[13px] leading-4">
                                         {row.missing.length === 0 ? (
-                                            <span className="text-text-muted">Complete</span>
+                                            <span className="text-text-muted">{t('Complete')}</span>
                                         ) : (
                                             row.missing.map((sheet, index_) => (
                                                 <span key={sheet.sheet_id} className="flex items-center gap-1">
@@ -257,7 +256,7 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
                                                         </Link>
                                                     ) : (
                                                         <Link href={editSubject.url(sheet.subject_id)} className={`font-medium hover:underline ${amberText}`}>
-                                                            {sheet.subject} · no teacher, assign →
+                                                            {t(':subject · no teacher, assign →', { subject: sheet.subject })}
                                                         </Link>
                                                     )}
                                                 </span>
@@ -275,18 +274,18 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
 
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <p className="max-w-[520px] text-[13px] leading-[19px] text-text">
-                    {plan.state === 'scheduled' && `Marks open on ${day(plan.window_starts_on)}. Teachers cannot enter marks before then.`}
+                    {plan.state === 'scheduled' && t('Marks open on :window_starts_on. Teachers cannot enter marks before then.', { window_starts_on: day(plan.window_starts_on) })}
                     {plan.state === 'marks_open' &&
                         (acceptsMarks
-                            ? `Marks close on ${day(plan.window_ends_on)}. After that teachers cannot enter marks.`
-                            : `The window ended on ${day(plan.window_ends_on)}, so teachers can no longer enter marks. Extend it, or close marks entry.`)}
-                    {plan.state === 'marks_closed' && 'Marks entry is closed. Review the results, then publish them.'}
-                    {plan.state === 'published' && `Results were published on ${day(plan.published_on)}. Marks are locked.`}
+                            ? t('Marks close on :window_ends_on. After that teachers cannot enter marks.', { window_ends_on: day(plan.window_ends_on) })
+                            : t('The window ended on :window_ends_on, so teachers can no longer enter marks. Extend it, or close marks entry.', { window_ends_on: day(plan.window_ends_on) }))}
+                    {plan.state === 'marks_closed' && t('Marks entry is closed. Review the results, then publish them.')}
+                    {plan.state === 'published' && t('Results were published on :published_on. Marks are locked.', { published_on: day(plan.published_on) })}
                 </p>
                 <div className="flex flex-wrap gap-2">
                     {plan.state !== 'scheduled' && (
                         <Link href={results.url({ query: { plan: plan.id } })} className={quietClass}>
-                            {plan.state === 'marks_open' ? 'See results so far' : 'Open results'}
+                            {plan.state === 'marks_open' ? t('See results so far') : t('Open results')}
                         </Link>
                     )}
                     {plan.state === 'marks_open' && (
@@ -295,36 +294,36 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
                             onClick={() => setClosing(true)}
                             className="flex h-9 items-center rounded-md border border-solid border-primary bg-white px-4 text-[13px] leading-4 font-semibold text-primary hover:bg-primary-tint"
                         >
-                            Close marks entry and review results →
+                            {t('Close marks entry and review results →')}
                         </button>
                     )}
                 </div>
             </div>
 
             {closing && (
-                <div role="dialog" aria-modal="true" aria-label="Close marks entry" className="fixed inset-0 z-50 flex items-center justify-center bg-text/40 p-4">
+                <div role="dialog" aria-modal="true" aria-label={t('Close marks entry')} className="fixed inset-0 z-50 flex items-center justify-center bg-text/40 p-4">
                     <div className="flex w-full max-w-[520px] flex-col gap-4 rounded-lg bg-white p-6">
                         <div className="flex flex-col gap-2">
-                            <h2 className="font-display text-[22px] leading-7 font-bold tracking-[-0.01em] text-text">Close marks entry for {plan.name}?</h2>
+                            <h2 className="font-display text-[22px] leading-7 font-bold tracking-[-0.01em] text-text">{t('Close marks entry for :plan?', { plan: plan.name })}</h2>
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                {stats.submitted} of {stats.total} mark sheets are in.
-                                {left > 0 ? ` ${left} ${left === 1 ? 'is' : 'are'} still not submitted, from ${stats.teachers} ${stats.teachers === 1 ? 'teacher' : 'teachers'}.` : ' Every sheet is submitted.'}
+                                {stats.submitted} {t('of')} {stats.total} {t('mark sheets are in.')}
+                                {left > 0 ? t(' :left :are still not submitted, from :teachers :teachers_a.', { left, are: left === 1 ? 'is' : 'are', teachers: stats.teachers, teachers_a: stats.teachers === 1 ? 'teacher' : 'teachers' }) : t(' Every sheet is submitted.')}
                             </p>
                         </div>
                         <ul className="flex flex-col border-y border-solid border-border">
                             {[
-                                { tone: 'bg-warning', text: `Teachers can no longer enter or change ${plan.name} marks.` },
-                                { tone: 'bg-warning', text: 'Empty marks stay empty. A student with a missing mark is not ranked until it is in.' },
-                                { tone: 'bg-success', text: 'Results open for review. Nothing is published yet.' },
-                                { tone: 'bg-success', text: 'You can give teachers more time by reopening marks entry, until results are published.' },
+                                { tone: 'bg-warning', text: t('Teachers can no longer enter or change :plan marks.', { plan: plan.name }) },
+                                { tone: 'bg-warning', text: t('Empty marks stay empty. A student with a missing mark is not ranked until it is in.') },
+                                { tone: 'bg-success', text: t('Results open for review. Nothing is published yet.') },
+                                { tone: 'bg-success', text: t('You can give teachers more time by reopening marks entry, until results are published.') },
                             ].map((line) => (
                                 <li key={line.text} className="flex items-start gap-[10px] border-b border-solid border-border py-[10px] text-[14px] leading-5 text-text last:border-b-0">
                                     <span className={`mt-[7px] h-[6px] w-[6px] shrink-0 rounded-full ${line.tone}`} />
-                                    {line.text}
+                                    {t(line.text)}
                                 </li>
                             ))}
                         </ul>
-                        <p className="text-[13px] leading-[18px] text-text-muted">Teachers are not told automatically.</p>
+                        <p className="text-[13px] leading-[18px] text-text-muted">{t('Teachers are not told automatically.')}</p>
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <button
                                 type="button"
@@ -334,14 +333,14 @@ function Progress({ tabs, plans, plan, acceptsMarks, termEnds, stats, classes }:
                                 }}
                                 className={linkClass}
                             >
-                                Extend the window instead
+                                {t('Extend the window instead')}
                             </button>
                             <div className="flex gap-2">
                                 <button type="button" onClick={() => setClosing(false)} className={quietClass}>
-                                    Cancel
+                                    {t('Cancel')}
                                 </button>
                                 <button type="button" onClick={() => router.post(close.url(plan.id))} className={primaryClass}>
-                                    Close marks entry →
+                                    {t('Close marks entry →')}
                                 </button>
                             </div>
                         </div>

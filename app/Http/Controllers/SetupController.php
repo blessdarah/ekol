@@ -72,7 +72,7 @@ class SetupController extends Controller
             'school' => [
                 ...$school->only([
                     'id', 'name', 'code', 'slug', 'ownership', 'region', 'town',
-                    'cycle', 'subsystem', 'currency', 'timezone', 'school_days',
+                    'cycle', 'subsystem', 'currency', 'timezone', 'school_days', 'locale',
                 ]),
                 'logo_url' => $school->logo_path ? "/storage/{$school->logo_path}" : null,
             ],
@@ -172,7 +172,7 @@ class SetupController extends Controller
 
         if ($request->has('slug')) {
             throw ValidationException::withMessages([
-                'slug' => 'The workspace address cannot be changed.',
+                'slug' => __('The workspace address cannot be changed.'),
             ]);
         }
 
@@ -191,7 +191,7 @@ class SetupController extends Controller
 
         $dirty = array_intersect_key($data, array_flip([
             'name', 'code', 'ownership', 'region', 'town',
-            'subsystem', 'currency', 'timezone', 'logo_path',
+            'subsystem', 'currency', 'timezone', 'logo_path', 'locale',
         ]));
 
         $before = $school->only(array_keys($dirty));
@@ -244,7 +244,7 @@ class SetupController extends Controller
 
         if ($outside) {
             throw ValidationException::withMessages([
-                'starts_on' => "{$outside->label} falls outside these dates. Change the term first.",
+                'starts_on' => __(':label falls outside these dates. Change the term first.', ['label' => $outside->label]),
             ]);
         }
 
@@ -317,7 +317,7 @@ class SetupController extends Controller
         $school = $this->school($request);
         $year = $this->managedYear($request, $school);
 
-        abort_if(! $year, 422, 'Create an academic year first.');
+        abort_if(! $year, 422, __('Create an academic year first.'));
 
         $data = $request->validated();
 
@@ -325,7 +325,7 @@ class SetupController extends Controller
 
         if (abs($total - 100) > 0.01) {
             throw ValidationException::withMessages([
-                'templates' => 'Percents must sum to 100.',
+                'templates' => __('Percents must sum to 100.'),
             ]);
         }
 
@@ -399,7 +399,7 @@ class SetupController extends Controller
                     if (! empty($row['_delete'])) {
                         if ($period->timetableSlots()->exists()) {
                             throw ValidationException::withMessages([
-                                'periods' => "Period {$period->label} is on the timetable and cannot be deleted.",
+                                'periods' => __('Period :label is on the timetable and cannot be deleted.', ['label' => $period->label]),
                             ]);
                         }
                         $period->delete();
@@ -446,7 +446,7 @@ class SetupController extends Controller
         $school = $this->school($request);
         $year = $this->managedYear($request, $school);
 
-        abort_if(! $year, 422, 'Create an academic year first.');
+        abort_if(! $year, 422, __('Create an academic year first.'));
 
         $data = $request->validated();
 
@@ -491,7 +491,7 @@ class SetupController extends Controller
 
         if ($target->academicYear?->status !== AcademicYearStatus::Current) {
             throw ValidationException::withMessages([
-                'term' => 'Only a term of the current academic year can be made active.',
+                'term' => __('Only a term of the current academic year can be made active.'),
             ]);
         }
 

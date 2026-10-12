@@ -125,7 +125,7 @@ class TimetableChangeController extends Controller
         $live = $term ? TimetableVersion::liveFor($term) : null;
 
         if (! $term || ! $live) {
-            throw ValidationException::withMessages(['change' => 'Changes apply to a published timetable, and none is live yet.']);
+            throw ValidationException::withMessages(['change' => __('Changes apply to a published timetable, and none is live yet.')]);
         }
 
         $data = $request->validated();
@@ -136,7 +136,7 @@ class TimetableChangeController extends Controller
         $until = $week ? $date->copy()->endOfWeek() : $date;
         $periods = $live->world()['periods']->keyBy('id');
         $slot = fn (string $id) => $live->slots->firstWhere('id', $id)
-            ?? throw ValidationException::withMessages(['change' => 'That lesson is not on the live timetable.']);
+            ?? throw ValidationException::withMessages(['change' => __('That lesson is not on the live timetable.')]);
         $at = fn (TimetableSlot $lesson) => substr(TimetableVersion::WEEKDAYS[$lesson->weekday], 0, 3).' '.$periods->get($lesson->period_id)?->label;
         $span = $week ? ' for the week' : '';
         $rows = [];
@@ -158,7 +158,7 @@ class TimetableChangeController extends Controller
             $second = $slot($data['other_slot_id']);
 
             if ($first->school_class_id !== $second->school_class_id) {
-                throw ValidationException::withMessages(['other_slot_id' => 'Swap two lessons of the same class.']);
+                throw ValidationException::withMessages(['other_slot_id' => __('Swap two lessons of the same class.')]);
             }
 
             $rows[] = [
@@ -171,7 +171,7 @@ class TimetableChangeController extends Controller
             $room = Room::whereKey($data['room_id'])->firstOrFail();
 
             if ($room->id === $lesson->room_id) {
-                throw ValidationException::withMessages(['room_id' => 'The lesson is already in that room.']);
+                throw ValidationException::withMessages(['room_id' => __('The lesson is already in that room.')]);
             }
 
             $rows[] = [

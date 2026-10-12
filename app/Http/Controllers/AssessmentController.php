@@ -183,7 +183,7 @@ class AssessmentController extends Controller
 
         if (! in_array($target->state, [AssessmentState::Draft, AssessmentState::Scheduled], true)) {
             throw ValidationException::withMessages([
-                'name' => "{$target->name} has marks open or closed. Only its marks window can change now, under Marks progress.",
+                'name' => __(':name has marks open or closed. Only its marks window can change now, under Marks progress.', ['name' => $target->name]),
             ]);
         }
 
@@ -209,7 +209,7 @@ class AssessmentController extends Controller
         $target = Term::where('school_id', $school->id)->where('academic_year_id', $year?->id)->where('id', $term)->firstOrFail();
 
         if (AssessmentPlan::where('term_id', $target->id)->exists()) {
-            throw ValidationException::withMessages(['term' => "{$target->label} already has assessments."]);
+            throw ValidationException::withMessages(['term' => __(':label already has assessments.', ['label' => $target->label])]);
         }
 
         $levels = Level::where('school_id', $school->id)->orderBy('ordinal')->pluck('id')->all();
@@ -297,7 +297,7 @@ class AssessmentController extends Controller
         $target = $this->plan($school, $plan)->refreshState();
 
         if ($target->state !== AssessmentState::MarksOpen) {
-            throw ValidationException::withMessages(['close' => "Marks are not open for {$target->name}."]);
+            throw ValidationException::withMessages(['close' => __('Marks are not open for :name.', ['name' => $target->name])]);
         }
 
         $target->moveTo(AssessmentState::MarksClosed, ['closed_at' => now()]);
@@ -320,8 +320,8 @@ class AssessmentController extends Controller
         if (! in_array($target->state, [AssessmentState::Scheduled, AssessmentState::MarksOpen, AssessmentState::MarksClosed], true)) {
             throw ValidationException::withMessages([
                 'window_ends_on' => $target->state === AssessmentState::Published
-                    ? 'Results are published, so the window cannot be reopened. Use Corrections.'
-                    : 'Schedule the assessment first.',
+                    ? __('Results are published, so the window cannot be reopened. Use Corrections.')
+                    : __('Schedule the assessment first.'),
             ]);
         }
 
@@ -412,8 +412,8 @@ class AssessmentController extends Controller
         if ($target->state !== AssessmentState::MarksClosed) {
             throw ValidationException::withMessages([
                 'publish' => $target->state === AssessmentState::Published
-                    ? "{$target->name} is already published."
-                    : 'Close marks entry before publishing results.',
+                    ? __(':name is already published.', ['name' => $target->name])
+                    : __('Close marks entry before publishing results.'),
             ]);
         }
 

@@ -46,6 +46,8 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'locale' => fn () => app()->getLocale(),
+            'locales' => School::LOCALES,
             'school' => fn () => $this->sharedSchool($request),
             'term' => fn () => $this->sharedTerm($request),
             'shellUser' => fn () => $this->sharedShellUser($request),

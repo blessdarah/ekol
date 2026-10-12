@@ -19,6 +19,7 @@ import {
 } from '../../components/structure/ui';
 import { StudentHeader, money } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface Field {
     key: string;
@@ -93,7 +94,7 @@ function Progress({ step }: { step: number }) {
                 </li>
             ))}
             <li className="ml-auto text-[13px] leading-4 text-text-muted">
-                Step {step + 1} of {STEPS.length}
+                {t('Step :step of :steps', { step: step + 1, steps: STEPS.length })}
             </li>
         </ol>
     );
@@ -110,7 +111,7 @@ function FileBar({ file, note }: { file: FileInfo; note: string }) {
                     {file.name}
                 </span>
                 <span className="text-[12px] leading-4 text-text-muted">
-                    {money(file.rows)} rows · {note}
+                    {t(':rows rows · :note', { rows: money(file.rows), note })}
                 </span>
             </div>
             <button
@@ -118,7 +119,7 @@ function FileBar({ file, note }: { file: FileInfo; note: string }) {
                 onClick={() => router.delete(destroy.url())}
                 className="text-[13px] leading-4 font-medium text-primary hover:underline"
             >
-                Replace file
+                {t('Replace file')}
             </button>
         </div>
     );
@@ -137,11 +138,10 @@ function UploadStep({ hasYear }: { hasYear: boolean }) {
             <form onSubmit={submit} className="flex min-w-0 flex-1 flex-col gap-4">
                 <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-border bg-surface px-6 py-10 text-center hover:border-primary">
                     <span className="text-[14px] leading-[18px] font-semibold text-text">
-                        {form.data.file ? form.data.file.name : 'Choose a CSV file'}
+                        {form.data.file ? form.data.file.name : t('Choose a CSV file')}
                     </span>
                     <span className="text-[13px] leading-[19px] text-text-muted">
-                        One row per student, with a header line. Up to 5,000
-                        rows and 2 MB.
+                        {t('One row per student, with a header line. Up to 5,000 rows and 2 MB.')}
                     </span>
                     <input
                         type="file"
@@ -153,8 +153,7 @@ function UploadStep({ hasYear }: { hasYear: boolean }) {
                 <ErrorText message={form.errors.file} />
                 {!hasYear && (
                     <p className="text-[13px] leading-[19px] text-warning">
-                        Students are placed in classes of an academic year.
-                        Make a year active in School Setup before importing.
+                        {t('Students are placed in classes of an academic year. Make a year active in School Setup before importing.')}
                     </p>
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -162,18 +161,18 @@ function UploadStep({ hasYear }: { hasYear: boolean }) {
                         href={template.url()}
                         className="text-[13px] leading-4 font-medium text-primary hover:underline"
                     >
-                        Download a template to fill in
+                        {t('Download a template to fill in')}
                     </a>
                     <div className="flex gap-2">
                         <Link href={index.url()} className={outlineButtonClass}>
-                            Cancel
+                            {t('Cancel')}
                         </Link>
                         <button
                             type="submit"
                             disabled={!form.data.file || form.processing || !hasYear}
                             className={solidButtonClass}
                         >
-                            Upload and match columns
+                            {t('Upload and match columns')}
                         </button>
                     </div>
                 </div>
@@ -181,23 +180,22 @@ function UploadStep({ hasYear }: { hasYear: boolean }) {
             <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                 <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-white p-4">
                     <p className="text-[14px] leading-[18px] font-semibold text-text">
-                        What each row needs
+                        {t('What each row needs')}
                     </p>
                     <ul className="flex flex-col gap-2 text-[13px] leading-[18px] text-text-muted">
-                        <li>Full name, surname first</li>
-                        <li>Date of birth, as 2010-03-14 or 14/03/2010</li>
-                        <li>Gender: boy or girl</li>
-                        <li>Class, spelled as on the Levels page</li>
-                        <li>A guardian’s name and phone number</li>
+                        <li>{t('Full name, surname first')}</li>
+                        <li>{t('Date of birth, as 2010-03-14 or 14/03/2010')}</li>
+                        <li>{t('Gender: boy or girl')}</li>
+                        <li>{t('Class, spelled as on the Levels page')}</li>
+                        <li>{t('A guardian’s name and phone number')}</li>
                     </ul>
                 </div>
                 <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-white p-4">
                     <p className="text-[13px] leading-4 font-semibold text-text">
-                        Using Excel or Google Sheets?
+                        {t('Using Excel or Google Sheets?')}
                     </p>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        Save or download the sheet as CSV first. Excel files
-                        cannot be read directly yet.
+                        {t('Save or download the sheet as CSV first. Excel files cannot be read directly yet.')}
                     </p>
                 </div>
             </aside>
@@ -250,9 +248,9 @@ function MatchStep({
             <FileBar file={file} note={`${file.headers.length} columns found`} />
             <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
                 <div className="flex h-8 shrink-0 items-center gap-4 bg-surface px-4 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
-                    <span className="w-[200px] shrink-0">We need</span>
-                    <span className="w-[260px] shrink-0">Column in your file</span>
-                    <span className="flex-1">First rows</span>
+                    <span className="w-[200px] shrink-0">{t('We need')}</span>
+                    <span className="w-[260px] shrink-0">{t('Column in your file')}</span>
+                    <span className="flex-1">{t('First rows')}</span>
                 </div>
                 {fields.map((field) => {
                     const column = chosen[field.key];
@@ -265,15 +263,15 @@ function MatchStep({
                         >
                             <span className="flex w-[200px] shrink-0 flex-col">
                                 <span className="text-[14px] leading-[18px] font-medium text-text">
-                                    {field.label}
+                                    {t(field.label)}
                                 </span>
                                 {!field.required && (
-                                    <span className="text-[12px] leading-4 text-text-muted">optional</span>
+                                    <span className="text-[12px] leading-4 text-text-muted">{t('optional')}</span>
                                 )}
                             </span>
                             <span className="flex w-[260px] shrink-0 flex-col gap-1">
                                 <select
-                                    aria-label={`Column for ${field.label}`}
+                                    aria-label={t('Column for :label', { label: field.label })}
                                     value={column}
                                     onChange={(e) => setChosen({ ...chosen, [field.key]: e.target.value })}
                                     className={`${fieldInputClass} h-9 text-[14px] ${
@@ -281,11 +279,11 @@ function MatchStep({
                                     }`}
                                 >
                                     <option value="">
-                                        {field.required ? 'Choose a column' : 'Not in this file'}
+                                        {field.required ? t('Choose a column') : t('Not in this file')}
                                     </option>
                                     {file.headers.map((header, position) => (
                                         <option key={`${header}-${position}`} value={position}>
-                                            {header || `Column ${position + 1}`}
+                                            {header || t('Column :position', { position: position + 1 })}
                                         </option>
                                     ))}
                                 </select>
@@ -306,15 +304,14 @@ function MatchStep({
             <ErrorText message={errors.mapping} />
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-[13px] leading-4 text-text-muted">
-                    {matched} of {fields.length} matched. Nothing is imported
-                    until you have seen the check.
+                    {t(':matched of :fields matched. Nothing is imported until you have seen the check.', { matched, fields: fields.length })}
                 </p>
                 <div className="flex gap-2">
                     <Link href={index.url()} className={outlineButtonClass}>
-                        Cancel
+                        {t('Cancel')}
                     </Link>
                     <button type="submit" disabled={saving} className={solidButtonClass}>
-                        Check the rows
+                        {t('Check the rows')}
                     </button>
                 </div>
             </div>
@@ -341,8 +338,8 @@ function CheckStep({
     const stats: [string, number, string][] = [
         ['Rows', report.rows, 'text-text'],
         ['Ready', report.ready, 'text-success'],
-        ['Need fixing', report.fix, 'text-danger'],
-        ['Possible duplicates', report.duplicates, 'text-[#8A5A12]'],
+        [t('Need fixing'), report.fix, 'text-danger'],
+        [t('Possible duplicates'), report.duplicates, 'text-[#8A5A12]'],
     ];
 
     return (
@@ -367,14 +364,14 @@ function CheckStep({
                 </dl>
                 {report.problems.length === 0 ? (
                     <p className="rounded-md bg-success-tint p-4 text-[13px] leading-[19px] text-text">
-                        Every row is ready. Nothing needs fixing.
+                        {t('Every row is ready. Nothing needs fixing.')}
                     </p>
                 ) : (
                     <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
                         <div className="flex h-8 shrink-0 items-center gap-3 bg-surface px-3 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
-                            <span className="w-11 shrink-0">Row</span>
-                            <span className="w-[170px] shrink-0">Student</span>
-                            <span className="flex-1">Problem</span>
+                            <span className="w-11 shrink-0">{t('Row')}</span>
+                            <span className="w-[170px] shrink-0">{t('Student')}</span>
+                            <span className="flex-1">{t('Problem')}</span>
                         </div>
                         {shown.map((problem, position) => (
                             <div
@@ -397,7 +394,7 @@ function CheckStep({
                         ))}
                         <div className="flex h-9 shrink-0 items-center justify-between border-t border-solid border-border bg-surface px-3">
                             <span className="text-[13px] leading-4 text-text-muted">
-                                {shown.length} of {report.problems.length} shown
+                                {t(':shown of :problems shown', { shown: shown.length, problems: report.problems.length })}
                             </span>
                             {report.problems.length > 6 && (
                                 <button
@@ -405,7 +402,7 @@ function CheckStep({
                                     onClick={() => setShowAll(!showAll)}
                                     className="text-[13px] leading-4 font-medium text-primary hover:underline"
                                 >
-                                    {showAll ? 'Show fewer' : `Show all ${report.problems.length}`}
+                                    {showAll ? t('Show fewer') : t('Show all :problems', { problems: report.problems.length })}
                                 </button>
                             )}
                         </div>
@@ -413,23 +410,19 @@ function CheckStep({
                 )}
                 {report.problems.length > 0 && (
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        Rows with problems are skipped. Download them, fix
-                        them in the spreadsheet and import that file
-                        afterwards.
+                        {t('Rows with problems are skipped. Download them, fix them in the spreadsheet and import that file afterwards.')}
                     </p>
                 )}
             </div>
 
             <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                 <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-surface p-4">
-                    <p className={capsLabelClass}>When you import</p>
+                    <p className={capsLabelClass}>{t('When you import')}</p>
                     <p className="font-display text-[16px] leading-[22px] font-bold text-text">
-                        {money(report.ready)} students are created now.
+                        {t(':ready students are created now.', { ready: money(report.ready) })}
                     </p>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        Matricules run from {nextMatricule}. A guardian and
-                        the fee plan are created with each student. Rows with
-                        problems are skipped.
+                        {t('Matricules run from :next_matricule. A guardian and the fee plan are created with each student. Rows with problems are skipped.', { next_matricule: nextMatricule })}
                     </p>
                     <button
                         type="button"
@@ -440,17 +433,17 @@ function CheckStep({
                         }}
                         className={`${solidButtonClass} w-full`}
                     >
-                        Import {money(report.ready)} students
+                        {t('Import :ready students', { ready: money(report.ready) })}
                     </button>
                     {report.problems.length > 0 && (
                         <a href={problems.url()} className={`${outlineButtonClass} w-full`}>
-                            Download the {report.problems.length} problem rows
+                            {t('Download the :problems problem rows', { problems: report.problems.length })}
                         </a>
                     )}
                 </div>
                 <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-white p-4">
                     <p className="text-[14px] leading-[18px] font-semibold text-text">
-                        Columns matched
+                        {t('Columns matched')}
                     </p>
                     <dl className="flex flex-col gap-2">
                         {mapping.map((pair) => (
@@ -469,7 +462,7 @@ function CheckStep({
                         onClick={() => router.delete(clearMapping.url())}
                         className="self-start text-[13px] leading-4 font-medium text-primary hover:underline"
                     >
-                        Change matching
+                        {t('Change matching')}
                     </button>
                 </div>
             </aside>
@@ -482,12 +475,12 @@ function ImportStudents(props: ImportProps) {
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-6">
-            <Head title="Import students" />
+            <Head title={t('Import students')} />
             <StudentHeader
-                trail={[{ label: 'Import' }]}
-                title="Import students"
-                tag={`Enrolment${props.yearLabel ? ` · ${props.yearLabel}` : ''}`}
-                meta="bring in a whole intake from a spreadsheet"
+                trail={[{ label: t('Import') }]}
+                title={t('Import students')}
+                tag={t('Enrolment:year_label', { year_label: props.yearLabel ? ` · ${props.yearLabel}` : '' })}
+                meta={t('bring in a whole intake from a spreadsheet')}
             />
             <Progress step={stepIndex} />
 

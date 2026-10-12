@@ -366,10 +366,10 @@ class Invoice extends Model
         $due = $gross - $this->exempted();
         $installments = $this->installments->sortBy('seq')->values();
         $parts = $installments->isEmpty()
-            ? [['seq' => 1, 'label' => 'Annual fees', 'gross' => $gross, 'amount' => $gross, 'due_on' => $this->issued_on]]
+            ? [['seq' => 1, 'label' => __('Annual fees'), 'gross' => $gross, 'amount' => $gross, 'due_on' => $this->issued_on]]
             : array_values($installments->map(fn (Installment $installment) => [
                 'seq' => $installment->seq,
-                'label' => static::ordinal($installment->seq).' installment',
+                'label' => __(':ordinal installment', ['ordinal' => static::ordinal($installment->seq, true)]),
                 'gross' => (float) $installment->amount,
                 'amount' => (float) $installment->amount,
                 'due_on' => $installment->due_on,
@@ -508,8 +508,15 @@ class Invoice extends Model
         return $this;
     }
 
-    public static function ordinal(int $number): string
+    /**
+     * "1st", "2nd"; in French "1er" or "1re", then "2e".
+     */
+    public static function ordinal(int $number, bool $feminine = false): string
     {
+        if (app()->getLocale() === 'fr') {
+            return $number === 1 ? ($feminine ? '1re' : '1er') : "{$number}e";
+        }
+
         $suffix = match (true) {
             $number % 100 >= 11 && $number % 100 <= 13 => 'th',
             $number % 10 === 1 => 'st',

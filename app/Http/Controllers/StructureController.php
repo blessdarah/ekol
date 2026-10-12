@@ -158,13 +158,13 @@ class StructureController extends Controller
 
         if ($data['uses_series'] && ! static::seriesAllowed($data['cycle'], $data['subsystem'])) {
             throw ValidationException::withMessages([
-                'uses_series' => 'Series are only for high school levels in the GCE subsystem.',
+                'uses_series' => __('Series are only for high school levels in the GCE subsystem.'),
             ]);
         }
 
         if ($data['class_count'] > 0 && ! $year) {
             throw ValidationException::withMessages([
-                'class_count' => 'Classes belong to an academic year. Make a year active in School Setup first.',
+                'class_count' => __('Classes belong to an academic year. Make a year active in School Setup first.'),
             ]);
         }
 
@@ -244,7 +244,7 @@ class StructureController extends Controller
 
         if (array_sum($counts) > 0 && ! $year) {
             throw ValidationException::withMessages([
-                'levels' => 'Classes belong to an academic year. Make a year active in School Setup first.',
+                'levels' => __('Classes belong to an academic year. Make a year active in School Setup first.'),
             ]);
         }
 
@@ -311,7 +311,7 @@ class StructureController extends Controller
 
         if ($data['uses_series'] && ! static::seriesAllowed($target->cycle, $target->subsystem)) {
             throw ValidationException::withMessages([
-                'uses_series' => 'Series are only for high school levels in the GCE subsystem.',
+                'uses_series' => __('Series are only for high school levels in the GCE subsystem.'),
             ]);
         }
 
@@ -331,7 +331,7 @@ class StructureController extends Controller
 
         if (! $year) {
             throw ValidationException::withMessages([
-                'class' => 'Classes belong to an academic year. Make a year active in School Setup first.',
+                'class' => __('Classes belong to an academic year. Make a year active in School Setup first.'),
             ]);
         }
 
@@ -347,7 +347,7 @@ class StructureController extends Controller
 
         if (! $name) {
             throw ValidationException::withMessages([
-                'class' => 'This level already has every class from A to Z.',
+                'class' => __('This level already has every class from A to Z.'),
             ]);
         }
 
@@ -401,7 +401,7 @@ class StructureController extends Controller
 
         if ($inUse) {
             throw ValidationException::withMessages([
-                'class' => "{$target->name} has students, lessons or assessments. Move them before removing the class.",
+                'class' => __(':name has students, lessons or assessments. Move them before removing the class.', ['name' => $target->name]),
             ]);
         }
 

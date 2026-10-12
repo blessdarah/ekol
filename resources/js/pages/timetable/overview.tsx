@@ -23,6 +23,7 @@ import {
     primaryActionClass,
 } from '../../components/timetable/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { numberLocale, t } from '../../lib/i18n';
 
 interface OverviewProps {
     phase: TimetablePhase | null;
@@ -80,11 +81,11 @@ function Overview({ phase, summary, setupLine, warnings = 0, firstProblem, live 
     if (!phase || !summary) {
         return (
             <div className="flex flex-col gap-5">
-                <Head title="Timetable" />
+                <Head title={t('Timetable')} />
                 <div className="flex flex-col gap-[6px]">
-                    <Breadcrumbs trail={[{ label: 'Timetable' }]} />
+                    <Breadcrumbs trail={[{ label: t('Timetable') }]} />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                        Timetable
+                        {t('Timetable')}
                     </h1>
                 </div>
                 <NoTerm setupHref={schoolSetup.url()} />
@@ -108,39 +109,39 @@ function Overview({ phase, summary, setupLine, warnings = 0, firstProblem, live 
         </Link>
     );
     const next: Record<StepKey, { label: string; href: string }> = {
-        setup: { label: 'Finish setup →', href: setup.url() },
-        checks: { label: `Fix ${plural(phase.blocking, 'problem')} →`, href: checks.url() },
-        generate: { label: 'Generate →', href: generator.url() },
-        review: { label: `Fix ${plural(phase.to_fix ?? 0, 'thing')} →`, href: review.url() },
-        publish: { label: `Publish version ${phase.draft} →`, href: publishing.url() },
+        setup: { label: t('Finish setup →'), href: setup.url() },
+        checks: { label: t('Fix :problem →', { problem: plural(phase.blocking, 'problem') }), href: checks.url() },
+        generate: { label: t('Generate →'), href: generator.url() },
+        review: { label: t('Fix :thing →', { thing: plural(phase.to_fix ?? 0, 'thing') }), href: review.url() },
+        publish: { label: t('Publish version :draft →', { draft: phase.draft }), href: publishing.url() },
     };
     const stats = [
-        { label: 'Lessons a week', value: summary.lessons },
-        { label: 'Classes', value: summary.classes },
-        { label: 'Teachers', value: summary.teachers },
-        { label: 'Rooms', value: summary.rooms },
+        { label: t('Lessons a week'), value: summary.lessons },
+        { label: t('Classes'), value: summary.classes },
+        { label: t('Teachers'), value: summary.teachers },
+        { label: t('Rooms'), value: summary.rooms },
     ];
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
-            <Head title="Timetable" />
+            <Head title={t('Timetable')} />
             <TimetableHeader
                 page="overview"
                 phase={phase}
-                title="Timetable"
+                title={t('Timetable')}
                 meta={
                     <>
                         <span className="font-mono uppercase">{phase.term}</span>
                         {' · '}
                         {phase.live !== null
-                            ? `live: version ${phase.live}${phase.live_since ? ` since ${shortDate(phase.live_since)}` : ''}`
-                            : 'nothing published yet'}
-                        {' · '}draft: version {phase.draft}
+                            ? t('live: version :live:live_since', { live: phase.live, live_since: phase.live_since ? ` since ${shortDate(phase.live_since)}` : '' })
+                            : t('nothing published yet')}
+                        {' · '}{t('draft: version')} {phase.draft}
                     </>
                 }
                 action={
                     <Link href={next[phase.current].href} className={primaryActionClass}>
-                        {next[phase.current].label}
+                        {t(next[phase.current].label)}
                     </Link>
                 }
             />
@@ -153,9 +154,9 @@ function Overview({ phase, summary, setupLine, warnings = 0, firstProblem, live 
                             position === 0 ? 'pr-4' : 'border-l border-solid border-border px-4'
                         }`}
                     >
-                        <span className={capsLabelClass}>{stat.label}</span>
+                        <span className={capsLabelClass}>{t(stat.label)}</span>
                         <span className="font-display text-[24px] leading-7 font-extrabold text-text">
-                            {new Intl.NumberFormat('en-US').format(stat.value)}
+                            {new Intl.NumberFormat(numberLocale()).format(stat.value)}
                         </span>
                     </div>
                 ))}
@@ -164,53 +165,52 @@ function Overview({ phase, summary, setupLine, warnings = 0, firstProblem, live 
             <div className="flex flex-1 flex-col gap-7 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-[10px]">
                     <p className={capsLabelClass}>
-                        {phase.has_draft ? 'Building' : 'Next:'} draft version {phase.draft}
+                        {phase.has_draft ? t('Building') : t('Next:')} {t('draft version')} {phase.draft}
                     </p>
-                    <Stage state={state('setup')} title="1 · Setup" action={go('Edit setup', setup.url())}>
+                    <Stage state={state('setup')} title={t('1 · Setup')} action={go(t('Edit setup'), setup.url())}>
                         {setupLine}
                     </Stage>
                     <Stage
                         state={state('checks')}
-                        title="2 · Check inputs"
+                        title={t('2 · Check inputs')}
                         action={
                             phase.setup &&
                             (phase.blocking > 0
-                                ? go(`Fix ${plural(phase.blocking, 'problem')} →`, checks.url(), true)
-                                : go('Open checks', checks.url()))
+                                ? go(t('Fix :problem →', { problem: plural(phase.blocking, 'problem') }), checks.url(), true)
+                                : go(t('Open checks'), checks.url()))
                         }
                     >
                         {phase.blocking > 0
-                            ? `${plural(phase.blocking, 'problem stops', 'problems stop')} the generator: ${firstProblem?.toLowerCase()}${phase.blocking > 1 ? ', and more' : ''}. `
-                            : 'Nothing stops the generator. '}
-                        {warnings > 0 ? `${plural(warnings, 'warning')} can wait.` : 'No warnings.'}
+                            ? t(':stop the generator: :to_lower_case:more. ', { stop: plural(phase.blocking, 'problem stops', 'problems stop'), to_lower_case: firstProblem?.toLowerCase(), more: phase.blocking > 1 ? ', and more' : '' })
+                            : t('Nothing stops the generator. ')}
+                        {warnings > 0 ? t(':warning can wait.', { warning: plural(warnings, 'warning') }) : t('No warnings.')}
                     </Stage>
                     <Stage
                         state={state('generate')}
-                        title="3 · Generate"
-                        action={phase.checks && go(phase.generated ? 'Generate again' : 'Generate →', generator.url(), !phase.generated)}
+                        title={t('3 · Generate')}
+                        action={phase.checks && go(phase.generated ? t('Generate again') : t('Generate →'), generator.url(), !phase.generated)}
                     >
-                        Places every lesson, keeping the ones you locked.
-                        {phase.checks ? '' : ' Opens when the checks pass.'}
+                        {t('Places every lesson, keeping the ones you locked.')}
+                        {phase.checks ? '' : t(' Opens when the checks pass.')}
                     </Stage>
                     <Stage
                         state={state('review')}
-                        title="4 · Review the timetable"
+                        title={t('4 · Review the timetable')}
                         action={
                             phase.to_fix !== null &&
-                            go(phase.to_fix > 0 ? `Fix ${plural(phase.to_fix, 'thing')} →` : 'Open the timetable', review.url(), phase.to_fix > 0)
+                            go(phase.to_fix > 0 ? t('Fix :thing →', { thing: plural(phase.to_fix, 'thing') }) : t('Open the timetable'), review.url(), phase.to_fix > 0)
                         }
                     >
-                        By class, teacher or room. Move lessons, clear
-                        clashes, place what is left over.
+                        {t('By class, teacher or room. Move lessons, clear clashes, place what is left over.')}
                     </Stage>
                     <Stage
                         state={state('publish')}
-                        title="5 · Publish"
-                        action={phase.reviewed && go(`Publish version ${phase.draft} →`, publishing.url(), true)}
+                        title={t('5 · Publish')}
+                        action={phase.reviewed && go(t('Publish version :draft →', { draft: phase.draft }), publishing.url(), true)}
                     >
                         {phase.live !== null
-                            ? `Version ${phase.draft} replaces version ${phase.live} for the school.`
-                            : `Version ${phase.draft} becomes the school’s timetable.`}
+                            ? t('Version :draft replaces version :live for the school.', { draft: phase.draft, live: phase.live })
+                            : t('Version :draft becomes the school’s timetable.', { draft: phase.draft })}
                     </Stage>
                 </div>
 
@@ -218,37 +218,33 @@ function Overview({ phase, summary, setupLine, warnings = 0, firstProblem, live 
                     {live ? (
                         <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-surface p-4">
                             <div className="flex items-center justify-between">
-                                <p className={capsLabelClass}>Live now</p>
+                                <p className={capsLabelClass}>{t('Live now')}</p>
                                 <span className="flex h-[22px] items-center rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
-                                    Version {live.number}
+                                    {t('Version :number', { number: live.number })}
                                 </span>
                             </div>
                             <p className="text-[13px] leading-[19px] text-text">
-                                Published {shortDate(live.published)}. This is
-                                the school’s timetable, not the draft.
+                                {t('Published :published. This is the school’s timetable, not the draft.', { published: shortDate(live.published) })}
                             </p>
                             <Link href={review.url({ query: { version: 'live' } })} className={linkClass}>
-                                View the live timetable →
+                                {t('View the live timetable →')}
                             </Link>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-surface p-4">
-                            <p className={capsLabelClass}>Nothing live yet</p>
+                            <p className={capsLabelClass}>{t('Nothing live yet')}</p>
                             <p className="text-[13px] leading-[19px] text-text">
-                                Version {phase.draft} is the first timetable for{' '}
-                                {phase.term}. Nobody sees it until it is
-                                published.
+                                {t('Version :draft is the first timetable for :term. Nobody sees it until it is published.', { draft: phase.draft, term: phase.term })}
                             </p>
                         </div>
                     )}
                     <div className="flex flex-col gap-[10px] rounded-lg border border-dashed border-border bg-white p-4">
-                        <p className="text-[13px] leading-4 font-semibold text-text">Small changes after publishing</p>
+                        <p className="text-[13px] leading-4 font-semibold text-text">{t('Small changes after publishing')}</p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            A teacher is away, or a room is not available? Use
-                            Changes. It does not need a new version.
+                            {t('A teacher is away, or a room is not available? Use Changes. It does not need a new version.')}
                         </p>
                         <Link href={changes.url()} className={linkClass}>
-                            Open Changes →
+                            {t('Open Changes →')}
                         </Link>
                     </div>
                 </aside>

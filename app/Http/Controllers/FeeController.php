@@ -173,7 +173,7 @@ class FeeController extends Controller
                 ->get()
                 ->map(fn (FeeInstallmentTemplate $template) => [
                     'seq' => $template->seq,
-                    'label' => Invoice::ordinal($template->seq),
+                    'label' => Invoice::ordinal($template->seq, true),
                     'percent' => (float) $template->percent,
                     'due_on' => $template->due_on?->toDateString(),
                 ]),
@@ -204,7 +204,7 @@ class FeeController extends Controller
         $year = AcademicYear::whereKey($data['year_id'])->firstOrFail();
 
         if ($year->status === AcademicYearStatus::Closed) {
-            throw ValidationException::withMessages(['year_id' => "{$year->label} is closed. Its fees can no longer change."]);
+            throw ValidationException::withMessages(['year_id' => __(':label is closed. Its fees can no longer change.', ['label' => $year->label])]);
         }
 
         $rows = $this->itemRows($data);
@@ -219,7 +219,7 @@ class FeeController extends Controller
 
         if ($stranded->isNotEmpty()) {
             throw ValidationException::withMessages([
-                'items' => 'Students in '.$stranded->join(', ', ' and ').' are already billed, so the level has to keep at least one fee.',
+                'items' => __('Students in :levels are already billed, so the level has to keep at least one fee.', ['levels' => $stranded->join(', ')]),
             ]);
         }
 
@@ -284,7 +284,7 @@ class FeeController extends Controller
 
         if (! $term) {
             throw ValidationException::withMessages([
-                'bill' => "{$year->label} has no term to bill against. Add its terms in School Setup first.",
+                'bill' => __(':label has no term to bill against. Add its terms in School Setup first.', ['label' => $year->label]),
             ]);
         }
 
@@ -395,8 +395,8 @@ class FeeController extends Controller
         if ((float) $data['amount'] > $balance) {
             throw ValidationException::withMessages([
                 'amount' => $balance > 0
-                    ? 'That is more than the '.number_format($balance).' still owed.'
-                    : 'This invoice is already paid in full.',
+                    ? __('That is more than the :amount still owed.', ['amount' => number_format($balance)])
+                    : __('This invoice is already paid in full.'),
             ]);
         }
 
@@ -549,7 +549,7 @@ class FeeController extends Controller
         $percent = $data['kind'] === 'percent' ? (float) $data['value'] : null;
 
         if ($percent !== null && $percent > 100) {
-            throw ValidationException::withMessages(['value' => 'A discount cannot be more than 100%.']);
+            throw ValidationException::withMessages(['value' => __('A discount cannot be more than 100%.')]);
         }
 
         $amount = $percent !== null ? round($gross * $percent / 100) : (float) $data['value'];
@@ -557,8 +557,8 @@ class FeeController extends Controller
         if ($amount > $gross - $paid) {
             throw ValidationException::withMessages([
                 'value' => $paid > 0
-                    ? number_format($paid).' is already paid, so at most '.number_format($gross - $paid).' can be taken off.'
-                    : 'That is more than the '.number_format($gross).' billed.',
+                    ? __(':paid is already paid, so at most :room can be taken off.', ['paid' => number_format($paid), 'room' => number_format($gross - $paid)])
+                    : __('That is more than the :amount billed.', ['amount' => number_format($gross)]),
             ]);
         }
 

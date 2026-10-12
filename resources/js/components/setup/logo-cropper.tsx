@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { t } from '../../lib/i18n';
 
 export const LOGO_MIN_SIDE = 256;
 
@@ -134,22 +135,21 @@ export default function LogoCropper({
         <div
             role="dialog"
             aria-modal="true"
-            aria-label="Crop logo"
+            aria-label={t('Crop logo')}
             className="fixed inset-0 z-50 flex items-center justify-center bg-text/40 p-4"
         >
             <div className="flex w-full max-w-[368px] flex-col gap-4 rounded-lg bg-white p-6">
                 <div className="flex flex-col gap-1">
                     <h2 className="text-[16px] leading-5 font-semibold text-text">
-                        Crop logo
+                        {t('Crop logo')}
                     </h2>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        Logos must be square. Drag the image and zoom to choose
-                        the part to keep.
+                        {t('Logos must be square. Drag the image and zoom to choose the part to keep.')}
                     </p>
                 </div>
                 <div
                     tabIndex={0}
-                    aria-label="Crop area. Drag or use the arrow keys to move the image."
+                    aria-label={t('Crop area. Drag or use the arrow keys to move the image.')}
                     onPointerDown={onPointerDown}
                     onPointerMove={onPointerMove}
                     onPointerUp={() => (drag.current = null)}
@@ -188,7 +188,7 @@ export default function LogoCropper({
                     />
                 </div>
                 <label className="flex items-center gap-3 text-[13px] leading-4 font-medium text-text">
-                    Zoom
+                    {t('Zoom')}
                     <input
                         type="range"
                         min={1}
@@ -206,14 +206,14 @@ export default function LogoCropper({
                         onClick={onCancel}
                         className="h-9 rounded-md border border-solid border-border px-4 text-[14px] font-medium text-text hover:bg-surface"
                     >
-                        Cancel
+                        {t('Cancel')}
                     </button>
                     <button
                         type="button"
                         onClick={crop}
                         className="h-9 rounded-md bg-primary px-4 text-[14px] font-medium text-white hover:bg-primary-hover"
                     >
-                        Use this crop
+                        {t('Use this crop')}
                     </button>
                 </div>
             </div>

@@ -17,6 +17,7 @@ import {
     solidButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface OverviewProps {
     yearLabel: string | null;
@@ -46,19 +47,19 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
-            <Head title="Series Registration" />
+            <Head title={t('Series Registration')} />
             <SeriesHeader
-                title="Series Registration"
+                title={t('Series Registration')}
                 tag={yearLabel ?? undefined}
-                meta="put each student of a series level into a series, with their electives"
+                meta={t('put each student of a series level into a series, with their electives')}
                 action={
                     level && (
                         <div className="flex gap-2">
                             <Link href={bulk.url(query)} className={outlineButtonClass}>
-                                Register many at once
+                                {t('Register many at once')}
                             </Link>
                             <Link href={one.url(query)} className={solidButtonClass}>
-                                Register one by one →
+                                {t('Register one by one →')}
                             </Link>
                         </div>
                     )
@@ -67,17 +68,15 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
 
             {!hasTerm && (
                 <p className="rounded-md border border-solid border-warning bg-warning-tint p-4 text-[13px] leading-[19px] text-text">
-                    Series are registered for a term, and no term is active.
-                    Make one active in School Setup first.
+                    {t('Series are registered for a term, and no term is active. Make one active in School Setup first.')}
                 </p>
             )}
 
             {!level ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    No level uses series yet. Turn “Uses series” on for a
-                    high school level, then set its series up under{' '}
+                    {t('No level uses series yet. Turn “Uses series” on for a high school level, then set its series up under')}{' '}
                     <Link href={seriesSetup.url()} className="font-medium text-primary hover:underline">
-                        Series setup
+                        {t('Series setup')}
                     </Link>
                     .
                 </p>
@@ -116,10 +115,10 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                     </span>
                                     <span className={`text-[12px] leading-4 ${missing > 0 ? 'text-[#8A5A12]' : option.total > 0 ? 'text-success' : 'text-text-muted'}`}>
                                         {option.total === 0
-                                            ? 'No students yet'
+                                            ? t('No students yet')
                                             : missing > 0
-                                              ? `${missing} without a series`
-                                              : 'Everyone registered'}
+                                              ? t(':missing without a series', { missing })
+                                              : t('Everyone registered')}
                                     </span>
                                 </Link>
                             );
@@ -130,16 +129,15 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                         <div className="flex min-w-0 flex-1 flex-col gap-[14px]">
                             <div className="flex items-baseline justify-between">
                                 <p className={capsLabelClass}>
-                                    {level.name} · who is in each series
+                                    {t(':level · who is in each series', { level: level.name })}
                                 </p>
                                 <Link href={seriesSetup.url(query)} className={linkClass}>
-                                    Series setup →
+                                    {t('Series setup →')}
                                 </Link>
                             </div>
                             {series.length === 0 ? (
                                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                                    {level.name} has no series yet. Add them
-                                    under Series setup.
+                                    {t(':level has no series yet. Add them under Series setup.', { level: level.name })}
                                 </p>
                             ) : (
                                 <div className="flex flex-col gap-3 md:flex-row">
@@ -153,7 +151,7 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                         return (
                                             <div key={stream.value} className="flex min-w-0 flex-1 flex-col gap-[10px]">
                                                 <p className={`text-[12px] leading-4 font-semibold tracking-[0.06em] uppercase ${stream.text}`}>
-                                                    {stream.label}
+                                                    {t(stream.label)}
                                                 </p>
                                                 <ul className="flex flex-col overflow-clip rounded-lg border border-solid border-border">
                                                     {group.map((item, position) => (
@@ -169,7 +167,7 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                                             ) : (
                                                                 <span className="flex flex-1 items-center gap-[6px] text-[13px] leading-4 text-[#8A5A12]">
                                                                     <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                                                    Needs setup
+                                                                    {t('Needs setup')}
                                                                 </span>
                                                             )}
                                                             <span className={`font-mono text-[14px] leading-[18px] ${item.students > 0 ? 'text-text' : 'text-text-muted'}`}>
@@ -184,10 +182,7 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                 </div>
                             )}
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                Core subjects come with the series and cannot
-                                be unticked. Each student then picks electives
-                                from the pool, within the series minimum and
-                                maximum.
+                                {t('Core subjects come with the series and cannot be unticked. Each student then picks electives from the pool, within the series minimum and maximum.')}
                             </p>
                         </div>
 
@@ -195,18 +190,17 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                             <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-surface p-4">
                                 <div className="flex items-baseline justify-between">
                                     <p className={capsLabelClass}>
-                                        Without a series · {unassigned?.total ?? 0}
+                                        {t('Without a series ·')} {unassigned?.total ?? 0}
                                     </p>
                                     {(unassigned?.total ?? 0) > 0 && (
                                         <Link href={one.url(query)} className={linkClass}>
-                                            Start →
+                                            {t('Start →')}
                                         </Link>
                                     )}
                                 </div>
                                 {(unassigned?.total ?? 0) === 0 ? (
                                     <p className="text-[13px] leading-[19px] text-text-muted">
-                                        Every {level.name} student has a
-                                        series.
+                                        {t('Every :level student has a series.', { level: level.name })}
                                     </p>
                                 ) : (
                                     <ul className="flex flex-col">
@@ -228,11 +222,11 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                         <li className="flex justify-between border-t border-solid border-border py-[7px]">
                                             <span className="text-[13px] leading-4 text-text-muted">
                                                 {unassigned && unassigned.total > unassigned.preview.length
-                                                    ? `and ${unassigned.total - unassigned.preview.length} more`
+                                                    ? t('and :preview more', { preview: unassigned.total - unassigned.preview.length })
                                                     : ''}
                                             </span>
                                             <Link href={bulk.url(query)} className={linkClass}>
-                                                Register many at once
+                                                {t('Register many at once')}
                                             </Link>
                                         </li>
                                     </ul>
@@ -245,20 +239,17 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                     className="flex flex-col gap-2 rounded-lg border border-solid border-warning bg-warning-tint p-4"
                                 >
                                     <p className="text-[14px] leading-[18px] font-semibold text-[#8A5A12]">
-                                        {subject.name} has no teacher
+                                        {t(':subject has no teacher', { subject: subject.name })}
                                     </p>
                                     <p className="text-[13px] leading-[19px] text-text">
                                         {subject.students} {level.name}{' '}
-                                        {subject.students === 1 ? 'student takes' : 'students take'} it in
-                                        a class with no teacher for it. Their
-                                        marks cannot be entered until one is
-                                        assigned.
+                                        {subject.students === 1 ? t('student takes') : t('students take')} {t('it in a class with no teacher for it. Their marks cannot be entered until one is assigned.')}
                                     </p>
                                     <Link
                                         href={editSubject.url(subject.id)}
                                         className={linkClass}
                                     >
-                                        Assign a teacher →
+                                        {t('Assign a teacher →')}
                                     </Link>
                                 </div>
                             ))}
@@ -269,14 +260,13 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                     className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-white p-4"
                                 >
                                     <p className="text-[14px] leading-[18px] font-semibold text-text">
-                                        {item.name} is not set up
+                                        {t(':item is not set up', { item: item.name })}
                                     </p>
                                     <p className="text-[13px] leading-[19px] text-text-muted">
-                                        It has no core subjects, so students
-                                        cannot be registered in it yet.
+                                        {t('It has no core subjects, so students cannot be registered in it yet.')}
                                     </p>
                                     <Link href={editSeries.url(item.id)} className={linkClass}>
-                                        Open series setup →
+                                        {t('Open series setup →')}
                                     </Link>
                                 </div>
                             ))}

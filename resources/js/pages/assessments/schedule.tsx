@@ -22,6 +22,7 @@ import {
 } from '../../components/assessments/ui';
 import { ErrorText, capsLabelClass, fieldLabelClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface Paper {
     id: string;
@@ -58,7 +59,7 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const inputClass = 'h-9 w-full rounded-md border border-solid border-border bg-white px-[10px] text-[13px] leading-4 text-text outline-none focus:border-primary';
 
 function weekday(iso: string): string {
-    return `${WEEKDAYS[new Date(`${iso}T12:00:00`).getDay()]} ${day(iso)}`;
+    return `${t(WEEKDAYS[new Date(`${iso}T12:00:00`).getDay()])} ${day(iso)}`;
 }
 
 function PaperForm({
@@ -101,7 +102,7 @@ function PaperForm({
             <p className="text-[14px] leading-[18px] font-semibold text-text">{row.subject}</p>
             <div className="flex gap-2">
                 <label className={`flex min-w-0 flex-[1.5] flex-col gap-[6px] ${fieldLabelClass}`}>
-                    Day
+                    {t('Day')}
                     <input
                         type="date"
                         value={data.held_on}
@@ -112,13 +113,13 @@ function PaperForm({
                     />
                 </label>
                 <label className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                    Time
+                    {t('Time')}
                     <input type="time" value={data.starts_at} onChange={(e) => setData('starts_at', e.target.value)} className={`${inputClass} font-mono`} />
                 </label>
             </div>
             <div className="flex gap-2">
                 <label className={`flex w-[84px] shrink-0 flex-col gap-[6px] ${fieldLabelClass}`}>
-                    Hours
+                    {t('Hours')}
                     <input
                         type="number"
                         min={0.5}
@@ -130,41 +131,41 @@ function PaperForm({
                     />
                 </label>
                 <label className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                    Room
+                    {t('Room')}
                     <select value={data.room_id} onChange={(e) => setData('room_id', e.target.value)} className={inputClass}>
-                        <option value="">Not set</option>
+                        <option value="">{t('Not set')}</option>
                         {rooms.map((room) => (
                             <option key={room.id} value={room.id}>
-                                {room.code} · {room.capacity} seats
+                                {t(':code · :capacity seats', { code: room.code, capacity: room.capacity })}
                             </option>
                         ))}
                     </select>
                 </label>
             </div>
             <div className="flex flex-col gap-[6px]">
-                <span className={fieldLabelClass}>Invigilators</span>
+                <span className={fieldLabelClass}>{t('Invigilators')}</span>
                 <div className="flex flex-wrap gap-[6px]">
                     {data.invigilator_ids.map((id) => (
                         <button
                             key={id}
                             type="button"
-                            title="Remove"
+                            title={t('Remove')}
                             onClick={() => setData('invigilator_ids', data.invigilator_ids.filter((item) => item !== id))}
                             className="flex h-6 items-center gap-1 rounded-sm bg-primary-tint px-2 text-[12px] leading-4 font-medium text-primary hover:bg-surface"
                         >
                             {staff.find((member) => member.id === id)?.name} ×
                         </button>
                     ))}
-                    {data.invigilator_ids.length === 0 && <span className="text-[13px] leading-6 text-text-muted">None yet</span>}
+                    {data.invigilator_ids.length === 0 && <span className="text-[13px] leading-6 text-text-muted">{t('None yet')}</span>}
                 </div>
                 {left.length > 0 && (
                     <select
-                        aria-label="Add an invigilator"
+                        aria-label={t('Add an invigilator')}
                         value=""
                         onChange={(e) => e.target.value && setData('invigilator_ids', [...data.invigilator_ids, e.target.value])}
                         className={inputClass}
                     >
-                        <option value="">Add an invigilator…</option>
+                        <option value="">{t('Add an invigilator…')}</option>
                         {left.map((member) => (
                             <option key={member.id} value={member.id}>
                                 {member.name}
@@ -176,10 +177,10 @@ function PaperForm({
             <ErrorText message={Object.values(errors).find(Boolean)} />
             <div className="flex flex-wrap items-center gap-3">
                 <button type="submit" disabled={form.processing || !data.held_on} className={primaryClass}>
-                    Save paper
+                    {t('Save paper')}
                 </button>
                 <button type="button" onClick={onClose} className="text-[13px] leading-4 font-medium text-text-muted hover:underline">
-                    Cancel
+                    {t('Cancel')}
                 </button>
                 {row.paper && (
                     <button
@@ -187,7 +188,7 @@ function PaperForm({
                         onClick={() => router.delete(destroy.url({ plan: plan.id, paper: row.paper?.id ?? '' }), { preserveScroll: true, onSuccess: onClose })}
                         className="ml-auto text-[13px] leading-4 font-medium text-danger hover:underline"
                     >
-                        Remove paper
+                        {t('Remove paper')}
                     </button>
                 )}
             </div>
@@ -202,12 +203,12 @@ function Schedule({ tabs, plans, plan, levels = [], level, rows = [], rooms = []
     if (!plan || !level) {
         return (
             <div className="flex flex-col gap-5">
-                <Head title="Exam schedule" />
-                <AssessmentHeader active="schedule" tabs={tabs} trail={[{ label: 'Exam schedule' }]} title="Exam schedule" />
-                <Empty title="No exam is scheduled yet">
-                    An exam gets its timetable here once it is scheduled on the calendar.{' '}
+                <Head title={t('Exam schedule')} />
+                <AssessmentHeader active="schedule" tabs={tabs} trail={[{ label: t('Exam schedule') }]} title={t('Exam schedule')} />
+                <Empty title={t('No exam is scheduled yet')}>
+                    {t('An exam gets its timetable here once it is scheduled on the calendar.')}{' '}
                     <Link href={index.url()} className="font-medium text-primary hover:underline">
-                        Open the calendar →
+                        {t('Open the calendar →')}
                     </Link>
                 </Empty>
             </div>
@@ -220,28 +221,28 @@ function Schedule({ tabs, plans, plan, levels = [], level, rows = [], rooms = []
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
-            <Head title="Exam schedule" />
+            <Head title={t('Exam schedule')} />
             <AssessmentHeader
                 active="schedule"
                 tabs={tabs}
-                trail={[{ label: 'Exam schedule' }]}
-                title="Exam schedule"
+                trail={[{ label: t('Exam schedule') }]}
+                title={t('Exam schedule')}
                 meta={
                     <>
                         <span className="font-mono uppercase">
                             {plan.name} · {range(plan.held_from, plan.held_until)}
                         </span>
-                        <span>· one paper per subject and level</span>
+                        <span>{t('· one paper per subject and level')}</span>
                     </>
                 }
             />
 
-            {plans.length > 1 && <PlanPicker plans={plans} current={plan.id} href={(id) => show.url({ query: { plan: id } })} label="Exam" />}
+            {plans.length > 1 && <PlanPicker plans={plans} current={plan.id} href={(id) => show.url({ query: { plan: id } })} label={t('Exam')} />}
 
             <p className="rounded-lg bg-surface p-4 text-[13px] leading-[19px] text-text-muted">
                 {plan.has_schedule
-                    ? `This schedule is published. Marks open on ${day(plan.window_starts_on)} and you follow them in Marks progress.`
-                    : `Give every subject its paper, then publish. Marks then open on ${day(plan.window_starts_on)} and you follow them in Marks progress.`}
+                    ? t('This schedule is published. Marks open on :window_starts_on and you follow them in Marks progress.', { window_starts_on: day(plan.window_starts_on) })
+                    : t('Give every subject its paper, then publish. Marks then open on :window_starts_on and you follow them in Marks progress.', { window_starts_on: day(plan.window_starts_on) })}
             </p>
 
             <div className="flex flex-1 flex-col gap-7 lg:flex-row">
@@ -266,17 +267,17 @@ function Schedule({ tabs, plans, plan, levels = [], level, rows = [], rooms = []
                     </div>
 
                     {rows.length === 0 ? (
-                        <Empty title={`${level.name} takes no subjects yet`}>A paper is set for each subject the level’s classes take.</Empty>
+                        <Empty title={t(':level takes no subjects yet', { level: level.name })}>{t('A paper is set for each subject the level’s classes take.')}</Empty>
                     ) : (
                         <div className="overflow-x-auto rounded-lg border border-solid border-border">
                             <div className="flex min-w-[680px] flex-col">
                                 <div className={`flex h-8 items-center gap-4 border-b border-solid border-border bg-surface px-[14px] ${capsLabelClass}`}>
-                                    <span className="w-[96px] shrink-0">Day</span>
-                                    <span className="w-[50px] shrink-0">Time</span>
-                                    <span className="flex-1">Subject</span>
-                                    <span className="w-9 shrink-0">Hrs</span>
-                                    <span className="w-[90px] shrink-0">Room</span>
-                                    <span className="w-[190px] shrink-0">Invigilators</span>
+                                    <span className="w-[96px] shrink-0">{t('Day')}</span>
+                                    <span className="w-[50px] shrink-0">{t('Time')}</span>
+                                    <span className="flex-1">{t('Subject')}</span>
+                                    <span className="w-9 shrink-0">{t('Hrs')}</span>
+                                    <span className="w-[90px] shrink-0">{t('Room')}</span>
+                                    <span className="w-[190px] shrink-0">{t('Invigilators')}</span>
                                 </div>
                                 {rows.map((row, position) => (
                                     <button
@@ -295,10 +296,10 @@ function Schedule({ tabs, plans, plan, levels = [], level, rows = [], rooms = []
                                         </span>
                                         <span className="w-9 shrink-0 font-mono text-[13px] leading-4 text-text">{row.paper?.hours ?? ''}</span>
                                         <span className={`w-[90px] shrink-0 truncate text-[13px] leading-4 ${row.paper?.clash ? `font-semibold ${amberText}` : 'text-text'}`}>
-                                            {row.paper ? (row.paper.room ?? 'Not set') : ''}
+                                            {row.paper ? (row.paper.room ?? t('Not set')) : ''}
                                         </span>
                                         <span className={`w-[190px] shrink-0 truncate text-[13px] leading-4 ${row.paper ? 'text-text' : `font-medium ${amberText}`}`}>
-                                            {row.paper ? row.paper.invigilators.join(' · ') || 'None yet' : 'No paper yet · set it'}
+                                            {row.paper ? row.paper.invigilators.join(' · ') || t('None yet') : t('No paper yet · set it')}
                                         </span>
                                     </button>
                                 ))}
@@ -306,8 +307,7 @@ function Schedule({ tabs, plans, plan, levels = [], level, rows = [], rooms = []
                         </div>
                     )}
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        A paper is for every student of the level who takes the
-                        subject.{locked ? '' : ' Pick a row to set or change its paper.'}
+                        {t('A paper is for every student of the level who takes the subject.')}{locked ? '' : t(' Pick a row to set or change its paper.')}
                     </p>
                 </div>
 
@@ -316,16 +316,16 @@ function Schedule({ tabs, plans, plan, levels = [], level, rows = [], rooms = []
                         <PaperForm key={`${level.id}-${current.subject_id}`} plan={plan} levelId={level.id} row={current} rooms={rooms} staff={staff} onClose={() => setEditing(null)} />
                     )}
                     <div className="flex flex-col gap-3 rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>{plan.has_schedule ? 'Published' : 'Before you publish'}</p>
+                        <p className={capsLabelClass}>{plan.has_schedule ? t('Published') : t('Before you publish')}</p>
                         <ul className="flex flex-col gap-[10px]">
                             <li className="flex items-start gap-2 text-[13px] leading-[18px] text-text">
                                 <span className={`mt-[6px] h-[6px] w-[6px] shrink-0 rounded-full ${unset === 0 ? 'bg-success' : 'bg-warning'}`} />
-                                {unset === 0 ? 'Every subject has a paper' : `${unset} ${unset === 1 ? 'subject has' : 'subjects have'} no paper yet`}
+                                {unset === 0 ? t('Every subject has a paper') : t(':unset :have no paper yet', { unset, have: unset === 1 ? 'subject has' : 'subjects have' })}
                             </li>
                             {clashes.length === 0 ? (
                                 <li className="flex items-start gap-2 text-[13px] leading-[18px] text-text">
                                     <span className="mt-[6px] h-[6px] w-[6px] shrink-0 rounded-full bg-success" />
-                                    No room or invigilator is in two places at once
+                                    {t('No room or invigilator is in two places at once')}
                                 </li>
                             ) : (
                                 clashes.map((clash) => (
@@ -343,23 +343,21 @@ function Schedule({ tabs, plans, plan, levels = [], level, rows = [], rooms = []
                                 onClick={() => router.post(publish.url(plan.id))}
                                 className="flex h-10 items-center justify-center rounded-md bg-primary text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-40"
                             >
-                                {plan.has_schedule ? 'Publish again' : 'Publish exam schedule'}
+                                {plan.has_schedule ? t('Publish again') : t('Publish exam schedule')}
                             </button>
                         )}
                         <ErrorText message={errors.publish} />
                         <Link href={index.url()} className={quietClass}>
-                            ← Back to the calendar
+                            {t('← Back to the calendar')}
                         </Link>
                     </div>
                     <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-4">
-                        <p className="text-[13px] leading-4 font-semibold text-text">After publishing</p>
+                        <p className="text-[13px] leading-4 font-semibold text-text">{t('After publishing')}</p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            The Calendar shows {plan.name} as scheduled with a
-                            timetable. Nobody is told automatically; share the
-                            papers with students and invigilators yourself.
+                            {t('The Calendar shows :plan as scheduled with a timetable. Nobody is told automatically; share the papers with students and invigilators yourself.', { plan: plan.name })}
                         </p>
                         <button type="button" onClick={() => window.print()} className={`self-start ${linkClass}`}>
-                            Print this level’s papers
+                            {t('Print this level’s papers')}
                         </button>
                     </div>
                 </aside>

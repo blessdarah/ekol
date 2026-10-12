@@ -33,9 +33,9 @@ class StoreTimetableChangeRequest extends TermRequest
     public function messages(): array
     {
         return [
-            'date.after_or_equal' => 'Choose a date inside the term.',
-            'date.before_or_equal' => 'Choose a date inside the term.',
-            'covers.required_if' => 'Choose who covers at least one lesson.',
+            'date.after_or_equal' => __('Choose a date inside the term.'),
+            'date.before_or_equal' => __('Choose a date inside the term.'),
+            'covers.required_if' => __('Choose who covers at least one lesson.'),
         ];
     }
 }

@@ -27,7 +27,7 @@ class UploadStudentImportRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'file.mimes' => 'Upload a CSV file. In Excel or Google Sheets, use Save as or Download as CSV.',
+            'file.mimes' => __('Upload a CSV file. In Excel or Google Sheets, use Save as or Download as CSV.'),
         ];
     }
 }

@@ -22,7 +22,7 @@ class StaffInvitationMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: "Set your {$this->school->name} portal password");
+        return new Envelope(subject: __('Set your :school portal password', ['school' => $this->school->name]));
     }
 
     public function content(): Content

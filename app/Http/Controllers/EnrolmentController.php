@@ -220,7 +220,7 @@ class EnrolmentController extends Controller
         $current = StructureController::currentYear($school);
 
         if (SchoolClass::where('academic_year_id', $next->id)->exists()) {
-            throw ValidationException::withMessages(['classes' => "{$next->label} already has classes."]);
+            throw ValidationException::withMessages(['classes' => __(':label already has classes.', ['label' => $next->label])]);
         }
 
         $classes = $current
@@ -228,7 +228,7 @@ class EnrolmentController extends Controller
             : new Collection;
 
         if ($classes->isEmpty()) {
-            throw ValidationException::withMessages(['classes' => 'This year has no classes to copy.']);
+            throw ValidationException::withMessages(['classes' => __('This year has no classes to copy.')]);
         }
 
         DB::transaction(function () use ($request, $school, $next, $classes) {
@@ -269,7 +269,7 @@ class EnrolmentController extends Controller
             ->first(fn (string $candidate) => ! in_array($candidate, $taken, true));
 
         if (! $name) {
-            throw ValidationException::withMessages(['class' => 'This level already has every class from A to Z.']);
+            throw ValidationException::withMessages(['class' => __('This level already has every class from A to Z.')]);
         }
 
         $class = SchoolClass::create([
@@ -379,7 +379,7 @@ class EnrolmentController extends Controller
 
         if (! $enrolment || ! isset($successors[(string) $enrolment->schoolClass?->level_id])) {
             throw ValidationException::withMessages([
-                'decision' => 'That student is not one of this year\'s continuing students.',
+                'decision' => __('That student is not one of this year\'s continuing students.'),
             ]);
         }
 
@@ -507,7 +507,7 @@ class EnrolmentController extends Controller
 
         if ($enrolments->count() !== count($data['enrolment_ids'])) {
             throw ValidationException::withMessages([
-                'enrolment_ids' => "Some of those students are no longer waiting for a {$class->name} place. Reload and try again.",
+                'enrolment_ids' => __('Some of those students are no longer waiting for a :name place. Reload and try again.', ['name' => $class->name]),
             ]);
         }
 
@@ -516,8 +516,8 @@ class EnrolmentController extends Controller
         if ($enrolments->count() > $free) {
             throw ValidationException::withMessages([
                 'class_id' => $free > 0
-                    ? "{$class->name} has room for {$free} more, not {$enrolments->count()}."
-                    : "{$class->name} is full. Choose another class or add one.",
+                    ? __(':name has room for :free more, not :count.', ['name' => $class->name, 'free' => $free, 'count' => $enrolments->count()])
+                    : __(':name is full. Choose another class or add one.', ['name' => $class->name]),
             ]);
         }
 
@@ -561,7 +561,7 @@ class EnrolmentController extends Controller
             ->values();
 
         if ($classes->isEmpty()) {
-            throw ValidationException::withMessages(['level_id' => 'This level has no classes yet. Add one first.']);
+            throw ValidationException::withMessages(['level_id' => __('This level has no classes yet. Add one first.')]);
         }
 
         $taken = $classes->mapWithKeys(fn (SchoolClass $class) => [$class->id => (int) $class->getAttribute('enrolments_count')])->all();
@@ -606,7 +606,7 @@ class EnrolmentController extends Controller
 
         if ($next->enrolment_confirmed_at) {
             throw ValidationException::withMessages([
-                'class_id' => 'Enrolment is confirmed, so a class can no longer be emptied.',
+                'class_id' => __('Enrolment is confirmed, so a class can no longer be emptied.'),
             ]);
         }
 
@@ -661,12 +661,12 @@ class EnrolmentController extends Controller
         $progress = static::progress($school, $next);
 
         if ($progress['confirmed']) {
-            throw ValidationException::withMessages(['confirm' => "Enrolment for {$next->label} is already confirmed."]);
+            throw ValidationException::withMessages(['confirm' => __('Enrolment for :label is already confirmed.', ['label' => $next->label])]);
         }
 
         if (! $progress['ready']) {
             throw ValidationException::withMessages([
-                'confirm' => 'Enrolment cannot be confirmed yet. Finish the checks that are still open.',
+                'confirm' => __('Enrolment cannot be confirmed yet. Finish the checks that are still open.'),
             ]);
         }
 
@@ -696,7 +696,7 @@ class EnrolmentController extends Controller
     public static function requireYear(School $school): AcademicYear
     {
         return static::nextYear($school) ?? throw ValidationException::withMessages([
-            'year' => 'Enrolment needs a planned academic year. Add next year in School Setup first.',
+            'year' => __('Enrolment needs a planned academic year. Add next year in School Setup first.'),
         ]);
     }
 

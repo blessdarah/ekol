@@ -184,7 +184,7 @@ class SeriesRegistrationController extends Controller
 
         if (! $student) {
             throw ValidationException::withMessages([
-                'series_id' => "That student is not in {$level->name} this year.",
+                'series_id' => __('That student is not in :name this year.', ['name' => $level->name]),
             ]);
         }
 
@@ -254,7 +254,7 @@ class SeriesRegistrationController extends Controller
 
         if ($students->count() !== count($data['student_ids'])) {
             throw ValidationException::withMessages([
-                'student_ids' => "Some of those students are not in {$level->name} this year.",
+                'student_ids' => __('Some of those students are not in :name this year.', ['name' => $level->name]),
             ]);
         }
 
@@ -340,15 +340,15 @@ class SeriesRegistrationController extends Controller
             'note' => ['nullable', 'string', 'max:255'],
             'parent_agreed' => ['accepted'],
         ], [
-            'parent_agreed.accepted' => 'A parent or guardian must agree before the series changes.',
-            'series_id.not_in' => 'The student is already in that series.',
+            'parent_agreed.accepted' => __('A parent or guardian must agree before the series changes.'),
+            'series_id.not_in' => __('The student is already in that series.'),
         ]);
 
         $series = Series::whereKey($data['series_id'])->with('subjects:id')->firstOrFail();
 
         if ($series->subjects->where('pivot.kind', 'core')->isEmpty()) {
             throw ValidationException::withMessages([
-                'series_id' => "{$series->name} has no core subjects yet, so nobody can be moved into it.",
+                'series_id' => __(':name has no core subjects yet, so nobody can be moved into it.', ['name' => $series->name]),
             ]);
         }
 
@@ -404,7 +404,7 @@ class SeriesRegistrationController extends Controller
 
         if (! $term) {
             throw ValidationException::withMessages([
-                'series_id' => 'Series are registered for a term. Make a term active in School Setup first.',
+                'series_id' => __('Series are registered for a term. Make a term active in School Setup first.'),
             ]);
         }
 
@@ -512,13 +512,13 @@ class SeriesRegistrationController extends Controller
 
         if ($core->isEmpty()) {
             throw ValidationException::withMessages([
-                'series_id' => "{$series->name} has no core subjects yet. Set it up before registering students in it.",
+                'series_id' => __(':name has no core subjects yet. Set it up before registering students in it.', ['name' => $series->name]),
             ]);
         }
 
         if (array_diff($chosen, $pool) !== []) {
             throw ValidationException::withMessages([
-                'electives' => "Some of those subjects are not in the elective pool of {$series->code}.",
+                'electives' => __('Some of those subjects are not in the elective pool of :code.', ['code' => $series->code]),
             ]);
         }
 
@@ -526,13 +526,13 @@ class SeriesRegistrationController extends Controller
 
         if ($series->min_subjects !== null && $total < $series->min_subjects) {
             throw ValidationException::withMessages([
-                'electives' => "{$series->code} needs at least {$series->min_subjects} subjects. That is {$total}.",
+                'electives' => __(':code needs at least :min_subjects subjects. That is :total.', ['code' => $series->code, 'min_subjects' => $series->min_subjects, 'total' => $total]),
             ]);
         }
 
         if ($series->max_subjects !== null && $total > $series->max_subjects) {
             throw ValidationException::withMessages([
-                'electives' => "{$series->code} allows at most {$series->max_subjects} subjects. That is {$total}.",
+                'electives' => __(':code allows at most :max_subjects subjects. That is :total.', ['code' => $series->code, 'max_subjects' => $series->max_subjects, 'total' => $total]),
             ]);
         }
 

@@ -4,6 +4,7 @@ import { student as ledger } from '@/actions/App/Http/Controllers/FeeController'
 import { dayMonth, figure } from '../../components/fees/ui';
 import { outlineButtonClass, solidButtonClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface ReceiptProps {
     issuer: { name: string; town: string | null };
@@ -35,17 +36,17 @@ function Line({ label, children }: { label: string; children: ReactNode }) {
 function Receipt({ issuer, currency, receipt, student }: ReceiptProps) {
     return (
         <div className="flex flex-col items-center gap-5">
-            <Head title={`Receipt ${receipt.number ?? ''}`} />
+            <Head title={t('Receipt :number', { number: receipt.number ?? '' })} />
             <div className="flex w-full max-w-[520px] flex-wrap items-center justify-between gap-3 print:hidden">
                 {student.id ? (
                     <Link href={ledger.url(student.id)} className={outlineButtonClass}>
-                        ← Back to the ledger
+                        {t('← Back to the ledger')}
                     </Link>
                 ) : (
                     <span />
                 )}
                 <button type="button" onClick={() => window.print()} className={solidButtonClass}>
-                    Print receipt
+                    {t('Print receipt')}
                 </button>
             </div>
 
@@ -56,13 +57,13 @@ function Receipt({ issuer, currency, receipt, student }: ReceiptProps) {
                         {issuer.town && <p className="text-[13px] leading-4 text-text-muted">{issuer.town}</p>}
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                        <p className="text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">Fee receipt</p>
+                        <p className="text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">{t('Fee receipt')}</p>
                         <p className="font-mono text-[14px] leading-[18px] text-text">{receipt.number ?? '—'}</p>
                     </div>
                 </header>
 
                 <div className="flex flex-col gap-1 rounded-md bg-surface p-4">
-                    <p className="text-[13px] leading-4 text-text-muted">Received</p>
+                    <p className="text-[13px] leading-4 text-text-muted">{t('Received')}</p>
                     <p className="flex items-baseline gap-[6px]">
                         <span className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                             {figure(receipt.amount)}
@@ -72,14 +73,14 @@ function Receipt({ issuer, currency, receipt, student }: ReceiptProps) {
                 </div>
 
                 <div className="flex flex-col border-b border-solid border-border">
-                    <Line label="From">
+                    <Line label={t('From')}>
                         {student.name}
                         <span className="block font-mono text-[12px] leading-4 text-text-muted">
                             {[student.matricule, student.class].filter(Boolean).join(' · ')}
                         </span>
                     </Line>
-                    <Line label="For">
-                        Fees{receipt.year ? ` · ${receipt.year}` : ''}
+                    <Line label={t('For')}>
+                        {t('Fees')}{receipt.year ? ` · ${receipt.year}` : ''}
                         {receipt.covers.length > 1 &&
                             receipt.covers.map((cover) => (
                                 <span key={cover.name} className="block font-mono text-[12px] leading-[18px] text-text-muted">
@@ -90,23 +91,23 @@ function Receipt({ issuer, currency, receipt, student }: ReceiptProps) {
                             <span className="block text-[12px] leading-[18px] text-text-muted">{receipt.covers[0].name}</span>
                         )}
                     </Line>
-                    <Line label="Date">{dayMonth(receipt.on)}</Line>
-                    <Line label="Method">
+                    <Line label={t('Date')}>{dayMonth(receipt.on)}</Line>
+                    <Line label={t('Method')}>
                         {receipt.method}
-                        {receipt.reference ? ` · ref ${receipt.reference}` : ''}
+                        {receipt.reference ? t(' · ref :reference', { reference: receipt.reference }) : ''}
                     </Line>
-                    <Line label="Received by">{receipt.by ?? '—'}</Line>
-                    <Line label="Still owed after this">
+                    <Line label={t('Received by')}>{receipt.by ?? '—'}</Line>
+                    <Line label={t('Still owed after this')}>
                         <span className="font-mono">
                             {figure(receipt.balance)} {currency}
                         </span>
-                        <span className="block text-[12px] leading-4 text-text-muted">of {figure(receipt.due)} for the year, as of today</span>
+                        <span className="block text-[12px] leading-4 text-text-muted">{t('of :due for the year, as of today', { due: figure(receipt.due) })}</span>
                     </Line>
                 </div>
 
                 <footer className="flex justify-between gap-8 pt-8 text-[12px] leading-4 text-text-muted">
-                    <span className="flex-1 border-t border-solid border-border pt-2">Bursar’s signature</span>
-                    <span className="flex-1 border-t border-solid border-border pt-2">School stamp</span>
+                    <span className="flex-1 border-t border-solid border-border pt-2">{t('Bursar’s signature')}</span>
+                    <span className="flex-1 border-t border-solid border-border pt-2">{t('School stamp')}</span>
                 </footer>
             </article>
         </div>

@@ -18,6 +18,7 @@ import {
     levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 const LETTERS = 'ABCDEFGHIJKL'.split('');
 
@@ -64,24 +65,24 @@ function LevelCreate({
 
     return (
         <form onSubmit={submit} className="flex flex-col gap-7">
-            <Head title="Add a level" />
+            <Head title={t('Add a level')} />
             <StructureHeader
-                trail={[levelsCrumb, { label: 'New level' }]}
-                title="Add a level"
-                tag={`Structure${yearLabel ? ` · ${yearLabel}` : ''}`}
-                meta="name it, place it in a cycle, then set up its classes"
+                trail={[levelsCrumb, { label: t('New level') }]}
+                title={t('Add a level')}
+                tag={t('Structure:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                meta={t('name it, place it in a cycle, then set up its classes')}
             />
 
             <div className="flex flex-col gap-8 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-6">
                     <section className="flex flex-col gap-3">
-                        <p className={capsLabelClass}>Level</p>
+                        <p className={capsLabelClass}>{t('Level')}</p>
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
-                                Name
+                                {t('Name')}
                                 <input
                                     type="text"
-                                    placeholder="Form 1"
+                                    placeholder={t('Form 1')}
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
                                     className={fieldInputClass}
@@ -89,7 +90,7 @@ function LevelCreate({
                                 <ErrorText message={errors.name} />
                             </label>
                             <label className={`flex flex-col gap-2 sm:w-[160px] ${fieldLabelClass}`}>
-                                Short code
+                                {t('Short code')}
                                 <input
                                     type="text"
                                     placeholder="F1"
@@ -105,19 +106,18 @@ function LevelCreate({
 
                     <section className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
-                            <p className={capsLabelClass}>Cycle and subsystem</p>
+                            <p className={capsLabelClass}>{t('Cycle and subsystem')}</p>
                             <p className="text-[13px] leading-4 text-text-muted">
-                                Secondary levels share one subject list. High
-                                school levels can use series.
+                                {t('Secondary levels share one subject list. High school levels can use series.')}
                             </p>
                         </div>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <div role="radiogroup" aria-label="Cycle" className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
-                                Cycle
+                            <div role="radiogroup" aria-label={t('Cycle')} className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                                {t('Cycle')}
                                 <div className="flex gap-2">
                                     {[
-                                        { value: 'secondary', label: 'Secondary' },
-                                        { value: 'high_school', label: 'High school' },
+                                        { value: 'secondary', label: t('Secondary') },
+                                        { value: 'high_school', label: t('High school') },
                                     ].map((option) => (
                                         <button
                                             key={option.value}
@@ -127,18 +127,18 @@ function LevelCreate({
                                             onClick={() => choose({ cycle: option.value })}
                                             className={segmentClass(data.cycle === option.value)}
                                         >
-                                            {option.label}
+                                            {t(option.label)}
                                         </button>
                                     ))}
                                 </div>
                                 <ErrorText message={errors.cycle} />
                             </div>
-                            <div role="radiogroup" aria-label="Subsystem" className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
-                                Subsystem
+                            <div role="radiogroup" aria-label={t('Subsystem')} className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                                {t('Subsystem')}
                                 <div className="flex gap-2">
                                     {[
-                                        { value: 'anglophone', label: 'Anglophone (GCE)' },
-                                        { value: 'francophone', label: 'Francophone' },
+                                        { value: 'anglophone', label: t('Anglophone (GCE)') },
+                                        { value: 'francophone', label: t('Francophone') },
                                     ].map((option) => (
                                         <button
                                             key={option.value}
@@ -148,7 +148,7 @@ function LevelCreate({
                                             onClick={() => choose({ subsystem: option.value })}
                                             className={segmentClass(data.subsystem === option.value)}
                                         >
-                                            {option.label}
+                                            {t(option.label)}
                                         </button>
                                     ))}
                                 </div>
@@ -158,25 +158,25 @@ function LevelCreate({
                     </section>
 
                     <section className="flex flex-col gap-3">
-                        <p className={capsLabelClass}>Series</p>
+                        <p className={capsLabelClass}>{t('Series')}</p>
                         <div className="flex items-center justify-between gap-4 rounded-md border border-solid border-border bg-surface px-4 py-[14px]">
                             <div className="flex flex-col gap-1">
                                 <span
                                     className={`flex items-center gap-2 text-[14px] leading-[18px] font-semibold ${seriesAllowed ? 'text-text' : 'text-text-muted'}`}
                                 >
                                     {!seriesAllowed && <LockIcon size={13} />}
-                                    Uses series
+                                    {t('Uses series')}
                                 </span>
                                 <span className="text-[13px] leading-[19px] text-text-muted">
                                     {seriesAllowed
-                                        ? 'Students pick a series, then electives. You set the series up after adding the level.'
-                                        : 'Not available here. Choose High school with the GCE subsystem to turn series on.'}
+                                        ? t('Students pick a series, then electives. You set the series up after adding the level.')
+                                        : t('Not available here. Choose High school with the GCE subsystem to turn series on.')}
                                 </span>
                             </div>
                             <Toggle
                                 checked={data.uses_series}
                                 disabled={!seriesAllowed}
-                                label="Uses series"
+                                label={t('Uses series')}
                                 onChange={(next) => setData('uses_series', next)}
                             />
                         </div>
@@ -184,10 +184,10 @@ function LevelCreate({
                     </section>
 
                     <section className="flex flex-col gap-3">
-                        <p className={capsLabelClass}>Classes</p>
+                        <p className={capsLabelClass}>{t('Classes')}</p>
                         <div className="flex flex-wrap items-end gap-4">
                             <label className={`flex w-[160px] shrink-0 flex-col gap-2 ${fieldLabelClass}`}>
-                                Number of classes
+                                {t('Number of classes')}
                                 <span className="flex h-10 items-center justify-between rounded-md border border-solid border-border px-3 focus-within:border-primary">
                                     <input
                                         type="number"
@@ -199,14 +199,14 @@ function LevelCreate({
                                         className="w-14 bg-transparent font-mono text-[16px] leading-5 font-normal text-text outline-none"
                                     />
                                     <span className="text-[13px] leading-4 font-normal text-text-muted">
-                                        classes
+                                        {t('classes')}
                                     </span>
                                 </span>
                             </label>
                             {count > 0 && (
                                 <div className="flex min-h-10 flex-wrap items-center gap-2">
                                     <span className="text-[13px] leading-4 text-text-muted">
-                                        Named
+                                        {t('Named')}
                                     </span>
                                     {LETTERS.slice(0, count).map((letter, position) => (
                                         <span
@@ -214,7 +214,7 @@ function LevelCreate({
                                             className="flex h-[26px] items-center rounded-sm border border-solid border-border bg-surface px-[10px] text-[13px] leading-4 font-medium text-text"
                                         >
                                             {position === 0
-                                                ? `${data.name.trim() || 'Level'} ${letter}`
+                                                ? `${data.name.trim() || t('Level')} ${letter}`
                                                 : letter}
                                         </span>
                                     ))}
@@ -223,9 +223,7 @@ function LevelCreate({
                         </div>
                         {!hasYear && (
                             <p className="text-[13px] leading-[19px] text-warning">
-                                Classes belong to an academic year. Make a year
-                                active in School Setup, then add classes from
-                                the level.
+                                {t('Classes belong to an academic year. Make a year active in School Setup, then add classes from the level.')}
                             </p>
                         )}
                         <ErrorText message={errors.class_count} />
@@ -233,15 +231,14 @@ function LevelCreate({
 
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                         <p className="text-[13px] leading-4 text-text-muted">
-                            Classes can be added, renamed or removed later
-                            from the level.
+                            {t('Classes can be added, renamed or removed later from the level.')}
                         </p>
                         <div className="flex gap-2">
                             <Link href={index.url()} className={outlineButtonClass}>
-                                Cancel
+                                {t('Cancel')}
                             </Link>
                             <button type="submit" disabled={processing} className={solidButtonClass}>
-                                Add level
+                                {t('Add level')}
                             </button>
                         </div>
                     </div>
@@ -249,22 +246,22 @@ function LevelCreate({
 
                 <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     <div className="flex flex-col gap-3 rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>When series apply</p>
+                        <p className={capsLabelClass}>{t('When series apply')}</p>
                         <ul className="flex flex-col">
                             {RULES.map((rule) => (
                                 <li
                                     key={rule.label}
                                     className="flex items-center justify-between border-t border-solid border-border py-[10px] text-[13px] leading-4 text-text last:border-b"
                                 >
-                                    {rule.label}
+                                    {t(rule.label)}
                                     {rule.series ? (
                                         <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-success-tint px-2 text-[12px] font-medium text-success">
                                             <span className="h-[6px] w-[6px] rounded-full bg-success" />
-                                            Series
+                                            {t('Series')}
                                         </span>
                                     ) : (
                                         <span className="flex h-[22px] items-center rounded-full border border-solid border-border bg-white px-2 text-[12px] font-medium text-text-muted">
-                                            No series
+                                            {t('No series')}
                                         </span>
                                     )}
                                 </li>
@@ -273,12 +270,10 @@ function LevelCreate({
                     </div>
                     <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-white p-4">
                         <p className="text-[14px] leading-[18px] font-semibold text-text">
-                            If you turn series on
+                            {t('If you turn series on')}
                         </p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            Students pick a series, then electives. For each
-                            series you set the core subjects and the elective
-                            pool in Levels and series.
+                            {t('Students pick a series, then electives. For each series you set the core subjects and the elective pool in Levels and series.')}
                         </p>
                     </div>
                 </aside>

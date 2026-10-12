@@ -77,19 +77,19 @@ class CorrectionController extends Controller
         abort_unless($user && $sheet && ($user->role->managesAssessments() || $sheet->examiner_id === $user->id), 403);
 
         if ($plan?->state !== AssessmentState::Published) {
-            throw ValidationException::withMessages(['new_score' => 'A correction is for a published mark. This one can still be edited on its sheet.']);
+            throw ValidationException::withMessages(['new_score' => __('A correction is for a published mark. This one can still be edited on its sheet.')]);
         }
 
         if ((float) $data['new_score'] > (float) $sheet->max_score) {
-            throw ValidationException::withMessages(['new_score' => "A mark can't be above ".(float) $sheet->max_score.'.']);
+            throw ValidationException::withMessages(['new_score' => __('A mark can\'t be above :max_score.', ['max_score' => (float) $sheet->max_score])]);
         }
 
         if ($mark->score !== null && abs((float) $mark->score - (float) $data['new_score']) < 0.001) {
-            throw ValidationException::withMessages(['new_score' => 'That is the mark already published.']);
+            throw ValidationException::withMessages(['new_score' => __('That is the mark already published.')]);
         }
 
         if (MarkCorrection::where('mark_id', $mark->id)->where('status', 'pending')->exists()) {
-            throw ValidationException::withMessages(['new_score' => 'A correction for this mark is already waiting for the principal.']);
+            throw ValidationException::withMessages(['new_score' => __('A correction for this mark is already waiting for the principal.')]);
         }
 
         $correction = MarkCorrection::create([
@@ -120,7 +120,7 @@ class CorrectionController extends Controller
         $data = $request->validated();
 
         if ($target->status !== 'pending') {
-            throw ValidationException::withMessages(['decision' => 'This correction has already been decided.']);
+            throw ValidationException::withMessages(['decision' => __('This correction has already been decided.')]);
         }
 
         DB::transaction(function () use ($request, $school, $target, $data, $user) {

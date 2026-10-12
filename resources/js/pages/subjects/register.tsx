@@ -28,6 +28,7 @@ import {
     type StaffOption,
 } from '../../components/subjects/class-table';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface RegisterProps {
     yearLabel: string | null;
@@ -126,35 +127,34 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
             }}
             className="flex flex-col gap-7"
         >
-            <Head title={subject ? `Edit ${subject.name}` : 'Register a subject'} />
+            <Head title={subject ? t('Edit :subject', { subject: subject.name }) : t('Register a subject')} />
             <StructureHeader
                 trail={
                     subject
                         ? [
                               subjectsCrumb,
                               { label: subject.name, href: show.url(subject.id) },
-                              { label: 'Edit' },
+                              { label: t('Edit') },
                           ]
-                        : [subjectsCrumb, { label: 'Register' }]
+                        : [subjectsCrumb, { label: t('Register') }]
                 }
-                title={subject ? 'Edit a subject' : 'Register a subject'}
-                tag={`Subject setup${yearLabel ? ` · ${yearLabel}` : ''}`}
-                meta="identity, coefficient and who teaches it in each class"
+                title={subject ? t('Edit a subject') : t('Register a subject')}
+                tag={t('Subject setup:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                meta={t('identity, coefficient and who teaches it in each class')}
             />
 
             <div className="flex flex-col gap-8 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-6">
                     <section className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
-                            <p className={capsLabelClass}>Subject identity</p>
+                            <p className={capsLabelClass}>{t('Subject identity')}</p>
                             <p className="text-[13px] leading-4 text-text-muted">
-                                Define how this subject appears everywhere:
-                                roster, reports, and marks entry.
+                                {t('Define how this subject appears everywhere: roster, reports, and marks entry.')}
                             </p>
                         </div>
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
-                                Subject name
+                                {t('Subject name')}
                                 <input
                                     type="text"
                                     value={data.name}
@@ -164,10 +164,10 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
                                 <ErrorText message={errors.name} />
                             </label>
                             <label className={`flex flex-col gap-2 sm:w-[168px] ${fieldLabelClass}`}>
-                                Code
+                                {t('Code')}
                                 <input
                                     type="text"
-                                    placeholder="MATH-101"
+                                    placeholder={t('MATH-101')}
                                     maxLength={20}
                                     value={data.code}
                                     onChange={(e) => setData('code', e.target.value.toUpperCase())}
@@ -176,7 +176,7 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
                                 <ErrorText message={errors.code} />
                             </label>
                             <label className={`flex flex-col gap-2 sm:w-[196px] ${fieldLabelClass}`}>
-                                Coefficient
+                                {t('Coefficient')}
                                 <span className="flex h-10 items-center justify-between rounded-md border border-solid border-border bg-white px-3 focus-within:border-primary">
                                     <input
                                         type="number"
@@ -188,7 +188,7 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
                                         className="w-16 bg-transparent font-mono text-[16px] leading-5 font-normal text-text outline-none"
                                     />
                                     <span className="text-[13px] leading-4 font-medium text-text-muted">
-                                        tests &amp; exams
+                                        {t('tests & exams')}
                                     </span>
                                 </span>
                                 <ErrorText message={errors.coefficient} />
@@ -196,7 +196,7 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
                         </div>
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <label className={`flex flex-col gap-2 sm:w-[300px] ${fieldLabelClass}`}>
-                                Department
+                                {t('Department')}
                                 <select
                                     value={data.department}
                                     onChange={(e) => setData('department', e.target.value)}
@@ -209,10 +209,10 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
                                 <ErrorText message={errors.department} />
                             </label>
                             <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
-                                Internal note (optional)
+                                {t('Internal note (optional)')}
                                 <input
                                     type="text"
-                                    placeholder="Keep grouped with Further Maths in reports."
+                                    placeholder={t('Keep grouped with Further Maths in reports.')}
                                     maxLength={255}
                                     value={data.note}
                                     onChange={(e) => setData('note', e.target.value)}
@@ -225,11 +225,9 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
 
                     <section className="flex flex-col gap-3">
                         <div className="flex flex-col gap-1">
-                            <p className={capsLabelClass}>Classes &amp; teachers</p>
+                            <p className={capsLabelClass}>{t('Classes & teachers')}</p>
                             <p className="text-[13px] leading-4 text-text-muted">
-                                Pick the levels, then tick the classes that
-                                take this subject. Each class has its own
-                                teacher and weekly periods.
+                                {t('Pick the levels, then tick the classes that take this subject. Each class has its own teacher and weekly periods.')}
                             </p>
                         </div>
                         <LevelPicker levels={levels} value={levelIds} onChange={changeLevels} />
@@ -245,15 +243,14 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
 
                     <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                         <p className="text-[13px] leading-4 text-text-muted">
-                            Every selected class needs a teacher before you
-                            can register.
+                            {t('Every selected class needs a teacher before you can register.')}
                         </p>
                         <div className="flex gap-2">
                             <Link
                                 href={subject ? show.url(subject.id) : index.url()}
                                 className="flex h-9 items-center px-3 text-[13px] font-medium text-text-muted hover:underline"
                             >
-                                Cancel
+                                {t('Cancel')}
                             </Link>
                             <button
                                 type="button"
@@ -261,10 +258,10 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
                                 onClick={() => submit('draft')}
                                 className={outlineButtonClass}
                             >
-                                Save draft
+                                {t('Save draft')}
                             </button>
                             <button type="submit" disabled={processing} className={solidButtonClass}>
-                                {subject ? 'Save subject' : 'Register subject'}
+                                {subject ? t('Save subject') : t('Register subject')}
                             </button>
                         </div>
                     </div>
@@ -272,24 +269,23 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
 
                 <aside className="flex shrink-0 flex-col gap-6 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>One coefficient</p>
+                        <p className={capsLabelClass}>{t('One coefficient')}</p>
                         <p className="font-display text-[16px] leading-[22px] font-bold text-text">
-                            Same weight for sequences and exams.
+                            {t('Same weight for sequences and exams.')}
                         </p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            The coefficient is set once on the subject. There
-                            is no separate exam coefficient to enter.
+                            {t('The coefficient is set once on the subject. There is no separate exam coefficient to enter.')}
                         </p>
                     </div>
                     <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-white p-4">
                         <p className="text-[14px] leading-[18px] font-semibold text-text">
-                            Before you register
+                            {t('Before you register')}
                         </p>
                         {[
-                            ['Subject name and coefficient', !!data.name.trim() && Number(data.coefficient) > 0],
-                            ['At least one class selected', chosen > 0],
-                            ['A teacher for every selected class', chosen > 0 && unstaffedCount(assignments) === 0],
-                            ['Weekly periods for every selected class', chosen > 0 && periodsSet],
+                            [t('Subject name and coefficient'), !!data.name.trim() && Number(data.coefficient) > 0],
+                            [t('At least one class selected'), chosen > 0],
+                            [t('A teacher for every selected class'), chosen > 0 && unstaffedCount(assignments) === 0],
+                            [t('Weekly periods for every selected class'), chosen > 0 && periodsSet],
                         ].map(([label, done]) => (
                             <p
                                 key={label as string}
@@ -303,18 +299,16 @@ function Register({ yearLabel, departments, levels, classes, staff, subject }: R
                     {!subject && (
                         <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-white p-4">
                             <p className="text-[13px] leading-4 font-semibold text-text">
-                                Setting up many subjects?
+                                {t('Setting up many subjects?')}
                             </p>
                             <p className="text-[13px] leading-4 text-text-muted">
-                                Start from a prepared set, then choose
-                                classes and teachers for all of them in one
-                                go.
+                                {t('Start from a prepared set, then choose classes and teachers for all of them in one go.')}
                             </p>
                             <Link
                                 href={templates.url()}
                                 className="flex h-8 w-fit items-center rounded-md border border-solid border-border bg-white px-3 text-[13px] leading-4 font-medium text-text hover:bg-surface"
                             >
-                                Use a template
+                                {t('Use a template')}
                             </Link>
                         </div>
                     )}

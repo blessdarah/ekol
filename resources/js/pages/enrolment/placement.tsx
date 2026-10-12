@@ -22,6 +22,7 @@ import {
 } from '../../components/enrolment/ui';
 import { ErrorText, capsLabelClass, outlineButtonClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 type Kind = 'promoted' | 'repeating' | 'new';
 
@@ -73,13 +74,13 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title="Class placement" />
+            <Head title={t('Class placement')} />
             <EnrolmentHeader
                 active="placement"
                 progress={enrolment}
-                trail={[{ label: 'Class placement' }]}
-                title="Class placement"
-                meta="give every promoted, repeating and admitted student a class"
+                trail={[{ label: t('Class placement') }]}
+                title={t('Class placement')}
+                meta={t('give every promoted, repeating and admitted student a class')}
                 action={
                     level &&
                     waiting.length > 0 &&
@@ -89,8 +90,8 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                             onClick={() => router.post(placeAll.url(), { level_id: level.id }, { preserveScroll: true })}
                             className={outlineButtonClass}
                         >
-                            Place {count(Math.min(waiting.length, freeSeats))} {level.name}{' '}
-                            {Math.min(waiting.length, freeSeats) === 1 ? 'student' : 'students'} automatically
+                            {t('Place')} {count(Math.min(waiting.length, freeSeats))} {level.name}{' '}
+                            {Math.min(waiting.length, freeSeats) === 1 ? t('student') : t('students')} {t('automatically')}
                         </button>
                     )
                 }
@@ -98,14 +99,13 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
 
             {!level ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    Nobody is waiting for a class yet. Students appear here
-                    once they are promoted or repeating under{' '}
+                    {t('Nobody is waiting for a class yet. Students appear here once they are promoted or repeating under')}{' '}
                     <Link href={reEnrolment.url()} className="font-medium text-primary hover:underline">
-                        Re-enrolment
+                        {t('Re-enrolment')}
                     </Link>
-                    , or admitted under{' '}
+                    {t(', or admitted under')}{' '}
                     <Link href={applications.url()} className="font-medium text-primary hover:underline">
-                        Applications
+                        {t('Applications')}
                     </Link>
                     .
                 </p>
@@ -140,15 +140,15 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                         <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-solid border-warning bg-warning-tint px-4 py-3">
                             <p className="min-w-0 flex-1 text-[13px] leading-[19px] text-text">
                                 {classes.length === 0
-                                    ? `${level.name} has no classes in ${enrolment.year} yet. Add one to start placing.`
-                                    : `${level.name} has ${count(level.expected)} students for ${count(level.seats)} seats. Add a class or raise the class size, or some students will have no seat.`}
+                                    ? t(':level has no classes in :year yet. Add one to start placing.', { level: level.name, year: enrolment.year })
+                                    : t(':level has :expected students for :seats seats. Add a class or raise the class size, or some students will have no seat.', { level: level.name, expected: count(level.expected), seats: count(level.seats) })}
                             </p>
                             <button
                                 type="button"
                                 onClick={() => router.post(storeClass.url(level.id), {}, { preserveScroll: true })}
                                 className="flex h-8 shrink-0 items-center rounded-md border border-solid border-border bg-white px-[14px] text-[13px] leading-4 font-medium text-text hover:bg-surface"
                             >
-                                Add a class to {level.name}
+                                {t('Add a class to :level', { level: level.name })}
                             </button>
                         </div>
                     )}
@@ -156,11 +156,11 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                     <div className="flex flex-col gap-6 lg:flex-row">
                         <div className="flex shrink-0 flex-col gap-3 lg:w-[400px]">
                             <div className="flex items-baseline justify-between">
-                                <p className={capsLabelClass}>Waiting for a class · {count(waiting.length)}</p>
-                                <p className="text-[13px] leading-4 text-text-muted">{selected.length} selected</p>
+                                <p className={capsLabelClass}>{t('Waiting for a class · :waiting', { waiting: count(waiting.length) })}</p>
+                                <p className="text-[13px] leading-4 text-text-muted">{t(':selected selected', { selected: selected.length })}</p>
                             </div>
                             <div className="flex flex-wrap gap-[6px]">
-                                {[{ key: 'all' as const, label: 'All' }, ...KINDS].map((option) => {
+                                {[{ key: 'all' as const, label: t('All') }, ...KINDS].map((option) => {
                                     const active = kind === option.key;
                                     const total = option.key === 'all' ? null : waiting.filter((row) => row.kind === option.key).length;
 
@@ -176,7 +176,7 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                                                     : 'border-border text-text hover:bg-surface'
                                             }`}
                                         >
-                                            {option.label}
+                                            {t(option.label)}
                                             {total !== null && ` · ${count(total)}`}
                                         </button>
                                     );
@@ -186,8 +186,8 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                                 {shown.length === 0 ? (
                                     <p className="px-3 py-4 text-[13px] leading-[19px] text-text-muted">
                                         {waiting.length === 0
-                                            ? `Every ${level.name} student has a class.`
-                                            : 'Nobody of this kind is waiting.'}
+                                            ? t('Every :level student has a class.', { level: level.name })
+                                            : t('Nobody of this kind is waiting.')}
                                     </p>
                                 ) : (
                                     <>
@@ -198,7 +198,7 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                                                 onChange={toggleAll}
                                                 className="h-[18px] w-[18px] shrink-0 accent-primary"
                                             />
-                                            Select all {count(shown.length)}
+                                            {t('Select all')} {count(shown.length)}
                                         </label>
                                         {shown.map((row) => {
                                             const on = selected.includes(row.id);
@@ -219,7 +219,7 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                                                     </span>
                                                     {row.kind === 'promoted' ? (
                                                         <span className="shrink-0 text-[12px] leading-4 text-text-muted">
-                                                            From {row.from}
+                                                            {t('From :from', { from: row.from })}
                                                         </span>
                                                     ) : (
                                                         <span
@@ -229,7 +229,7 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                                                                     : 'bg-science-tint text-science'
                                                             }`}
                                                         >
-                                                            {row.kind === 'repeating' ? `Repeating ${level.name}` : 'New student'}
+                                                            {row.kind === 'repeating' ? t('Repeating :level', { level: level.name }) : t('New student')}
                                                         </span>
                                                     )}
                                                 </label>
@@ -240,13 +240,13 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                             </div>
                             <div className="flex items-center gap-2">
                                 <select
-                                    aria-label="Class to place in"
+                                    aria-label={t('Class to place in')}
                                     value={targetId}
                                     onChange={(e) => setTarget(e.target.value)}
                                     disabled={classes.length === 0}
                                     className="h-9 min-w-0 flex-1 rounded-md border border-solid border-border bg-white px-3 text-[14px] leading-[18px] text-text outline-none focus:border-primary disabled:opacity-50"
                                 >
-                                    {classes.length === 0 && <option value="">No classes yet</option>}
+                                    {classes.length === 0 && <option value="">{t('No classes yet')}</option>}
                                     {classes.map((option) => (
                                         <option key={option.id} value={option.id}>
                                             {option.name} · {option.placed} / {option.capacity}
@@ -259,7 +259,7 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                                     onClick={placeSelected}
                                     className="flex h-9 shrink-0 items-center rounded-md border border-solid border-primary bg-white px-4 text-[13px] leading-4 font-semibold text-primary hover:bg-primary-tint disabled:opacity-50"
                                 >
-                                    Place {selected.length > 0 ? count(selected.length) : ''} in class
+                                    {t('Place')} {selected.length > 0 ? count(selected.length) : ''} {t('in class')}
                                 </button>
                             </div>
                             <ErrorText message={errors.class_id ?? errors.enrolment_ids ?? errors.level_id ?? errors.class} />
@@ -267,15 +267,15 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
 
                         <div className="flex min-w-0 flex-1 flex-col gap-3">
                             <p className={capsLabelClass}>
-                                {level.name} classes · {count(level.placed)} of {count(level.expected)} placed
+                                {t(':level classes · :placed of :expected placed', { level: level.name, placed: count(level.placed), expected: count(level.expected) })}
                             </p>
                             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 {classes.map((option) => {
                                     const receiving = option.id === targetId && selected.length > 0;
                                     const parts = [
-                                        option.promoted > 0 ? `${option.promoted} promoted` : null,
-                                        option.repeating > 0 ? `${option.repeating} repeating` : null,
-                                        option.new > 0 ? `${option.new} new` : null,
+                                        option.promoted > 0 ? t(':promoted promoted', { promoted: option.promoted }) : null,
+                                        option.repeating > 0 ? t(':repeating repeating', { repeating: option.repeating }) : null,
+                                        option.new > 0 ? t(':new new', { new: option.new }) : null,
                                     ].filter(Boolean);
 
                                     return (
@@ -301,10 +301,10 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                                             <div className="flex items-center justify-between gap-3">
                                                 <span className="text-[12px] leading-4 text-text-muted">
                                                     {receiving
-                                                        ? `Receiving the ${count(selected.length)} selected`
+                                                        ? t('Receiving the :selected selected', { selected: count(selected.length) })
                                                         : parts.length > 0
                                                           ? parts.join(' · ')
-                                                          : 'Empty'}
+                                                          : t('Empty')}
                                                 </span>
                                                 {option.placed > 0 && !enrolment.confirmed && (
                                                     <button
@@ -312,7 +312,7 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                                                         onClick={() => router.post(clearClass.url(), { class_id: option.id }, { preserveScroll: true })}
                                                         className="shrink-0 text-[12px] leading-4 font-medium text-primary hover:underline"
                                                     >
-                                                        Send back to waiting
+                                                        {t('Send back to waiting')}
                                                     </button>
                                                 )}
                                             </div>
@@ -324,64 +324,64 @@ function Placement({ enrolment, levels, level, waiting, classes }: PlacementProp
                             <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-surface p-4">
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <p className="text-[14px] leading-[18px] font-semibold text-text">
-                                        {enrolment.confirmed ? 'Enrolment is confirmed' : 'Before enrolment can be confirmed'}
+                                        {enrolment.confirmed ? t('Enrolment is confirmed') : t('Before enrolment can be confirmed')}
                                     </p>
                                     {enrolment.ready || enrolment.confirmed ? (
                                         <Link
                                             href={confirm.url()}
                                             className="flex h-8 items-center rounded-md bg-primary px-[14px] text-[13px] leading-4 font-semibold text-white hover:bg-primary-hover"
                                         >
-                                            {enrolment.confirmed ? 'Open confirmation' : 'Confirm enrolment'}
+                                            {enrolment.confirmed ? t('Open confirmation') : t('Confirm enrolment')}
                                         </Link>
                                     ) : (
                                         <span
                                             aria-disabled="true"
                                             className="flex h-8 items-center rounded-md border border-solid border-border bg-white px-[14px] text-[13px] leading-4 font-semibold text-text opacity-50"
                                         >
-                                            Confirm enrolment
+                                            {t('Confirm enrolment')}
                                         </span>
                                     )}
                                 </div>
                                 <ul className="flex flex-col gap-[10px]">
                                     <CheckLine done={enrolment.undecided === 0}>
                                         {enrolment.undecided === 0 ? (
-                                            'Every continuing student is decided'
+                                            t('Every continuing student is decided')
                                         ) : (
                                             <>
-                                                {count(enrolment.undecided)} continuing{' '}
-                                                {enrolment.undecided === 1 ? 'student is' : 'students are'} not decided →{' '}
+                                                {count(enrolment.undecided)} {t('continuing')}{' '}
+                                                {enrolment.undecided === 1 ? t('student is') : t('students are')} {t('not decided →')}{' '}
                                                 <Link href={reEnrolment.url()} className={linkClass}>
-                                                    Re-enrolment
+                                                    {t('Re-enrolment')}
                                                 </Link>
                                             </>
                                         )}
                                     </CheckLine>
                                     <CheckLine done={enrolment.to_review === 0}>
                                         {enrolment.to_review === 0 ? (
-                                            'Every application has an answer'
+                                            t('Every application has an answer')
                                         ) : (
                                             <>
                                                 {count(enrolment.to_review)}{' '}
-                                                {enrolment.to_review === 1 ? 'application is' : 'applications are'} still to review →{' '}
+                                                {enrolment.to_review === 1 ? t('application is') : t('applications are')} {t('still to review →')}{' '}
                                                 <Link href={applications.url({ query: { stage: 'to_review' } })} className={linkClass}>
-                                                    Applications
+                                                    {t('Applications')}
                                                 </Link>
                                             </>
                                         )}
                                     </CheckLine>
                                     <CheckLine done={enrolment.over_levels.length === 0 && enrolment.unplaced === 0 && enrolment.expected > 0}>
                                         {enrolment.over_levels.length > 0
-                                            ? `${listed(enrolment.over_levels)} ${enrolment.over_levels.length === 1 ? 'has' : 'have'} more students than seats → Add a class`
+                                            ? t(':over_levels :have more students than seats → Add a class', { over_levels: listed(enrolment.over_levels), have: enrolment.over_levels.length === 1 ? 'has' : 'have' })
                                             : enrolment.unplaced > 0
-                                              ? `${count(enrolment.unplaced)} ${enrolment.unplaced === 1 ? 'student is' : 'students are'} still waiting for a class`
+                                              ? t(':unplaced :are still waiting for a class', { unplaced: count(enrolment.unplaced), are: enrolment.unplaced === 1 ? 'student is' : 'students are' })
                                               : enrolment.expected > 0
-                                                ? 'Every student has a class'
-                                                : 'Nobody is headed for next year yet'}
+                                                ? t('Every student has a class')
+                                                : t('Nobody is headed for next year yet')}
                                     </CheckLine>
                                     <CheckLine done={enrolment.has_fee_plan}>
                                         {enrolment.has_fee_plan
-                                            ? `The ${enrolment.year} fee plan is set`
-                                            : `No ${enrolment.year} fee plan yet, so confirming bills nothing`}
+                                            ? t('The :year fee plan is set', { year: enrolment.year })
+                                            : t('No :year fee plan yet, so confirming bills nothing', { year: enrolment.year })}
                                     </CheckLine>
                                 </ul>
                             </div>

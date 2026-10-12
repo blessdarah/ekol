@@ -37,7 +37,7 @@ class ResolveSchool
         $user = $request->user();
 
         if ($user && $user->school_id && $user->school_id !== $school->id) {
-            abort(403, 'This account does not belong to this school.');
+            abort(403, __('This account does not belong to this school.'));
         }
 
         return $next($request);

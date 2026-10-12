@@ -1,5 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useT } from '../../lib/i18n';
 
 export interface ToastData {
     type: 'success' | 'error' | 'info';
@@ -42,6 +43,7 @@ function Mark({ type }: { type: ToastData['type'] }) {
  */
 export default function Toasts() {
     const { flash } = usePage();
+    const t = useT();
     const [toasts, setToasts] = useState<Toast[]>([]);
     const nextId = useRef(1);
     const flashed = flash.toast;
@@ -73,19 +75,19 @@ export default function Toasts() {
             if (messages.length > 0) {
                 push({
                     type: 'error',
-                    message: messages.length === 1 ? String(messages[0]) : `${messages[0]} And ${messages.length - 1} more to fix.`,
+                    message: messages.length === 1 ? String(messages[0]) : `${messages[0]} ${t('And :count more to fix.', { count: messages.length - 1 })}`,
                 });
             }
         });
         const offNetwork = router.on('networkError', () => {
-            push({ type: 'error', message: 'The server could not be reached. Check your connection and try again.' });
+            push({ type: 'error', message: t('The server could not be reached. Check your connection and try again.') });
         });
 
         return () => {
             offError();
             offNetwork();
         };
-    }, [push]);
+    }, [push, t]);
 
     if (toasts.length === 0) {
         return null;
@@ -101,12 +103,12 @@ export default function Toasts() {
                 >
                     <Mark type={toast.type} />
                     <p className="min-w-0 flex-1 py-[3px] text-[13px] leading-[18px] text-text">
-                        <span className="sr-only">{TONES[toast.type].label}: </span>
+                        <span className="sr-only">{t(TONES[toast.type].label)}: </span>
                         {toast.message}
                     </p>
                     <button
                         type="button"
-                        aria-label="Dismiss"
+                        aria-label={t('Dismiss')}
                         onClick={() => dismiss(toast.id)}
                         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-text-muted hover:bg-surface hover:text-text"
                     >

@@ -46,7 +46,7 @@ class ExamScheduleController extends Controller
                     continue;
                 }
 
-                $when = $paper->held_on->format('D j M').' at '.substr($paper->starts_at, 0, 5);
+                $when = $paper->held_on->translatedFormat('D j M').' at '.substr($paper->starts_at, 0, 5);
                 $pair = "{$paper->level?->name} {$paper->subject?->name} and {$other->level?->name} {$other->subject?->name}";
 
                 if ($paper->room_id && $paper->room_id === $other->room_id) {
@@ -136,7 +136,7 @@ class ExamScheduleController extends Controller
         $target = $this->exam($school, $plan);
 
         if ($target->state === AssessmentState::Published) {
-            throw ValidationException::withMessages(['held_on' => 'This exam is published. Its schedule can no longer change.']);
+            throw ValidationException::withMessages(['held_on' => __('This exam is published. Its schedule can no longer change.')]);
         }
 
         $data = $request->validated();
@@ -187,12 +187,12 @@ class ExamScheduleController extends Controller
 
         if ($papers->isEmpty() || $unset > 0) {
             throw ValidationException::withMessages(['publish' => $unset > 0
-                ? "{$unset} ".($unset === 1 ? 'subject still has' : 'subjects still have').' no paper.'
-                : 'Add the papers first.']);
+                ? trans_choice('{1} :count subject still has no paper.|[2,*] :count subjects still have no paper.', $unset, ['count' => $unset])
+                : __('Add the papers first.')]);
         }
 
         if (static::clashes($target) !== []) {
-            throw ValidationException::withMessages(['publish' => 'Clear the clashes before publishing the schedule.']);
+            throw ValidationException::withMessages(['publish' => __('Clear the clashes before publishing the schedule.')]);
         }
 
         $target->update(['schedule_published_at' => now()]);

@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { show } from '@/actions/App/Http/Controllers/TeacherTimetableController';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface Cell {
     id: string;
@@ -42,7 +43,7 @@ const TONES: Record<Cell['tone'], string> = {
 };
 
 function plural(count: number, one: string, many = `${one}s`): string {
-    return `${count} ${count === 1 ? one : many}`;
+    return `${count} ${count === 1 ? t(one) : t(many)}`;
 }
 
 function shortDay(iso: string | null): string {
@@ -52,26 +53,26 @@ function shortDay(iso: string | null): string {
 
     const [, month, date] = iso.split('-');
 
-    return `${Number(date)} ${MONTHS[Number(month) - 1]}`;
+    return `${Number(date)} ${t(MONTHS[Number(month) - 1])}`;
 }
 
 function Timetable({ termLabel, yearLabel, week, version, summary, days = [], periods = [], cells = {} }: TimetableProps) {
     if (!week || !summary || !version) {
         return (
             <div className="flex flex-col gap-6">
-                <Head title="My timetable" />
+                <Head title={t('My timetable')} />
                 <div className="flex flex-col gap-[6px]">
-                    <p className={`${monoCaps} text-text-muted`}>{termLabel ?? 'No active term'}</p>
-                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">My timetable</h1>
+                    <p className={`${monoCaps} text-text-muted`}>{termLabel ?? t('No active term')}</p>
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">{t('My timetable')}</h1>
                 </div>
                 <div className="flex flex-col gap-2 rounded-lg bg-surface p-5">
                     <p className="text-[14px] leading-[18px] font-semibold text-text">
-                        {termLabel ? 'No timetable is published yet' : 'No term is active'}
+                        {termLabel ? t('No timetable is published yet') : t('No term is active')}
                     </p>
                     <p className="max-w-[600px] text-[13px] leading-[19px] text-text">
                         {termLabel
-                            ? `Your week appears here once the school publishes the ${termLabel} timetable.`
-                            : 'A timetable belongs to a term. Your week appears here once the school makes a term active.'}
+                            ? t('Your week appears here once the school publishes the :term_label timetable.', { term_label: termLabel })
+                            : t('A timetable belongs to a term. Your week appears here once the school makes a term active.')}
                     </p>
                 </div>
             </div>
@@ -82,17 +83,17 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
 
     return (
         <div className="flex flex-col gap-6">
-            <Head title="My timetable" />
+            <Head title={t('My timetable')} />
             <div className="flex flex-wrap items-end justify-between gap-6">
                 <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
                     <p className={`${monoCaps} text-text-muted`}>
                         {termLabel}
-                        {yearLabel ? ` · ${yearLabel}` : ''} · Week {week.number} of {week.of}
+                        {yearLabel ? ` · ${yearLabel}` : ''} {t('· Week')} {week.number} {t('of')} {week.of}
                     </p>
-                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">My timetable</h1>
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">{t('My timetable')}</h1>
                     <p className="text-[14px] leading-5 text-text-muted">
                         {plural(summary.subjects, 'subject')} · {plural(summary.classes, 'class', 'classes')} · {plural(summary.rooms, 'room')} ·{' '}
-                        {plural(summary.periods, 'period')} a week · {plural(summary.free, 'free period')}
+                        {plural(summary.periods, 'period')} {t('a week ·')} {plural(summary.free, 'free period')}
                     </p>
                 </div>
                 <div className="flex gap-3 print:hidden">
@@ -101,7 +102,7 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                             <Link
                                 href={show.url({ query: { week: week.previous } })}
                                 preserveScroll
-                                aria-label="Previous week"
+                                aria-label={t('Previous week')}
                                 className="flex h-9 w-9 items-center justify-center rounded-l-md border border-solid border-border text-[14px] text-text hover:bg-surface"
                             >
                                 ←
@@ -117,13 +118,13 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                                 week.isCurrent ? 'z-10 border-primary bg-primary-tint text-primary' : 'border-border text-text hover:bg-surface'
                             }`}
                         >
-                            This week
+                            {t('This week')}
                         </Link>
                         {week.next ? (
                             <Link
                                 href={show.url({ query: { week: week.next } })}
                                 preserveScroll
-                                aria-label="Next week"
+                                aria-label={t('Next week')}
                                 className="flex h-9 w-9 items-center justify-center rounded-r-md border border-solid border-border text-[14px] text-text hover:bg-surface"
                             >
                                 →
@@ -133,7 +134,7 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                         )}
                     </div>
                     <button type="button" onClick={() => window.print()} className={buttonClass}>
-                        Print
+                        {t('Print')}
                     </button>
                 </div>
             </div>
@@ -141,11 +142,11 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
             <section className="flex flex-col overflow-clip rounded-lg border border-solid border-border bg-white">
                 <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-solid border-border bg-surface px-4 py-[14px]">
                     <h2 className="font-display text-[14px] leading-[18px] font-semibold text-text">
-                        Week {week.number} · {week.label}
+                        {t('Week :number · :label', { number: week.number, label: week.label })}
                     </h2>
                     <p className="font-mono text-[12px] leading-4 text-text-muted">
-                        Published version {version.number}
-                        {version.published ? ` · ${shortDay(version.published)}` : ''}. Only the office can move a lesson
+                        {t('Published version')} {version.number}
+                        {version.published ? ` · ${shortDay(version.published)}` : ''}{t('. Only the office can move a lesson')}
                     </p>
                 </header>
 
@@ -156,7 +157,7 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                                 <div key={day.index} className="flex flex-1 justify-center">
                                     {day.today ? (
                                         <span className="rounded-full bg-primary-tint px-[10px] py-[2px] text-[12px] leading-4 font-semibold text-primary">
-                                            {day.short} · today
+                                            {t(':short · today', { short: day.short })}
                                         </span>
                                     ) : (
                                         <span className="text-[12px] leading-4 font-semibold text-text-muted">
@@ -169,12 +170,12 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                         {periods.map((period) =>
                             period.is_break ? (
                                 <div key={period.id} className="flex h-5 shrink-0 items-center pl-11">
-                                    <span className="text-[11px] leading-[14px] font-semibold tracking-[0.06em] text-text-muted uppercase">{period.label}</span>
+                                    <span className="text-[11px] leading-[14px] font-semibold tracking-[0.06em] text-text-muted uppercase">{t(period.label)}</span>
                                 </div>
                             ) : (
                                 <div key={period.id} className="flex gap-1">
                                     <span title={period.time} className="w-10 shrink-0 truncate font-mono text-[11px] leading-[48px] text-text-muted">
-                                        {period.label}
+                                        {t(period.label)}
                                     </span>
                                     {days.map((day) => {
                                         const here = cells[`${day.index}|${period.id}`] ?? [];
@@ -182,7 +183,7 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                                         if (here.length === 0) {
                                             return (
                                                 <div key={day.index} className="flex h-12 min-w-0 flex-1 items-center rounded-[6px] bg-surface px-2 text-[12px] leading-4 text-text-muted">
-                                                    Free
+                                                    {t('Free')}
                                                 </div>
                                             );
                                         }
@@ -194,9 +195,9 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                                                     className="flex h-12 min-w-0 flex-1 flex-col justify-center overflow-clip rounded-[6px] border-2 border-solid border-danger bg-danger-tint px-2"
                                                 >
                                                     <span className="truncate text-[12px] leading-[17px] font-semibold text-danger">
-                                                        Clash · {here.map((cell) => cell.class).join(' + ')}
+                                                        {t('Clash ·')} {here.map((cell) => cell.class).join(' + ')}
                                                     </span>
-                                                    <span className="truncate text-[11px] leading-[14px] text-danger">Tell the office</span>
+                                                    <span className="truncate text-[11px] leading-[14px] text-danger">{t('Tell the office')}</span>
                                                 </div>
                                             );
                                         }
@@ -213,7 +214,7 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                                                     {cell.class} · {cell.subject}
                                                 </span>
                                                 <span className={`truncate text-[12px] leading-[17px] ${cell.note ? 'font-medium' : 'font-semibold'} ${cell.tone === 'away' ? 'text-text-muted' : 'text-text'}`}>
-                                                    {cell.note ? `${cell.room ?? 'No room'} · ${cell.note}` : (cell.room ?? 'No room')}
+                                                    {cell.note ? `${cell.room ?? t('No room')} · ${cell.note}` : (cell.room ?? t('No room'))}
                                                 </span>
                                             </div>
                                         );
@@ -225,11 +226,10 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                 </div>
 
                 <p className="border-t border-solid border-border px-4 py-3 text-[13px] leading-[18px] text-text-muted">
-                    Each box is the class, the subject and the room. Free means
-                    no lesson.
+                    {t('Each box is the class, the subject and the room. Free means no lesson.')}
                     {changed
-                        ? ' Amber is a lesson the office moved or re-roomed this week, blue is a lesson you cover, and a struck-out lesson is covered for you.'
-                        : ' A cover, a swap or a room change for the week shows here when the office logs one.'}
+                        ? t(' Amber is a lesson the office moved or re-roomed this week, blue is a lesson you cover, and a struck-out lesson is covered for you.')
+                        : t(' A cover, a swap or a room change for the week shows here when the office logs one.')}
                 </p>
             </section>
         </div>

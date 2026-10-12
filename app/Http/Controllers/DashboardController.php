@@ -54,7 +54,7 @@ class DashboardController extends Controller
         $open = collect($sheets)->where('open', true);
 
         return Inertia::render('teacher/today', [
-            'date' => $now->format('l j F'),
+            'date' => $now->translatedFormat('l j F'),
             'greeting' => match (true) {
                 $now->hour < 12 => 'Good morning',
                 $now->hour < 17 => 'Good afternoon',

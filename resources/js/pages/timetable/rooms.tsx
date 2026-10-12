@@ -24,6 +24,7 @@ import {
     quietActionClass,
 } from '../../components/timetable/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface Block {
     weekday: number;
@@ -78,7 +79,7 @@ function RoomPanel({
     });
     const { data, setData, processing } = form;
     const errors = form.errors as Record<string, string | undefined>;
-    const days = WEEKDAYS.map((label, index) => ({ label, index })).filter(({ index }) => (schoolDays & (1 << index)) !== 0);
+    const days = WEEKDAYS.map((name) => t(name)).map((label, index) => ({ label, index })).filter(({ index }) => (schoolDays & (1 << index)) !== 0);
     const [draft, setDraft] = useState<{ open: boolean; weekday: number; period_id: string; reason: string }>({
         open: false,
         weekday: days[0]?.index ?? 0,
@@ -133,33 +134,33 @@ function RoomPanel({
             className="flex flex-col gap-4"
         >
             <div className="flex items-center justify-between gap-3">
-                <h2 className="font-display text-[22px] leading-7 font-bold text-text">{room ? room.code : 'New room'}</h2>
+                <h2 className="font-display text-[22px] leading-7 font-bold text-text">{room ? room.code : t('New room')}</h2>
                 {room && share >= 0.9 && (
                     <span className={`flex h-[22px] items-center rounded-full bg-warning-tint px-2 text-[12px] leading-4 font-medium ${amberText}`}>
-                        Nearly full
+                        {t('Nearly full')}
                     </span>
                 )}
             </div>
 
             <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                Name
+                {t('Name')}
                 <input type="text" value={data.code} onChange={(e) => setData('code', e.target.value)} className={inputClass} />
                 <ErrorText message={errors.code} />
             </label>
 
             <div className="flex gap-[10px]">
                 <label className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                    Type
+                    {t('Type')}
                     <select value={data.kind} onChange={(e) => setData('kind', e.target.value)} className={inputClass}>
                         {kinds.map((option) => (
                             <option key={option.value} value={option.value}>
-                                {option.label}
+                                {t(option.label)}
                             </option>
                         ))}
                     </select>
                 </label>
                 <label className={`flex w-[90px] shrink-0 flex-col gap-[6px] ${fieldLabelClass}`}>
-                    Seats
+                    {t('Seats')}
                     <input
                         type="number"
                         min={1}
@@ -173,7 +174,7 @@ function RoomPanel({
 
             {room && kind?.special && (
                 <div className="flex flex-col gap-2">
-                    <p className={fieldLabelClass}>Lessons that need this kind of room</p>
+                    <p className={fieldLabelClass}>{t('Lessons that need this kind of room')}</p>
                     <div className="flex flex-wrap gap-[6px]">
                         {subjects
                             .filter((subject) => data.subject_ids.includes(subject.id))
@@ -185,7 +186,7 @@ function RoomPanel({
                                     {subject.name}
                                     <button
                                         type="button"
-                                        aria-label={`Remove ${subject.name}`}
+                                        aria-label={t('Remove :subject', { subject: subject.name })}
                                         onClick={() => setData('subject_ids', data.subject_ids.filter((id) => id !== subject.id))}
                                         className="flex size-4 items-center justify-center rounded-sm hover:bg-white"
                                     >
@@ -194,45 +195,45 @@ function RoomPanel({
                                 </span>
                             ))}
                         {data.subject_ids.length === 0 && (
-                            <span className="text-[13px] leading-6 text-text-muted">None yet</span>
+                            <span className="text-[13px] leading-6 text-text-muted">{t('None yet')}</span>
                         )}
                     </div>
                     {left.length > 0 && (
                         <select
-                            aria-label="Add a subject"
+                            aria-label={t('Add a subject')}
                             value=""
                             onChange={(e) => e.target.value && setData('subject_ids', [...data.subject_ids, e.target.value])}
                             className={`${inputClass} h-8 text-[13px]`}
                         >
-                            <option value="">Add a subject…</option>
+                            <option value="">{t('Add a subject…')}</option>
                             {left.map((subject) => (
                                 <option key={subject.id} value={subject.id}>
                                     {subject.name}
-                                    {subject.room_kind ? ' (moves from another kind)' : ''}
+                                    {subject.room_kind ? t(' (moves from another kind)') : ''}
                                 </option>
                             ))}
                         </select>
                     )}
                     <p className="text-[12px] leading-[17px] text-text-muted">
-                        This applies to every {kind.label.toLowerCase()}, not only this one.
+                        {t('This applies to every :to_lower_case, not only this one.', { to_lower_case: kind.label.toLowerCase() })}
                     </p>
                 </div>
             )}
 
             <div className="flex flex-col gap-2">
-                <p className={fieldLabelClass}>Not available</p>
+                <p className={fieldLabelClass}>{t('Not available')}</p>
                 {data.unavailable.length > 0 ? (
                     <ul className="flex flex-col gap-1 rounded-md bg-surface px-3 py-2">
                         {data.unavailable.map((block, position) => (
                             <li key={`${block.weekday}-${block.period_id}`} className="flex items-center justify-between gap-3 py-1">
                                 <span className="text-[13px] leading-4 text-text">
-                                    {WEEKDAYS[block.weekday]}{' '}
-                                    {periods.find((period) => period.id === block.period_id)?.label ?? 'period'}
+                                    {t(WEEKDAYS[block.weekday])}{' '}
+                                    {periods.find((period) => period.id === block.period_id)?.label ?? t('period')}
                                     {block.reason ? ` · ${block.reason}` : ''}
                                 </span>
                                 <button
                                     type="button"
-                                    aria-label="Remove this block"
+                                    aria-label={t('Remove this block')}
                                     onClick={() => setData('unavailable', data.unavailable.filter((_, index) => index !== position))}
                                     className="flex size-5 items-center justify-center rounded-sm hover:bg-white"
                                 >
@@ -242,32 +243,32 @@ function RoomPanel({
                         ))}
                     </ul>
                 ) : (
-                    <p className="text-[13px] leading-4 text-text-muted">Open every period.</p>
+                    <p className="text-[13px] leading-4 text-text-muted">{t('Open every period.')}</p>
                 )}
                 {draft.open ? (
                     <div className="flex flex-col gap-2 rounded-md border border-solid border-border p-3">
                         <div className="flex gap-2">
                             <select
-                                aria-label="Day"
+                                aria-label={t('Day')}
                                 value={draft.weekday}
                                 onChange={(e) => setDraft({ ...draft, weekday: Number(e.target.value) })}
                                 className={`${inputClass} h-8 text-[13px]`}
                             >
                                 {days.map((day) => (
                                     <option key={day.index} value={day.index}>
-                                        {day.label}
+                                        {t(day.label)}
                                     </option>
                                 ))}
                             </select>
                             <select
-                                aria-label="Period"
+                                aria-label={t('Period')}
                                 value={draft.period_id}
                                 onChange={(e) => setDraft({ ...draft, period_id: e.target.value })}
                                 className={`${inputClass} h-8 text-[13px]`}
                             >
                                 {periods.map((period) => (
                                     <option key={period.id} value={period.id}>
-                                        {period.label}
+                                        {t(period.label)}
                                     </option>
                                 ))}
                             </select>
@@ -276,26 +277,26 @@ function RoomPanel({
                             type="text"
                             value={draft.reason}
                             onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
-                            placeholder="Reason, such as cleaning"
+                            placeholder={t('Reason, such as cleaning')}
                             className={`${inputClass} h-8 text-[13px]`}
                         />
                         <div className="flex gap-3">
                             <button type="button" onClick={addBlock} className={linkClass}>
-                                Add
+                                {t('Add')}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setDraft({ ...draft, open: false })}
                                 className="text-[13px] leading-4 text-text-muted hover:underline"
                             >
-                                Cancel
+                                {t('Cancel')}
                             </button>
                         </div>
                     </div>
                 ) : (
                     periods.length > 0 && (
                         <button type="button" onClick={() => setDraft({ ...draft, open: true })} className={`self-start ${linkClass}`}>
-                            Block {data.unavailable.length > 0 ? 'another' : 'a'} period
+                            {t('Block')} {data.unavailable.length > 0 ? t('another') : 'a'} {t('period')}
                         </button>
                     )
                 )}
@@ -304,26 +305,26 @@ function RoomPanel({
 
             <div className="flex items-center gap-4">
                 <button type="submit" disabled={processing} className={`${primaryActionClass} h-9 flex-1`}>
-                    {room ? 'Save room' : 'Add room'}
+                    {room ? t('Save room') : t('Add room')}
                 </button>
                 {room && (
                     <button
                         type="button"
                         onClick={() => {
-                            if (window.confirm(`Retire ${room.code}? Draft lessons in it keep their time and lose the room.`)) {
+                            if (window.confirm(t('Retire :code? Draft lessons in it keep their time and lose the room.', { code: room.code }))) {
                                 router.delete(destroy.url(room.id));
                             }
                         }}
                         className="shrink-0 px-2 text-[13px] leading-4 font-medium text-danger hover:underline"
                     >
-                        Retire room
+                        {t('Retire room')}
                     </button>
                 )}
             </div>
             <p className="text-[13px] leading-[19px] text-text-muted">
                 {room
-                    ? 'Retiring a room takes it off the list. Draft lessons that were in it show with no room in Review.'
-                    : 'A new room can be booked the next time you generate.'}
+                    ? t('Retiring a room takes it off the list. Draft lessons that were in it show with no room in Review.')
+                    : t('A new room can be booked the next time you generate.')}
             </p>
         </form>
     );
@@ -338,21 +339,21 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
-            <Head title="Rooms" />
+            <Head title={t('Rooms')} />
             <TimetableHeader
                 page="setup"
                 phase={phase}
-                trail={[{ label: 'Setup', href: setup.url() }, { label: 'Rooms' }]}
-                title="Rooms"
-                meta={`${rooms.length} ${rooms.length === 1 ? 'room' : 'rooms'}. The timetable books lessons from this list.`}
+                trail={[{ label: t('Setup'), href: setup.url() }, { label: t('Rooms') }]}
+                title={t('Rooms')}
+                meta={t(':rooms :rooms_a. The timetable books lessons from this list.', { rooms: rooms.length, rooms_a: rooms.length === 1 ? 'room' : 'rooms' })}
                 action={
                     <>
                         <Link href={setup.url()} className={quietActionClass}>
-                            ← Back to Setup
+                            {t('← Back to Setup')}
                         </Link>
                         <Link href={index.url({ query: { new: '1' } })} className={primaryActionClass}>
                             <PlusIcon />
-                            Add a room
+                            {t('Add a room')}
                         </Link>
                     </>
                 }
@@ -377,7 +378,7 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
                                             : 'border-border font-medium text-text hover:bg-surface'
                                     }`}
                                 >
-                                    {option.label} · {total}
+                                    {t(option.label)} · {total}
                                 </button>
                             );
                         })}
@@ -385,18 +386,17 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
 
                     {rooms.length === 0 ? (
                         <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                            No rooms yet. Add the classrooms, laboratories and
-                            halls lessons are held in.
+                            {t('No rooms yet. Add the classrooms, laboratories and halls lessons are held in.')}
                         </p>
                     ) : (
                         <div className="overflow-x-auto rounded-lg border border-solid border-border">
                             <div className="flex min-w-[620px] flex-col">
                                 <div className={`flex h-8 items-center gap-4 border-b border-solid border-border bg-surface px-[14px] ${capsLabelClass}`}>
-                                    <span className="w-[86px] shrink-0">Room</span>
-                                    <span className="w-[100px] shrink-0">Type</span>
-                                    <span className="w-[46px] shrink-0 text-right">Seats</span>
-                                    <span className="w-[90px] shrink-0">Home class</span>
-                                    <span className="flex-1">Booked a week</span>
+                                    <span className="w-[86px] shrink-0">{t('Room')}</span>
+                                    <span className="w-[100px] shrink-0">{t('Type')}</span>
+                                    <span className="w-[46px] shrink-0 text-right">{t('Seats')}</span>
+                                    <span className="w-[90px] shrink-0">{t('Home class')}</span>
+                                    <span className="flex-1">{t('Booked a week')}</span>
                                 </div>
                                 {shown.map((room, position) => {
                                     const active = selected?.id === room.id;
@@ -415,11 +415,11 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
                                         >
                                             <span className="w-[86px] shrink-0 text-[14px] leading-[18px] font-semibold text-text">{room.code}</span>
                                             <span className="w-[100px] shrink-0 truncate text-[13px] leading-4 text-text">
-                                                {shared.kinds.find((kind) => kind.value === room.kind)?.label}
+                                                {t(shared.kinds.find((kind) => kind.value === room.kind)?.label)}
                                             </span>
                                             <span className="w-[46px] shrink-0 text-right font-mono text-[13px] leading-4 text-text">{room.capacity}</span>
                                             <span className={`w-[90px] shrink-0 truncate text-[13px] leading-4 ${room.home ? 'text-text' : 'text-text-muted'}`}>
-                                                {room.home ?? 'None'}
+                                                {room.home ?? t('None')}
                                             </span>
                                             <span className="flex min-w-0 flex-1 items-center gap-2">
                                                 <span className="flex h-1 flex-1 rounded-full bg-border">
@@ -439,9 +439,7 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
                         </div>
                     )}
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        Booked a week counts slots out of {shared.slotsAWeek} that
-                        lessons use{phase.has_draft ? ' in the draft' : phase.live !== null ? ' in the live timetable' : ''}. A room above 90%
-                        leaves little room to move lessons.
+                        {t('Booked a week counts slots out of')} {shared.slotsAWeek} {t('that lessons use')}{phase.has_draft ? t(' in the draft') : phase.live !== null ? t(' in the live timetable') : ''}{t('. A room above 90% leaves little room to move lessons.')}
                     </p>
                 </div>
 

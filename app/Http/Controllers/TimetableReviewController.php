@@ -55,12 +55,12 @@ class TimetableReviewController extends Controller
         $picker = collect($this->picker($version, $view, $issues));
         $id = (string) $request->query('id', '');
         $current = $picker->firstWhere('id', $id)
-            ?? $picker->first(fn(array $row) => $row['issues'] > 0)
+            ?? $picker->first(fn (array $row) => $row['issues'] > 0)
             ?? $picker->first();
 
         $column = ['class' => 'school_class_id', 'teacher' => 'staff_id', 'room' => 'room_id'][$view];
         $slots = $current ? $version->slots->where($column, $current['id']) : collect();
-        $clashing = $issues->where('type', 'clash')->flatMap(fn(array $issue) => $issue['slot_ids'])->all();
+        $clashing = $issues->where('type', 'clash')->flatMap(fn (array $issue) => $issue['slot_ids'])->all();
         $cells = [];
 
         foreach ($slots as $slot) {
@@ -71,7 +71,7 @@ class TimetableReviewController extends Controller
                     default => (string) $slot->subject?->name,
                 },
                 'sub' => match ($view) {
-                    'class' => trim($this->short($slot->staff) . ' · ' . ($slot->room->code ?? 'no room'), ' ·'),
+                    'class' => trim($this->short($slot->staff).' · '.($slot->room->code ?? 'no room'), ' ·'),
                     'teacher' => $slot->room->code ?? 'no room',
                     default => (string) $slot->schoolClass?->name,
                 },
@@ -97,11 +97,11 @@ class TimetableReviewController extends Controller
             'view' => $view,
             'picker' => $picker->values(),
             'current' => $current,
-            'days' => collect($world['days'])->map(fn(int $day) => [
+            'days' => collect($world['days'])->map(fn (int $day) => [
                 'index' => $day,
                 'short' => substr(TimetableVersion::WEEKDAYS[$day], 0, 3),
             ])->values(),
-            'periods' => Period::where('school_id', $school->id)->orderBy('ordinal')->get()->map(fn(Period $period) => [
+            'periods' => Period::where('school_id', $school->id)->orderBy('ordinal')->get()->map(fn (Period $period) => [
                 'id' => $period->id,
                 'label' => $period->label,
                 'is_break' => $period->is_break,
@@ -110,25 +110,25 @@ class TimetableReviewController extends Controller
             'closed' => $current ? $this->closed($version, $view, $current['id'], $school) : [],
             'unplaced' => $view === 'class' && $current
                 ? $issues->where('type', 'unplaced')
-                ->filter(fn(array $issue) => in_array($current['id'], $issue['class_ids'], true))
-                ->map(fn(array $issue) => [
-                    'lesson_id' => $issue['lesson_id'],
-                    'subject' => explode(' · ', $issue['title'])[0],
-                    'count' => $issue['count'],
-                ])->values()
+                    ->filter(fn (array $issue) => in_array($current['id'], $issue['class_ids'], true))
+                    ->map(fn (array $issue) => [
+                        'lesson_id' => $issue['lesson_id'],
+                        'subject' => explode(' · ', $issue['title'])[0],
+                        'count' => $issue['count'],
+                    ])->values()
                 : [],
             'clashes' => $current
                 ? $issues->where('type', 'clash')
-                ->filter(fn(array $issue) => match ($view) {
-                    'teacher' => $issue['staff_id'] === $current['id'],
-                    'room' => $issue['room_id'] === $current['id'],
-                    default => in_array($current['id'], $issue['class_ids'], true),
-                })
-                ->map(fn(array $issue) => [
-                    'title' => $issue['title'],
-                    'detail' => $issue['detail'],
-                    'slot_id' => $issue['slot_ids'][0] ?? null,
-                ])->values()
+                    ->filter(fn (array $issue) => match ($view) {
+                        'teacher' => $issue['staff_id'] === $current['id'],
+                        'room' => $issue['room_id'] === $current['id'],
+                        default => in_array($current['id'], $issue['class_ids'], true),
+                    })
+                    ->map(fn (array $issue) => [
+                        'title' => $issue['title'],
+                        'detail' => $issue['detail'],
+                        'slot_id' => $issue['slot_ids'][0] ?? null,
+                    ])->values()
                 : [],
             'selected' => $selected,
         ]);
@@ -153,13 +153,13 @@ class TimetableReviewController extends Controller
         $class = $lesson ? $world['classes']->get($lesson->school_class_id) : null;
 
         if (! $lesson || ! $class) {
-            throw ValidationException::withMessages(['move' => 'That lesson is no longer on the list.']);
+            throw ValidationException::withMessages(['move' => __('That lesson is no longer on the list.')]);
         }
 
         $placed = $draft->slots->where('school_class_id', $class->id)->where('subject_id', $lesson->subject_id)->count();
 
         if ($placed >= $lesson->weekly_periods) {
-            throw ValidationException::withMessages(['move' => 'Every lesson of that subject is already placed.']);
+            throw ValidationException::withMessages(['move' => __('Every lesson of that subject is already placed.')]);
         }
 
         $weekday = (int) $data['weekday'];
@@ -168,7 +168,7 @@ class TimetableReviewController extends Controller
 
         if ($room === false) {
             throw ValidationException::withMessages([
-                'move' => "No {$lesson->subject?->room_kind?->label()} is free at that time.",
+                'move' => __('No :kind is free at that time.', ['kind' => $lesson->subject?->room_kind?->label()]),
             ]);
         }
 
@@ -246,7 +246,7 @@ class TimetableReviewController extends Controller
         $draft = $term ? TimetableVersion::draftFor($term) : null;
 
         return $draft ?? throw ValidationException::withMessages([
-            'move' => 'There is no draft timetable to change. The live timetable changes through Changes.',
+            'move' => __('There is no draft timetable to change. The live timetable changes through Changes.'),
         ]);
     }
 
@@ -270,15 +270,15 @@ class TimetableReviewController extends Controller
         $world = $draft->world();
         $key = TimetableVersion::key($weekday, $periodId);
         $busy = $draft->busy();
-        $others = fn(array $ids) => array_values(array_diff($ids, [$exceptId]));
+        $others = fn (array $ids) => array_values(array_diff($ids, [$exceptId]));
         $period = $world['periods']->firstWhere('id', $periodId);
-        $when = TimetableVersion::WEEKDAYS[$weekday] . ' ' . $period?->label;
+        $when = TimetableVersion::WEEKDAYS[$weekday].' '.$period?->label;
 
         if (in_array('time', $checks, true)) {
             $taken = $busy['class'][$classId][$key] ?? null;
 
             if ($taken !== null && $taken !== $exceptId) {
-                throw ValidationException::withMessages(['move' => "The class already has a lesson on {$when}."]);
+                throw ValidationException::withMessages(['move' => __('The class already has a lesson on :when.', ['when' => $when])]);
             }
         }
 
@@ -286,11 +286,11 @@ class TimetableReviewController extends Controller
             $teacher = User::where('school_id', $school->id)->whereKey($staffId)->first();
 
             if ($others($busy['staff'][$staffId][$key] ?? []) !== []) {
-                throw ValidationException::withMessages(['move' => "{$teacher?->full_name} already teaches on {$when}."]);
+                throw ValidationException::withMessages(['move' => __(':full_name already teaches on :when.', ['full_name' => $teacher?->full_name, 'when' => $when])]);
             }
 
             if ($teacher && $period && ! TimetableVersion::teacherWorks($teacher, $school, $weekday, $period, $world['periods'])) {
-                throw ValidationException::withMessages(['move' => "{$teacher->full_name} does not work on {$when}, by the staff record."]);
+                throw ValidationException::withMessages(['move' => __(':full_name does not work on :when, by the staff record.', ['full_name' => $teacher->full_name, 'when' => $when])]);
             }
         }
 
@@ -298,11 +298,11 @@ class TimetableReviewController extends Controller
             $room = $world['rooms']->get($roomId);
 
             if ($others($busy['room'][$roomId][$key] ?? []) !== []) {
-                throw ValidationException::withMessages(['move' => "{$room?->code} is already booked on {$when}."]);
+                throw ValidationException::withMessages(['move' => __(':code is already booked on :when.', ['code' => $room?->code, 'when' => $when])]);
             }
 
             if ($room && ! TimetableVersion::roomOpen($room, $weekday, $periodId)) {
-                throw ValidationException::withMessages(['move' => "{$room->code} is closed on {$when}."]);
+                throw ValidationException::withMessages(['move' => __(':code is closed on :when.', ['code' => $room->code, 'when' => $when])]);
             }
         }
     }
@@ -325,18 +325,18 @@ class TimetableReviewController extends Controller
                 $placed = $version->slots->where('staff_id', $teacher->id)->count();
                 $mine = $clashes->where('staff_id', $teacher->id)->count();
                 $over = $teacher->max_periods_week !== null && $placed > $teacher->max_periods_week;
-                $subjects = $world['lessons']->where('staff_id', $teacher->id)->map(fn(ClassSubject $lesson) => $lesson->subject?->name)->filter()->unique();
+                $subjects = $world['lessons']->where('staff_id', $teacher->id)->map(fn (ClassSubject $lesson) => $lesson->subject?->name)->filter()->unique();
                 $classes = $version->slots->where('staff_id', $teacher->id)->unique('school_class_id')->count();
 
                 return [
                     'id' => $teacher->id,
                     'name' => $teacher->full_name,
                     'meta' => $teacher->max_periods_week !== null ? "{$placed}/{$teacher->max_periods_week}" : (string) $placed,
-                    'note' => $mine > 0 ? "{$mine} " . ($mine === 1 ? 'clash' : 'clashes') : ($over ? 'over' : null),
+                    'note' => $mine > 0 ? "{$mine} ".($mine === 1 ? 'clash' : 'clashes') : ($over ? 'over' : null),
                     'issues' => $mine,
                     'clash' => $mine > 0,
                     'title' => $teacher->full_name,
-                    'detail' => $subjects->take(2)->join(', ') . " · {$placed} " . ($teacher->max_periods_week !== null ? "of {$teacher->max_periods_week} " : '') . "periods · {$classes} " . ($classes === 1 ? 'class' : 'classes'),
+                    'detail' => $subjects->take(2)->join(', ')." · {$placed} ".($teacher->max_periods_week !== null ? "of {$teacher->max_periods_week} " : '')."periods · {$classes} ".($classes === 1 ? 'class' : 'classes'),
                 ];
             })->values()->all();
         }
@@ -346,25 +346,25 @@ class TimetableReviewController extends Controller
                 $booked = $version->slots->where('room_id', $room->id)->count();
                 $mine = $clashes->where('room_id', $room->id)->count();
                 $left = $slotsAWeek - $booked - count($room->unavailable ?? []);
-                $needs = $world['lessons']->map(fn(ClassSubject $lesson) => $lesson->subject)
-                    ->filter(fn($subject) => $subject && $subject->room_kind === $room->kind)
+                $needs = $world['lessons']->map(fn (ClassSubject $lesson) => $lesson->subject)
+                    ->filter(fn ($subject) => $subject && $subject->room_kind === $room->kind)
                     ->pluck('name')->unique();
 
                 return [
                     'id' => $room->id,
                     'name' => $room->code,
                     'meta' => "{$booked}/{$slotsAWeek}",
-                    'note' => $mine > 0 ? "{$mine} " . ($mine === 1 ? 'clash' : 'clashes') : ($booked > 0 && $left <= 3 ? max(0, $left) . ' left' : null),
+                    'note' => $mine > 0 ? "{$mine} ".($mine === 1 ? 'clash' : 'clashes') : ($booked > 0 && $left <= 3 ? max(0, $left).' left' : null),
                     'issues' => $mine,
                     'clash' => $mine > 0,
                     'title' => $room->code,
-                    'detail' => "{$room->kind->label()} · {$room->capacity} seats · {$booked} of {$slotsAWeek} slots booked" . ($needs->isNotEmpty() ? ' · ' . $needs->join(', ') : ''),
+                    'detail' => "{$room->kind->label()} · {$room->capacity} seats · {$booked} of {$slotsAWeek} slots booked".($needs->isNotEmpty() ? ' · '.$needs->join(', ') : ''),
                 ];
             })->values()->all();
         }
 
         return $world['classes']->toBase()->map(function (SchoolClass $class) use ($version, $world, $issues) {
-            $mine = $issues->filter(fn(array $issue) => in_array($class->id, $issue['class_ids'], true));
+            $mine = $issues->filter(fn (array $issue) => in_array($class->id, $issue['class_ids'], true));
             $total = (int) $world['lessons']->where('school_class_id', $class->id)->sum('weekly_periods');
             $placed = $version->slots->where('school_class_id', $class->id)->count();
 
@@ -376,7 +376,7 @@ class TimetableReviewController extends Controller
                 'issues' => (int) $mine->sum('count'),
                 'clash' => $mine->contains('type', 'clash'),
                 'title' => $class->name,
-                'detail' => ($class->formMaster ? "Form master {$class->formMaster->full_name} · " : '') . "{$placed} of {$total} lessons placed",
+                'detail' => ($class->formMaster ? "Form master {$class->formMaster->full_name} · " : '')."{$placed} of {$total} lessons placed",
             ];
         })->values()->all();
     }
@@ -394,7 +394,7 @@ class TimetableReviewController extends Controller
 
         if ($view === 'room' && ($room = $world['rooms']->get($id))) {
             foreach ($room->unavailable ?? [] as $block) {
-                $closed[TimetableVersion::key((int) $block['weekday'], $block['period_id'])] = 'Closed' . ($block['reason'] ? " · {$block['reason']}" : '');
+                $closed[TimetableVersion::key((int) $block['weekday'], $block['period_id'])] = 'Closed'.($block['reason'] ? " · {$block['reason']}" : '');
             }
         }
 
@@ -423,17 +423,17 @@ class TimetableReviewController extends Controller
         $period = Period::whereKey($slot->period_id)->first();
         $key = TimetableVersion::key($slot->weekday, $slot->period_id);
         $busy = $version->busy();
-        $lesson = $world['lessons']->first(fn(ClassSubject $candidate) => $candidate->school_class_id === $slot->school_class_id
+        $lesson = $world['lessons']->first(fn (ClassSubject $candidate) => $candidate->school_class_id === $slot->school_class_id
             && $candidate->subject_id === $slot->subject_id);
         $kind = $slot->subject?->room_kind;
-        $free = fn(array $ids) => array_diff($ids, [$slot->id]) === [];
+        $free = fn (array $ids) => array_diff($ids, [$slot->id]) === [];
 
         $teachers = $world['lessons']
             ->where('subject_id', $slot->subject_id)
             ->pluck('staff_id')->push($slot->staff_id)->filter()->unique()
-            ->map(fn(string $id) => $world['teachers']->get($id) ?? User::whereKey($id)->first())
+            ->map(fn (string $id) => $world['teachers']->get($id) ?? User::whereKey($id)->first())
             ->filter()
-            ->map(fn(User $teacher) => [
+            ->map(fn (User $teacher) => [
                 'id' => $teacher->id,
                 'name' => $teacher->full_name,
                 'free' => $free($busy['staff'][$teacher->id][$key] ?? [])
@@ -441,22 +441,22 @@ class TimetableReviewController extends Controller
             ])->values();
 
         $rooms = $world['rooms']
-            ->filter(fn(Room $room) => $room->id === $slot->room_id || (
+            ->filter(fn (Room $room) => $room->id === $slot->room_id || (
                 ($kind !== null ? $room->kind === $kind : $room->kind === RoomKind::Classroom)
                 && $free($busy['room'][$room->id][$key] ?? [])
                 && TimetableVersion::roomOpen($room, $slot->weekday, $slot->period_id)
             ))
-            ->map(fn(Room $room) => ['id' => $room->id, 'code' => $room->code])
+            ->map(fn (Room $room) => ['id' => $room->id, 'code' => $room->code])
             ->values();
 
         return [
             'type' => 'slot',
             'id' => $slot->id,
             'title' => "{$slot->subject?->name} · {$slot->schoolClass?->name}",
-            'when' => strtoupper(substr(TimetableVersion::WEEKDAYS[$slot->weekday], 0, 3)) . " · {$period?->label} · " . substr((string) $period?->starts_at, 0, 5) . ' – ' . substr((string) $period?->ends_at, 0, 5),
+            'when' => strtoupper(substr(TimetableVersion::WEEKDAYS[$slot->weekday], 0, 3))." · {$period?->label} · ".substr((string) $period?->starts_at, 0, 5).' – '.substr((string) $period?->ends_at, 0, 5),
             'problems' => $issues
-                ->filter(fn(array $issue) => in_array($slot->id, $issue['slot_ids'], true))
-                ->map(fn(array $issue) => [
+                ->filter(fn (array $issue) => in_array($slot->id, $issue['slot_ids'], true))
+                ->map(fn (array $issue) => [
                     'title' => match ($issue['kind']) {
                         'teacher' => 'Two lessons at once',
                         'room' => 'Two classes in one room',
@@ -504,10 +504,10 @@ class TimetableReviewController extends Controller
     {
         $periods = $version->world()['periods']->keyBy('id');
 
-        return array_map(fn(array $time) => [
+        return array_map(fn (array $time) => [
             'weekday' => $time['weekday'],
             'period_id' => $time['period_id'],
-            'label' => substr(TimetableVersion::WEEKDAYS[$time['weekday']], 0, 3) . ' ' . $periods->get($time['period_id'])?->label,
+            'label' => substr(TimetableVersion::WEEKDAYS[$time['weekday']], 0, 3).' '.$periods->get($time['period_id'])?->label,
         ], array_slice($version->freeTimes($lesson, $slot), 0, static::MOVES_SHOWN));
     }
 

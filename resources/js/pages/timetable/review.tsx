@@ -20,6 +20,7 @@ import {
     quietActionClass,
 } from '../../components/timetable/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 type View = 'class' | 'teacher' | 'room';
 
@@ -153,31 +154,31 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
-            <Head title="Review the timetable" />
+            <Head title={t('Review the timetable')} />
             <TimetableHeader
                 page="review"
                 phase={phase}
-                trail={[{ label: readOnly ? 'Live timetable' : 'Review' }]}
-                title={readOnly ? 'The live timetable' : 'Review the timetable'}
+                trail={[{ label: readOnly ? t('Live timetable') : t('Review') }]}
+                title={readOnly ? t('The live timetable') : t('Review the timetable')}
                 meta={
                     readOnly
-                        ? `Version ${version.number} · what the school works from. It changes only through Changes or a new version.`
-                        : `Draft version ${version.number} · look at it by class, by teacher or by room, and fix what is flagged.`
+                        ? t('Version :number · what the school works from. It changes only through Changes or a new version.', { number: version.number })
+                        : t('Draft version :number · look at it by class, by teacher or by room, and fix what is flagged.', { number: version.number })
                 }
                 action={
                     readOnly ? (
                         <>
                             <Link href={overview.url()} className={quietActionClass}>
-                                ← Overview
+                                {t('← Overview')}
                             </Link>
                             <Link href={changes.url()} className={primaryActionClass}>
-                                Open Changes
+                                {t('Open Changes')}
                             </Link>
                         </>
                     ) : (
                         <>
                             <Link href={generator.url()} className={quietActionClass}>
-                                ← Generate again
+                                {t('← Generate again')}
                             </Link>
                             <Link
                                 href={publishing.url()}
@@ -185,7 +186,7 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                 tabIndex={phase.to_fix !== 0 ? -1 : undefined}
                                 className={primaryActionClass}
                             >
-                                Next: publish →
+                                {t('Next: publish →')}
                             </Link>
                         </>
                     )
@@ -204,16 +205,16 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                     option.key === view ? 'bg-white font-semibold text-text' : 'font-medium text-text-muted hover:text-text'
                                 }`}
                             >
-                                {option.label}
+                                {t(option.label)}
                             </Link>
                         ))}
                     </div>
                     <input
                         type="search"
-                        aria-label={`Find a ${noun}`}
+                        aria-label={t('Find a :noun', { noun })}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder={`Find a ${noun}`}
+                        placeholder={t('Find a :noun', { noun })}
                         className="h-[34px] shrink-0 rounded-md border border-solid border-border px-[10px] text-[13px] leading-4 text-text outline-none placeholder:text-text-muted focus:border-primary"
                     />
                     <div className="flex max-h-[420px] flex-col gap-1 overflow-y-auto">
@@ -253,35 +254,35 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                             );
                         })}
                         {listed.length === 0 && (
-                            <p className="px-[10px] py-2 text-[13px] leading-4 text-text-muted">No {noun} matches.</p>
+                            <p className="px-[10px] py-2 text-[13px] leading-4 text-text-muted">{t('No :noun matches.', { noun })}</p>
                         )}
                     </div>
                     <p className="text-[12px] leading-[17px] text-text-muted">
                         {view === 'class'
-                            ? `Number = things to fix. A dot means the class is clean. ${plural(picker.length, 'class', 'classes')} in all.`
+                            ? t('Number = things to fix. A dot means the class is clean. :classes in all.', { classes: plural(picker.length, 'class', 'classes') })
                             : view === 'teacher'
-                              ? `Periods placed out of the most each teacher can teach. ${plural(picker.length, 'teacher')} in all.`
-                              : `Slots used a week. ${plural(picker.length, 'room')} in all.`}
+                              ? t('Periods placed out of the most each teacher can teach. :teacher in all.', { teacher: plural(picker.length, 'teacher') })
+                              : t('Slots used a week. :room in all.', { room: plural(picker.length, 'room') })}
                     </p>
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                     {!current ? (
                         <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                            There is no {noun} to show yet.
+                            {t('There is no :noun to show yet.', { noun })}
                         </p>
                     ) : (
                         <>
                             <div className="flex flex-wrap items-baseline gap-x-[10px] gap-y-1">
-                                <h2 className="font-display text-[22px] leading-7 font-bold text-text">{current.title}</h2>
+                                <h2 className="font-display text-[22px] leading-7 font-bold text-text">{t(current.title)}</h2>
                                 <p className="text-[13px] leading-4 text-text-muted">{current.detail}</p>
                             </div>
 
                             {unplaced.length > 0 && (
                                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-solid border-warning bg-warning-tint px-3 py-2">
                                     <p className="text-[13px] leading-[18px] text-text">
-                                        Not placed: {unplaced.map((item) => `${item.subject}, ${plural(item.count, 'lesson')}`).join(' · ')}.
-                                        {readOnly ? '' : ' Pick one, then a free slot, or drag it onto the grid.'}
+                                        {t('Not placed:')} {unplaced.map((item) => `${item.subject}, ${plural(item.count, 'lesson')}`).join(' · ')}.
+                                        {readOnly ? '' : t(' Pick one, then a free slot, or drag it onto the grid.')}
                                     </p>
                                     <div className="flex flex-wrap gap-[6px]">
                                         {unplaced.map((item) => (
@@ -312,7 +313,7 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                     className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-solid border-danger bg-danger-tint px-3 py-2"
                                 >
                                     <p className="text-[13px] leading-[18px] text-text">
-                                        Clash: {clash.title}. {clash.detail}.
+                                        {t('Clash: :title. :detail.', { title: clash.title, detail: clash.detail })}
                                     </p>
                                     {clash.slot_id && (
                                         <button
@@ -320,7 +321,7 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                             onClick={() => select({ slot: clash.slot_id ?? undefined })}
                                             className="text-[13px] leading-4 font-semibold text-danger hover:underline"
                                         >
-                                            Fix it →
+                                            {t('Fix it →')}
                                         </button>
                                     )}
                                 </div>
@@ -341,13 +342,13 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                         period.is_break ? (
                                             <div key={period.id} className="flex h-5 shrink-0 items-center pl-11">
                                                 <span className="text-[11px] leading-[14px] font-semibold tracking-[0.06em] text-text-muted uppercase">
-                                                    {period.label}
+                                                    {t(period.label)}
                                                 </span>
                                             </div>
                                         ) : (
                                             <div key={period.id} className="flex gap-1">
                                                 <span className="w-10 shrink-0 truncate font-mono text-[11px] leading-[48px] text-text-muted">
-                                                    {period.label}
+                                                    {t(period.label)}
                                                 </span>
                                                 {days.map((day) => {
                                                     const key = `${day.index}|${period.id}`;
@@ -381,7 +382,7 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                                                         : 'border-border text-text-muted enabled:hover:bg-surface'
                                                                 }`}
                                                             >
-                                                                {open ? 'Move here' : 'Free'}
+                                                                {open ? t('Move here') : t('Free')}
                                                             </button>
                                                         );
                                                     }
@@ -392,7 +393,7 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                                                 key={key}
                                                                 className="flex h-12 min-w-0 flex-1 flex-col overflow-clip rounded-[6px] border-2 border-solid border-danger bg-danger-tint px-[5px] py-[2px]"
                                                             >
-                                                                <span className="text-[10px] leading-3 font-semibold text-danger">Clash</span>
+                                                                <span className="text-[10px] leading-3 font-semibold text-danger">{t('Clash')}</span>
                                                                 {here.slice(0, 2).map((cell) => (
                                                                     <button
                                                                         key={cell.id}
@@ -400,7 +401,7 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                                                         onClick={() => select({ slot: cell.id })}
                                                                         className={`truncate text-left text-[11px] leading-[14px] text-danger hover:underline ${active === cell.id ? 'font-bold' : 'font-medium'}`}
                                                                     >
-                                                                        {cell.title} · {cell.sub}
+                                                                        {t(cell.title)} · {t(cell.sub)}
                                                                     </button>
                                                                 ))}
                                                             </div>
@@ -431,10 +432,10 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                                             } ${on ? 'outline outline-2 outline-offset-1 outline-text' : ''}`}
                                                         >
                                                             <span className={`w-full truncate text-[12px] leading-[15px] font-semibold ${cell.clash ? 'text-danger' : 'text-text'}`}>
-                                                                {cell.title}
+                                                                {t(cell.title)}
                                                             </span>
                                                             <span className={`w-full truncate text-[11px] leading-[14px] ${cell.clash ? 'text-danger' : 'text-text-muted'}`}>
-                                                                {cell.clash ? `Clash · ${cell.sub}` : cell.sub}
+                                                                {cell.clash ? t('Clash · :sub', { sub: cell.sub }) : cell.sub}
                                                             </span>
                                                             {cell.locked && (
                                                                 <span className="absolute top-[5px] right-[5px]">
@@ -451,61 +452,60 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                             </div>
                             <p className="text-[12px] leading-[17px] text-text-muted">
                                 {view === 'class'
-                                    ? 'Each box is the subject, the teacher and the room.'
+                                    ? t('Each box is the subject, the teacher and the room.')
                                     : view === 'teacher'
-                                      ? 'Each box is the class taught and the room. A grey box is a time this teacher does not work, taken from the staff record.'
-                                      : 'Each box is the lesson and the class using the room. Grey is a time the room is closed, set on the Rooms screen.'}
-                                {!readOnly && ' Drag a lesson onto a free slot, or pick it and choose where it goes. A padlock marks a locked lesson.'}
+                                      ? t('Each box is the class taught and the room. A grey box is a time this teacher does not work, taken from the staff record.')
+                                      : t('Each box is the lesson and the class using the room. Grey is a time the room is closed, set on the Rooms screen.')}
+                                {!readOnly && t(' Drag a lesson onto a free slot, or pick it and choose where it goes. A padlock marks a locked lesson.')}
                             </p>
                         </>
                     )}
                 </div>
 
                 <aside className="flex shrink-0 flex-col gap-3 border-solid border-border xl:w-[290px] xl:border-l xl:pl-5">
-                    <p className={capsLabelClass}>Selected lesson</p>
+                    <p className={capsLabelClass}>{t('Selected lesson')}</p>
                     {!selected ? (
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            Pick a lesson on the grid to see who teaches it,
-                            where, and {readOnly ? 'when' : 'where it can move'}.
+                            {t('Pick a lesson on the grid to see who teaches it, where, and')} {readOnly ? t('when') : t('where it can move')}.
                         </p>
                     ) : selected.type === 'lesson' ? (
                         <>
                             <div className="flex flex-col gap-1">
-                                <p className="font-display text-[18px] leading-6 font-bold text-text">{selected.title}</p>
+                                <p className="font-display text-[18px] leading-6 font-bold text-text">{t(selected.title)}</p>
                                 <p className="font-mono text-[12px] leading-4 text-text-muted uppercase">
-                                    {plural(selected.count, 'lesson')} not placed{selected.teacher ? ` · ${selected.teacher}` : ''}
+                                    {plural(selected.count, 'lesson')} {t('not placed')}{selected.teacher ? ` · ${selected.teacher}` : ''}
                                 </p>
                             </div>
                             {selected.why && (
                                 <div className="flex flex-col gap-[6px] rounded-md bg-warning-tint px-3 py-[10px]">
-                                    <p className={`text-[13px] leading-4 font-semibold ${amberText}`}>Why it is not placed</p>
+                                    <p className={`text-[13px] leading-4 font-semibold ${amberText}`}>{t('Why it is not placed')}</p>
                                     <p className="text-[13px] leading-[18px] text-text">{selected.why}.</p>
                                 </div>
                             )}
                             <Moves
-                                title="Place it in a free slot"
+                                title={t('Place it in a free slot')}
                                 moves={selected.moves}
-                                empty="No slot has the class, the teacher and a room all free. Move another lesson first, or change the teacher on the subject."
+                                empty={t('No slot has the class, the teacher and a room all free. Move another lesson first, or change the teacher on the subject.')}
                                 onPick={(move) => drop(`lesson:${selected.id}`, move.weekday, move.period_id)}
                             />
                         </>
                     ) : (
                         <>
                             <div className="flex flex-col gap-1">
-                                <p className="font-display text-[18px] leading-6 font-bold text-text">{selected.title}</p>
+                                <p className="font-display text-[18px] leading-6 font-bold text-text">{t(selected.title)}</p>
                                 <p className="font-mono text-[12px] leading-4 text-text-muted">{selected.when}</p>
                             </div>
                             {selected.problems.map((problem) => (
                                 <div key={problem.text} className="flex flex-col gap-[6px] rounded-md bg-danger-tint px-3 py-[10px]">
-                                    <p className="text-[13px] leading-4 font-semibold text-danger">{problem.title}</p>
-                                    <p className="text-[13px] leading-[18px] text-text">{problem.text}</p>
+                                    <p className="text-[13px] leading-4 font-semibold text-danger">{t(problem.title)}</p>
+                                    <p className="text-[13px] leading-[18px] text-text">{t(problem.text)}</p>
                                 </div>
                             ))}
                             <div className="flex flex-col border-t border-solid border-border">
                                 <label className="flex items-center justify-between gap-3 border-b border-solid border-border py-[6px]">
-                                    <span className="text-[13px] leading-4 text-text-muted">Teacher</span>
+                                    <span className="text-[13px] leading-4 text-text-muted">{t('Teacher')}</span>
                                     {readOnly ? (
-                                        <span className="py-[6px] text-[13px] leading-4 text-text">{selected.teacher ?? 'None'}</span>
+                                        <span className="py-[6px] text-[13px] leading-4 text-text">{selected.teacher ?? t('None')}</span>
                                     ) : (
                                         <select
                                             value={selected.teacher_id ?? ''}
@@ -515,23 +515,23 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                             {selected.teachers.map((teacher) => (
                                                 <option key={teacher.id} value={teacher.id} disabled={!teacher.free && teacher.id !== selected.teacher_id}>
                                                     {teacher.name}
-                                                    {!teacher.free && teacher.id !== selected.teacher_id ? ' (busy)' : ''}
+                                                    {!teacher.free && teacher.id !== selected.teacher_id ? t(' (busy)') : ''}
                                                 </option>
                                             ))}
                                         </select>
                                     )}
                                 </label>
                                 <label className="flex items-center justify-between gap-3 border-b border-solid border-border py-[6px]">
-                                    <span className="text-[13px] leading-4 text-text-muted">Room</span>
+                                    <span className="text-[13px] leading-4 text-text-muted">{t('Room')}</span>
                                     {readOnly ? (
-                                        <span className="py-[6px] text-[13px] leading-4 text-text">{selected.room ?? 'None'}</span>
+                                        <span className="py-[6px] text-[13px] leading-4 text-text">{selected.room ?? t('None')}</span>
                                     ) : (
                                         <select
                                             value={selected.room_id ?? ''}
                                             onChange={(e) => change(selected.id, { room_id: e.target.value || null })}
                                             className="h-7 max-w-[170px] rounded-sm bg-transparent text-right text-[13px] leading-4 text-text outline-none focus:bg-surface"
                                         >
-                                            <option value="">No room</option>
+                                            <option value="">{t('No room')}</option>
                                             {selected.rooms.map((room) => (
                                                 <option key={room.id} value={room.id}>
                                                     {room.code}
@@ -544,24 +544,23 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                             {!readOnly && (
                                 <>
                                     <Moves
-                                        title="Move to a free slot"
+                                        title={t('Move to a free slot')}
                                         moves={selected.moves}
-                                        empty="No other slot has the class, the teacher and the room all free."
+                                        empty={t('No other slot has the class, the teacher and the room all free.')}
                                         onPick={(move) => change(selected.id, { weekday: move.weekday, period_id: move.period_id })}
                                     />
                                     <TickBox checked={selected.locked} onChange={(next) => change(selected.id, { is_locked: next })}>
-                                        Lock this lesson. Generate again keeps it.
+                                        {t('Lock this lesson. Generate again keeps it.')}
                                     </TickBox>
                                     <button
                                         type="button"
                                         onClick={() => router.delete(removeSlot.url(selected.id), visitOptions)}
                                         className={`self-start ${linkClass}`}
                                     >
-                                        Take it off the timetable
+                                        {t('Take it off the timetable')}
                                     </button>
                                     <p className="text-[12px] leading-[17px] text-text-muted">
-                                        A move is only offered where the class,
-                                        the teacher and the room are all free.
+                                        {t('A move is only offered where the class, the teacher and the room are all free.')}
                                     </p>
                                 </>
                             )}
@@ -587,8 +586,8 @@ function Moves({ title, moves, empty, onPick }: { title: string; moves: Move[]; 
                         onClick={() => onPick(move)}
                         className="flex h-9 shrink-0 items-center justify-between rounded-md border border-solid border-border px-[10px] hover:bg-surface"
                     >
-                        <span className="text-[13px] leading-4 text-text">{move.label}</span>
-                        <span className="text-[12px] leading-4 text-success">All free</span>
+                        <span className="text-[13px] leading-4 text-text">{t(move.label)}</span>
+                        <span className="text-[12px] leading-4 text-success">{t('All free')}</span>
                     </button>
                 ))
             )}

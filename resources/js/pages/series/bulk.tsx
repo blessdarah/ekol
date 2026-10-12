@@ -20,6 +20,7 @@ import {
     outlineButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface BulkStudent {
     id: string;
@@ -105,21 +106,21 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-6">
-            <Head title="Register many at once" />
+            <Head title={t('Register many at once')} />
             <SeriesHeader
-                trail={[{ label: 'Register many at once' }]}
-                title="Register many at once"
-                meta={`Give the same series and electives to a group of students. ${level.name}${yearLabel ? ` · ${yearLabel}` : ''}`}
+                trail={[{ label: t('Register many at once') }]}
+                title={t('Register many at once')}
+                meta={t('Give the same series and electives to a group of students. :level:year_label', { level: level.name, year_label: yearLabel ? ` · ${yearLabel}` : '' })}
                 action={
                     <Link href={index.url({ query: { level: level.id } })} className={outlineButtonClass}>
-                        ← Back to overview
+                        {t('← Back to overview')}
                     </Link>
                 }
             />
 
             {students.length === 0 ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    Every {level.name} student already has a series.
+                    {t('Every :level student already has a series.', { level: level.name })}
                 </p>
             ) : (
                 <div className="flex flex-1 flex-col gap-7 lg:flex-row">
@@ -132,7 +133,7 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
                                     onClick={() => setClassId('')}
                                     className={pillClass(classId === '')}
                                 >
-                                    All without a series · {students.length}
+                                    {t('All without a series · :students', { students: students.length })}
                                 </button>
                                 {classes.map((option) => (
                                     <button
@@ -147,14 +148,14 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
                                 ))}
                             </div>
                             <span aria-live="polite" className="text-[13px] leading-4 text-text-muted">
-                                {selected.length} selected
+                                {t(':selected selected', { selected: selected.length })}
                             </span>
                         </div>
                         <div className="flex flex-col overflow-clip rounded-lg border border-solid border-border">
                             <label className="flex h-[34px] shrink-0 cursor-pointer items-center gap-3 border-b border-solid border-border bg-surface px-[14px] text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                                 <input
                                     type="checkbox"
-                                    aria-label="Select every student shown"
+                                    aria-label={t('Select every student shown')}
                                     checked={allShown}
                                     ref={(input) => {
                                         if (input) {
@@ -164,9 +165,9 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
                                     onChange={toggleAll}
                                     className="h-[18px] w-[18px] shrink-0 accent-primary"
                                 />
-                                <span className="flex-1">Student</span>
-                                <span className="w-[90px] shrink-0">Class</span>
-                                <span className="w-[110px] shrink-0">Matricule</span>
+                                <span className="flex-1">{t('Student')}</span>
+                                <span className="w-[90px] shrink-0">{t('Class')}</span>
+                                <span className="w-[110px] shrink-0">{t('Matricule')}</span>
                             </label>
                             {shown.map((student, position) => {
                                 const on = selected.includes(student.id);
@@ -198,22 +199,20 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
                             })}
                         </div>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            Tick the students who take the same series and
-                            electives. Anyone who needs something different
-                            is registered one by one.
+                            {t('Tick the students who take the same series and electives. Anyone who needs something different is registered one by one.')}
                         </p>
                     </div>
 
                     <aside className="flex shrink-0 flex-col gap-[14px] self-start rounded-lg border border-solid border-border bg-surface p-[18px] lg:w-[380px]">
                         <p className={capsLabelClass}>
-                            Register the {selected.length} selected{' '}
-                            {selected.length === 1 ? 'student' : 'students'}
+                            {t('Register the')} {selected.length} {t('selected')}{' '}
+                            {selected.length === 1 ? t('student') : t('students')}
                         </p>
                         <div className="flex flex-col gap-2">
-                            <span className="text-[13px] leading-4 font-medium text-text">Series</span>
+                            <span className="text-[13px] leading-4 font-medium text-text">{t('Series')}</span>
                             {series.length === 0 ? (
                                 <span className="text-[13px] leading-[19px] text-warning">
-                                    {level.name} has no series yet.
+                                    {t(':level has no series yet.', { level: level.name })}
                                 </span>
                             ) : (
                                 <SeriesChips series={series} value={seriesId} size="small" onChange={chooseSeries} />
@@ -224,7 +223,7 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
                             <div className="flex flex-col gap-[6px]">
                                 <div className="flex items-baseline justify-between">
                                     <span className="text-[13px] leading-4 font-medium text-text">
-                                        Subjects in {chosen.code}
+                                        {t('Subjects in :code', { code: chosen.code })}
                                     </span>
                                     <span className="font-mono text-[12px] leading-4 text-text-muted">
                                         {limits(chosen, true)} · {total}
@@ -242,7 +241,7 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
                                                 {subject.name}
                                             </span>
                                             <span className="text-[11px] leading-[14px] font-semibold text-text-muted">
-                                                CORE
+                                                {t('CORE')}
                                             </span>
                                         </li>
                                     ))}
@@ -266,7 +265,7 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
                                                 </span>
                                                 {!staffed.includes(subject.id) && (
                                                     <span className="text-[12px] leading-4 text-[#8A5A12]">
-                                                        no teacher
+                                                        {t('no teacher')}
                                                     </span>
                                                 )}
                                             </label>
@@ -286,15 +285,15 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
                                 onClick={submit}
                                 className="flex h-10 shrink-0 items-center justify-center rounded-md bg-primary text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
                             >
-                                Register {selected.length}{' '}
-                                {selected.length === 1 ? 'student' : 'students'}
-                                {chosen ? ` in ${chosen.code}` : ''}
+                                {t('Register')} {selected.length}{' '}
+                                {selected.length === 1 ? t('student') : t('students')}
+                                {chosen ? t(' in :code', { code: chosen.code }) : ''}
                             </button>
                             <ErrorText message={errors.student_ids} />
                             <p className="text-[12px] leading-[17px] text-text-muted">
                                 {hasTerm
-                                    ? `They leave the unregistered list. If you go back, the overview shows ${left} still without a series.`
-                                    : 'No term is active, so nothing can be saved. Make a term active in School Setup.'}
+                                    ? t('They leave the unregistered list. If you go back, the overview shows :left still without a series.', { left })
+                                    : t('No term is active, so nothing can be saved. Make a term active in School Setup.')}
                             </p>
                         </div>
                     </aside>

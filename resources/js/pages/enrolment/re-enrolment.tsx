@@ -15,6 +15,7 @@ import {
 import { capsLabelClass, solidButtonClass } from '../../components/structure/ui';
 import { money } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 type Decision = 'promote' | 'repeat' | 'leaving';
 
@@ -57,32 +58,29 @@ function ReEnrolment({ enrolment, levels, graduating, level, classes, class: sel
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title="Re-enrolment" />
+            <Head title={t('Re-enrolment')} />
             <EnrolmentHeader
                 active="re-enrolment"
                 progress={enrolment}
-                trail={[{ label: 'Continuing students' }]}
-                title="Re-enrolment"
-                meta="decide for every student: promote, repeat or leaving"
+                trail={[{ label: t('Continuing students') }]}
+                title={t('Re-enrolment')}
+                meta={t('decide for every student: promote, repeat or leaving')}
             />
 
             {!level || !selected ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    No class has continuing students this year, so there is
-                    nobody to decide for.
-                    {graduating.length > 0 && ` ${graduating.join(', ')} students are graduating.`}
+                    {t('No class has continuing students this year, so there is nobody to decide for.')}
+                    {graduating.length > 0 && t(' :graduating students are graduating.', { graduating: graduating.join(', ') })}
                 </p>
             ) : (
                 <>
                     <div className="flex flex-wrap items-center gap-4 rounded-md bg-surface px-4 py-3">
                         <div className="flex min-w-0 flex-1 flex-col gap-[2px]">
                             <p className="text-[14px] leading-[18px] font-semibold text-text">
-                                Decide each student by hand for now
+                                {t('Decide each student by hand for now')}
                             </p>
                             <p className="text-[13px] leading-4 text-text-muted">
-                                Annual averages will suggest promote or repeat
-                                once marks are entered. Any decision can be
-                                changed until enrolment is confirmed.
+                                {t('Annual averages will suggest promote or repeat once marks are entered. Any decision can be changed until enrolment is confirmed.')}
                             </p>
                         </div>
                         <button
@@ -92,8 +90,8 @@ function ReEnrolment({ enrolment, levels, graduating, level, classes, class: sel
                             className={solidButtonClass}
                         >
                             {undecided > 0
-                                ? `Promote the ${count(undecided)} undecided in ${selected.name}`
-                                : `Everyone in ${selected.name} is decided`}
+                                ? t('Promote the :undecided undecided in :selected', { undecided: count(undecided), selected: selected.name })
+                                : t('Everyone in :selected is decided', { selected: selected.name })}
                         </button>
                     </div>
 
@@ -130,7 +128,7 @@ function ReEnrolment({ enrolment, levels, graduating, level, classes, class: sel
                             })}
                             {others.length > 0 && (
                                 <p className="px-[2px] pt-2 text-[13px] leading-[18px] text-text-muted">
-                                    Other levels:{' '}
+                                    {t('Other levels:')}{' '}
                                     {others.map((option, position) => (
                                         <span key={option.id}>
                                             {position > 0 && ', '}
@@ -146,8 +144,7 @@ function ReEnrolment({ enrolment, levels, graduating, level, classes, class: sel
                             )}
                             {graduating.length > 0 && (
                                 <p className="px-[2px] pt-1 text-[12px] leading-[17px] text-text-muted">
-                                    {graduating.join(', ')} students are
-                                    graduating. They are not re-enrolled.
+                                    {graduating.join(', ')} {t('students are graduating. They are not re-enrolled.')}
                                 </p>
                             )}
                         </div>
@@ -156,15 +153,15 @@ function ReEnrolment({ enrolment, levels, graduating, level, classes, class: sel
                             <div className="overflow-x-auto rounded-lg border border-solid border-border">
                                 <div className="flex min-w-[640px] flex-col">
                                     <div className={`flex h-[34px] items-center gap-3 border-b border-solid border-border bg-surface px-[14px] ${capsLabelClass}`}>
-                                        <span className="flex-1">Student</span>
-                                        <span className="w-16 shrink-0 text-right">Average</span>
-                                        <span className="w-56 shrink-0">Decision</span>
-                                        <span className="w-[70px] shrink-0">Next</span>
-                                        <span className="w-[76px] shrink-0 text-right">Fees owed</span>
+                                        <span className="flex-1">{t('Student')}</span>
+                                        <span className="w-16 shrink-0 text-right">{t('Average')}</span>
+                                        <span className="w-56 shrink-0">{t('Decision')}</span>
+                                        <span className="w-[70px] shrink-0">{t('Next')}</span>
+                                        <span className="w-[76px] shrink-0 text-right">{t('Fees owed')}</span>
                                     </div>
                                     {students.length === 0 && (
                                         <p className="px-[14px] py-4 text-[13px] leading-[19px] text-text-muted">
-                                            {selected.name} has no students this year.
+                                            {t(':selected has no students this year.', { selected: selected.name })}
                                         </p>
                                     )}
                                     {students.map((student) => (
@@ -177,7 +174,7 @@ function ReEnrolment({ enrolment, levels, graduating, level, classes, class: sel
                                                 <span className="font-mono text-[11px] leading-[14px] text-text-muted">{student.matricule}</span>
                                             </span>
                                             <span className="w-16 shrink-0 text-right font-mono text-[13px] leading-4 text-text-muted">—</span>
-                                            <span role="radiogroup" aria-label={`Decision for ${student.name}`} className="flex w-56 shrink-0 gap-1">
+                                            <span role="radiogroup" aria-label={t('Decision for :student', { student: student.name })} className="flex w-56 shrink-0 gap-1">
                                                 {CHOICES.map((choice) => {
                                                     const on = student.decision === choice.key;
 
@@ -192,7 +189,7 @@ function ReEnrolment({ enrolment, levels, graduating, level, classes, class: sel
                                                                 on ? choice.on : 'border-border text-text hover:bg-surface'
                                                             }`}
                                                         >
-                                                            {choice.label}
+                                                            {t(choice.label)}
                                                         </button>
                                                     );
                                                 })}
@@ -205,7 +202,7 @@ function ReEnrolment({ enrolment, levels, graduating, level, classes, class: sel
                                                     {money(student.owed)}
                                                 </span>
                                             ) : (
-                                                <span className="w-[76px] shrink-0 text-right text-[13px] leading-4 text-text-muted">Clear</span>
+                                                <span className="w-[76px] shrink-0 text-right text-[13px] leading-4 text-text-muted">{t('Clear')}</span>
                                             )}
                                         </div>
                                     ))}
@@ -214,17 +211,15 @@ function ReEnrolment({ enrolment, levels, graduating, level, classes, class: sel
 
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <p className="text-[13px] leading-4 text-text">
-                                    {selected.name} · {tally('promote')} promote · {tally('repeat')} repeat ·{' '}
-                                    {tally('leaving')} leaving · {undecided} not decided
+                                    {selected.name} · {tally('promote')} {t('promote ·')} {tally('repeat')} {t('repeat ·')}{' '}
+                                    {tally('leaving')} {t('leaving ·')} {undecided} {t('not decided')}
                                 </p>
                                 <Link href={placement.url()} className={nextStepClass}>
-                                    Next: class placement →
+                                    {t('Next: class placement →')}
                                 </Link>
                             </div>
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                Click a chosen decision again to clear it. Fees
-                                owed are shown for the conversation with the
-                                parents; they do not block a decision.
+                                {t('Click a chosen decision again to clear it. Fees owed are shown for the conversation with the parents; they do not block a decision.')}
                             </p>
                         </div>
                     </div>

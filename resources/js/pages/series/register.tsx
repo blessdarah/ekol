@@ -21,6 +21,7 @@ import {
     solidButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface RegisterProps {
     yearLabel: string | null;
@@ -145,7 +146,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col lg:flex-row">
-            <Head title={student ? student.name : 'Register one by one'} />
+            <Head title={student ? student.name : t('Register one by one')} />
 
             <aside className="flex shrink-0 flex-col border-solid border-border lg:-my-7 lg:-ml-10 lg:w-[300px] lg:border-r">
                 <div className="flex flex-col gap-[14px] border-b border-solid border-border px-5 pt-7 pb-4">
@@ -154,13 +155,13 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                             {level.name}
                         </h2>
                         <span className="text-[13px] leading-4 text-text-muted">
-                            {counts.total} students
+                            {t(':total students', { total: counts.total })}
                         </span>
                     </div>
                     <div className="flex rounded-md bg-surface p-[3px]">
                         {[
-                            { value: 'unassigned', label: `Unassigned · ${counts.unassigned}` },
-                            { value: 'registered', label: 'Registered' },
+                            { value: 'unassigned', label: t('Unassigned · :unassigned', { unassigned: counts.unassigned }) },
+                            { value: 'registered', label: t('Registered') },
                         ].map((option) => (
                             <button
                                 key={option.value}
@@ -173,7 +174,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                                         : 'font-medium text-text-muted hover:text-text'
                                 }`}
                             >
-                                {option.label}
+                                {t(option.label)}
                             </button>
                         ))}
                     </div>
@@ -184,8 +185,8 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                         </svg>
                         <input
                             type="search"
-                            aria-label="Search students"
-                            placeholder="Search by name or matricule"
+                            aria-label={t('Search students')}
+                            placeholder={t('Search by name or matricule')}
                             value={search}
                             onChange={(e) => onSearch(e.target.value)}
                             className="min-w-0 flex-1 bg-transparent text-[14px] text-text outline-none placeholder:text-text-muted"
@@ -196,8 +197,8 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                     {students.length === 0 && (
                         <li className="px-3 py-4 text-[13px] leading-[19px] text-text-muted">
                             {tab === 'unassigned'
-                                ? `Nobody in ${level.name} is waiting for a series.`
-                                : 'Nobody is registered yet.'}
+                                ? t('Nobody in :level is waiting for a series.', { level: level.name })
+                                : t('Nobody is registered yet.')}
                         </li>
                     )}
                     {students.map((item) => {
@@ -235,13 +236,13 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                 <div className="flex flex-col gap-[6px]">
                     <Breadcrumbs
                         trail={[
-                            { label: 'Series Registration', href: index.url({ query: { level: level.id } }) },
-                            { label: 'Register one by one' },
+                            { label: t('Series Registration'), href: index.url({ query: { level: level.id } }) },
+                            { label: t('Register one by one') },
                             { label: level.name },
                         ]}
                     />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                        {student ? student.name : 'Everyone is registered'}
+                        {student ? student.name : t('Everyone is registered')}
                     </h1>
                     {student && (
                         <p className="font-mono text-[13px] leading-4 text-text-muted">
@@ -253,22 +254,19 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                 {!student ? (
                     <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">
                         <p className="text-[13px] leading-[19px] text-text">
-                            No {level.name} student is waiting for a series.
-                            Open the Registered list to change someone’s
-                            electives.
+                            {t('No :level student is waiting for a series. Open the Registered list to change someone’s electives.', { level: level.name })}
                         </p>
                         <Link href={index.url({ query: { level: level.id } })} className={outlineButtonClass}>
-                            Back to overview
+                            {t('Back to overview')}
                         </Link>
                     </div>
                 ) : (
                     <>
                         <section className="flex flex-col gap-3">
-                            <p className={capsLabelClass}>1 · Choose a series</p>
+                            <p className={capsLabelClass}>{t('1 · Choose a series')}</p>
                             {series.length === 0 ? (
                                 <p className="text-[13px] leading-[19px] text-warning">
-                                    {level.name} has no series yet. Add them
-                                    under Series setup.
+                                    {t(':level has no series yet. Add them under Series setup.', { level: level.name })}
                                 </p>
                             ) : (
                                 <SeriesChips series={series} value={seriesId} labelled onChange={chooseSeries} />
@@ -279,7 +277,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                         {chosen && (
                             <section className="flex flex-col gap-3">
                                 <div className="flex flex-wrap items-end justify-between gap-2">
-                                    <p className={capsLabelClass}>2 · Subjects for {chosen.code}</p>
+                                    <p className={capsLabelClass}>{t('2 · Subjects for :code', { code: chosen.code })}</p>
                                     <div className="flex items-center gap-[10px]">
                                         <span className="text-[13px] leading-4 text-text-muted">
                                             {limits(chosen)}
@@ -317,7 +315,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                                             </span>
                                             <span className="flex w-20 shrink-0">
                                                 <span className="flex h-[22px] items-center rounded-sm border border-solid border-text px-2 text-[11px] leading-[14px] font-semibold tracking-[0.06em] text-text">
-                                                    CORE
+                                                    {t('CORE')}
                                                 </span>
                                             </span>
                                             <Teacher name={teachers[subject.id]} />
@@ -340,7 +338,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                                                     </span>
                                                     <span className="flex w-20 shrink-0">
                                                         <span className="flex h-[22px] items-center rounded-sm border border-dashed border-text-muted px-2 text-[11px] leading-[14px] font-semibold tracking-[0.06em] text-text-muted">
-                                                            ELECTIVE
+                                                            {t('ELECTIVE')}
                                                         </span>
                                                     </span>
                                                     <Teacher name={teachers[subject.id]} />
@@ -356,13 +354,13 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                             <p className={`text-[13px] leading-4 ${problem ? 'text-[#8A5A12]' : 'text-text-muted'}`}>
                                 {!chosen
-                                    ? 'Choose a series to see its subjects.'
+                                    ? t('Choose a series to see its subjects.')
                                     : (problem ??
                                       (room === null
-                                          ? 'Core subjects are locked. Tick the electives this student takes.'
+                                          ? t('Core subjects are locked. Tick the electives this student takes.')
                                           : room > 0
-                                            ? `You can add ${room} more ${room === 1 ? 'elective' : 'electives'}.`
-                                            : 'That is the most subjects this series allows.'))}
+                                            ? t('You can add :room more :electives.', { room, electives: room === 1 ? 'elective' : 'electives' })
+                                            : t('That is the most subjects this series allows.')))}
                             </p>
                             <div className="flex gap-2">
                                 {tab === 'unassigned' && nextId && (
@@ -370,7 +368,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                                         href={one.url({ query: { level: level.id, student: nextId } })}
                                         className={outlineButtonClass}
                                     >
-                                        Skip
+                                        {t('Skip')}
                                     </Link>
                                 )}
                                 <button
@@ -380,10 +378,10 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                                     className={solidButtonClass}
                                 >
                                     {student.series_id
-                                        ? 'Save subjects'
+                                        ? t('Save subjects')
                                         : nextId
-                                          ? 'Register & next student'
-                                          : 'Register student'}
+                                          ? t('Register & next student')
+                                          : t('Register student')}
                                     {!student.series_id && nextId && (
                                         <svg width="14" height="14" viewBox="0 0 24 24">
                                             <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
@@ -394,8 +392,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                         </div>
                         {!hasTerm && (
                             <p className="text-[13px] leading-[19px] text-warning">
-                                No term is active, so nothing can be saved.
-                                Make a term active in School Setup.
+                                {t('No term is active, so nothing can be saved. Make a term active in School Setup.')}
                             </p>
                         )}
                     </>
@@ -408,7 +405,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
 function Teacher({ name }: { name?: string }) {
     return (
         <span className={`w-40 shrink-0 truncate text-[13px] leading-4 ${name ? 'text-text-muted' : 'text-warning'}`}>
-            {name ?? 'No teacher assigned'}
+            {name ?? t('No teacher assigned')}
         </span>
     );
 }

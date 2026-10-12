@@ -1,4 +1,4 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import {
     createContext,
     useContext,
@@ -24,6 +24,7 @@ import LogoCropper, {
     loadImage,
 } from '../components/setup/logo-cropper';
 import { withAppShell } from '../layouts/app-layout';
+import { ordinalOf, t } from '../lib/i18n';
 
 interface SchoolProp {
     id: string;
@@ -32,6 +33,7 @@ interface SchoolProp {
     slug: string;
     logo_url: string | null;
     school_days: number;
+    locale: string;
 }
 
 interface YearProp {
@@ -112,7 +114,7 @@ function shortDate(iso: string | null, padded = true): string {
 
     const [, month, day] = iso.split('-');
 
-    return `${padded ? day : Number(day)} ${MONTHS[Number(month) - 1]}`;
+    return `${padded ? day : Number(day)} ${t(MONTHS[Number(month) - 1])}`;
 }
 
 function longDate(iso: string): string {
@@ -142,12 +144,7 @@ function addMinutes(time: string, minutes: number): string {
 }
 
 function ordinal(n: number): string {
-    const suffix =
-        n % 100 >= 11 && n % 100 <= 13
-            ? 'th'
-            : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th');
-
-    return `${n}${suffix}`;
+    return ordinalOf(n);
 }
 
 /**
@@ -262,6 +259,7 @@ function ProfileZone({ school }: { school: SchoolProp }) {
     const [uploading, setUploading] = useState(false);
     const [cropping, setCropping] = useState<HTMLImageElement | null>(null);
     const logo = preview ?? school.logo_url;
+    const locales = (usePage().props.locales ?? {}) as Record<string, string>;
 
     /**
      * SVGs and already-square images upload as they are; any other
@@ -282,7 +280,7 @@ function ProfileZone({ school }: { school: SchoolProp }) {
 
             if (shortest < LOGO_MIN_SIDE) {
                 setUploadError(
-                    `Logo must be at least ${LOGO_MIN_SIDE}px on its shortest side.`,
+                    t('Logo must be at least :logo_min_sidepx on its shortest side.', { logo_min_side: LOGO_MIN_SIDE }),
                 );
             } else if (image.naturalWidth === image.naturalHeight) {
                 uploadLogo(file);
@@ -290,13 +288,13 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                 setCropping(image);
             }
         } catch {
-            setUploadError('That file could not be read. Use a PNG or SVG.');
+            setUploadError(t('That file could not be read. Use a PNG or SVG.'));
         }
     }
 
     function uploadLogo(file: File) {
         if (file.size > 2 * 1024 * 1024) {
-            setUploadError('Logo must be smaller than 2 MB.');
+            setUploadError(t('Logo must be smaller than 2 MB.'));
 
             return;
         }
@@ -317,7 +315,7 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                 onSuccess: () => report('saved'),
                 onError: (failed) => {
                     setUploadError(
-                        failed.logo ?? 'Upload failed. Use a square PNG or SVG.',
+                        failed.logo ?? t('Upload failed. Use a square PNG or SVG.'),
                     );
                     setPreview(null);
                     report('error');
@@ -329,8 +327,8 @@ function ProfileZone({ school }: { school: SchoolProp }) {
 
     return (
         <Zone
-            title="School profile"
-            desc="Shown on report cards, receipts and the login page."
+            title={t('School profile')}
+            desc={t('Shown on report cards, receipts and the login page.')}
         >
             <div className="flex items-center gap-5">
                 <span className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary font-display text-[24px] leading-[30px] font-extrabold tracking-[-0.02em] text-white">
@@ -347,7 +345,7 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                 <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <input
                         type="text"
-                        aria-label="School name"
+                        aria-label={t('School name')}
                         value={data.name}
                         onChange={(e) => save({ name: e.target.value })}
                         className="w-full border-b border-solid border-transparent bg-transparent text-[16px] leading-5 font-semibold text-text outline-none hover:border-border focus:border-primary"
@@ -356,7 +354,7 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                         <label
                             className={`inline-flex h-8 items-center rounded-md border border-solid border-border px-3 text-[13px] leading-4 font-medium text-text hover:bg-surface ${uploading ? 'cursor-wait opacity-50' : 'cursor-pointer'}`}
                         >
-                            {uploading ? 'Uploading…' : 'Upload logo'}
+                            {uploading ? t('Uploading…') : t('Upload logo')}
                             <input
                                 type="file"
                                 accept=".png,.svg"
@@ -372,12 +370,29 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                             />
                         </label>
                         <span className="text-[12px] leading-4 text-text-muted">
-                            PNG or SVG, square, at least 256px
+                            {t('PNG or SVG, square, at least 256px')}
                         </span>
                     </div>
                     <ZoneError message={uploadError ?? error} />
                 </div>
             </div>
+            <label className="flex flex-wrap items-center gap-3 border-t border-solid border-border pt-4 text-[13px] leading-4 font-medium text-text">
+                {t('School language')}
+                <select
+                    value={school.locale}
+                    onChange={(e) => router.patch(updateProfile.url(), { locale: e.target.value }, { preserveScroll: true, preserveState: true })}
+                    className="h-9 rounded-md border border-solid border-border bg-white px-2 text-[13px] leading-4 font-normal text-text outline-none focus:border-primary"
+                >
+                    {Object.entries(locales).map(([code, name]) => (
+                        <option key={code} value={code}>
+                            {name}
+                        </option>
+                    ))}
+                </select>
+                <span className="font-normal text-text-muted">
+                    {t('What people see until they choose their own language, and the language of sign-in for your school.')}
+                </span>
+            </label>
             {cropping && (
                 <LogoCropper
                     image={cropping}
@@ -431,11 +446,11 @@ function TermCard({
                 <span
                     className={`text-[14px] leading-[18px] font-semibold ${active ? 'text-white' : 'text-text'}`}
                 >
-                    {term.label}
+                    {t(term.label)}
                 </span>
                 {active ? (
                     <span className="text-[11px] leading-[14px] font-semibold tracking-[0.06em] text-[#8FE3B5] uppercase">
-                        Active
+                        {t('Active')}
                     </span>
                 ) : (
                     term.id &&
@@ -445,7 +460,7 @@ function TermCard({
                             onClick={onActivate}
                             className="text-[12px] leading-4 font-medium text-primary hover:underline"
                         >
-                            Set active
+                            {t('Set active')}
                         </button>
                     )
                 )}
@@ -454,14 +469,14 @@ function TermCard({
                 <div className="flex flex-wrap items-center gap-1">
                     <input
                         type="text"
-                        aria-label="Term name"
+                        aria-label={t('Term name')}
                         value={term.label}
                         onChange={(e) => onChange({ label: e.target.value })}
                         className={`${dateInputClass} w-full font-sans`}
                     />
                     <input
                         type="date"
-                        aria-label={`${term.label} starts`}
+                        aria-label={t(':label starts', { label: term.label })}
                         value={term.starts_on}
                         min={year.starts_on}
                         max={year.ends_on}
@@ -470,7 +485,7 @@ function TermCard({
                     />
                     <input
                         type="date"
-                        aria-label={`${term.label} ends`}
+                        aria-label={t(':label ends', { label: term.label })}
                         value={term.ends_on}
                         min={term.starts_on}
                         max={year.ends_on}
@@ -482,7 +497,7 @@ function TermCard({
                         onClick={() => setEditing(false)}
                         className={`text-[12px] leading-4 font-medium hover:underline ${active ? 'text-white' : 'text-primary'}`}
                     >
-                        Done
+                        {t('Done')}
                     </button>
                 </div>
             ) : (
@@ -491,14 +506,14 @@ function TermCard({
                     disabled={locked}
                     title={
                         locked
-                            ? 'This term already has marks, so its dates are locked.'
-                            : 'Edit term'
+                            ? t('This term already has marks, so its dates are locked.')
+                            : t('Edit term')
                     }
                     onClick={() => setEditing(true)}
                     className={`self-start font-mono text-[12px] leading-4 enabled:hover:underline disabled:cursor-not-allowed ${active ? 'text-[#CFE3D8]' : 'text-text-muted'}`}
                 >
                     {shortDate(term.starts_on)} – {shortDate(term.ends_on)}
-                    {locked && ' · locked'}
+                    {locked && t(' · locked')}
                 </button>
             )}
         </div>
@@ -549,7 +564,7 @@ function YearZone({
             terms: [
                 ...data.terms,
                 {
-                    label: `Term ${sequence}`,
+                    label: t('Term :sequence', { sequence }),
                     sequence,
                     starts_on: startsOn,
                     ends_on: year.ends_on,
@@ -628,14 +643,14 @@ function YearZone({
 
     return (
         <Zone
-            title="Academic year & terms"
-            desc="The active term decides where marks, attendance and fees are recorded."
+            title={t('Academic year & terms')}
+            desc={t('The active term decides where marks, attendance and fees are recorded.')}
         >
             <div className="flex flex-wrap items-center gap-[10px]">
                 {year && (
                     <span className="relative flex">
                         <select
-                            aria-label="Academic year"
+                            aria-label={t('Academic year')}
                             value={year.id}
                             onChange={(e) =>
                                 router.get(
@@ -646,7 +661,7 @@ function YearZone({
                         >
                             {years.map((option) => (
                                 <option key={option.id} value={option.id}>
-                                    {option.label}
+                                    {t(option.label)}
                                 </option>
                             ))}
                         </select>
@@ -670,12 +685,12 @@ function YearZone({
                 <span className="text-[13px] leading-4 text-text-muted">
                     {year
                         ? `${longDate(year.starts_on)} – ${longDate(year.ends_on)}`
-                        : 'No academic year yet.'}
+                        : t('No academic year yet.')}
                 </span>
                 {year?.status === 'current' && (
                     <span className="flex h-6 items-center gap-[6px] rounded-full bg-primary-tint px-[10px] text-[12px] leading-4 font-medium text-primary">
                         <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-primary" />
-                        Active
+                        {t('Active')}
                     </span>
                 )}
                 <span className="flex-1" />
@@ -687,7 +702,7 @@ function YearZone({
                                 onClick={makeYearActive}
                                 className={linkClass}
                             >
-                                Set active
+                                {t('Set active')}
                             </button>
                         )}
                         {year && (
@@ -696,7 +711,7 @@ function YearZone({
                                 onClick={() => openForm('edit')}
                                 className={linkClass}
                             >
-                                Edit year
+                                {t('Edit year')}
                             </button>
                         )}
                         <button
@@ -704,7 +719,7 @@ function YearZone({
                             onClick={() => openForm('create')}
                             className={linkClass}
                         >
-                            + New academic year
+                            {t('+ New academic year')}
                         </button>
                     </span>
                 )}
@@ -713,7 +728,7 @@ function YearZone({
                 <div className="flex flex-wrap items-center gap-2">
                     <input
                         type="text"
-                        aria-label="Year label"
+                        aria-label={t('Year label')}
                         placeholder="2026/27"
                         value={draft.label}
                         onChange={(e) =>
@@ -723,7 +738,7 @@ function YearZone({
                     />
                     <input
                         type="date"
-                        aria-label="Year starts"
+                        aria-label={t('Year starts')}
                         value={draft.starts_on}
                         onChange={(e) =>
                             setDraft({ ...draft, starts_on: e.target.value })
@@ -732,7 +747,7 @@ function YearZone({
                     />
                     <input
                         type="date"
-                        aria-label="Year ends"
+                        aria-label={t('Year ends')}
                         value={draft.ends_on}
                         min={draft.starts_on}
                         onChange={(e) =>
@@ -748,14 +763,14 @@ function YearZone({
                         }
                         className="h-[34px] rounded-md bg-primary px-3 text-[13px] font-medium text-white hover:bg-primary-hover disabled:opacity-40"
                     >
-                        {mode === 'edit' ? 'Save year' : 'Create year'}
+                        {mode === 'edit' ? t('Save year') : t('Create year')}
                     </button>
                     <button
                         type="button"
                         onClick={() => setMode(null)}
                         className="px-1 text-[13px] font-medium text-text-muted hover:underline"
                     >
-                        Cancel
+                        {t('Cancel')}
                     </button>
                 </div>
             )}
@@ -780,7 +795,7 @@ function YearZone({
                             onClick={addTerm}
                             className="flex min-h-[70px] items-center justify-center rounded-md border border-dashed border-border text-[13px] font-medium text-primary hover:bg-surface"
                         >
-                            + Add term
+                            {t('+ Add term')}
                         </button>
                     )}
                 </div>
@@ -849,17 +864,17 @@ function InstallmentsZone({
 
     return (
         <Zone
-            title="Fee installments"
-            desc="Applies to every student. Partial payments fill the oldest installment first."
+            title={t('Fee installments')}
+            desc={t('Applies to every student. Partial payments fill the oldest installment first.')}
         >
             <div className="flex items-center gap-3">
                 <span className="text-[13px] leading-4 font-medium text-text">
-                    Number of installments
+                    {t('Number of installments')}
                 </span>
                 <div className="flex h-[34px] items-center rounded-md border border-solid border-border">
                     <button
                         type="button"
-                        aria-label="Fewer installments"
+                        aria-label={t('Fewer installments')}
                         disabled={!year || rows.length <= 1}
                         onClick={removeRow}
                         className="flex h-8 w-[34px] items-center justify-center border-r border-solid border-border text-[16px] leading-5 text-text enabled:hover:bg-surface disabled:text-text-muted disabled:opacity-60"
@@ -871,7 +886,7 @@ function InstallmentsZone({
                     </span>
                     <button
                         type="button"
-                        aria-label="More installments"
+                        aria-label={t('More installments')}
                         disabled={!year || rows.length >= 12}
                         onClick={addRow}
                         className="flex h-8 w-[34px] items-center justify-center border-l border-solid border-border text-[16px] leading-5 text-text enabled:hover:bg-surface disabled:opacity-40"
@@ -881,7 +896,7 @@ function InstallmentsZone({
                 </div>
                 {rows.length > 0 && !balanced && (
                     <span className="text-[13px] leading-4 text-danger">
-                        Splits add up to {total}%. They must total 100% to save.
+                        {t('Splits add up to :total%. They must total 100% to save.', { total })}
                     </span>
                 )}
             </div>
@@ -900,7 +915,7 @@ function InstallmentsZone({
                                     <input
                                         type="date"
                                         autoFocus
-                                        aria-label={`${ordinal(row.seq)} installment due date`}
+                                        aria-label={t(':seq installment due date', { seq: ordinal(row.seq) })}
                                         value={row.due_on ?? ''}
                                         min={year?.starts_on}
                                         max={year?.ends_on}
@@ -915,13 +930,13 @@ function InstallmentsZone({
                                 ) : (
                                     <button
                                         type="button"
-                                        title="Change due date"
+                                        title={t('Change due date')}
                                         onClick={() => setEditingDue(index)}
                                         className="self-start text-[12px] leading-4 text-text-muted hover:underline"
                                     >
                                         {row.due_on
-                                            ? `Due ${shortDate(row.due_on, false)}`
-                                            : 'Set due date'}
+                                            ? t('Due :due_on', { due_on: shortDate(row.due_on, false) })
+                                            : t('Set due date')}
                                     </button>
                                 )}
                             </div>
@@ -929,7 +944,7 @@ function InstallmentsZone({
                                 <input
                                     type="text"
                                     inputMode="decimal"
-                                    aria-label={`${ordinal(row.seq)} installment percent`}
+                                    aria-label={t(':seq installment percent', { seq: ordinal(row.seq) })}
                                     value={row.percent}
                                     onChange={(e) =>
                                         setRow(index, {
@@ -961,7 +976,7 @@ function WindowStatus({ status }: { status: AssessmentProp['window_status'] }) {
         return (
             <span className="flex h-6 items-center gap-[6px] rounded-full bg-primary-tint px-[10px] text-[12px] leading-4 font-medium text-primary">
                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-primary" />
-                Open
+                {t('Open')}
             </span>
         );
     }
@@ -969,14 +984,14 @@ function WindowStatus({ status }: { status: AssessmentProp['window_status'] }) {
     if (status === 'closed') {
         return (
             <span className="flex h-6 items-center rounded-full border border-solid border-border bg-surface px-[10px] text-[12px] leading-4 font-medium text-text-muted">
-                Closed
+                {t('Closed')}
             </span>
         );
     }
 
     return (
         <span className="text-[12px] leading-4 text-text-muted">
-            {status === 'scheduled' ? 'Scheduled' : 'Not scheduled'}
+            {status === 'scheduled' ? t('Scheduled') : t('Not scheduled')}
         </span>
     );
 }
@@ -1024,13 +1039,12 @@ function WindowsZone({ assessments }: { assessments: AssessmentProp[] }) {
 
     return (
         <Zone
-            title="Sequences & exams"
-            desc="Teachers can enter marks only while a window is open. Pass marks are set by each teacher."
+            title={t('Sequences & exams')}
+            desc={t('Teachers can enter marks only while a window is open. Pass marks are set by each teacher.')}
         >
             {data.rows.length === 0 ? (
                 <p className="text-[13px] leading-[19px] text-text-muted">
-                    No sequences or exams yet. Their marks windows appear here
-                    once they are created.
+                    {t('No sequences or exams yet. Their marks windows appear here once they are created.')}
                 </p>
             ) : (
                 <div className="flex flex-col">
@@ -1052,7 +1066,7 @@ function WindowsZone({ assessments }: { assessments: AssessmentProp[] }) {
                                     <span className="flex shrink-0 items-center gap-1">
                                         <input
                                             type="date"
-                                            aria-label={`${row.name} window opens`}
+                                            aria-label={t(':row window opens', { row: row.name })}
                                             value={row.window_starts_on}
                                             onChange={(e) =>
                                                 setRow(index, {
@@ -1064,7 +1078,7 @@ function WindowsZone({ assessments }: { assessments: AssessmentProp[] }) {
                                         />
                                         <input
                                             type="date"
-                                            aria-label={`${row.name} window closes`}
+                                            aria-label={t(':row window closes', { row: row.name })}
                                             value={row.window_ends_on}
                                             min={row.window_starts_on}
                                             onChange={(e) =>
@@ -1080,13 +1094,13 @@ function WindowsZone({ assessments }: { assessments: AssessmentProp[] }) {
                                             onClick={() => setEditing(null)}
                                             className="text-[12px] leading-4 font-medium text-primary hover:underline"
                                         >
-                                            Done
+                                            {t('Done')}
                                         </button>
                                     </span>
                                 ) : (
                                     <button
                                         type="button"
-                                        title="Change marks window"
+                                        title={t('Change marks window')}
                                         onClick={() => setEditing(index)}
                                         className={`w-[200px] shrink-0 text-left font-mono text-[13px] leading-4 hover:underline ${
                                             status === 'open'
@@ -1097,7 +1111,7 @@ function WindowsZone({ assessments }: { assessments: AssessmentProp[] }) {
                                         {row.window_starts_on &&
                                         row.window_ends_on
                                             ? `${shortDate(row.window_starts_on)} → ${shortDate(row.window_ends_on)}`
-                                            : 'Set window'}
+                                            : t('Set window')}
                                     </button>
                                 )}
                                 <span className="flex w-[130px] shrink-0 justify-end">
@@ -1176,15 +1190,15 @@ function SchooldayZone({
 
     return (
         <Zone
-            title="School day"
-            desc="The days and periods every timetable and exam schedule is built on. A change applies to the next timetable version you generate."
+            title={t('School day')}
+            desc={t('The days and periods every timetable and exam schedule is built on. A change applies to the next timetable version you generate.')}
         >
             <div className="flex flex-wrap items-center gap-[14px]">
                 <span className="text-[13px] leading-4 font-medium text-text">
-                    School days
+                    {t('School days')}
                 </span>
                 <div className="flex gap-[6px]">
-                    {WEEKDAYS.map((day, index) => {
+                    {WEEKDAYS.map((name) => t(name)).map((day, index) => {
                         const bit = 1 << index;
                         const on = (data.school_days & bit) !== 0;
 
@@ -1213,14 +1227,14 @@ function SchooldayZone({
             </div>
             <div className="flex flex-col overflow-clip rounded-lg border border-solid border-border">
                 <div className="flex h-8 shrink-0 items-center gap-[14px] border-b border-solid border-border bg-surface px-[14px] text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
-                    <span className="w-[70px] shrink-0">Period</span>
-                    <span className="w-[90px] shrink-0">Starts</span>
-                    <span className="w-[90px] shrink-0">Ends</span>
-                    <span className="flex-1">Length</span>
+                    <span className="w-[70px] shrink-0">{t('Period')}</span>
+                    <span className="w-[90px] shrink-0">{t('Starts')}</span>
+                    <span className="w-[90px] shrink-0">{t('Ends')}</span>
+                    <span className="flex-1">{t('Length')}</span>
                 </div>
                 {visible.length === 0 && (
                     <p className="px-[14px] py-3 text-[13px] leading-[19px] text-text-muted">
-                        No periods yet. Add the first one below.
+                        {t('No periods yet. Add the first one below.')}
                     </p>
                 )}
                 {visible.map((row, index) => {
@@ -1239,7 +1253,7 @@ function SchooldayZone({
                         >
                             <input
                                 type="text"
-                                aria-label="Period name"
+                                aria-label={t('Period name')}
                                 value={row.label}
                                 onChange={(e) =>
                                     setPeriod(row, { label: e.target.value })
@@ -1252,7 +1266,7 @@ function SchooldayZone({
                             />
                             <input
                                 type="time"
-                                aria-label={`${row.label} starts`}
+                                aria-label={t(':label starts', { label: row.label })}
                                 value={row.starts_at}
                                 onChange={(e) =>
                                     setPeriod(row, { starts_at: e.target.value })
@@ -1261,7 +1275,7 @@ function SchooldayZone({
                             />
                             <input
                                 type="time"
-                                aria-label={`${row.label} ends`}
+                                aria-label={t(':label ends', { label: row.label })}
                                 value={row.ends_at}
                                 onChange={(e) =>
                                     setPeriod(row, { ends_at: e.target.value })
@@ -1269,14 +1283,14 @@ function SchooldayZone({
                                 className={`${timeInputClass} ${tone}`}
                             />
                             <span className="flex-1 font-mono text-[12px] leading-4 text-text-muted">
-                                {length > 0 ? `${length} min` : '—'}
+                                {length > 0 ? t(':count min', { count: length }) : '—'}
                             </span>
                             <button
                                 type="button"
                                 onClick={() => removePeriod(row)}
                                 className="text-[12px] leading-4 font-medium text-danger opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:underline focus:opacity-100"
                             >
-                                Remove
+                                {t('Remove')}
                             </button>
                         </div>
                     );
@@ -1284,8 +1298,7 @@ function SchooldayZone({
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[13px] leading-[19px] text-text-muted">
-                    {lessons * days} lesson slots a week for each class. Used by
-                    the Timetable and the Exam schedule.
+                    {t(':days lesson slots a week for each class. Used by the Timetable and the Exam schedule.', { days: lessons * days })}
                 </p>
                 <div className="flex gap-4">
                     <button
@@ -1293,14 +1306,14 @@ function SchooldayZone({
                         onClick={() => addPeriod(false)}
                         className={linkClass}
                     >
-                        Add a period
+                        {t('Add a period')}
                     </button>
                     <button
                         type="button"
                         onClick={() => addPeriod(true)}
                         className={linkClass}
                     >
-                        Add a break
+                        {t('Add a break')}
                     </button>
                 </div>
             </div>
@@ -1329,17 +1342,17 @@ function SetupPage({
 
     return (
         <SaveContext value={setSaveState}>
-            <Head title="School Setup" />
+            <Head title={t('School Setup')} />
             <div className="flex flex-col gap-7">
                 <div className="flex flex-wrap items-end justify-between gap-2">
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                        School Setup
+                        {t('School Setup')}
                     </h1>
                     <p
                         aria-live="polite"
                         className={`text-[13px] leading-4 ${saveState === 'error' ? 'text-danger' : 'text-text-muted'}`}
                     >
-                        {SAVE_LABELS[saveState]}
+                        {t(SAVE_LABELS[saveState])}
                     </p>
                 </div>
                 <ProfileZone school={school} />

@@ -4,6 +4,7 @@ import { index, structure, student } from '@/actions/App/Http/Controllers/FeeCon
 import { FeesHeader, StatePill, amberText, figure } from '../../components/fees/ui';
 import { capsLabelClass, solidButtonClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface Filters {
     show: string;
@@ -74,26 +75,25 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
     }
 
     const stats = [
-        { label: 'Billed', value: totals.billed, tone: 'text-text', note: `${counts.all - counts.unbilled} of ${counts.all} students` },
-        { label: 'Collected', value: totals.collected, tone: 'text-success', note: `${share}% of what was billed` },
-        { label: 'Outstanding', value: totals.outstanding, tone: totals.outstanding > 0 ? amberText : 'text-text', note: `${counts.overdue + counts.owing} students owe` },
-        { label: 'Overdue', value: totals.overdue, tone: totals.overdue > 0 ? 'text-danger' : 'text-text', note: `${counts.overdue} students are late` },
+        { label: t('Billed'), value: totals.billed, tone: 'text-text', note: t(':unbilled of :all students', { unbilled: counts.all - counts.unbilled, all: counts.all }) },
+        { label: t('Collected'), value: totals.collected, tone: 'text-success', note: t(':share% of what was billed', { share }) },
+        { label: t('Outstanding'), value: totals.outstanding, tone: totals.outstanding > 0 ? amberText : 'text-text', note: t(':owing students owe', { owing: counts.overdue + counts.owing }) },
+        { label: t('Overdue'), value: totals.overdue, tone: totals.overdue > 0 ? 'text-danger' : 'text-text', note: t(':overdue students are late', { overdue: counts.overdue }) },
     ];
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title="Fees" />
+            <Head title={t('Fees')} />
             <FeesHeader
                 active="students"
-                title="Fees"
+                title={t('Fees')}
                 tag={yearLabel}
-                meta="what each student was billed, has paid and still owes"
+                meta={t('what each student was billed, has paid and still owes')}
             />
 
             {!yearLabel ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    Fees are billed for an academic year, and no year is
-                    active. Make one active in School Setup first.
+                    {t('Fees are billed for an academic year, and no year is active. Make one active in School Setup first.')}
                 </p>
             ) : (
                 <>
@@ -103,7 +103,7 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
                                 key={stat.label}
                                 className={`flex min-w-[160px] flex-1 flex-col gap-[2px] py-3 ${position === 0 ? 'pr-4' : 'border-l border-solid border-border px-4'}`}
                             >
-                                <span className={capsLabelClass}>{stat.label}</span>
+                                <span className={capsLabelClass}>{t(stat.label)}</span>
                                 <span className={`font-mono text-[20px] leading-7 ${stat.tone}`}>{figure(stat.value)}</span>
                                 <span className="text-[12px] leading-4 text-text-muted">
                                     {currency} · {stat.note}
@@ -116,12 +116,12 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
                         <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-solid border-warning bg-warning-tint px-4 py-3">
                             <p className="min-w-0 flex-1 text-[13px] leading-[19px] text-text">
                                 {!hasPlans
-                                    ? `No level has a fee for ${yearLabel} yet, so nobody can be billed.`
-                                    : `${counts.unbilled} ${counts.unbilled === 1 ? 'student has' : 'students have'} no invoice for ${yearLabel}.`}{' '}
-                                Set fees and bill students under Fee structure.
+                                    ? t('No level has a fee for :year_label yet, so nobody can be billed.', { year_label: yearLabel })
+                                    : t(':unbilled :have no invoice for :year_label.', { unbilled: counts.unbilled, have: counts.unbilled === 1 ? 'student has' : 'students have', year_label: yearLabel })}{' '}
+                                {t('Set fees and bill students under Fee structure.')}
                             </p>
                             <Link href={structure.url()} className={solidButtonClass}>
-                                Open Fee structure →
+                                {t('Open Fee structure →')}
                             </Link>
                         </div>
                     )}
@@ -146,7 +146,7 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
                                         {tab.key === 'overdue' && counts.overdue > 0 && (
                                             <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-danger" />
                                         )}
-                                        {tab.label} · {counts[tab.key] ?? 0}
+                                        {t(tab.label)} · {counts[tab.key] ?? 0}
                                     </button>
                                 );
                             })}
@@ -156,12 +156,12 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
                                 <circle cx="11" cy="11" r="7" fill="none" stroke="#56625C" strokeWidth="2" />
                                 <path d="M16 16l5 5" fill="none" stroke="#56625C" strokeWidth="2" strokeLinecap="round" />
                             </svg>
-                            <span className="sr-only">Search students</span>
+                            <span className="sr-only">{t('Search students')}</span>
                             <input
                                 type="search"
                                 value={search}
                                 onChange={(e) => onSearch(e.target.value)}
-                                placeholder="Name or matricule"
+                                placeholder={t('Name or matricule')}
                                 className="w-full bg-transparent text-[14px] leading-[18px] text-text outline-none placeholder:text-text-muted"
                             />
                         </label>
@@ -169,18 +169,18 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
 
                     {students.rows.length === 0 ? (
                         <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                            {counts.all === 0 ? `No student is enrolled in ${yearLabel} yet.` : 'No student matches.'}
+                            {counts.all === 0 ? t('No student is enrolled in :year_label yet.', { year_label: yearLabel }) : t('No student matches.')}
                         </p>
                     ) : (
                         <div className="overflow-x-auto rounded-lg border border-solid border-border">
                             <div className="flex min-w-[860px] flex-col">
                                 <div className={`flex h-9 items-center gap-4 border-b border-solid border-border bg-surface px-4 ${capsLabelClass}`}>
-                                    <span className="flex-1">Student</span>
-                                    <span className="w-[110px] shrink-0">Class</span>
-                                    <span className="w-[100px] shrink-0 text-right">Annual fees</span>
-                                    <span className="w-[100px] shrink-0 text-right">Paid</span>
-                                    <span className="w-[100px] shrink-0 text-right">Balance</span>
-                                    <span className="w-[110px] shrink-0">Status</span>
+                                    <span className="flex-1">{t('Student')}</span>
+                                    <span className="w-[110px] shrink-0">{t('Class')}</span>
+                                    <span className="w-[100px] shrink-0 text-right">{t('Annual fees')}</span>
+                                    <span className="w-[100px] shrink-0 text-right">{t('Paid')}</span>
+                                    <span className="w-[100px] shrink-0 text-right">{t('Balance')}</span>
+                                    <span className="w-[110px] shrink-0">{t('Status')}</span>
                                     <span className="w-[60px] shrink-0" />
                                 </div>
                                 {students.rows.map((row, position) => (
@@ -206,7 +206,7 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
                                         <span className="flex w-[110px] shrink-0">
                                             <StatePill state={row.state} />
                                         </span>
-                                        <span className="w-[60px] shrink-0 text-right text-[13px] leading-4 font-medium text-primary">Open</span>
+                                        <span className="w-[60px] shrink-0 text-right text-[13px] leading-4 font-medium text-primary">{t('Open')}</span>
                                     </Link>
                                 ))}
                             </div>
@@ -215,7 +215,7 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
 
                     <div className="flex flex-wrap items-center gap-4">
                         <p className="text-[13px] leading-4 text-text-muted">
-                            {students.rows.length} of {students.total} shown · most overdue first
+                            {t(':rows of :total shown · most overdue first', { rows: students.rows.length, total: students.total })}
                         </p>
                         {students.lastPage > 1 && (
                             <div className="flex items-center gap-1">
@@ -225,7 +225,7 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
                                     onClick={() => visit({ page: students.page - 1 })}
                                     className="flex h-7 items-center rounded-md px-3 text-[13px] text-text hover:bg-surface disabled:opacity-40"
                                 >
-                                    ← Previous
+                                    {t('← Previous')}
                                 </button>
                                 <span className="px-1 font-mono text-[12px] text-text-muted">
                                     {students.page} / {students.lastPage}
@@ -236,7 +236,7 @@ function Fees({ yearLabel, currency, totals, counts, filters, students, hasPlans
                                     onClick={() => visit({ page: students.page + 1 })}
                                     className="flex h-7 items-center rounded-md px-3 text-[13px] text-text hover:bg-surface disabled:opacity-40"
                                 >
-                                    Next →
+                                    {t('Next →')}
                                 </button>
                             </div>
                         )}

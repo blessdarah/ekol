@@ -4,6 +4,7 @@ import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 import { index as seriesIndex } from '@/actions/App/Http/Controllers/SeriesController';
 import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
 import { index as subjectsIndex } from '@/actions/App/Http/Controllers/SubjectController';
+import { t } from '../../lib/i18n';
 
 export const CYCLE_LABELS: Record<string, string> = {
     primary: 'Primary',
@@ -103,7 +104,7 @@ export function StructureHeader({
             <div className="flex flex-col gap-[6px]">
                 <Breadcrumbs
                     trail={[
-                        { label: 'Classes & Subjects', href: levelsIndex.url() },
+                        { label: t('Classes & Subjects'), href: levelsIndex.url() },
                         ...trail,
                     ]}
                 />
@@ -122,9 +123,9 @@ export function StructureHeader({
 
 export function StructureTabs({ active }: { active: 'subjects' | 'levels' | 'series' }) {
     const tabs = [
-        { key: 'subjects', label: 'Subjects', href: subjectsIndex.url() },
-        { key: 'levels', label: 'Levels', href: levelsIndex.url() },
-        { key: 'series', label: 'Series setup', href: seriesIndex.url() },
+        { key: 'subjects', label: t('Subjects'), href: subjectsIndex.url() },
+        { key: 'levels', label: t('Levels'), href: levelsIndex.url() },
+        { key: 'series', label: t('Series setup'), href: seriesIndex.url() },
     ];
 
     return (
@@ -140,7 +141,7 @@ export function StructureTabs({ active }: { active: 'subjects' | 'levels' | 'ser
                             : 'border-transparent font-medium text-text-muted hover:text-text'
                     }`}
                 >
-                    {tab.label}
+                    {t(tab.label)}
                 </Link>
             ))}
         </nav>
@@ -203,7 +204,7 @@ export function ChipPicker({
                 {children}
                 {chosen === 0 && (
                     <span className="text-[13px] leading-4 text-text-muted">
-                        None chosen
+                        {t('None chosen')}
                     </span>
                 )}
             </div>

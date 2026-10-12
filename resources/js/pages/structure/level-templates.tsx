@@ -15,6 +15,7 @@ import {
     levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface TemplateLevel {
     name: string;
@@ -92,18 +93,18 @@ function LevelTemplates({
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
-            <Head title="Start from a standard structure" />
+            <Head title={t('Start from a standard structure')} />
             <StructureHeader
-                trail={[levelsCrumb, { label: 'Standard structure' }]}
-                title="Start from a standard structure"
-                tag={`Structure${yearLabel ? ` · ${yearLabel}` : ''}`}
-                meta="create every level and its classes in one go"
+                trail={[levelsCrumb, { label: t('Standard structure') }]}
+                title={t('Start from a standard structure')}
+                tag={t('Structure:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                meta={t('create every level and its classes in one go')}
             />
 
             <div className="flex flex-1 flex-col gap-8 lg:flex-row">
                 <div className="flex shrink-0 flex-col gap-3 lg:w-[340px]">
-                    <p className={capsLabelClass}>Standard structures</p>
-                    <div role="radiogroup" aria-label="Standard structures" className="flex flex-col gap-[10px]">
+                    <p className={capsLabelClass}>{t('Standard structures')}</p>
+                    <div role="radiogroup" aria-label={t('Standard structures')} className="flex flex-col gap-[10px]">
                         {sets.map((option) => {
                             const selected = option.key === set.key;
 
@@ -130,12 +131,12 @@ function LevelTemplates({
                                             {option.name}
                                         </span>
                                         <span className="text-[13px] leading-[18px] text-text-muted">
-                                            {option.description}
+                                            {t(option.description)}
                                         </span>
                                         <span
                                             className={`pt-[2px] font-mono text-[12px] leading-4 ${selected ? 'text-primary' : 'text-text-muted'}`}
                                         >
-                                            {option.levels.length} levels
+                                            {t(':levels levels', { levels: option.levels.length })}
                                         </span>
                                     </span>
                                 </button>
@@ -143,30 +144,29 @@ function LevelTemplates({
                         })}
                     </div>
                     <p className="flex items-center gap-[6px] pt-1 text-[13px] leading-[18px] text-text-muted">
-                        Need just one level?
+                        {t('Need just one level?')}
                         <Link href={createLevel.url()} className="font-medium text-primary hover:underline">
-                            Add it yourself
+                            {t('Add it yourself')}
                         </Link>
                     </p>
                 </div>
 
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                     <div className="flex flex-col gap-1">
-                        <p className={capsLabelClass}>Levels in this structure</p>
+                        <p className={capsLabelClass}>{t('Levels in this structure')}</p>
                         <p className="text-[13px] leading-4 text-text-muted">
-                            Untick any you do not run. Classes can be added,
-                            renamed or removed afterwards from each level.
+                            {t('Untick any you do not run. Classes can be added, renamed or removed afterwards from each level.')}
                         </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3 rounded-md bg-surface px-3 py-[10px]">
                         <span className="text-[13px] leading-4 font-medium text-text">
-                            Classes in each level
+                            {t('Classes in each level')}
                         </span>
                         <div className="flex h-[30px] items-center rounded-md border border-solid border-border bg-white">
                             <button
                                 type="button"
-                                aria-label="Fewer classes in each level"
+                                aria-label={t('Fewer classes in each level')}
                                 disabled={!hasYear || perLevel <= 0}
                                 onClick={() => changeAll(perLevel - 1)}
                                 className="flex h-7 w-[30px] items-center justify-center border-r border-solid border-border text-[16px] leading-5 text-text enabled:hover:bg-surface disabled:text-text-muted disabled:opacity-60"
@@ -178,7 +178,7 @@ function LevelTemplates({
                             </span>
                             <button
                                 type="button"
-                                aria-label="More classes in each level"
+                                aria-label={t('More classes in each level')}
                                 disabled={!hasYear || perLevel >= MAX_CLASSES}
                                 onClick={() => changeAll(perLevel + 1)}
                                 className="flex h-7 w-[30px] items-center justify-center border-l border-solid border-border text-[16px] leading-5 text-text enabled:hover:bg-surface disabled:opacity-40"
@@ -188,18 +188,18 @@ function LevelTemplates({
                         </div>
                         <span className={`text-[13px] leading-4 ${hasYear ? 'text-text-muted' : 'text-warning'}`}>
                             {hasYear
-                                ? 'Named A, B, C. Set here for all, or change one level in the Classes column.'
-                                : 'Classes belong to an academic year. Make a year active in School Setup to add them.'}
+                                ? t('Named A, B, C. Set here for all, or change one level in the Classes column.')
+                                : t('Classes belong to an academic year. Make a year active in School Setup to add them.')}
                         </span>
                     </div>
 
                     <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
                         <div className="flex h-8 shrink-0 items-center gap-3 bg-surface px-3 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                             <span className="w-[18px] shrink-0" />
-                            <span className="flex-1">Level</span>
-                            <span className="w-16 shrink-0">Code</span>
-                            <span className="w-[150px] shrink-0">Cycle</span>
-                            <span className="w-16 shrink-0">Classes</span>
+                            <span className="flex-1">{t('Level')}</span>
+                            <span className="w-16 shrink-0">{t('Code')}</span>
+                            <span className="w-[150px] shrink-0">{t('Cycle')}</span>
+                            <span className="w-16 shrink-0">{t('Classes')}</span>
                         </div>
                         {set.levels.map((level, position) => {
                             const on = !level.exists && !unticked.includes(level.code);
@@ -212,7 +212,7 @@ function LevelTemplates({
                                 >
                                     <input
                                         type="checkbox"
-                                        aria-label={`Create ${level.name}`}
+                                        aria-label={t('Create :level', { level: level.name })}
                                         checked={on}
                                         disabled={level.exists}
                                         onChange={() =>
@@ -230,7 +230,7 @@ function LevelTemplates({
                                         </span>
                                         {level.exists && (
                                             <span className="flex h-5 shrink-0 items-center rounded-full border border-solid border-border bg-surface px-2 text-[11px] leading-[14px] font-medium text-text-muted">
-                                                Already exists
+                                                {t('Already exists')}
                                             </span>
                                         )}
                                     </span>
@@ -238,8 +238,8 @@ function LevelTemplates({
                                         {level.code}
                                     </span>
                                     <span className="w-[150px] shrink-0 text-[13px] leading-4 text-text-muted">
-                                        {CYCLE_LABELS[level.cycle]}
-                                        {level.uses_series ? ' · series' : ''}
+                                        {t(CYCLE_LABELS[level.cycle])}
+                                        {level.uses_series ? t(' · series') : ''}
                                     </span>
                                     <span className="w-16 shrink-0">
                                         {on && hasYear ? (
@@ -247,7 +247,7 @@ function LevelTemplates({
                                                 type="number"
                                                 min={0}
                                                 max={MAX_CLASSES}
-                                                aria-label={`Classes in ${level.name}`}
+                                                aria-label={t('Classes in :level', { level: level.name })}
                                                 value={overrides[level.code] ?? String(perLevel)}
                                                 onChange={(e) =>
                                                     setOverrides({
@@ -268,14 +268,14 @@ function LevelTemplates({
                         })}
                         <div className="flex h-9 shrink-0 items-center justify-between border-t border-solid border-border bg-surface px-3">
                             <span className="text-[13px] leading-4 text-text-muted">
-                                {set.levels.length} levels in this structure
+                                {t(':levels levels in this structure', { levels: set.levels.length })}
                             </span>
                             <span className="flex items-baseline gap-[6px]">
                                 <span className="font-mono text-[13px] leading-4 text-text">
-                                    {picked.length} selected
+                                    {t(':picked selected', { picked: picked.length })}
                                 </span>
                                 <span className="text-[13px] leading-4 text-text-muted">
-                                    · {existing} already {existing === 1 ? 'exists' : 'exist'}
+                                    · {existing} {t('already')} {existing === 1 ? t('exists') : t('exist')}
                                 </span>
                             </span>
                         </div>
@@ -286,14 +286,13 @@ function LevelTemplates({
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-col gap-1">
                     <p className="text-[13px] leading-4 text-text-muted">
-                        Levels you already have are left alone. Classes are
-                        named A, B, C and can be changed afterwards.
+                        {t('Levels you already have are left alone. Classes are named A, B, C and can be changed afterwards.')}
                     </p>
                     <ErrorText message={error} />
                 </div>
                 <div className="flex gap-2">
                     <Link href={index.url()} className={outlineButtonClass}>
-                        Cancel
+                        {t('Cancel')}
                     </Link>
                     <button
                         type="button"
@@ -301,7 +300,7 @@ function LevelTemplates({
                         onClick={create}
                         className={solidButtonClass}
                     >
-                        Create {picked.length} {picked.length === 1 ? 'level' : 'levels'}
+                        {t('Create')} {picked.length} {picked.length === 1 ? t('level') : t('levels')}
                     </button>
                 </div>
             </div>

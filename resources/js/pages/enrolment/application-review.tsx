@@ -19,6 +19,7 @@ import {
 import { ErrorText, capsLabelClass, fieldLabelClass } from '../../components/structure/ui';
 import { GENDER_LABELS, RELATION_LABELS, fullDate } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 type Decision = 'admit' | 'waitlist' | 'decline';
 
@@ -86,7 +87,7 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
     const admitted = application.stage === 'admitted';
     const missing = application.documents.filter((document) => !document.received);
     const stage = application.stage === 'to_review' && missing.length > 0 ? 'documents' : application.stage;
-    const they = application.gender === 'female' ? 'She' : 'He';
+    const they = application.gender === 'female' ? t('She') : t('He');
     const them = application.gender === 'female' ? 'her' : 'him';
     const over = capacity !== null && capacity.expected >= capacity.seats;
     const verb = DECISIONS.find((option) => option.key === data.decision)?.verb ?? 'Admit';
@@ -105,12 +106,12 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
             <EnrolmentHeader
                 active="applications"
                 progress={enrolment}
-                trail={[{ label: 'Applications', href: index.url() }, { label: application.name }]}
+                trail={[{ label: t('Applications'), href: index.url() }, { label: application.name }]}
                 title={application.name}
                 status={
                     <>
                         <span className="font-mono uppercase">
-                            {application.reference} · applying to {application.level}
+                            {t(':reference · applying to :level', { reference: application.reference, level: application.level })}
                         </span>
                         <StagePill stage={stage} small />
                     </>
@@ -119,25 +120,25 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
 
             <div className="flex flex-col gap-8 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-[22px]">
-                    <RowSection label="Applicant">
-                        <Detail label="Born">
+                    <RowSection label={t('Applicant')}>
+                        <Detail label={t('Born')}>
                             {fullDate(application.date_of_birth)}
-                            {application.place_of_birth ? ` in ${application.place_of_birth}` : ''} ·{' '}
+                            {application.place_of_birth ? t(' in :place_of_birth', { place_of_birth: application.place_of_birth }) : ''} ·{' '}
                             {GENDER_LABELS[application.gender] ?? application.gender}
                         </Detail>
                         {canSeePrivate && (
                             <>
-                                <Detail label="Religion">{application.religion ?? 'Not given'}</Detail>
-                                <Detail label="Disability">{application.disability ?? 'None'}</Detail>
+                                <Detail label={t('Religion')}>{application.religion ?? t('Not given')}</Detail>
+                                <Detail label={t('Disability')}>{application.disability ?? t('None')}</Detail>
                             </>
                         )}
-                        <Detail label={application.transferred ? 'Transferring from' : 'Coming from'}>
-                            {[application.previous_school, application.previous_class].filter(Boolean).join(' · ') || 'Not given'}
+                        <Detail label={application.transferred ? t('Transferring from') : t('Coming from')}>
+                            {[application.previous_school, application.previous_class].filter(Boolean).join(' · ') || t('Not given')}
                         </Detail>
-                        <Detail label="Reason">{application.reason ?? 'Not given'}</Detail>
+                        <Detail label={t('Reason')}>{application.reason ?? t('Not given')}</Detail>
                     </RowSection>
 
-                    <RowSection label="Parents">
+                    <RowSection label={t('Parents')}>
                         {application.guardians.map((guardian) => (
                             <div key={guardian.relation} className="flex items-center gap-4 border-t border-solid border-border py-[10px]">
                                 <span className="flex w-[184px] shrink-0 flex-col">
@@ -155,26 +156,26 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
                                 <span className="font-mono text-[13px] leading-[18px] text-text">{guardian.phone ?? '—'}</span>
                             </div>
                         ))}
-                        <Detail label="Sibling here">
+                        <Detail label={t('Sibling here')}>
                             {sibling ? (
                                 <Link href={studentRecord.url(sibling.id)} className="hover:underline">
                                     {sibling.name}
                                     {sibling.class ? ` · ${sibling.class}` : ''}
                                 </Link>
                             ) : (
-                                <span className="text-text-muted">None found by the parents’ phone numbers</span>
+                                <span className="text-text-muted">{t('None found by the parents’ phone numbers')}</span>
                             )}
                         </Detail>
                     </RowSection>
 
-                    <RowSection label="Documents">
+                    <RowSection label={t('Documents')}>
                         {application.documents.map((document) => (
                             <div key={document.key} className="flex items-center gap-4 border-t border-solid border-border py-[10px]">
-                                <span className="flex-1 text-[14px] leading-[19px] text-text">{document.label}</span>
+                                <span className="flex-1 text-[14px] leading-[19px] text-text">{t(document.label)}</span>
                                 <span className="flex items-center gap-[6px] text-[13px] leading-4">
                                     <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${document.received ? 'bg-success' : 'bg-warning'}`} />
                                     <span className={document.received ? 'text-text' : amberText}>
-                                        {document.received ? 'Received' : 'Missing'}
+                                        {document.received ? t('Received') : t('Missing')}
                                     </span>
                                 </span>
                                 {!admitted && (
@@ -183,7 +184,7 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
                                         onClick={() => toggleDocument(document.key)}
                                         className={`w-[112px] shrink-0 text-right ${linkClass}`}
                                     >
-                                        {document.received ? 'Not received' : 'Mark received'}
+                                        {document.received ? t('Not received') : t('Mark received')}
                                     </button>
                                 )}
                             </div>
@@ -194,25 +195,23 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
                 <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     {admitted ? (
                         <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-surface p-4">
-                            <p className={capsLabelClass}>Decision</p>
+                            <p className={capsLabelClass}>{t('Decision')}</p>
                             <p className="text-[14px] leading-[19px] font-semibold text-text">
-                                Admitted as {application.matricule}
+                                {t('Admitted as :matricule', { matricule: application.matricule })}
                             </p>
                             {application.condition && (
-                                <p className="text-[13px] leading-[19px] text-text">Condition: {application.condition}</p>
+                                <p className="text-[13px] leading-[19px] text-text">{t('Condition: :condition', { condition: application.condition })}</p>
                             )}
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                {they} is a student now. {they} is Enrolled
-                                once {they.toLowerCase()} has a class and
-                                enrolment is confirmed.
+                                {t(':they is a student now. :they is Enrolled once :to_lower_case has a class and enrolment is confirmed.', { they, to_lower_case: they.toLowerCase() })}
                             </p>
                             {application.student_id && (
                                 <Link href={studentRecord.url(application.student_id)} className={linkClass}>
-                                    Open the student record →
+                                    {t('Open the student record →')}
                                 </Link>
                             )}
                             <Link href={placement.url()} className={linkClass}>
-                                Go to class placement →
+                                {t('Go to class placement →')}
                             </Link>
                         </div>
                     ) : (
@@ -223,8 +222,8 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
                             }}
                             className="flex flex-col gap-[14px] rounded-lg border border-solid border-border bg-surface p-4"
                         >
-                            <p className={capsLabelClass}>Decision</p>
-                            <div role="radiogroup" aria-label="Decision" className="flex gap-2">
+                            <p className={capsLabelClass}>{t('Decision')}</p>
+                            <div role="radiogroup" aria-label={t('Decision')} className="flex gap-2">
                                 {DECISIONS.map((option) => {
                                     const selected = data.decision === option.key;
 
@@ -241,19 +240,19 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
                                                     : 'border-border bg-white font-medium text-text hover:bg-surface'
                                             }`}
                                         >
-                                            {option.label}
+                                            {t(option.label)}
                                         </button>
                                     );
                                 })}
                             </div>
                             {data.decision === 'admit' && (
                                 <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                    Condition of admission
+                                    {t('Condition of admission')}
                                     <textarea
                                         rows={2}
                                         value={data.condition}
                                         onChange={(e) => setData('condition', e.target.value)}
-                                        placeholder={missing.length > 0 ? `Bring the ${missing[0].label.toLowerCase()} by…` : 'None'}
+                                        placeholder={missing.length > 0 ? t('Bring the :to_lower_case by…', { to_lower_case: missing[0].label.toLowerCase() }) : t('None')}
                                         className="min-h-10 w-full resize-y rounded-md border border-solid border-border bg-white px-3 py-2 text-[14px] leading-[19px] font-normal text-text outline-none focus:border-primary"
                                     />
                                 </label>
@@ -264,27 +263,26 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
                                 disabled={processing}
                                 className="flex h-10 shrink-0 items-center justify-center rounded-md bg-primary px-3 text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
                             >
-                                {hasNext ? `${verb} and open the next application` : verb}
+                                {hasNext ? t(':verb and open the next application', { verb }) : verb}
                             </button>
                         </form>
                     )}
 
                     {!admitted && (
                         <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-white p-4">
-                            <p className="text-[14px] leading-[18px] font-semibold text-text">What admitting does</p>
+                            <p className="text-[14px] leading-[18px] font-semibold text-text">{t('What admitting does')}</p>
                             <ul className="flex flex-col gap-2">
-                                <Effect>Creates the student with matricule {nextMatricule}</Effect>
+                                <Effect>{t('Creates the student with matricule :next_matricule', { next_matricule: nextMatricule })}</Effect>
                                 {sibling && (
                                     <Effect>
-                                        Links {them} to {sibling.name} as siblings
+                                        {t('Links :them to :sibling as siblings', { them, sibling: sibling.name })}
                                     </Effect>
                                 )}
                                 <Effect tone="warning">
-                                    {they} is Admitted, not yet Enrolled. {they} then waits in
-                                    Class placement, {application.level}.
+                                    {t(':they is Admitted, not yet Enrolled. :they then waits in Class placement, :level.', { they, level: application.level })}
                                 </Effect>
                                 <Effect tone="warning">
-                                    No notice is sent to the parents. Tell them yourself.
+                                    {t('No notice is sent to the parents. Tell them yourself.')}
                                 </Effect>
                             </ul>
                         </div>
@@ -293,12 +291,10 @@ function Review({ enrolment, application, canSeePrivate, sibling, nextMatricule,
                     {!admitted && over && capacity && (
                         <div className="flex flex-col gap-2 rounded-lg border border-solid border-warning bg-warning-tint p-4">
                             <p className={`text-[14px] leading-[18px] font-semibold ${amberText}`}>
-                                {application.level} is {capacity.expected > capacity.seats ? 'over capacity' : 'full'}
+                                {application.level} {t('is')} {capacity.expected > capacity.seats ? t('over capacity') : t('full')}
                             </p>
                             <p className="text-[13px] leading-[19px] text-text">
-                                {count(capacity.expected)} expected for {count(capacity.seats)} seats. You
-                                can still admit {them}. Add a class on the
-                                Overview, then place {them}.
+                                {t(':expected expected for :seats seats. You can still admit :them. Add a class on the Overview, then place :them.', { expected: count(capacity.expected), seats: count(capacity.seats), them })}
                             </p>
                         </div>
                     )}

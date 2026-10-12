@@ -13,6 +13,7 @@ import {
     primaryActionClass,
 } from '../../components/timetable/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface SetupProps {
     phase: TimetablePhase;
@@ -35,41 +36,41 @@ function minutes(from: string, to: string): number {
 
 /** "Mon – Fri" for a run of days, "Mon, Wed, Fri" otherwise. */
 function dayRange(mask: number): string {
-    const on = WEEKDAYS.map((_, index) => index).filter((index) => (mask & (1 << index)) !== 0);
+    const on = WEEKDAYS.map((name) => t(name)).map((_, index) => index).filter((index) => (mask & (1 << index)) !== 0);
 
     if (on.length === 0) {
-        return 'No days';
+        return t('No days');
     }
 
     const run = on.every((day, position) => position === 0 || day === on[position - 1] + 1);
 
     return run && on.length > 2
-        ? `${WEEKDAYS[on[0]]} – ${WEEKDAYS[on[on.length - 1]]}`
-        : on.map((day) => WEEKDAYS[day]).join(', ');
+        ? `${t(WEEKDAYS[on[0]])} – ${t(WEEKDAYS[on[on.length - 1]])}`
+        : on.map((day) => t(WEEKDAYS[day])).join(', ');
 }
 
 function Setup({ phase, schoolDays, periods, rooms, practicals, teachers }: SetupProps) {
     return (
         <div className="flex flex-col gap-5">
-            <Head title="Timetable setup" />
+            <Head title={t('Timetable setup')} />
             <TimetableHeader
                 page="setup"
                 phase={phase}
-                trail={[{ label: 'Setup' }]}
-                title="Setup"
-                meta="The rooms and who teaches when. The school day itself comes from School Setup."
+                trail={[{ label: t('Setup') }]}
+                title={t('Setup')}
+                meta={t('The rooms and who teaches when. The school day itself comes from School Setup.')}
                 action={
                     <Link href={checks.url()} className={primaryActionClass}>
-                        Save and check inputs →
+                        {t('Save and check inputs →')}
                     </Link>
                 }
             />
 
             <div className="flex flex-col gap-7 lg:flex-row">
                 <section className="flex shrink-0 flex-col gap-3 lg:w-[430px]">
-                    <p className={capsLabelClass}>School day (from School Setup)</p>
+                    <p className={capsLabelClass}>{t('School day (from School Setup)')}</p>
                     <div className="flex flex-wrap gap-[6px]">
-                        {WEEKDAYS.map((day, index) =>
+                        {WEEKDAYS.map((name) => t(name)).map((day, index) =>
                             (schoolDays & (1 << index)) !== 0 ? (
                                 <span
                                     key={day}
@@ -82,8 +83,7 @@ function Setup({ phase, schoolDays, periods, rooms, practicals, teachers }: Setu
                     </div>
                     {periods.length === 0 ? (
                         <p className="rounded-md border border-solid border-warning bg-warning-tint p-4 text-[13px] leading-[19px] text-text">
-                            The school day has no periods yet. Lessons need
-                            periods to be placed in.
+                            {t('The school day has no periods yet. Lessons need periods to be placed in.')}
                         </p>
                     ) : (
                         <ul className="flex flex-col overflow-clip rounded-lg border border-solid border-border">
@@ -101,23 +101,22 @@ function Setup({ phase, schoolDays, periods, rooms, practicals, teachers }: Setu
                                                 : 'text-[14px] leading-[18px] font-semibold text-text'
                                         }`}
                                     >
-                                        {period.label}
+                                        {t(period.label)}
                                     </span>
                                     <span className={`flex-1 font-mono text-[13px] leading-4 ${period.is_break ? 'text-text-muted' : 'text-text'}`}>
                                         {period.starts_at} – {period.ends_at}
                                     </span>
                                     <span className="font-mono text-[12px] leading-4 text-text-muted">
-                                        {minutes(period.starts_at, period.ends_at)} min
+                                        {t(':ends_at min', { ends_at: minutes(period.starts_at, period.ends_at) })}
                                     </span>
                                 </li>
                             ))}
                         </ul>
                     )}
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        Days and periods are set once for the whole school, in
-                        School Setup under School day. Change them there.{' '}
+                        {t('Days and periods are set once for the whole school, in School Setup under School day. Change them there.')}{' '}
                         <Link href={schoolSetup.url()} className="font-medium text-primary hover:underline">
-                            Edit in School Setup →
+                            {t('Edit in School Setup →')}
                         </Link>
                     </p>
                 </section>
@@ -125,24 +124,23 @@ function Setup({ phase, schoolDays, periods, rooms, practicals, teachers }: Setu
                 <div className="flex min-w-0 flex-1 flex-col gap-6">
                     <section className="flex flex-col gap-3">
                         <div className="flex items-baseline justify-between">
-                            <p className={capsLabelClass}>Rooms · {rooms.total}</p>
+                            <p className={capsLabelClass}>{t('Rooms · :total', { total: rooms.total })}</p>
                             <Link href={roomsIndex.url()} className={linkClass}>
-                                Manage rooms →
+                                {t('Manage rooms →')}
                             </Link>
                         </div>
                         {rooms.total === 0 ? (
                             <p className="rounded-md border border-solid border-warning bg-warning-tint p-4 text-[13px] leading-[19px] text-text">
-                                The school has no rooms yet. Add the classrooms
-                                and laboratories lessons are held in.
+                                {t('The school has no rooms yet. Add the classrooms and laboratories lessons are held in.')}
                             </p>
                         ) : (
                             <div className="overflow-x-auto rounded-lg border border-solid border-border">
                                 <div className="flex min-w-[480px] flex-col">
                                     <div className={`flex h-8 items-center gap-4 border-b border-solid border-border bg-surface px-[14px] ${capsLabelClass}`}>
-                                        <span className="w-[86px] shrink-0">Room</span>
-                                        <span className="w-[104px] shrink-0">Type</span>
-                                        <span className="w-[58px] shrink-0 text-right">Seats</span>
-                                        <span className="flex-1">Home class</span>
+                                        <span className="w-[86px] shrink-0">{t('Room')}</span>
+                                        <span className="w-[104px] shrink-0">{t('Type')}</span>
+                                        <span className="w-[58px] shrink-0 text-right">{t('Seats')}</span>
+                                        <span className="flex-1">{t('Home class')}</span>
                                     </div>
                                     {rooms.rows.map((room, position) => (
                                         <Link
@@ -154,7 +152,7 @@ function Setup({ phase, schoolDays, periods, rooms, practicals, teachers }: Setu
                                             <span className="w-[104px] shrink-0 truncate text-[13px] leading-4 text-text">{room.kind}</span>
                                             <span className="w-[58px] shrink-0 text-right font-mono text-[13px] leading-4 text-text">{room.capacity}</span>
                                             <span className={`min-w-0 flex-1 truncate text-[13px] leading-4 ${room.home ? 'text-text' : 'text-text-muted'}`}>
-                                                {room.home ?? (room.subjects.length > 0 ? room.subjects.join(', ') : 'None')}
+                                                {room.home ?? (room.subjects.length > 0 ? room.subjects.join(', ') : t('None'))}
                                             </span>
                                         </Link>
                                     ))}
@@ -162,24 +160,23 @@ function Setup({ phase, schoolDays, periods, rooms, practicals, teachers }: Setu
                             </div>
                         )}
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            {rooms.total > rooms.rows.length && `${rooms.total - rooms.rows.length} more under Manage rooms. `}
+                            {rooms.total > rooms.rows.length && t(':rows more under Manage rooms. ', { rows: rooms.total - rooms.rows.length })}
                             {practicals.length > 0
-                                ? `Lessons that need a special room (${practicals.join(', ')}) are only placed in a room of that kind.`
-                                : 'No subject needs a laboratory or computer room yet. Say which do on a laboratory’s room page.'}
+                                ? t('Lessons that need a special room (:practicals) are only placed in a room of that kind.', { practicals: practicals.join(', ') })
+                                : t('No subject needs a laboratory or computer room yet. Say which do on a laboratory’s room page.')}
                         </p>
                     </section>
 
                     <section className="flex flex-col gap-3">
                         <div className="flex items-baseline justify-between">
-                            <p className={capsLabelClass}>Teaching days and hours · {teachers.length}</p>
+                            <p className={capsLabelClass}>{t('Teaching days and hours · :teachers', { teachers: teachers.length })}</p>
                             <Link href={staffRoster.url()} className={linkClass}>
-                                Set on each teacher’s record
+                                {t('Set on each teacher’s record')}
                             </Link>
                         </div>
                         {teachers.length === 0 ? (
                             <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                                No teacher is assigned to a subject in a class
-                                yet.
+                                {t('No teacher is assigned to a subject in a class yet.')}
                             </p>
                         ) : (
                             <ul className="flex max-h-[296px] flex-col overflow-y-auto rounded-lg border border-solid border-border">
@@ -197,11 +194,11 @@ function Setup({ phase, schoolDays, periods, rooms, practicals, teachers }: Setu
                                                 </span>
                                                 <span className={`w-[150px] shrink-0 text-[13px] leading-4 ${teacher.part_time ? amberText : 'text-text'}`}>
                                                     {dayRange(teacher.days)}
-                                                    {teacher.part_time && ' · part-time'}
+                                                    {teacher.part_time && t(' · part-time')}
                                                 </span>
                                                 <span className={`w-[130px] shrink-0 text-right font-mono text-[13px] leading-4 ${over ? amberText : 'text-text'}`}>
-                                                    {teacher.periods} a week
-                                                    {over && ` · max ${teacher.max}`}
+                                                    {teacher.periods} {t('a week')}
+                                                    {over && t(' · max :teacher', { teacher: teacher.max })}
                                                 </span>
                                             </Link>
                                         </li>

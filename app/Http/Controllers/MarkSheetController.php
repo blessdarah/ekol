@@ -150,10 +150,10 @@ class MarkSheetController extends Controller
         if (! $plan->acceptsMarks()) {
             throw ValidationException::withMessages([
                 'marks' => match ($plan->state) {
-                    AssessmentState::Published => 'These results are published. Ask for a correction instead.',
-                    AssessmentState::MarksClosed => 'Marks entry is closed for this assessment.',
-                    AssessmentState::MarksOpen => 'The marks window ended on '.$plan->window_ends_on?->format('j M').'. Ask the school to extend it.',
-                    default => 'Marks are not open for this assessment yet.',
+                    AssessmentState::Published => __('These results are published. Ask for a correction instead.'),
+                    AssessmentState::MarksClosed => __('Marks entry is closed for this assessment.'),
+                    AssessmentState::MarksOpen => __('The marks window ended on :date. Ask the school to extend it.', ['date' => $plan->window_ends_on?->translatedFormat('j M')]),
+                    default => __('Marks are not open for this assessment yet.'),
                 },
             ]);
         }
@@ -172,9 +172,9 @@ class MarkSheetController extends Controller
             'marks.*.remark' => ['nullable', 'string', 'max:200'],
             'submit' => ['sometimes', 'boolean'],
         ], [
-            'marks.*.score.max' => "A mark can't be above {$max}.",
-            'marks.*.score.min' => "A mark can't be below 0.",
-            'marks.*.score.numeric' => 'Enter the mark as a number.',
+            'marks.*.score.max' => __('A mark can\'t be above :max.', ['max' => $max]),
+            'marks.*.score.min' => __('A mark can\'t be below 0.'),
+            'marks.*.score.numeric' => __('Enter the mark as a number.'),
         ]);
 
         $submit = (bool) ($data['submit'] ?? false);
@@ -184,7 +184,7 @@ class MarkSheetController extends Controller
             $left = count(array_diff($students, $filled->all()));
 
             throw ValidationException::withMessages([
-                'marks' => "Fill {$left} empty ".($left === 1 ? 'mark' : 'marks').' before submitting, or mark the student absent.',
+                'marks' => trans_choice('{1} Fill :count empty mark before submitting, or mark the student absent.|[2,*] Fill :count empty marks before submitting, or mark the student absent.', $left, ['count' => $left]),
             ]);
         }
 

@@ -1,4 +1,5 @@
-export interface SegmentOption {
+
+import { t } from '../../lib/i18n';export interface SegmentOption {
     value: string;
     label: string;
 }
@@ -33,7 +34,7 @@ export default function Segmented({
                                 : 'border-border font-medium text-text'
                         }`}
                     >
-                        {option.label}
+                        {t(option.label)}
                     </button>
                 );
             })}

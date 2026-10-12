@@ -15,6 +15,7 @@ import {
 } from '../../components/structure/ui';
 import { FeePill, StudentHeader, money } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface StudentRow {
     id: string;
@@ -88,10 +89,10 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
     const [openMenu, setOpenMenu] = useState<string | null>(null);
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const tabs = [
-        { value: 'all', label: 'All students' },
-        { value: 'overdue', label: `Overdue fees · ${counts.overdue}`, dot: 'bg-danger' },
-        { value: 'no_series', label: `No series · ${counts.no_series}`, dot: 'bg-warning' },
-        { value: 'new', label: `New this term · ${counts.new}` },
+        { value: 'all', label: t('All students') },
+        { value: 'overdue', label: t('Overdue fees · :overdue', { overdue: counts.overdue }), dot: 'bg-danger' },
+        { value: 'no_series', label: t('No series · :no_series', { no_series: counts.no_series }), dot: 'bg-warning' },
+        { value: 'new', label: t('New this term · :new', { new: counts.new }) },
     ];
     const shownClasses = filters.level
         ? classes.filter((option) => option.level_id === filters.level)
@@ -149,23 +150,23 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
 
     return (
         <div className="flex flex-col gap-6">
-            <Head title="Students" />
+            <Head title={t('Students')} />
             <StudentHeader
-                trail={[{ label: 'Roster' }]}
-                title="Students"
-                tag={`Enrolment${yearLabel ? ` · ${yearLabel}` : ''}`}
-                meta={`${money(counts.total)} students · ${counts.classes} classes`}
+                trail={[{ label: t('Roster') }]}
+                title={t('Students')}
+                tag={t('Enrolment:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                meta={t(':total students · :classes classes', { total: money(counts.total), classes: counts.classes })}
                 action={
                     <div className="flex gap-2">
                         <Link href={importPage.url()} className={`${outlineButtonClass} gap-2`}>
                             <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
                                 <path d="M12 15V4M7 9l5-5 5 5M4 17v3h16v-3" fill="none" stroke="#101915" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
-                            Import
+                            {t('Import')}
                         </Link>
                         <Link href={create.url()} className={solidButtonClass}>
                             <PlusIcon />
-                            Add student
+                            {t('Add student')}
                         </Link>
                     </div>
                 }
@@ -191,7 +192,7 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
                                 {tab.dot && (
                                     <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${tab.dot}`} />
                                 )}
-                                {tab.label}
+                                {t(tab.label)}
                             </button>
                         );
                     })}
@@ -204,8 +205,8 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
                         </svg>
                         <input
                             type="search"
-                            aria-label="Search students"
-                            placeholder="Name, matricule or phone"
+                            aria-label={t('Search students')}
+                            placeholder={t('Name, matricule or phone')}
                             value={search}
                             onChange={(e) => onSearch(e.target.value)}
                             className="min-w-0 flex-1 bg-transparent text-[14px] text-text outline-none placeholder:text-text-muted"
@@ -217,7 +218,7 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
                         onClick={() => setShowFilters(!showFilters)}
                         className={outlineButtonClass}
                     >
-                        Level and class
+                        {t('Level and class')}
                     </button>
                 </div>
             </div>
@@ -225,12 +226,12 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
             {showFilters && (
                 <div className="-mt-3 flex flex-wrap items-center gap-2">
                     <select
-                        aria-label="Level"
+                        aria-label={t('Level')}
                         value={filters.level}
                         onChange={(e) => visit({ level: e.target.value, class: '' })}
                         className={selectClass}
                     >
-                        <option value="">Any level</option>
+                        <option value="">{t('Any level')}</option>
                         {levels.map((level) => (
                             <option key={level.id} value={level.id}>
                                 {level.name}
@@ -238,12 +239,12 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
                         ))}
                     </select>
                     <select
-                        aria-label="Class"
+                        aria-label={t('Class')}
                         value={filters.class}
                         onChange={(e) => visit({ class: e.target.value })}
                         className={selectClass}
                     >
-                        <option value="">Any class</option>
+                        <option value="">{t('Any class')}</option>
                         {shownClasses.map((option) => (
                             <option key={option.id} value={option.id}>
                                 {option.name}
@@ -256,7 +257,7 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
                             onClick={() => visit({ level: '', class: '' })}
                             className="px-2 text-[13px] font-medium text-primary hover:underline"
                         >
-                            Clear
+                            {t('Clear')}
                         </button>
                     )}
                 </div>
@@ -265,11 +266,10 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
             {counts.total === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">
                     <p className="text-[13px] leading-[19px] text-text">
-                        No students yet. Register one at a time, or bring in
-                        a whole intake from a spreadsheet.
+                        {t('No students yet. Register one at a time, or bring in a whole intake from a spreadsheet.')}
                     </p>
                     <Link href={importPage.url()} className={outlineButtonClass}>
-                        Import students
+                        {t('Import students')}
                     </Link>
                 </div>
             ) : (
@@ -277,18 +277,17 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
                     <div className="overflow-x-auto lg:overflow-visible">
                         <div className="flex min-w-[1040px] flex-col rounded-lg border border-solid border-border">
                             <div className="flex h-9 shrink-0 items-center gap-4 rounded-t-lg border-b border-solid border-border bg-surface px-4">
-                                <span className={`${headClass} min-w-[250px] flex-1`}>Student</span>
-                                <span className={`${headClass} w-[130px]`}>Class</span>
-                                <span className={`${headClass} w-20`}>Series</span>
-                                <span className={`${headClass} w-[230px]`}>Guardian</span>
-                                <span className={`${headClass} w-[120px]`}>Fees</span>
-                                <span className={`${headClass} w-[130px] text-right`}>Balance</span>
+                                <span className={`${headClass} min-w-[250px] flex-1`}>{t('Student')}</span>
+                                <span className={`${headClass} w-[130px]`}>{t('Class')}</span>
+                                <span className={`${headClass} w-20`}>{t('Series')}</span>
+                                <span className={`${headClass} w-[230px]`}>{t('Guardian')}</span>
+                                <span className={`${headClass} w-[120px]`}>{t('Fees')}</span>
+                                <span className={`${headClass} w-[130px] text-right`}>{t('Balance')}</span>
                                 <span className="w-10 shrink-0" />
                             </div>
                             {students.rows.length === 0 && (
                                 <p className="px-4 py-8 text-center text-[13px] text-text-muted">
-                                    No student matches. Try another name, or
-                                    clear the filters.
+                                    {t('No student matches. Try another name, or clear the filters.')}
                                 </p>
                             )}
                             {students.rows.map((row) => (
@@ -325,7 +324,7 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
                                         ) : row.needs_series ? (
                                             <span className="flex items-center gap-[6px] text-[13px] leading-4 text-[#8A5A12]">
                                                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                                None
+                                                {t('None')}
                                             </span>
                                         ) : (
                                             <span className="text-text-muted">—</span>
@@ -348,7 +347,7 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
                                     <span className="relative flex w-10 shrink-0 justify-center">
                                         <button
                                             type="button"
-                                            aria-label={`Actions for ${row.name}`}
+                                            aria-label={t('Actions for :row', { row: row.name })}
                                             aria-expanded={openMenu === row.id}
                                             onClick={(event) => {
                                                 event.stopPropagation();
@@ -369,10 +368,10 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
                                                 className="absolute top-full right-0 z-10 mt-1 flex w-[170px] flex-col rounded-md border border-solid border-border bg-white p-1 shadow-[0_8px_24px_rgba(16,25,21,0.12)]"
                                             >
                                                 <Link role="menuitem" href={show.url(row.id)} className="flex h-8 items-center rounded-sm px-3 text-[13px] text-text hover:bg-surface">
-                                                    Open record
+                                                    {t('Open record')}
                                                 </Link>
                                                 <Link role="menuitem" href={edit.url(row.id)} className="flex h-8 items-center rounded-sm px-3 text-[13px] text-text hover:bg-surface">
-                                                    Edit student
+                                                    {t('Edit student')}
                                                 </Link>
                                             </span>
                                         )}
@@ -384,8 +383,7 @@ function StudentRoster({ yearLabel, currency, counts, filters, levels, classes, 
 
                     <div className="flex flex-wrap items-center justify-between gap-4">
                         <p className="text-[13px] text-text-muted">
-                            {students.rows.length} of {money(students.total)} shown ·
-                            sorted by class
+                            {t(':rows of :total shown · sorted by class', { rows: students.rows.length, total: money(students.total) })}
                         </p>
                         {students.lastPage > 1 && (
                             <div className="flex items-center gap-1">

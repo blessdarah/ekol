@@ -115,7 +115,7 @@ class RegistrationController extends Controller
         $data = $request->validated();
 
         if (! $pending->attempt($data['code'])) {
-            return back()->withErrors(['code' => 'This code is incorrect.']);
+            return back()->withErrors(['code' => __('This code is incorrect.')]);
         }
 
         $user = $pending->bootstrap();
@@ -150,7 +150,7 @@ class RegistrationController extends Controller
         $pending->update(['channel' => $data['channel']]);
         $pending->reissue();
 
-        $this->notify("Code will arrive by {$data['channel']}.");
+        $this->notify(__('Code will arrive by :channel.', ['channel' => $data['channel'] === 'sms' ? 'SMS' : __('email')]));
 
         return back();
     }

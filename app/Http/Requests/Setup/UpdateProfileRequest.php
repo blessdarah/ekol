@@ -31,6 +31,7 @@ class UpdateProfileRequest extends SchoolRequest
             'subsystem' => ['sometimes', 'nullable', Rule::in(School::SUBSYSTEM_OPTIONS)],
             'currency' => ['sometimes', 'string', 'size:3'],
             'timezone' => ['sometimes', 'string', 'max:255'],
+            'locale' => ['sometimes', Rule::in(array_keys(School::LOCALES))],
             'logo' => $logoRules,
         ];
     }

@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import Stepper, { type Step } from '../components/auth/stepper';
+import LanguageSwitch from '../components/shell/language-switch';
 import Toasts from '../components/shell/toasts';
+import { t, useT } from '../lib/i18n';
 
 export function LogoMark() {
     return (
@@ -24,21 +26,22 @@ export function LogoMark() {
                 </svg>
             </span>
             <span className="font-display text-[16px] font-bold text-text">
-                Campus
+                {t('Campus')}
             </span>
         </span>
     );
 }
 
 function PrivacyNote() {
+    const t = useT();
+
     return (
         <div className="flex flex-col gap-2">
             <p className="text-xs font-semibold tracking-[0.06em] text-text-muted uppercase">
-                Private by default
+                {t('Private by default')}
             </p>
             <p className="text-[14px] leading-[1.55] text-text">
-                Every school gets its own workspace. Student, fee and marks
-                records are never shared between schools.
+                {t('Every school gets its own workspace. Student, fee and marks records are never shared between schools.')}
             </p>
         </div>
     );
@@ -58,11 +61,14 @@ export default function AuthLayout({
     topbar?: ReactNode;
     children: ReactNode;
 }) {
+    const t = useT();
+
     return (
         <div className="font-auth flex min-h-screen flex-col bg-bg text-text antialiased lg:flex-row">
             <Toasts />
-            <div className="flex items-center border-b border-border bg-surface px-5 py-4 lg:hidden">
+            <div className="flex items-center justify-between border-b border-border bg-surface px-5 py-4 lg:hidden">
                 <LogoMark />
+                <LanguageSwitch />
             </div>
             <aside className="hidden w-[440px] shrink-0 flex-col justify-between border-r border-border bg-surface px-12 py-10 lg:flex">
                 <div className="flex flex-col gap-12">
@@ -76,10 +82,10 @@ export default function AuthLayout({
                     {middle.variant === 'statement' && (
                         <div className="flex max-w-[320px] flex-col gap-2">
                             <p className="font-display text-[20px] leading-[1.3] font-bold text-text">
-                                {middle.title}
+                                {t(middle.title)}
                             </p>
                             <p className="text-[14px] leading-[1.55] text-text-muted">
-                                {middle.body}
+                                {t(middle.body)}
                             </p>
                         </div>
                     )}
@@ -97,7 +103,10 @@ export default function AuthLayout({
                         </div>
                     )}
                 </div>
-                <PrivacyNote />
+                <div className="flex flex-col gap-6">
+                    <PrivacyNote />
+                    <LanguageSwitch />
+                </div>
             </aside>
             <main className="flex flex-1 justify-center px-5 py-8 sm:px-8 sm:py-10">
                 <div className="w-full max-w-[592px]">

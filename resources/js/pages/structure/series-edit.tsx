@@ -19,6 +19,7 @@ import {
     levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface SubjectProp {
     id: string;
@@ -107,7 +108,7 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
 
     return (
         <form onSubmit={submit} className="flex flex-col gap-6">
-            <Head title={series ? `Configure series ${series.code}` : 'Add a series'} />
+            <Head title={series ? t('Configure series :code', { code: series.code }) : t('Add a series')} />
             <StructureHeader
                 trail={[
                     levelsCrumb,
@@ -115,20 +116,20 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                         label: level.name,
                         href: index.url({ query: { level: level.id } }),
                     },
-                    { label: series?.code ?? 'New series' },
+                    { label: series?.code ?? t('New series') },
                 ]}
-                title={series ? `Configure series ${series.code}` : 'Add a series'}
-                tag={`Series${yearLabel ? ` · ${yearLabel}` : ''}`}
-                meta="choose the core subjects and the electives students can pick from"
+                title={series ? t('Configure series :code', { code: series.code }) : t('Add a series')}
+                tag={t('Series:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                meta={t('choose the core subjects and the electives students can pick from')}
             />
 
             <div className="flex flex-col gap-8 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-5">
                     <section className="flex flex-col gap-3">
-                        <p className={capsLabelClass}>Series</p>
+                        <p className={capsLabelClass}>{t('Series')}</p>
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <label className={`flex flex-col gap-2 sm:w-[100px] ${fieldLabelClass}`}>
-                                Code
+                                {t('Code')}
                                 <input
                                     type="text"
                                     placeholder="S1"
@@ -139,21 +140,21 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                 />
                             </label>
                             <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
-                                Name
+                                {t('Name')}
                                 <input
                                     type="text"
-                                    placeholder="Science 1"
+                                    placeholder={t('Science 1')}
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
                                     className={fieldInputClass}
                                 />
                             </label>
-                            <div role="radiogroup" aria-label="Stream" className={`flex flex-col gap-2 sm:w-[220px] ${fieldLabelClass}`}>
-                                Stream
+                            <div role="radiogroup" aria-label={t('Stream')} className={`flex flex-col gap-2 sm:w-[220px] ${fieldLabelClass}`}>
+                                {t('Stream')}
                                 <div className="flex gap-2">
                                     {[
-                                        { value: 'science', label: 'Science', on: 'border-science bg-science-tint text-science' },
-                                        { value: 'arts', label: 'Arts', on: 'border-arts bg-arts-tint text-arts' },
+                                        { value: 'science', label: t('Science'), on: 'border-science bg-science-tint text-science' },
+                                        { value: 'arts', label: t('Arts'), on: 'border-arts bg-arts-tint text-arts' },
                                     ].map((option) => (
                                         <button
                                             key={option.value}
@@ -167,7 +168,7 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                                     : 'border-border font-medium text-text hover:bg-surface'
                                             }`}
                                         >
-                                            {option.label}
+                                            {t(option.label)}
                                         </button>
                                     ))}
                                 </div>
@@ -177,16 +178,16 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <div className="flex min-w-0 flex-1 flex-col gap-2">
                                 <p className="flex items-baseline gap-2">
-                                    <span className={fieldLabelClass}>Applies to levels</span>
+                                    <span className={fieldLabelClass}>{t('Applies to levels')}</span>
                                     <span className="text-[12px] leading-4 text-text-muted">
-                                        GCE high school only
+                                        {t('GCE high school only')}
                                     </span>
                                 </p>
                                 <ChipPicker
-                                    label="Add a level"
-                                    addLabel="Add a level"
+                                    label={t('Add a level')}
+                                    addLabel={t('Add a level')}
                                     chosen={data.level_ids.length}
-                                    summary={`${data.level_ids.length} of ${levels.length}`}
+                                    summary={t(':level_ids of :levels', { level_ids: data.level_ids.length, levels: levels.length })}
                                     options={levels.filter((option) => !data.level_ids.includes(option.id))}
                                     onAdd={(id) => setData('level_ids', [...data.level_ids, id])}
                                 >
@@ -201,7 +202,7 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                                 {option.id !== level.id && (
                                                     <button
                                                         type="button"
-                                                        aria-label={`Remove ${option.name}`}
+                                                        aria-label={t('Remove :option', { option: option.name })}
                                                         onClick={() =>
                                                             setData(
                                                                 'level_ids',
@@ -217,7 +218,7 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                 </ChipPicker>
                             </div>
                             <label className={`flex flex-col gap-2 sm:w-[100px] ${fieldLabelClass}`}>
-                                Min subjects
+                                {t('Min subjects')}
                                 <input
                                     type="number"
                                     min={1}
@@ -228,7 +229,7 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                 />
                             </label>
                             <label className={`flex flex-col gap-2 sm:w-[100px] ${fieldLabelClass}`}>
-                                Max subjects
+                                {t('Max subjects')}
                                 <input
                                     type="number"
                                     min={1}
@@ -242,36 +243,29 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                         <ErrorText message={errors.min_subjects ?? errors.max_subjects ?? errors.level_ids} />
                         {data.level_ids.length > 1 && (
                             <p className="text-[12px] leading-[18px] text-text-muted">
-                                Saving writes the same series, by code, to
-                                each level listed. Removing a level here does
-                                not delete the series already on it.
+                                {t('Saving writes the same series, by code, to each level listed. Removing a level here does not delete the series already on it.')}
                             </p>
                         )}
                     </section>
 
                     {subjects.length === 0 ? (
                         <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                            No subjects are registered yet, so there is
-                            nothing to choose as core or elective. You can
-                            save the series now and come back once subjects
-                            exist.
+                            {t('No subjects are registered yet, so there is nothing to choose as core or elective. You can save the series now and come back once subjects exist.')}
                         </p>
                     ) : (
                         <>
                             <section className="flex flex-col gap-3">
                                 <div className="flex flex-col gap-1">
-                                    <p className={capsLabelClass}>Core subjects</p>
+                                    <p className={capsLabelClass}>{t('Core subjects')}</p>
                                     <p className="text-[13px] leading-4 text-text-muted">
-                                        Every student in {code} takes these.
-                                        They are locked when students
-                                        register.
+                                        {t('Every student in :code takes these. They are locked when students register.', { code })}
                                     </p>
                                 </div>
                                 <ChipPicker
-                                    label="Add a core subject"
-                                    addLabel="Add a subject"
+                                    label={t('Add a core subject')}
+                                    addLabel={t('Add a subject')}
                                     chosen={core.length}
-                                    summary={`${core.length} core`}
+                                    summary={t(':core core', { core: core.length })}
                                     options={pool}
                                     onAdd={(id) =>
                                         setData({
@@ -290,7 +284,7 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                             {subject.name}
                                             <button
                                                 type="button"
-                                                aria-label={`Remove ${subject.name} from core`}
+                                                aria-label={t('Remove :subject from core', { subject: subject.name })}
                                                 onClick={() =>
                                                     setData('core', data.core.filter((id) => id !== subject.id))
                                                 }
@@ -305,18 +299,17 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
 
                             <section className="flex flex-col gap-3">
                                 <div className="flex flex-col gap-1">
-                                    <p className={capsLabelClass}>Elective pool</p>
+                                    <p className={capsLabelClass}>{t('Elective pool')}</p>
                                     <p className="text-[13px] leading-4 text-text-muted">
-                                        Subjects a student can choose from.
-                                        Core subjects are not repeated here.
+                                        {t('Subjects a student can choose from. Core subjects are not repeated here.')}
                                     </p>
                                 </div>
                                 <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
                                     <div className="flex h-[30px] shrink-0 items-center gap-3 bg-surface px-3 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                                         <span className="w-[18px] shrink-0" />
-                                        <span className="flex-1">Subject</span>
-                                        <span className="w-[84px] shrink-0">Code</span>
-                                        <span className="w-[190px] shrink-0">Teaching</span>
+                                        <span className="flex-1">{t('Subject')}</span>
+                                        <span className="w-[84px] shrink-0">{t('Code')}</span>
+                                        <span className="w-[190px] shrink-0">{t('Teaching')}</span>
                                     </div>
                                     {pool.map((subject, position) => {
                                         const chosen = data.electives.includes(subject.id);
@@ -341,15 +334,15 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                                 </span>
                                                 <span className="flex w-[190px] shrink-0 items-center gap-[6px] text-[13px] leading-4">
                                                     {!chosen ? (
-                                                        <span className="text-text-muted">Not in the pool</span>
+                                                        <span className="text-text-muted">{t('Not in the pool')}</span>
                                                     ) : subject.teachers === 0 ? (
                                                         <>
                                                             <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                                            <span className="text-[#8A5A12]">No teacher assigned</span>
+                                                            <span className="text-[#8A5A12]">{t('No teacher assigned')}</span>
                                                         </>
                                                     ) : (
                                                         <span className="text-text">
-                                                            {subject.teachers} {subject.teachers === 1 ? 'teacher' : 'teachers'}
+                                                            {subject.teachers} {subject.teachers === 1 ? t('teacher') : t('teachers')}
                                                         </span>
                                                     )}
                                                 </span>
@@ -358,14 +351,14 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                     })}
                                     <div className="flex h-8 shrink-0 items-center justify-between border-t border-solid border-border bg-surface px-3">
                                         <span className="text-[13px] leading-4 text-text-muted">
-                                            {pool.length} subjects
+                                            {t(':pool subjects', { pool: pool.length })}
                                         </span>
                                         <span className="flex items-baseline gap-[6px]">
                                             <span className="font-mono text-[13px] leading-4 text-text">
-                                                {inPool.length} in the pool
+                                                {t(':in_pool in the pool', { in_pool: inPool.length })}
                                             </span>
                                             <span className="text-[13px] leading-4 text-text-muted">
-                                                · students pick up to {electivesAllowed}
+                                                {t('· students pick up to :electives_allowed', { electives_allowed: electivesAllowed })}
                                             </span>
                                         </span>
                                     </div>
@@ -377,18 +370,17 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
 
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-[13px] leading-4 text-text-muted">
-                            Students already registered in {code} keep their
-                            subjects.
+                            {t('Students already registered in :code keep their subjects.', { code })}
                         </p>
                         <div className="flex gap-2">
                             <Link
                                 href={index.url({ query: { level: level.id } })}
                                 className={outlineButtonClass}
                             >
-                                Cancel
+                                {t('Cancel')}
                             </Link>
                             <button type="submit" disabled={processing} className={solidButtonClass}>
-                                Save series
+                                {t('Save series')}
                             </button>
                         </div>
                     </div>
@@ -396,7 +388,7 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
 
                 <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     <div className="flex flex-col gap-3 rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>What students see</p>
+                        <p className={capsLabelClass}>{t('What students see')}</p>
                         {core.length + inPool.length > 0 ? (
                             <ul className="flex flex-col overflow-clip rounded-md border border-solid border-border bg-white">
                                 {core.map((subject) => (
@@ -409,7 +401,7 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                             {subject.name}
                                         </span>
                                         <span className="flex h-[18px] items-center rounded-sm border border-solid border-text px-[5px] text-[9px] leading-3 font-semibold tracking-[0.06em] text-text">
-                                            CORE
+                                            {t('CORE')}
                                         </span>
                                     </li>
                                 ))}
@@ -423,42 +415,41 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                                             {subject.name}
                                         </span>
                                         <span className="flex h-[18px] items-center rounded-sm border border-dashed border-text-muted px-[5px] text-[9px] leading-3 font-semibold tracking-[0.06em] text-text-muted">
-                                            ELECTIVE
+                                            {t('ELECTIVE')}
                                         </span>
                                     </li>
                                 ))}
                             </ul>
                         ) : (
                             <p className="text-[12px] leading-4 text-text-muted">
-                                Nothing chosen yet.
+                                {t('Nothing chosen yet.')}
                             </p>
                         )}
                         <p className="text-[12px] leading-4 text-text-muted">
-                            Same layout as Series Registration. Min{' '}
-                            {data.min_subjects || '—'} · Max{' '}
+                            {t('Same layout as Series Registration. Min')}{' '}
+                            {data.min_subjects || '—'} {t('· Max')}{' '}
                             {data.max_subjects || '—'}.
                         </p>
                     </div>
 
                     <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-white p-4">
                         <p className="text-[14px] leading-[18px] font-semibold text-text">
-                            Checks
+                            {t('Checks')}
                         </p>
                         <ul className="flex flex-col gap-[10px]">
                             <Check tone={core.length > 0 ? 'success' : 'warning'}>
                                 {core.length > 0
-                                    ? 'At least one core subject'
-                                    : 'No core subject yet. The series shows as “Needs setup”.'}
+                                    ? t('At least one core subject')
+                                    : t('No core subject yet. The series shows as “Needs setup”.')}
                             </Check>
                             <Check tone={inPool.length > electivesAllowed ? 'success' : 'warning'}>
                                 {inPool.length > electivesAllowed
-                                    ? `Pool is larger than the ${electivesAllowed} electives allowed`
-                                    : `Pool of ${inPool.length} gives no real choice among the ${electivesAllowed} electives allowed`}
+                                    ? t('Pool is larger than the :electives_allowed electives allowed', { electives_allowed: electivesAllowed })
+                                    : t('Pool of :in_pool gives no real choice among the :electives_allowed electives allowed', { in_pool: inPool.length, electives_allowed: electivesAllowed })}
                             </Check>
                             {unstaffed.map((subject) => (
                                 <Check key={subject.id} tone="warning">
-                                    {subject.name} has no teacher. You can
-                                    still save.
+                                    {t(':subject has no teacher. You can still save.', { subject: subject.name })}
                                 </Check>
                             ))}
                         </ul>
@@ -467,21 +458,21 @@ function SeriesEdit({ yearLabel, level, levels, series, subjects, others }: Seri
                     {others.length > 0 && (
                         <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-white p-4">
                             <p className="text-[13px] leading-4 font-semibold text-text">
-                                Similar to another series?
+                                {t('Similar to another series?')}
                             </p>
                             <p className="text-[13px] leading-[18px] text-text-muted">
-                                Copy core subjects and the pool, then adjust.
+                                {t('Copy core subjects and the pool, then adjust.')}
                             </p>
                             <select
-                                aria-label="Copy from a series"
+                                aria-label={t('Copy from a series')}
                                 value=""
                                 onChange={(e) => copyFrom(e.target.value)}
                                 className="h-8 w-full rounded-md border border-solid border-border bg-white px-2 text-[13px] font-medium text-text outline-none focus:border-primary"
                             >
-                                <option value="">Copy from a series</option>
+                                <option value="">{t('Copy from a series')}</option>
                                 {others.map((other) => (
                                     <option key={other.id} value={other.id}>
-                                        {other.label}
+                                        {t(other.label)}
                                     </option>
                                 ))}
                             </select>

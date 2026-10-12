@@ -22,7 +22,7 @@ class WorkspaceReadyMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: "{$this->school->name} workspace is ready");
+        return new Envelope(subject: __(':school workspace is ready', ['school' => $this->school->name]));
     }
 
     public function content(): Content

@@ -18,6 +18,7 @@ import {
     sectionLabelClass,
 } from '../../components/staff/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface AccessProps {
     yearLabel: string | null;
@@ -70,15 +71,15 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
             onSubmit={submit}
             className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7"
         >
-            <Head title="Portal access" />
+            <Head title={t('Portal access')} />
             <PageHeader
                 crumb="Portal access"
                 parents={[
                     { label: member.formal_name, href: show.url(member.id) },
                 ]}
-                title="Portal access"
-                tag={`Registration${yearLabel ? ` · ${yearLabel}` : ''}`}
-                meta={`${member.formal_name} · ${selectedRole?.label ?? 'Teacher'} · ${member.has_account ? 'portal on' : 'no account yet'}`}
+                title={t('Portal access')}
+                tag={t('Registration:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                meta={`${member.formal_name} · ${selectedRole?.label ?? t('Teacher')} · ${member.has_account ? t('portal on') : t('no account yet')}`}
             />
             <FlowSteps active={1} />
 
@@ -86,34 +87,23 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
                 aside={
                     <>
                         <div className="flex flex-col gap-3">
-                            <p className={sectionLabelClass}>Access can wait</p>
+                            <p className={sectionLabelClass}>{t('Access can wait')}</p>
                             <p className="text-[13px] leading-[1.5] text-text">
-                                A staff member does not need an account to
-                                exist. Register {they.object}, leave the
-                                account off, and {they.subject} {they.sits} on
-                                the roster as Not yet until the school is
-                                ready.
+                                {t('A staff member does not need an account to exist. Register :object, leave the account off, and :subject :sits on the roster as Not yet until the school is ready.', { object: they.object, subject: they.subject, sits: they.sits })}
                             </p>
                             <p className="text-[13px] leading-[1.5] text-text">
-                                Nobody is counted as absent, or dropped from a
-                                class list, for not having signed in.
+                                {t('Nobody is counted as absent, or dropped from a class list, for not having signed in.')}
                             </p>
                         </div>
-                        <Note title="Same account either way">
-                            School-paid or government employee, the portal, the
-                            roster and the password are identical. Employment
-                            type only decides who pays {they.object}.
+                        <Note title={t('Same account either way')}>
+                            {t('School-paid or government employee, the portal, the roster and the password are identical. Employment type only decides who pays :object.', { object: they.object })}
                         </Note>
                         <div className="flex flex-col gap-2">
                             <p className={sectionLabelClass}>
-                                What {they.subject} {they.sees} of{' '}
-                                {they.possessive} record
+                                {t('What :subject :sees of :possessive record', { subject: they.subject, sees: they.sees, possessive: they.possessive })}
                             </p>
                             <p className="text-[13px] leading-[1.5] text-text-muted">
-                                {capitalise(they.possessive)} name, gender,
-                                address, email, phone, qualification and
-                                subjects. {capitalise(they.possessive)} pay
-                                stays with the school and the delegation.
+                                {t(':possessive name, gender, address, email, phone, qualification and subjects. :possessive pay stays with the school and the delegation.', { possessive: capitalise(they.possessive) })}
                             </p>
                         </div>
                         <div className="mt-auto flex flex-col gap-2">
@@ -123,15 +113,14 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
                                 }
                             />
                             <p className="text-[12px] leading-[1.5] text-text-muted">
-                                The invitation carries a link, never a
-                                password.
+                                {t('The invitation carries a link, never a password.')}
                             </p>
                             <div className="flex gap-2">
                                 <Link
                                     href={edit.url(member.id)}
                                     className={quietLinkClass}
                                 >
-                                    Back
+                                    {t('Back')}
                                 </Link>
                                 <button
                                     type="submit"
@@ -139,10 +128,10 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
                                     className={`${primaryButtonClass} flex-1`}
                                 >
                                     {member.has_account
-                                        ? 'Save access'
+                                        ? t('Save access')
                                         : data.create_now
-                                          ? 'Create the account & invite'
-                                          : 'Save without an account'}
+                                          ? t('Create the account & invite')
+                                          : t('Save without an account')}
                                 </button>
                             </div>
                         </div>
@@ -151,16 +140,16 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
             >
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <h2 className="font-display text-[20px] leading-[1.1] font-bold tracking-[-0.02em] text-text">
-                        What {they.subject} will be able to do
+                        {t('What :subject will be able to do', { subject: they.subject })}
                     </h2>
                     <p className="text-[13px] text-text-muted">
-                        One person, one account
+                        {t('One person, one account')}
                     </p>
                 </div>
 
                 <div className="flex flex-col gap-2 rounded-lg border border-solid border-border p-4">
-                    <p className={sectionLabelClass}>Role in the portal</p>
-                    <div role="radiogroup" aria-label="Role in the portal" className="flex flex-wrap gap-2">
+                    <p className={sectionLabelClass}>{t('Role in the portal')}</p>
+                    <div role="radiogroup" aria-label={t('Role in the portal')} className="flex flex-wrap gap-2">
                         {roles.map((role) => {
                             const selected = data.role === role.value;
 
@@ -177,20 +166,20 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
                                             : 'border-border bg-surface font-medium text-text hover:bg-primary-tint'
                                     }`}
                                 >
-                                    {role.label}
+                                    {t(role.label)}
                                 </button>
                             );
                         })}
                     </div>
                     <p className="text-[12px] leading-[1.5] text-text-muted">
-                        {selectedRole?.summary}
+                        {t(selectedRole?.summary)}
                     </p>
                     <FieldError message={errors.role} />
                 </div>
 
                 <div className="flex flex-col gap-4 sm:flex-row">
                     <label className={`flex flex-1 flex-col gap-1 ${sectionLabelClass}`}>
-                        Email
+                        {t('Email')}
                         <input
                             type="email"
                             value={data.email}
@@ -200,7 +189,7 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
                         <FieldError message={errors.email} />
                     </label>
                     <label className={`flex flex-col gap-1 sm:w-[200px] ${sectionLabelClass}`}>
-                        Phone
+                        {t('Phone')}
                         <input
                             type="tel"
                             value={data.phone}
@@ -213,20 +202,17 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
 
                 {member.has_account ? (
                     <p className="rounded-md bg-surface p-4 text-[13px] leading-[1.5] text-text">
-                        {capitalise(they.subject)} already {they.has} a portal
-                        account and signs in with {they.possessive} own
-                        password. Changing the role above takes effect the next
-                        time {they.subject} {they.does} so.
+                        {t(':subject already :has a portal account and signs in with :possessive own password. Changing the role above takes effect the next time :subject_a :does so.', { subject: capitalise(they.subject), has: they.has, possessive: they.possessive, subject_a: they.subject, does: they.does })}
                     </p>
                 ) : (
                     <>
                         <div className="flex flex-col gap-2 rounded-lg border border-solid border-border p-4">
                             <div className="flex items-center gap-2">
-                                <p className={sectionLabelClass}>Invitation</p>
+                                <p className={sectionLabelClass}>{t('Invitation')}</p>
                                 <span className="flex-1" />
                                 <div
                                     role="radiogroup"
-                                    aria-label="Send the invitation by"
+                                    aria-label={t('Send the invitation by')}
                                     className="flex gap-1 rounded-md border border-solid border-border bg-surface p-[3px]"
                                 >
                                     {CHANNELS.map((channel) => {
@@ -245,29 +231,25 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
                                                         : 'font-medium text-text-muted hover:text-text'
                                                 }`}
                                             >
-                                                {channel.label}
+                                                {t(channel.label)}
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
                             <p className="rounded-md border border-solid border-border bg-surface p-3 text-[13px] leading-[1.5] text-text">
-                                Dear {member.salutation}, you have been
-                                registered at {schoolName}. Set your portal
-                                password to see your classes
-                                {termLabel ? ` for ${termLabel}` : ''}.
+                                {t('Dear')} {member.salutation}{t(', you have been registered at')} {schoolName}{t('. Set your portal password to see your classes')}
+                                {termLabel ? t(' for :term_label', { term_label: termLabel }) : ''}.
                             </p>
                             <p className="text-[12px] leading-[1.5] text-text-muted">
-                                Your name and the school are added at the end.
-                                The link works for seven days and can be sent
-                                again.
+                                {t('Your name and the school are added at the end. The link works for seven days and can be sent again.')}
                             </p>
                             {data.channel !== 'email' && (
                                 <p className="text-[12px] leading-[1.5] text-warning">
-                                    SMS sending is not connected yet.{' '}
+                                    {t('SMS sending is not connected yet.')}{' '}
                                     {data.channel === 'both'
-                                        ? 'Only the email will go out.'
-                                        : 'Nothing will be delivered until it is; choose Email to reach the person now.'}
+                                        ? t('Only the email will go out.')
+                                        : t('Nothing will be delivered until it is; choose Email to reach the person now.')}
                                 </p>
                             )}
                             <FieldError message={errors.channel} />
@@ -279,13 +261,12 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
                                     id="create-now-label"
                                     className="text-[14px] leading-[1.35] text-text"
                                 >
-                                    Create the account now
+                                    {t('Create the account now')}
                                 </span>
                                 <span className="text-[13px] leading-[1.35] text-text-muted">
-                                    Off, {they.subject}{' '}
-                                    {they.subject === 'they' ? 'stay' : 'stays'}{' '}
-                                    on the roster as “Not yet” until you come
-                                    back.
+                                    {t('Off,')} {they.subject}{' '}
+                                    {they.subject === 'they' ? t('stay') : t('stays')}{' '}
+                                    {t('on the roster as “Not yet” until you come back.')}
                                 </span>
                             </div>
                             <button

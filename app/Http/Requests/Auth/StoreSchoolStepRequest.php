@@ -25,6 +25,7 @@ class StoreSchoolStepRequest extends FormRequest
             'region' => ['nullable', Rule::in(School::REGIONS)],
             'town' => ['nullable', 'string', 'max:255'],
             'subsystem' => ['nullable', Rule::in(School::SUBSYSTEM_OPTIONS)],
+            'locale' => ['sometimes', Rule::in(array_keys(School::LOCALES))],
         ];
     }
 }

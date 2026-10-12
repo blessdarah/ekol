@@ -14,6 +14,7 @@ import {
 } from '../../components/assessments/ui';
 import { capsLabelClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface ReportsProps {
     tabs: AssessmentTabs;
@@ -31,9 +32,9 @@ function Reports({ tabs, issuer, yearLabel, options, scope, classes, class: curr
     if (!scope) {
         return (
             <div className="flex flex-col gap-5">
-                <Head title="Report cards" />
-                <AssessmentHeader active="reports" tabs={tabs} trail={[{ label: 'Report cards' }]} title="Report cards" />
-                <Empty title="No results are published yet">Report cards are made from published marks. Publish an assessment’s results first.</Empty>
+                <Head title={t('Report cards')} />
+                <AssessmentHeader active="reports" tabs={tabs} trail={[{ label: t('Report cards') }]} title={t('Report cards')} />
+                <Empty title={t('No results are published yet')}>{t('Report cards are made from published marks. Publish an assessment’s results first.')}</Empty>
             </div>
         );
     }
@@ -42,30 +43,30 @@ function Reports({ tabs, issuer, yearLabel, options, scope, classes, class: curr
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
-            <Head title="Report cards" />
+            <Head title={t('Report cards')} />
             <AssessmentHeader
                 active="reports"
                 tabs={tabs}
-                trail={[{ label: 'Report cards' }]}
-                title="Report cards"
+                trail={[{ label: t('Report cards') }]}
+                title={t('Report cards')}
                 meta={
                     <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-success-tint px-[10px] text-[12px] leading-4 font-medium text-success">
                         <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-success" />
-                        {scope.label}
-                        {scope.published_on ? ` · results published ${day(scope.published_on)}` : ' · every assessment published'}
+                        {t(scope.label)}
+                        {scope.published_on ? t(' · results published :published_on', { published_on: day(scope.published_on) }) : t(' · every assessment published')}
                     </span>
                 }
                 action={
                     current && (
                         <Link href={printCards.url(query({ class: current.id }))} className={primaryClass}>
-                            Print {current.name} cards
+                            {t('Print :current cards', { current: current.name })}
                         </Link>
                     )
                 }
             />
 
             <div className="flex flex-wrap items-center gap-2">
-                <span className={`mr-1 ${capsLabelClass}`}>Cards for</span>
+                <span className={`mr-1 ${capsLabelClass}`}>{t('Cards for')}</span>
                 {options.map((option) => (
                     <Link
                         key={`${option.kind}-${option.id}`}
@@ -77,7 +78,7 @@ function Reports({ tabs, issuer, yearLabel, options, scope, classes, class: curr
                                 : 'border-border font-medium text-text hover:bg-surface'
                         }`}
                     >
-                        {option.label}
+                        {t(option.label)}
                     </Link>
                 ))}
             </div>
@@ -87,9 +88,9 @@ function Reports({ tabs, issuer, yearLabel, options, scope, classes, class: curr
                     <div className="overflow-x-auto rounded-lg border border-solid border-border">
                         <div className="flex min-w-[420px] flex-col">
                             <div className={`flex h-8 items-center gap-4 border-b border-solid border-border bg-surface px-[14px] ${capsLabelClass}`}>
-                                <span className="flex-1">Class</span>
-                                <span className="w-[60px] shrink-0 text-right">Pupils</span>
-                                <span className="w-[110px] shrink-0">Report cards</span>
+                                <span className="flex-1">{t('Class')}</span>
+                                <span className="w-[60px] shrink-0 text-right">{t('Pupils')}</span>
+                                <span className="w-[110px] shrink-0">{t('Report cards')}</span>
                                 <span className="w-[70px] shrink-0" />
                             </div>
                             {classes.map((row, position) => {
@@ -112,11 +113,11 @@ function Reports({ tabs, issuer, yearLabel, options, scope, classes, class: curr
                                         <span className="w-[60px] shrink-0 text-right font-mono text-[13px] leading-4 text-text">{row.pupils}</span>
                                         <span className="flex w-[110px] shrink-0">
                                             <span className="flex h-[22px] items-center rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
-                                                Ready
+                                                {t('Ready')}
                                             </span>
                                         </span>
                                         <Link href={printCards.url(query({ class: row.id }))} className={`w-[70px] shrink-0 text-right ${linkClass}`}>
-                                            Print
+                                            {t('Print')}
                                         </Link>
                                     </div>
                                 );
@@ -126,7 +127,7 @@ function Reports({ tabs, issuer, yearLabel, options, scope, classes, class: curr
 
                     {current && students.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <p className={capsLabelClass}>{current.name} · pick a student to preview</p>
+                            <p className={capsLabelClass}>{t(':current · pick a student to preview', { current: current.name })}</p>
                             <ul className="grid grid-cols-1 gap-x-6 sm:grid-cols-2">
                                 {students.map((student) => (
                                     <li key={student.id} className="border-b border-solid border-border">
@@ -148,19 +149,16 @@ function Reports({ tabs, issuer, yearLabel, options, scope, classes, class: curr
                     )}
 
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        Cards are made from the published marks each time they
-                        are opened, so an approved correction shows at once.
-                        Print a class to paper or save it as a PDF. Nothing is
-                        sent to parents from here.
+                        {t('Cards are made from the published marks each time they are opened, so an approved correction shows at once. Print a class to paper or save it as a PDF. Nothing is sent to parents from here.')}
                     </p>
                 </div>
 
                 <aside className="flex shrink-0 flex-col gap-3 lg:w-[360px]">
-                    <p className={capsLabelClass}>Preview{preview ? ` · ${preview.name}` : ''}</p>
+                    <p className={capsLabelClass}>{t('Preview')}{preview ? ` · ${preview.name}` : ''}</p>
                     {preview ? (
                         <ReportCard card={preview} issuer={issuer} yearLabel={yearLabel} />
                     ) : (
-                        <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">This class has no students with published marks.</p>
+                        <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">{t('This class has no students with published marks.')}</p>
                     )}
                 </aside>
             </div>

@@ -15,6 +15,7 @@ import {
 import { ErrorText, capsLabelClass, outlineButtonClass } from '../../components/structure/ui';
 import { fullDate } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface ConfirmProps {
     enrolment: EnrolmentProgress;
@@ -59,28 +60,28 @@ function Confirm({ enrolment, confirmedOn, who }: ConfirmProps) {
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title="Confirm enrolment" />
+            <Head title={t('Confirm enrolment')} />
             <EnrolmentHeader
                 active="confirm"
                 progress={enrolment}
-                trail={[{ label: 'Confirm' }]}
-                title="Confirm enrolment"
-                meta="the last step: everyone placed becomes Enrolled"
+                trail={[{ label: t('Confirm') }]}
+                title={t('Confirm enrolment')}
+                meta={t('the last step: everyone placed becomes Enrolled')}
             />
 
             <div className="flex flex-col gap-8 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-[22px]">
-                    <RowSection label="Checks">
-                        <Check done={enrolment.to_review === 0} label="Every application has an answer" detail={`${count(enrolment.to_review)} left`} />
-                        <Check done={enrolment.undecided === 0} label="Every continuing student is decided" detail={`${count(enrolment.undecided)} left`} />
+                    <RowSection label={t('Checks')}>
+                        <Check done={enrolment.to_review === 0} label={t('Every application has an answer')} detail={`${count(enrolment.to_review)} left`} />
+                        <Check done={enrolment.undecided === 0} label={t('Every continuing student is decided')} detail={`${count(enrolment.undecided)} left`} />
                         <Check
                             done={enrolment.unplaced === 0 && enrolment.expected > 0}
-                            label="Every student has a class"
+                            label={t('Every student has a class')}
                             detail={`${count(placed)} of ${count(enrolment.expected)}`}
                         />
                         <Check
                             done={enrolment.over_classes === 0}
-                            label="No class is over its seats"
+                            label={t('No class is over its seats')}
                             detail={
                                 enrolment.over_classes > 0
                                     ? `${count(enrolment.over_classes)} over`
@@ -89,13 +90,13 @@ function Confirm({ enrolment, confirmedOn, who }: ConfirmProps) {
                         />
                     </RowSection>
 
-                    <RowSection label={`Who is enrolled for ${enrolment.year}`}>
-                        <Tally label="Moving up to the next level" value={who.promoted} />
-                        <Tally label="Repeating their level" value={who.repeating} />
-                        <Tally label="New students, admitted" value={who.new} />
-                        <Tally label="Enrolled" value={enrolment.expected} strong />
+                    <RowSection label={t('Who is enrolled for :year', { year: enrolment.year })}>
+                        <Tally label={t('Moving up to the next level')} value={who.promoted} />
+                        <Tally label={t('Repeating their level')} value={who.repeating} />
+                        <Tally label={t('New students, admitted')} value={who.new} />
+                        <Tally label={t('Enrolled')} value={enrolment.expected} strong />
                         <Tally
-                            label={`Not returning: ${count(who.graduating)} graduating, ${count(who.leaving)} leaving`}
+                            label={t('Not returning: :graduating graduating, :leaving leaving', { graduating: count(who.graduating), leaving: count(who.leaving) })}
                             value={notReturning}
                             muted
                         />
@@ -104,33 +105,30 @@ function Confirm({ enrolment, confirmedOn, who }: ConfirmProps) {
 
                 <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     <div className="flex flex-col gap-[14px] rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>{enrolment.confirmed ? 'Confirmed' : 'When you confirm'}</p>
+                        <p className={capsLabelClass}>{enrolment.confirmed ? t('Confirmed') : t('When you confirm')}</p>
                         {enrolment.confirmed ? (
                             <p className="text-[13px] leading-[19px] text-text">
-                                Enrolment for {enrolment.year} was confirmed
-                                {confirmedOn ? ` on ${fullDate(confirmedOn)}` : ''}. Students placed from now on are
-                                Enrolled straight away.
+                                {t('Enrolment for')} {enrolment.year} {t('was confirmed')}
+                                {confirmedOn ? t(' on :confirmed_on', { confirmed_on: fullDate(confirmedOn) }) : ''}{t('. Students placed from now on are Enrolled straight away.')}
                             </p>
                         ) : (
                             <ul className="flex flex-col gap-[14px]">
                                 <Effect>
-                                    {count(placed)} {placed === 1 ? 'student becomes' : 'students become'} Enrolled for {enrolment.year}
+                                    {count(placed)} {placed === 1 ? t('student becomes') : t('students become')} {t('Enrolled for')} {enrolment.year}
                                 </Effect>
                                 <Effect tone={enrolment.has_fee_plan ? 'success' : 'warning'}>
                                     {enrolment.has_fee_plan
-                                        ? `A ${enrolment.year} invoice is issued where the level has a fee plan and the year has a first term`
-                                        : `No ${enrolment.year} fee plan exists, so nobody is billed`}
+                                        ? t('A :year invoice is issued where the level has a fee plan and the year has a first term', { year: enrolment.year })
+                                        : t('No :year fee plan exists, so nobody is billed', { year: enrolment.year })}
                                 </Effect>
                                 <Effect tone="warning">
-                                    The {count(notReturning)} not returning keep their records and stay on this
-                                    year’s roster until the year closes
+                                    {t('The :not_returning not returning keep their records and stay on this year’s roster until the year closes', { not_returning: count(notReturning) })}
                                 </Effect>
                                 {who.series > 0 && (
                                     <Effect tone="warning">
-                                        {count(who.series)} entering a series level choose their series once the year is
-                                        active.{' '}
+                                        {count(who.series)} {t('entering a series level choose their series once the year is active.')}{' '}
                                         <Link href={seriesRegistration.url()} className={linkClass}>
-                                            Open Series Registration →
+                                            {t('Open Series Registration →')}
                                         </Link>
                                     </Effect>
                                 )}
@@ -145,19 +143,18 @@ function Confirm({ enrolment, confirmedOn, who }: ConfirmProps) {
                                     onClick={() => router.post(storeConfirmation.url(), {}, { preserveScroll: true })}
                                     className="flex h-10 shrink-0 items-center justify-center rounded-md bg-primary px-3 text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
                                 >
-                                    Confirm enrolment for {count(placed)} {placed === 1 ? 'student' : 'students'}
+                                    {t('Confirm enrolment for')} {count(placed)} {placed === 1 ? t('student') : t('students')}
                                 </button>
                             )}
                             <Link href={placement.url()} className={outlineButtonClass}>
-                                ← Back to class placement
+                                {t('← Back to class placement')}
                             </Link>
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-white p-4">
-                        <p className="text-[13px] leading-4 font-semibold text-text">After confirming</p>
+                        <p className="text-[13px] leading-4 font-semibold text-text">{t('After confirming')}</p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            The roster opens on {enrolment.year} when that year
-                            is made active in School Setup.
+                            {t('The roster opens on :year when that year is made active in School Setup.', { year: enrolment.year })}
                         </p>
                     </div>
                 </aside>

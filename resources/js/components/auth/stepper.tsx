@@ -1,3 +1,4 @@
+import { useT } from '../../lib/i18n';
 export interface Step {
     title: string;
     sub: string;
@@ -10,6 +11,8 @@ export default function Stepper({
     steps: Step[];
     active: number;
 }) {
+    const t = useT();
+
     return (
         <ol className="flex flex-col">
             {steps.map((step, index) => {
@@ -45,10 +48,10 @@ export default function Stepper({
                                         : 'font-medium text-text-muted'
                                 }`}
                             >
-                                {step.title}
+                                {t(step.title)}
                             </span>
                             <span className="text-sm leading-[18px] text-text-muted">
-                                {step.sub}
+                                {t(step.sub)}
                             </span>
                         </span>
                     </li>

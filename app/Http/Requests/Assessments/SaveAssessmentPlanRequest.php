@@ -65,17 +65,17 @@ class SaveAssessmentPlanRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'name.unique' => 'This term already has an assessment with that name.',
-            'held_from.required' => 'Set the dates before scheduling.',
-            'held_from.after_or_equal' => 'Keep the dates inside the term.',
-            'held_from.before_or_equal' => 'Keep the dates inside the term.',
-            'held_until.after_or_equal' => 'This must be on or after the first day, inside the term.',
-            'held_until.before_or_equal' => 'Keep the dates inside the term.',
-            'window_starts_on.after_or_equal' => 'The marks window opens with the tests, inside the term.',
-            'window_starts_on.before_or_equal' => 'Keep the dates inside the term.',
-            'window_ends_on.after_or_equal' => 'The window closes after it opens and after the last test.',
-            'window_ends_on.before_or_equal' => 'Keep the dates inside the term.',
-            'level_ids.required' => 'Choose at least one level.',
+            'name.unique' => __('This term already has an assessment with that name.'),
+            'held_from.required' => __('Set the dates before scheduling.'),
+            'held_from.after_or_equal' => __('Keep the dates inside the term.'),
+            'held_from.before_or_equal' => __('Keep the dates inside the term.'),
+            'held_until.after_or_equal' => __('This must be on or after the first day, inside the term.'),
+            'held_until.before_or_equal' => __('Keep the dates inside the term.'),
+            'window_starts_on.after_or_equal' => __('The marks window opens with the tests, inside the term.'),
+            'window_starts_on.before_or_equal' => __('Keep the dates inside the term.'),
+            'window_ends_on.after_or_equal' => __('The window closes after it opens and after the last test.'),
+            'window_ends_on.before_or_equal' => __('Keep the dates inside the term.'),
+            'level_ids.required' => __('Choose at least one level.'),
         ];
     }
 

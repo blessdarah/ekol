@@ -47,7 +47,7 @@ class UpdateClassRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'home_room_id.unique' => 'That room is already the home room of another class.',
+            'home_room_id.unique' => __('That room is already the home room of another class.'),
         ];
     }
 }

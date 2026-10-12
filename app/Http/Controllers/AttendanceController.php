@@ -100,7 +100,7 @@ class AttendanceController extends Controller
         }
 
         return Inertia::render('teacher/attendance', [
-            'dateLabel' => $now->format('l j M'),
+            'dateLabel' => $now->translatedFormat('l j M'),
             'date' => $date,
             'weekLabel' => $term ? $this->week($term, $now) : null,
             'hasTimetable' => $live !== null,
@@ -135,12 +135,12 @@ class AttendanceController extends Controller
         $target = $live ? static::lessonsOn($teacher, $school, $live, $now)->firstWhere('id', $slot) : null;
 
         if (! $target) {
-            throw ValidationException::withMessages(['marks' => 'That is not one of your lessons today.']);
+            throw ValidationException::withMessages(['marks' => __('That is not one of your lessons today.')]);
         }
 
         if ($target->period === null || $now->format('H:i:s') < $target->period->starts_at) {
             throw ValidationException::withMessages([
-                'marks' => 'This lesson has not started. Its register opens at '.substr((string) $target->period?->starts_at, 0, 5).'.',
+                'marks' => __('This lesson has not started. Its register opens at :starts_at.', ['starts_at' => substr((string) $target->period?->starts_at, 0, 5)]),
             ]);
         }
 
@@ -161,7 +161,7 @@ class AttendanceController extends Controller
 
         if ($left > 0) {
             throw ValidationException::withMessages([
-                'marks' => "Mark the last {$left} ".($left === 1 ? 'student' : 'students').' before saving.',
+                'marks' => trans_choice('{1} Mark the last student before saving.|[2,*] Mark the last :count students before saving.', $left, ['count' => $left]),
             ]);
         }
 

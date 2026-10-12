@@ -327,7 +327,7 @@ class StaffController extends Controller
 
         if (in_array($channel, ['email', 'both'], true)) {
             try {
-                Mail::to($member->email)->send(new StaffInvitationMail(
+                Mail::to($member->email)->locale($member->locale ?? $school->locale)->send(new StaffInvitationMail(
                     $school,
                     $this->salutation($member),
                     (string) $request->user()?->full_name,
@@ -340,7 +340,7 @@ class StaffController extends Controller
                 ]);
 
                 throw ValidationException::withMessages([
-                    'invitation' => 'The invitation email could not be sent. Check the address and send it again.',
+                    'invitation' => __('The invitation email could not be sent. Check the address and send it again.'),
                 ]);
             }
         }

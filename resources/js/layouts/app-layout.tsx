@@ -7,6 +7,7 @@ import Sidebar, {
     type ShellUser,
 } from '../components/shell/sidebar';
 import Toasts from '../components/shell/toasts';
+import { useT } from '../lib/i18n';
 
 export interface ShellSharedProps {
     school: ShellSchool | null;
@@ -32,6 +33,7 @@ export function withAppShell<P extends object>(
 export default function AppLayout({ children }: { children: ReactNode }) {
     const { props, url } = usePage<ShellSharedProps>();
     const [menuOpen, setMenuOpen] = useState(false);
+    const t = useT();
     const school = props.school ?? null;
 
     // The menu slides away once a link in it has been followed.
@@ -60,7 +62,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <header className="font-auth sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b border-solid border-border bg-white px-4 lg:hidden print:hidden">
                 <button
                     type="button"
-                    aria-label="Open menu"
+                    aria-label={t('Open menu')}
                     aria-expanded={menuOpen}
                     aria-controls="app-menu"
                     onClick={() => setMenuOpen(true)}
@@ -74,12 +76,12 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     {school ? school.code.slice(0, 2).toUpperCase() : '··'}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-[14px] leading-[18px] font-semibold text-text">{school?.name ?? ''}</span>
-                {props.term && <span className="shrink-0 text-[12px] leading-4 text-text-muted">{props.term.label}</span>}
+                {props.term && <span className="shrink-0 text-[12px] leading-4 text-text-muted">{t(props.term.label)}</span>}
             </header>
             {menuOpen && (
                 <button
                     type="button"
-                    aria-label="Close menu"
+                    aria-label={t('Close menu')}
                     onClick={() => setMenuOpen(false)}
                     className="fixed inset-0 z-40 bg-text/40 lg:hidden print:hidden"
                 />

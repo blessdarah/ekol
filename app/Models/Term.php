@@ -63,7 +63,7 @@ class Term extends Model
                 && $term->hasMarks()
             ) {
                 throw ValidationException::withMessages([
-                    'starts_on' => 'This term already has marks and can no longer be changed.',
+                    'starts_on' => __('This term already has marks and can no longer be changed.'),
                 ]);
             }
 
@@ -82,8 +82,8 @@ class Term extends Model
 
             if ($starts->lt($year->starts_on) || $ends->gt($year->ends_on)) {
                 throw ValidationException::withMessages([
-                    'starts_on' => 'Term dates must fall inside its academic year.',
-                    'ends_on' => 'Term dates must fall inside its academic year.',
+                    'starts_on' => __('Term dates must fall inside its academic year.'),
+                    'ends_on' => __('Term dates must fall inside its academic year.'),
                 ]);
             }
         });

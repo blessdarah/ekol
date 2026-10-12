@@ -14,12 +14,12 @@ enum RoomKind: string
     public function label(): string
     {
         return match ($this) {
-            self::Classroom => 'Classroom',
-            self::Laboratory => 'Laboratory',
-            self::Computer => 'Computer room',
-            self::Library => 'Library',
-            self::Hall => 'Hall',
-            self::Office => 'Office',
+            self::Classroom => __('Classroom'),
+            self::Laboratory => __('Laboratory'),
+            self::Computer => __('Computer room'),
+            self::Library => __('Library'),
+            self::Hall => __('Hall'),
+            self::Office => __('Office'),
         };
     }
 

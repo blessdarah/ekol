@@ -15,6 +15,7 @@ import {
     solidButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface SubjectRow {
     id: string;
@@ -64,7 +65,7 @@ function tabClass(selected: boolean): string {
 }
 
 function plural(count: number, one: string, many: string): string {
-    return `${count} ${count === 1 ? one : many}`;
+    return `${count} ${count === 1 ? t(one) : t(many)}`;
 }
 
 function Staffing({ row }: { row: SubjectRow }) {
@@ -72,7 +73,7 @@ function Staffing({ row }: { row: SubjectRow }) {
         return (
             <span className="flex items-center gap-[6px] text-[13px] leading-4 text-text">
                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                No classes yet
+                {t('No classes yet')}
             </span>
         );
     }
@@ -82,7 +83,7 @@ function Staffing({ row }: { row: SubjectRow }) {
             <span className="flex items-start gap-[6px] text-[13px] leading-4 text-text">
                 <span className="mt-[5px] h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                 <span>
-                    {plural(row.classes, 'class', 'classes')} · in a series but not taught in{' '}
+                    {plural(row.classes, 'class', 'classes')} {t('· in a series but not taught in')}{' '}
                     {row.not_taught.join(', ')}
                 </span>
             </span>
@@ -95,8 +96,8 @@ function Staffing({ row }: { row: SubjectRow }) {
                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                 {plural(row.classes, 'class', 'classes')} ·{' '}
                 {row.teachers === 0
-                    ? 'no teacher yet'
-                    : `${row.unstaffed} without a teacher`}
+                    ? t('no teacher yet')
+                    : t(':unstaffed without a teacher', { unstaffed: row.unstaffed })}
             </span>
         );
     }
@@ -167,12 +168,12 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
-            <Head title="The subject roster" />
+            <Head title={t('The subject roster')} />
             <StructureHeader
-                trail={[{ label: 'Subjects' }]}
-                title="The subject roster"
-                tag={`Subjects${yearLabel ? ` · ${yearLabel}` : ''}`}
-                meta={`${plural(counts.total, 'subject', 'subjects')} · ${plural(counts.departments, 'department', 'departments')} · ${counts.needs_teacher} ${counts.needs_teacher === 1 ? 'needs' : 'need'} a teacher`}
+                trail={[{ label: t('Subjects') }]}
+                title={t('The subject roster')}
+                tag={t('Subjects:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                meta={t(':subjects · :departments · :needs_teacher :need a teacher', { subjects: plural(counts.total, 'subject', 'subjects'), departments: plural(counts.departments, 'department', 'departments'), needs_teacher: counts.needs_teacher, need: counts.needs_teacher === 1 ? 'needs' : 'need' })}
             />
             <StructureTabs active="subjects" />
 
@@ -184,7 +185,7 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                         onClick={() => visit({ department: '', needs: false })}
                         className={tabClass(!filters.department && !filters.needs)}
                     >
-                        All subjects
+                        {t('All subjects')}
                     </button>
                     {departments.map((department) => (
                         <button
@@ -204,7 +205,7 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                         className={tabClass(filters.needs)}
                     >
                         <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                        Needs teacher
+                        {t('Needs teacher')}
                     </button>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -215,8 +216,8 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                         </svg>
                         <input
                             type="search"
-                            aria-label="Search subjects"
-                            placeholder="A subject, code or teacher"
+                            aria-label={t('Search subjects')}
+                            placeholder={t('A subject, code or teacher')}
                             value={search}
                             onChange={(e) => onSearch(e.target.value)}
                             className="min-w-0 flex-1 bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
@@ -228,11 +229,11 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                         onClick={() => setShowFilters(!showFilters)}
                         className="flex h-9 items-center justify-center rounded-md border border-solid border-border px-4 text-[14px] font-medium text-primary hover:bg-surface"
                     >
-                        Filter{filters.level ? ' · 1' : ''}
+                        {t('Filter')}{filters.level ? ' · 1' : ''}
                     </button>
                     <Link href={create.url()} className={solidButtonClass}>
                         <PlusIcon />
-                        Add subject
+                        {t('Add subject')}
                     </Link>
                 </div>
             </div>
@@ -240,12 +241,12 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
             {showFilters && (
                 <div className="-mt-3 flex flex-wrap items-center gap-2">
                     <select
-                        aria-label="Level"
+                        aria-label={t('Level')}
                         value={filters.level}
                         onChange={(e) => visit({ level: e.target.value })}
                         className="h-9 rounded-md border border-solid border-border bg-white px-3 text-[13px] text-text outline-none focus:border-primary"
                     >
-                        <option value="">Any level</option>
+                        <option value="">{t('Any level')}</option>
                         {levels.map((level) => (
                             <option key={level.id} value={level.id}>
                                 {level.name}
@@ -258,7 +259,7 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                             onClick={() => visit({ level: '' })}
                             className="px-2 text-[13px] font-medium text-primary hover:underline"
                         >
-                            Clear
+                            {t('Clear')}
                         </button>
                     )}
                 </div>
@@ -267,12 +268,10 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
             {counts.total === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">
                     <p className="text-[13px] leading-[19px] text-text">
-                        No subjects yet. Register one from scratch, or start
-                        from a prepared set and give each subject its classes
-                        and teachers in one go.
+                        {t('No subjects yet. Register one from scratch, or start from a prepared set and give each subject its classes and teachers in one go.')}
                     </p>
                     <Link href={templates.url()} className={outlineButtonClass}>
-                        Use a template
+                        {t('Use a template')}
                     </Link>
                 </div>
             ) : (
@@ -280,19 +279,18 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                     <div className="overflow-x-auto lg:overflow-visible">
                         <div className="flex min-w-[1080px] flex-col rounded-lg border border-solid border-border bg-white">
                             <div className="flex items-center gap-4 rounded-t-lg border-b border-solid border-border bg-surface px-4 py-2">
-                                <span className={`${headClass} min-w-[200px] flex-1`}>Subject</span>
-                                <span className={`${headClass} w-[88px]`}>Code</span>
-                                <span className={`${headClass} w-[120px]`}>Department</span>
-                                <span className={`${headClass} w-[130px]`}>Levels</span>
-                                <span className={`${headClass} w-16`}>Coeff.</span>
-                                <span className={`${headClass} w-[220px]`}>Classes &amp; teachers</span>
-                                <span className={`${headClass} w-[100px]`}>Periods</span>
+                                <span className={`${headClass} min-w-[200px] flex-1`}>{t('Subject')}</span>
+                                <span className={`${headClass} w-[88px]`}>{t('Code')}</span>
+                                <span className={`${headClass} w-[120px]`}>{t('Department')}</span>
+                                <span className={`${headClass} w-[130px]`}>{t('Levels')}</span>
+                                <span className={`${headClass} w-16`}>{t('Coeff.')}</span>
+                                <span className={`${headClass} w-[220px]`}>{t('Classes & teachers')}</span>
+                                <span className={`${headClass} w-[100px]`}>{t('Periods')}</span>
                                 <span className="w-10 shrink-0" />
                             </div>
                             {subjects.rows.length === 0 && (
                                 <p className="px-4 py-8 text-center text-[13px] text-text-muted">
-                                    No subject matches. Try another name, or
-                                    clear the filters.
+                                    {t('No subject matches. Try another name, or clear the filters.')}
                                 </p>
                             )}
                             {subjects.rows.map((row) => (
@@ -329,12 +327,12 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                                         <Staffing row={row} />
                                     </span>
                                     <span className="w-[100px] shrink-0 font-mono text-[13px] leading-4 text-text">
-                                        {row.periods} / wk
+                                        {t(':periods / wk', { periods: row.periods })}
                                     </span>
                                     <span className="relative flex w-10 shrink-0 justify-center">
                                         <button
                                             type="button"
-                                            aria-label={`Actions for ${row.name}`}
+                                            aria-label={t('Actions for :row', { row: row.name })}
                                             aria-expanded={openMenu === row.id}
                                             onClick={(event) => {
                                                 event.stopPropagation();
@@ -359,14 +357,14 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                                                     href={show.url(row.id)}
                                                     className="flex h-8 items-center rounded-sm px-3 text-[13px] text-text hover:bg-surface"
                                                 >
-                                                    Open record
+                                                    {t('Open record')}
                                                 </Link>
                                                 <Link
                                                     role="menuitem"
                                                     href={edit.url(row.id)}
                                                     className="flex h-8 items-center rounded-sm px-3 text-[13px] text-text hover:bg-surface"
                                                 >
-                                                    Edit subject
+                                                    {t('Edit subject')}
                                                 </Link>
                                             </span>
                                         )}
@@ -378,8 +376,7 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
 
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-4">
                         <p className="text-[13px] text-text-muted">
-                            {subjects.rows.length} of {subjects.total} shown ·
-                            sorted by code
+                            {t(':rows of :total shown · sorted by code', { rows: subjects.rows.length, total: subjects.total })}
                         </p>
                         <div className="flex items-center gap-2">
                             {subjects.lastPage > 1 &&

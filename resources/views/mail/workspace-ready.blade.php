@@ -1,6 +1,6 @@
-Your {{ $school->name }} workspace is live.
+{{ __('Your :school workspace is live.', ['school' => $school->name]) }}
 
-Address: {{ $address }}
-Administrator: {{ $administrator->full_name }} ({{ $administrator->email }})
+{{ __('Address: :address', ['address' => $address]) }}
+{{ __('Administrator: :name (:email)', ['name' => $administrator->full_name, 'email' => $administrator->email]) }}
 
-Staff will sign in at the address above.
+{{ __('Staff will sign in at the address above.') }}

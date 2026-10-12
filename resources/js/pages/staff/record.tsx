@@ -26,6 +26,7 @@ import {
     sectionLabelClass,
 } from '../../components/staff/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface UnavailableTime {
     weekday: number;
@@ -73,7 +74,7 @@ const EMPLOYMENT_NOTES: Record<string, string> = {
 };
 
 function describeTime(time: UnavailableTime, separator = ' '): string {
-    const span = time.from === time.to ? time.from : `${time.from} to ${time.to}`;
+    const span = time.from === time.to ? time.from : t(':from to :to', { from: time.from, to: time.to });
 
     return [`${WEEKDAY_NAMES[time.weekday]}${separator}${span}`, time.reason]
         .filter(Boolean)
@@ -194,7 +195,7 @@ function HoursDialog({
                         id="hours-title"
                         className="font-display text-[22px] leading-7 font-bold text-text"
                     >
-                        Teaching days and hours
+                        {t('Teaching days and hours')}
                     </h2>
                     <p className="text-[14px] leading-5 text-text-muted">
                         {[member.name, member.subjects.join(', ')]
@@ -205,10 +206,10 @@ function HoursDialog({
 
                 <div className="flex flex-col gap-2">
                     <span className="text-[13px] leading-4 font-medium text-text">
-                        Days {they.subject} can teach
+                        {t('Days :subject can teach', { subject: they.subject })}
                     </span>
                     <div className="flex flex-wrap gap-2">
-                        {WEEKDAYS.map((day, i) => {
+                        {WEEKDAYS.map((name) => t(name)).map((day, i) => {
                             const bit = 1 << i;
 
                             if ((schoolDays & bit) === 0) {
@@ -239,12 +240,12 @@ function HoursDialog({
 
                 <div className="flex gap-3">
                     <label className="flex flex-1 flex-col gap-[6px] text-[13px] leading-4 font-medium text-text">
-                        Most periods a week
+                        {t('Most periods a week')}
                         <input
                             type="number"
                             min={1}
                             max={60}
-                            placeholder="No limit"
+                            placeholder={t('No limit')}
                             value={data.max_periods_week}
                             onChange={(e) => setData('max_periods_week', e.target.value)}
                             className={fieldClass}
@@ -252,7 +253,7 @@ function HoursDialog({
                         <FieldError message={errors.max_periods_week} />
                     </label>
                     <label className="flex flex-1 flex-col gap-[6px] text-[13px] leading-4 font-medium text-text">
-                        Most periods a day
+                        {t('Most periods a day')}
                         <input
                             type="number"
                             min={1}
@@ -268,7 +269,7 @@ function HoursDialog({
 
                 <div className="flex flex-col gap-2">
                     <span className="text-[13px] leading-4 font-medium text-text">
-                        Times {they.subject} cannot teach
+                        {t('Times :subject cannot teach', { subject: they.subject })}
                     </span>
                     {data.unavailable_times.map((time, position) => (
                         <div
@@ -288,14 +289,14 @@ function HoursDialog({
                                 }
                                 className="text-[13px] leading-4 font-medium text-danger hover:underline"
                             >
-                                Remove
+                                {t('Remove')}
                             </button>
                         </div>
                     ))}
                     {adding ? (
                         <div className="flex flex-wrap items-center gap-2 rounded-md border border-solid border-border p-3">
                             <select
-                                aria-label="Day"
+                                aria-label={t('Day')}
                                 value={draft.weekday}
                                 onChange={(e) => setDraft({ ...draft, weekday: Number(e.target.value) })}
                                 className={smallSelectClass}
@@ -309,7 +310,7 @@ function HoursDialog({
                                 )}
                             </select>
                             <select
-                                aria-label="From period"
+                                aria-label={t('From period')}
                                 value={draft.from}
                                 onChange={(e) => setDraft({ ...draft, from: e.target.value })}
                                 className={smallSelectClass}
@@ -318,9 +319,9 @@ function HoursDialog({
                                     <option key={period}>{period}</option>
                                 ))}
                             </select>
-                            <span className="text-[13px] text-text-muted">to</span>
+                            <span className="text-[13px] text-text-muted">{t('to')}</span>
                             <select
-                                aria-label="To period"
+                                aria-label={t('To period')}
                                 value={draft.to}
                                 onChange={(e) => setDraft({ ...draft, to: e.target.value })}
                                 className={smallSelectClass}
@@ -331,8 +332,8 @@ function HoursDialog({
                             </select>
                             <input
                                 type="text"
-                                aria-label="Reason"
-                                placeholder="Reason, e.g. staff meeting"
+                                aria-label={t('Reason')}
+                                placeholder={t('Reason, e.g. staff meeting')}
                                 maxLength={100}
                                 value={draft.reason ?? ''}
                                 onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
@@ -343,7 +344,7 @@ function HoursDialog({
                                 onClick={addTime}
                                 className="h-9 rounded-md border border-solid border-border px-3 text-[13px] font-medium text-primary hover:bg-surface"
                             >
-                                Add
+                                {t('Add')}
                             </button>
                         </div>
                     ) : periods.length > 0 ? (
@@ -352,20 +353,18 @@ function HoursDialog({
                             onClick={() => setAdding(true)}
                             className="self-start text-[13px] leading-4 font-medium text-primary hover:underline"
                         >
-                            + Add a time {they.subject} cannot teach
+                            {t('+ Add a time :subject cannot teach', { subject: they.subject })}
                         </button>
                     ) : (
                         <p className="text-[13px] leading-[18px] text-text-muted">
-                            Add the school’s periods in School Setup to block
-                            out times.
+                            {t('Add the school’s periods in School Setup to block out times.')}
                         </p>
                     )}
                     <FieldError message={errors.unavailable_times} />
                 </div>
 
                 <p className="rounded-md bg-surface p-3 text-[13px] leading-[18px] text-text-muted">
-                    The live timetable is not touched. New limits apply the
-                    next time you generate.
+                    {t('The live timetable is not touched. New limits apply the next time you generate.')}
                 </p>
 
                 <div className="flex items-center justify-end gap-2">
@@ -374,14 +373,14 @@ function HoursDialog({
                         onClick={onClose}
                         className="flex h-[38px] items-center rounded-md border border-solid border-border bg-white px-4 text-[14px] font-medium text-text hover:bg-surface"
                     >
-                        Cancel
+                        {t('Cancel')}
                     </button>
                     <button
                         type="submit"
                         disabled={processing || data.teaching_days === 0}
                         className="flex h-[38px] items-center rounded-md bg-primary px-4 text-[14px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
                     >
-                        Save hours
+                        {t('Save hours')}
                     </button>
                 </div>
             </form>
@@ -425,8 +424,8 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
             <Head title={member.name} />
             <PageHeader
                 crumb={member.name}
-                title="One staff record"
-                tag={`Record${yearLabel ? ` · ${yearLabel}` : ''}`}
+                title={t('One staff record')}
+                tag={t('Record:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
                 meta={[
                     member.formal_name,
                     member.role_label,
@@ -442,14 +441,13 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                     <>
                         <div className="flex flex-col gap-3">
                             <p className={sectionLabelClass}>
-                                {Their} portal account
+                                {t(':their portal account', { their: Their })}
                             </p>
                             {member.has_account ? (
                                 <div className="flex items-center gap-2 text-[13px] leading-[1.5] text-text">
                                     <StatusDot tone="success" />
-                                    {capitalise(they.subject)} {they.has} set{' '}
-                                    {they.possessive} password and can sign
-                                    in.
+                                    {capitalise(they.subject)} {they.has} {t('set')}{' '}
+                                    {they.possessive} {t('password and can sign in.')}
                                 </div>
                             ) : (
                                 <>
@@ -457,17 +455,13 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                                         <div className="flex items-center gap-2 text-[13px] leading-[1.5] text-text">
                                             <StatusDot tone="warning" />
                                             {!member.invited_on
-                                                ? 'No invitation has been sent yet.'
+                                                ? t('No invitation has been sent yet.')
                                                 : member.invitation_expired
-                                                  ? `The invitation sent on ${longDate(member.invited_on, false)} has expired.`
-                                                  : `${capitalise(they.subject)} ${they.has} not yet opened the invitation sent on ${longDate(member.invited_on, false)}.`}
+                                                  ? t('The invitation sent on :invited_on has expired.', { invited_on: longDate(member.invited_on, false) })
+                                                  : t(':subject :has not yet opened the invitation sent on :invited_on.', { subject: capitalise(they.subject), has: they.has, invited_on: longDate(member.invited_on, false) })}
                                         </div>
                                         <p className="text-[13px] leading-[1.5] text-text-muted">
-                                            Until {they.subject} {they.does},{' '}
-                                            {they.subject} {they.has} no portal
-                                            login, and {they.possessive}{' '}
-                                            subjects sit empty on the
-                                            timetable.
+                                            {t('Until :subject :does, :subject :has no portal login, and :possessive subjects sit empty on the timetable.', { subject: they.subject, does: they.does, has: they.has, possessive: they.possessive })}
                                         </p>
                                     </div>
                                     {member.invited_on ? (
@@ -478,49 +472,45 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                                             className={primaryButtonClass}
                                         >
                                             {member.invitation_expired
-                                                ? 'Send a new link'
-                                                : 'Send a reminder'}
+                                                ? t('Send a new link')
+                                                : t('Send a reminder')}
                                         </button>
                                     ) : (
                                         <Link
                                             href={access.url(member.id)}
                                             className={primaryButtonClass}
                                         >
-                                            Set up portal access
+                                            {t('Set up portal access')}
                                         </Link>
                                     )}
                                     {reminded && !reminderError && (
                                         <p role="status" className="text-[12px] leading-4 text-success">
-                                            A fresh link is on its way. It
-                                            works for seven days.
+                                            {t('A fresh link is on its way. It works for seven days.')}
                                         </p>
                                     )}
                                     <FieldError message={reminderError ?? undefined} />
                                 </>
                             )}
                         </div>
-                        <Note title="Corrections are normal">
-                            Nothing in this record was checked with a
-                            government body. If a detail is wrong, change it
-                            here and {they.subject} {they.sees} the correction
-                            in {they.possessive} portal.
+                        <Note title={t('Corrections are normal')}>
+                            {t('Nothing in this record was checked with a government body. If a detail is wrong, change it here and :subject :sees the correction in :possessive portal.', { subject: they.subject, sees: they.sees, possessive: they.possessive })}
                         </Note>
                         <div className="mt-auto flex flex-col gap-2">
                             <p className="text-[12px] leading-[1.5] text-text-muted">
                                 {lastEdit
-                                    ? `Last edited${lastEdit.by ? ` by the ${lastEdit.by}` : ''} on ${longDate(lastEdit.on, false)}. `
+                                    ? t('Last edited:by on :on. ', { by: lastEdit.by ? ` by the ${lastEdit.by}` : '', on: longDate(lastEdit.on, false) })
                                     : ''}
-                                Every change is kept in the log.
+                                {t('Every change is kept in the log.')}
                             </p>
                             <div className="flex flex-wrap gap-2">
                                 <Link
                                     href={edit.url(member.id)}
                                     className="flex h-9 items-center rounded-md border border-solid border-border px-4 text-[14px] font-medium text-primary hover:bg-surface"
                                 >
-                                    Edit {they.possessive} record
+                                    {t('Edit :possessive record', { possessive: they.possessive })}
                                 </Link>
                                 <Link href={index.url()} className={quietLinkClass}>
-                                    Back to roster
+                                    {t('Back to roster')}
                                 </Link>
                             </div>
                         </div>
@@ -545,48 +535,48 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                     </div>
                     <span className="ml-auto flex h-7 shrink-0 items-center gap-2 rounded-md border border-solid border-border px-3 text-[13px] font-medium text-text">
                         <StatusDot tone={member.has_account ? 'success' : 'warning'} />
-                        {member.has_account ? 'Portal on' : 'No portal account'}
+                        {member.has_account ? t('Portal on') : t('No portal account')}
                     </span>
                 </div>
 
                 <section className="flex flex-col gap-2">
                     <p className={sectionLabelClass}>
-                        Who {they.subject} {they.subject === 'they' ? 'are' : 'is'}
+                        {t('Who')} {they.subject} {they.subject === 'they' ? t('are') : t('is')}
                     </p>
                     <dl className="flex flex-col">
-                        <Row label="Gender">
+                        <Row label={t('Gender')}>
                             {member.gender ? GENDER_LABELS[member.gender] : '—'}
                         </Row>
-                        <Row label="Highest qualification">
+                        <Row label={t('Highest qualification')}>
                             {member.qualification ?? '—'}
                         </Row>
-                        <Row label="Address">{member.address ?? '—'}</Row>
-                        <Row label="Email">{member.email}</Row>
-                        <Row label="Phone">{member.phone}</Row>
+                        <Row label={t('Address')}>{member.address ?? '—'}</Row>
+                        <Row label={t('Email')}>{member.email}</Row>
+                        <Row label={t('Phone')}>{member.phone}</Row>
                     </dl>
                 </section>
 
                 <section className="flex flex-col gap-2">
-                    <p className={sectionLabelClass}>{Their} work here</p>
+                    <p className={sectionLabelClass}>{t(':their work here', { their: Their })}</p>
                     <dl className="flex flex-col">
-                        <Row label="Portal role">
+                        <Row label={t('Portal role')}>
                             {member.role_label}{' '}
                             <Link
                                 href={access.url(member.id)}
                                 className="ml-2 text-[13px] font-medium text-primary hover:underline"
                             >
-                                Change
+                                {t('Change')}
                             </Link>
                         </Row>
-                        <Row label="Subjects">
-                            {subjects || 'None assigned yet'}
+                        <Row label={t('Subjects')}>
+                            {subjects || t('None assigned yet')}
                         </Row>
-                        <Row label="Employment type">
+                        <Row label={t('Employment type')}>
                             {employment
                                 ? `${employment} · ${EMPLOYMENT_NOTES[member.employment_type ?? '']}`
                                 : '—'}
                         </Row>
-                        <Row label="Joined this school">
+                        <Row label={t('Joined this school')}>
                             {longDate(member.joined_on)}
                         </Row>
                     </dl>
@@ -595,23 +585,23 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                 <section className="flex flex-col gap-2">
                     <div className="flex items-baseline justify-between">
                         <p className={sectionLabelClass}>
-                            {Their} teaching days and hours
+                            {t(':their teaching days and hours', { their: Their })}
                         </p>
                         <button
                             type="button"
                             onClick={() => setChangingHours(true)}
                             className="text-[13px] leading-4 font-medium text-primary hover:underline"
                         >
-                            Change
+                            {t('Change')}
                         </button>
                     </div>
                     <dl className="flex flex-col">
                         <div className="flex items-center gap-4 border-t border-solid border-border py-[9px]">
                             <dt className="w-[176px] shrink-0 text-[13px] text-text-muted">
-                                Teaching days
+                                {t('Teaching days')}
                             </dt>
                             <dd className="flex flex-wrap gap-[6px]">
-                                {WEEKDAYS.map((day, i) => {
+                                {WEEKDAYS.map((name) => t(name)).map((day, i) => {
                                     const bit = 1 << i;
 
                                     if ((schoolDays & bit) === 0) {
@@ -633,18 +623,18 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                                 })}
                             </dd>
                         </div>
-                        <Row label="Most periods a week">
-                            {member.max_periods_week ?? 'No limit'} ·{' '}
+                        <Row label={t('Most periods a week')}>
+                            {member.max_periods_week ?? t('No limit')} ·{' '}
                             {they.subject}{' '}
-                            {they.subject === 'they' ? 'teach' : 'teaches'}{' '}
-                            {member.periods_taught} now
+                            {they.subject === 'they' ? t('teach') : t('teaches')}{' '}
+                            {member.periods_taught} {t('now')}
                         </Row>
-                        <Row label="Most periods a day">
+                        <Row label={t('Most periods a day')}>
                             <span className="font-mono">
                                 {member.max_periods_day ?? 6}
                             </span>
                         </Row>
-                        <Row label="Cannot teach" last>
+                        <Row label={t('Cannot teach')} last>
                             {member.unavailable_times.length > 0 ? (
                                 <span className="flex flex-col gap-1">
                                     {member.unavailable_times.map((time, i) => (
@@ -652,13 +642,12 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                                     ))}
                                 </span>
                             ) : (
-                                'Nothing set'
+                                t('Nothing set')
                             )}
                         </Row>
                     </dl>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        If nothing is set, a teacher can teach every day, up
-                        to 6 periods a day. The timetable only reads this.
+                        {t('If nothing is set, a teacher can teach every day, up to 6 periods a day. The timetable only reads this.')}
                     </p>
                 </section>
             </SplitLayout>

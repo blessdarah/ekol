@@ -22,7 +22,7 @@ class AcceptInvitationRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'password.regex' => 'The password needs at least one number.',
+            'password.regex' => __('The password needs at least one number.'),
         ];
     }
 }

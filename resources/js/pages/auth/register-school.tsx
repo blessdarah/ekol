@@ -11,6 +11,8 @@ import {
     submitOnEnter,
 } from '../../components/auth/field';
 import { useHttp } from '@inertiajs/react';
+import { switchLocale } from '../../components/shell/language-switch';
+import { useLocale, useT } from '../../lib/i18n';
 
 const STEPS = [
     { title: 'School', sub: 'Name, location and type' },
@@ -23,12 +25,16 @@ export default function RegisterSchool({
     ownershipOptions,
     subsystemOptions,
     regions,
+    locales,
 }: {
     parentDomain: string;
     ownershipOptions: string[];
     subsystemOptions: string[];
     regions: string[];
+    locales: Record<string, string>;
 }) {
+    const t = useT();
+    const locale = useLocale();
     const [ownership, setOwnership] = useState(ownershipOptions[0] ?? '');
     const [subsystem, setSubsystem] = useState(subsystemOptions[0] ?? '');
     const [slug, setSlug] = useState('');
@@ -52,10 +58,10 @@ export default function RegisterSchool({
                 {data.available ? (
                     <>
                         <span className="mr-1 inline-block h-[6px] w-[6px] rounded-full bg-success align-middle" />
-                        Available. This is where your staff will sign in.
+                        {t('Available. This is where your staff will sign in.')}
                     </>
                 ) : (
-                    'This address is taken.'
+                    t('This address is taken.')
                 )}
             </span>
         ) : null;
@@ -65,51 +71,64 @@ export default function RegisterSchool({
             middle={{ variant: 'stepper', steps: STEPS, active: 0 }}
             topbar={
                 <TopBar
-                    text="Already registered?"
-                    linkText="Sign in"
+                    text={t('Already registered?')}
+                    linkText={t('Sign in')}
                     href="/login"
                 />
             }
         >
-            <Head title="Register your school" />
+            <Head title={t('Register your school')} />
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                    <Eyebrow>Step 1 of 3</Eyebrow>
+                    <Eyebrow>{t('Step :step of :total', { step: 1, total: 3 })}</Eyebrow>
                     <Heading
-                        title="Register your school"
-                        sub="Create a private workspace for your school. You will be its first administrator."
+                        title={t('Register your school')}
+                        sub={t('Create a private workspace for your school. You will be its first administrator.')}
                     />
                 </div>
                 <Form action="/register/school" method="post" onKeyDown={submitOnEnter}>
                     {({ errors, processing }) => (
                         <div className="flex flex-col gap-4">
-                            <Field label="School name" error={errors.name}>
+                            <div className="flex flex-col gap-[6px] text-[13px] font-medium text-text">
+                                {t('Language')}
+                                <Segmented
+                                    name="locale"
+                                    value={locale}
+                                    onChange={switchLocale}
+                                    options={Object.entries(locales).map(([value, label]) => ({ value, label }))}
+                                />
+                                <span className="text-[12px] font-normal text-text-muted">
+                                    {t('The language your school works in. Each person can still choose their own.')}
+                                </span>
+                                {errors.locale && <span className="font-normal text-danger">{errors.locale}</span>}
+                            </div>
+                            <Field label={t('School name')} error={errors.name}>
                                 <input
                                     type="text"
                                     name="name"
-                                    placeholder="Government Bilingual High School, Bamenda"
+                                    placeholder={t('Government Bilingual High School, Bamenda')}
                                     className={inputClass}
                                 />
                             </Field>
-                            <div className="grid grid-cols-[200px_1fr] gap-4">
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[200px_1fr]">
                                 <Field
-                                    label="Short name"
+                                    label={t('Short name')}
                                     error={errors.code}
                                     hint={
                                         <span className="text-[12px] font-normal text-text-muted">
-                                            Prefix for student IDs
+                                            {t('Prefix for student IDs')}
                                         </span>
                                     }
                                 >
                                     <input
                                         type="text"
                                         name="code"
-                                        placeholder="GBHS"
+                                        placeholder={t('GBHS')}
                                         className={inputClass}
                                     />
                                 </Field>
                                 <Field
-                                    label="Workspace address"
+                                    label={t('Workspace address')}
                                     error={errors.slug}
                                     hint={availability}
                                 >
@@ -121,7 +140,7 @@ export default function RegisterSchool({
                                             onChange={(e) =>
                                                 check(e.target.value)
                                             }
-                                            placeholder="gbhs-bamenda"
+                                            placeholder={t('gbhs-bamenda')}
                                             className={`${inputClass} rounded-r-none border-r-0 font-mono`}
                                         />
                                         <span className="flex h-9 shrink-0 items-center rounded-r-lg border border-solid border-border bg-surface px-3 font-mono text-[13px] text-text-muted">
@@ -131,7 +150,7 @@ export default function RegisterSchool({
                                 </Field>
                             </div>
                             <div className="flex flex-col gap-[6px] text-[13px] font-medium text-text">
-                                School type
+                                {t('School type')}
                                 <Segmented
                                     name="ownership"
                                     value={ownership}
@@ -139,9 +158,7 @@ export default function RegisterSchool({
                                     options={ownershipOptions.map(
                                         (option) => ({
                                             value: option,
-                                            label:
-                                                option.charAt(0).toUpperCase() +
-                                                option.slice(1),
+                                            label: t(option.charAt(0).toUpperCase() + option.slice(1)),
                                         }),
                                     )}
                                 />
@@ -151,37 +168,37 @@ export default function RegisterSchool({
                                     </span>
                                 )}
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <Field label="Region" error={errors.region}>
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <Field label={t('Region')} error={errors.region}>
                                     <select
                                         name="region"
                                         defaultValue=""
                                         className={`${inputClass} bg-white`}
                                     >
                                         <option value="" disabled>
-                                            Select region
+                                            {t('Select region')}
                                         </option>
                                         {regions.map((region) => (
                                             <option
                                                 key={region}
                                                 value={region}
                                             >
-                                                {region}
+                                                {t(region)}
                                             </option>
                                         ))}
                                     </select>
                                 </Field>
-                                <Field label="Town" error={errors.town}>
+                                <Field label={t('Town')} error={errors.town}>
                                     <input
                                         type="text"
                                         name="town"
-                                        placeholder="Bamenda"
+                                        placeholder={t('Bamenda')}
                                         className={inputClass}
                                     />
                                 </Field>
                             </div>
                             <div className="flex flex-col gap-[6px] text-[13px] font-medium text-text">
-                                Education subsystem
+                                {t('Education subsystem')}
                                 <Segmented
                                     name="subsystem"
                                     value={subsystem}
@@ -189,13 +206,7 @@ export default function RegisterSchool({
                                     options={subsystemOptions.map(
                                         (option) => ({
                                             value: option,
-                                            label:
-                                                option === 'anglophone'
-                                                    ? 'Anglophone (GCE)'
-                                                    : option
-                                                          .charAt(0)
-                                                          .toUpperCase() +
-                                                      option.slice(1),
+                                            label: t(option === 'anglophone' ? 'Anglophone (GCE)' : option.charAt(0).toUpperCase() + option.slice(1)),
                                         }),
                                     )}
                                 />
@@ -209,11 +220,10 @@ export default function RegisterSchool({
                                 in School Setup, not on this screen. */}
                             <div className="flex items-center gap-4 pt-2">
                                 <PrimaryButton disabled={processing}>
-                                    Continue
+                                    {t('Continue')}
                                 </PrimaryButton>
                                 <span className="text-[13px] text-text-muted">
-                                    You can change all of this later in School
-                                    Setup.
+                                    {t('You can change all of this later in School Setup.')}
                                 </span>
                             </div>
                         </div>

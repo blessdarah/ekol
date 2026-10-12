@@ -31,8 +31,8 @@ class ExemptInvoiceRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'value.gt' => 'Enter an amount above zero.',
-            'reason.required' => 'Say why, so the bursar and the principal can account for it.',
+            'value.gt' => __('Enter an amount above zero.'),
+            'reason.required' => __('Say why, so the bursar and the principal can account for it.'),
         ];
     }
 }

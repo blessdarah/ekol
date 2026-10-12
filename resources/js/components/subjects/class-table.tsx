@@ -1,4 +1,5 @@
 import { ChipPicker, RemoveIcon, fieldLabelClass } from '../structure/ui';
+import { t } from '../../lib/i18n';
 
 export interface LevelOption {
     id: string;
@@ -54,12 +55,12 @@ export function LevelPicker({
 }) {
     return (
         <div className="flex flex-col gap-2">
-            <span className={fieldLabelClass}>Levels</span>
+            <span className={fieldLabelClass}>{t('Levels')}</span>
             <ChipPicker
-                label="Add a level"
-                addLabel="Add a level"
+                label={t('Add a level')}
+                addLabel={t('Add a level')}
                 chosen={value.length}
-                summary={`${value.length} of ${levels.length} levels`}
+                summary={t(':value of :levels levels', { value: value.length, levels: levels.length })}
                 options={levels.filter((level) => !value.includes(level.id))}
                 onAdd={(id) => onChange([...value, id])}
             >
@@ -73,7 +74,7 @@ export function LevelPicker({
                             {level.name}
                             <button
                                 type="button"
-                                aria-label={`Remove ${level.name}`}
+                                aria-label={t('Remove :level', { level: level.name })}
                                 onClick={() =>
                                     onChange(value.filter((id) => id !== level.id))
                                 }
@@ -130,8 +131,7 @@ export function ClassTable({
     if (classes.length === 0) {
         return (
             <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                Pick at least one level that has classes. Classes are added
-                under Levels.
+                {t('Pick at least one level that has classes. Classes are added under Levels.')}
             </p>
         );
     }
@@ -140,9 +140,9 @@ export function ClassTable({
         <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
             <div className="flex h-8 shrink-0 items-center gap-3 bg-surface px-3 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                 <span className="w-[18px] shrink-0" />
-                <span className="w-[190px] shrink-0">Class</span>
-                <span className="flex-1">Teacher</span>
-                <span className="w-32 shrink-0">Weekly periods</span>
+                <span className="w-[190px] shrink-0">{t('Class')}</span>
+                <span className="flex-1">{t('Teacher')}</span>
+                <span className="w-32 shrink-0">{t('Weekly periods')}</span>
             </div>
             {classes.map((option) => {
                 const row = value[option.id];
@@ -154,7 +154,7 @@ export function ClassTable({
                     >
                         <input
                             type="checkbox"
-                            aria-label={`${option.name} takes this subject`}
+                            aria-label={t(':option takes this subject', { option: option.name })}
                             checked={!!row}
                             onChange={() => toggle(option.id)}
                             className="h-[18px] w-[18px] shrink-0 accent-primary"
@@ -172,7 +172,7 @@ export function ClassTable({
                         {row ? (
                             <>
                                 <select
-                                    aria-label={`Teacher for ${option.name}`}
+                                    aria-label={t('Teacher for :option', { option: option.name })}
                                     value={row.staff_id}
                                     onChange={(e) =>
                                         patch(option.id, { staff_id: e.target.value })
@@ -183,7 +183,7 @@ export function ClassTable({
                                             : 'border-warning bg-warning-tint text-[#8A5A12]'
                                     }`}
                                 >
-                                    <option value="">Select a teacher</option>
+                                    <option value="">{t('Select a teacher')}</option>
                                     {staff.map((member) => (
                                         <option key={member.id} value={member.id}>
                                             {member.name}
@@ -195,7 +195,7 @@ export function ClassTable({
                                         type="number"
                                         min={1}
                                         max={20}
-                                        aria-label={`Weekly periods for ${option.name}`}
+                                        aria-label={t('Weekly periods for :option', { option: option.name })}
                                         value={row.weekly_periods}
                                         onChange={(e) =>
                                             patch(option.id, {
@@ -205,14 +205,14 @@ export function ClassTable({
                                         className="w-10 bg-transparent font-mono outline-none"
                                     />
                                     <span className="text-[12px] leading-4 text-text-muted">
-                                        per week
+                                        {t('per week')}
                                     </span>
                                 </label>
                             </>
                         ) : (
                             <>
                                 <span className={`${cellInputClass} flex min-w-0 flex-1 items-center text-text-muted opacity-[0.64]`}>
-                                    Not offered in this class
+                                    {t('Not offered in this class')}
                                 </span>
                                 <span className={`${cellInputClass} flex w-32 shrink-0 items-center font-mono text-text-muted opacity-[0.64]`}>
                                     0
@@ -228,15 +228,15 @@ export function ClassTable({
                         <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                     )}
                     {unstaffedCount(value) > 0
-                        ? `${unstaffedCount(value)} ${unstaffedCount(value) === 1 ? 'class needs' : 'classes need'} a teacher`
-                        : `${selected.length} of ${classes.length} classes selected`}
+                        ? t(':value :need a teacher', { value: unstaffedCount(value), need: unstaffedCount(value) === 1 ? 'class needs' : 'classes need' })
+                        : t(':selected of :classes classes selected', { selected: selected.length, classes: classes.length })}
                 </span>
                 <span className="flex items-baseline gap-[6px]">
                     <span className="font-mono text-[13px] leading-4 text-text">
-                        {totalPeriods(value)} periods
+                        {t(':value periods', { value: totalPeriods(value) })}
                     </span>
                     <span className="text-[13px] leading-4 text-text-muted">
-                        per week in total
+                        {t('per week in total')}
                     </span>
                 </span>
             </div>

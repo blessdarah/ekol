@@ -1,3 +1,3 @@
-Your Ekol verification code is: {{ $code }}.
+{{ __('Your Ekol verification code is: :code.', ['code' => $code]) }}
 
-It expires in {{ $ttlMinutes }} minutes.
+{{ __('It expires in :minutes minutes.', ['minutes' => $ttlMinutes]) }}

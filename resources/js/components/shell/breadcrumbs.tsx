@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { Fragment } from 'react';
+import { t } from '../../lib/i18n';
 
 export interface Crumb {
     label: string;
@@ -10,7 +11,7 @@ export interface Crumb {
 /** The trail to the current page; every step but the last is a link. */
 export default function Breadcrumbs({ trail }: { trail: Crumb[] }) {
     return (
-        <nav aria-label="Breadcrumb">
+        <nav aria-label={t('Breadcrumb')}>
             <ol className="flex flex-wrap items-center gap-x-[6px] text-[13px] leading-4 text-text-muted">
                 {trail.map((crumb, position) => {
                     const last = position === trail.length - 1;
@@ -23,11 +24,11 @@ export default function Breadcrumbs({ trail }: { trail: Crumb[] }) {
                                         href={crumb.href}
                                         className="rounded-sm font-medium text-primary hover:text-primary-hover hover:underline"
                                     >
-                                        {crumb.label}
+                                        {t(crumb.label)}
                                     </Link>
                                 ) : (
                                     <span aria-current={last ? 'page' : undefined}>
-                                        {crumb.label}
+                                        {t(crumb.label)}
                                     </span>
                                 )}
                             </li>

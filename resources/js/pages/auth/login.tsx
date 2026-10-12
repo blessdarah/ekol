@@ -10,6 +10,7 @@ import {
     inputClass,
     submitOnEnter,
 } from '../../components/auth/field';
+import { useT } from '../../lib/i18n';
 
 function initialsOf(name: string): string {
     const parts = name.split(/\s+/).filter(Boolean);
@@ -26,6 +27,8 @@ export default function Login({
     address: string;
     switchUrl: string;
 }) {
+    const t = useT();
+
     return (
         <AuthLayout
             middle={{
@@ -36,19 +39,19 @@ export default function Login({
             }}
             topbar={
                 <TopBar
-                    text="Not your school?"
-                    linkText="Switch school"
+                    text={t('Not your school?')}
+                    linkText={t('Switch school')}
                     href={switchUrl}
                 />
             }
         >
-            <Head title={`Sign in — ${school.name}`} />
+            <Head title={`${t('Sign in')} — ${school.name}`} />
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                    <Eyebrow>Sign in</Eyebrow>
+                    <Eyebrow>{t('Sign in')}</Eyebrow>
                     <Heading
-                        title="Welcome back"
-                        sub={`Sign in to manage ${school.name}.`}
+                        title={t('Welcome back')}
+                        sub={t('Sign in to manage :school.', { school: school.name })}
                     />
                 </div>
                 <Form action="/login" method="post" onKeyDown={submitOnEnter}>
@@ -56,27 +59,27 @@ export default function Login({
                         <div className="flex flex-col gap-4">
                             {errors.identifier && (
                                 <ErrorBanner
-                                    title="Email or password is incorrect"
+                                    title={t('Email or password is incorrect')}
                                     body={errors.identifier}
                                 />
                             )}
-                            <Field label="Email or phone">
+                            <Field label={t('Email or phone')}>
                                 <input
                                     type="text"
                                     name="identifier"
                                     autoComplete="username"
-                                    placeholder="eposi.fonkem@gmail.com"
+                                    placeholder={t('eposi.fonkem@gmail.com')}
                                     className={inputClass}
                                 />
                             </Field>
                             <div className="flex flex-col gap-[6px]">
                                 <span className="flex items-center justify-between text-[13px] font-medium text-text">
-                                    Password
+                                    {t('Password')}
                                     <a
                                         href="/forgot-password"
                                         className="font-normal text-text-muted hover:underline"
                                     >
-                                        Forgot password?
+                                        {t('Forgot password?')}
                                     </a>
                                 </span>
                                 <PasswordField
@@ -92,11 +95,11 @@ export default function Login({
                                     value="1"
                                     className="h-4 w-4 accent-primary"
                                 />
-                                Keep me signed in on this device
+                                {t('Keep me signed in on this device')}
                             </label>
                             <div className="pt-2">
                                 <PrimaryButton disabled={processing}>
-                                    Sign in
+                                    {t('Sign in')}
                                 </PrimaryButton>
                             </div>
                         </div>
@@ -104,11 +107,10 @@ export default function Login({
                 </Form>
                 <div className="flex flex-col gap-1 border-t border-border pt-4">
                     <p className="text-[14px] font-semibold text-text">
-                        Teacher or staff member?
+                        {t('Teacher or staff member?')}
                     </p>
                     <p className="text-[13px] text-text-muted">
-                        Use the invite link your administrator sent you to set
-                        your password. After that you sign in here.
+                        {t('Use the invite link your administrator sent you to set your password. After that you sign in here.')}
                     </p>
                 </div>
             </div>

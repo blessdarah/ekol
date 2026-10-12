@@ -45,7 +45,7 @@ class SaveRoomRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'code.unique' => 'Another room already has this name.',
+            'code.unique' => __('Another room already has this name.'),
         ];
     }
 }

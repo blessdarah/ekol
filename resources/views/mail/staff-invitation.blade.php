@@ -1,10 +1,10 @@
-Dear {{ $salutation }},
+{{ __('Dear :name,', ['name' => $salutation]) }}
 
-You have been registered at {{ $school->name }}. Set your portal password to open your account:
+{{ __('You have been registered at :school. Set your portal password to open your account:', ['school' => $school->name]) }}
 
 {{ $url }}
 
-The link works for seven days. If it has expired, ask the school to send it again.
+{{ __('The link works for seven days. If it has expired, ask the school to send it again.') }}
 
 {{ $sender }}
 {{ $school->name }}

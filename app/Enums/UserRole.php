@@ -33,15 +33,15 @@ enum UserRole: string
     public function label(): string
     {
         return match ($this) {
-            self::Principal => 'Principal',
-            self::AcademicLead => 'Academic lead',
-            self::Teacher => 'Teacher',
-            self::FormMaster => 'Form master',
-            self::Admin => 'Administrator',
-            self::Accountant => 'Accountant',
-            self::HeadOfDepartment => 'Head of department',
-            self::Registrar => 'Registrar',
-            self::Bursar => 'Bursar',
+            self::Principal => __('Principal'),
+            self::AcademicLead => __('Academic lead'),
+            self::Teacher => __('Teacher'),
+            self::FormMaster => __('Form master'),
+            self::Admin => __('Administrator'),
+            self::Accountant => __('Accountant'),
+            self::HeadOfDepartment => __('Head of department'),
+            self::Registrar => __('Registrar'),
+            self::Bursar => __('Bursar'),
         };
     }
 

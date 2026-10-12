@@ -20,6 +20,7 @@ import Breadcrumbs from '../../components/shell/breadcrumbs';
 import { capsLabelClass, solidButtonClass } from '../../components/structure/ui';
 import { fullDate } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface LevelRow {
     id: string;
@@ -85,7 +86,7 @@ function LevelStatus({ level }: { level: LevelRow }) {
     if (level.classes === 0) {
         return level.expected > 0 ? (
             <span className={`flex h-[22px] items-center rounded-full bg-warning-tint px-2 text-[12px] leading-4 font-medium ${amberText}`}>
-                No classes yet
+                {t('No classes yet')}
             </span>
         ) : (
             <span className="text-[13px] leading-4 text-text-muted">—</span>
@@ -94,11 +95,11 @@ function LevelStatus({ level }: { level: LevelRow }) {
 
     return room < 0 ? (
         <span className="flex h-[22px] items-center rounded-full bg-danger-tint px-2 text-[12px] leading-4 font-medium text-danger">
-            {count(-room)} over
+            {t(':room over', { room: count(-room) })}
         </span>
     ) : (
         <span className="flex h-[22px] items-center rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
-            {room === 0 ? 'Full' : `Room for ${count(room)}`}
+            {room === 0 ? t('Full') : t('Room for :room', { room: count(room) })}
         </span>
     );
 }
@@ -107,11 +108,11 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
     if (!enrolment || !applications || !continuing) {
         return (
             <div className="flex flex-col gap-5">
-                <Head title="Enrolment" />
+                <Head title={t('Enrolment')} />
                 <div className="flex flex-col gap-[6px]">
-                    <Breadcrumbs trail={[{ label: 'Enrolment' }]} />
+                    <Breadcrumbs trail={[{ label: t('Enrolment') }]} />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                        Enrolment
+                        {t('Enrolment')}
                     </h1>
                 </div>
                 <NoYear currentLabel={currentLabel} setupHref={setup.url()} />
@@ -124,37 +125,37 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title={`Enrolment ${enrolment.year}`} />
+            <Head title={t('Enrolment :year', { year: enrolment.year })} />
             <EnrolmentHeader
                 active="overview"
                 progress={enrolment}
-                title={`Enrolment ${enrolment.year}`}
+                title={t('Enrolment :year', { year: enrolment.year })}
                 status={
                     enrolment.confirmed ? (
                         <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-surface px-2 text-[12px] leading-4 font-medium text-text">
-                            Confirmed
+                            {t('Confirmed')}
                         </span>
                     ) : (
                         <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
                             <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-success" />
-                            Open
+                            {t('Open')}
                         </span>
                     )
                 }
-                meta={startsOn ? `for the year starting ${fullDate(startsOn)}` : undefined}
+                meta={startsOn ? t('for the year starting :starts_on', { starts_on: fullDate(startsOn) }) : undefined}
             />
 
             <div className="flex flex-col gap-5 lg:flex-row">
                 <div className={cardClass}>
                     <div className="flex items-baseline justify-between gap-3">
-                        <p className={capsLabelClass}>New students</p>
+                        <p className={capsLabelClass}>{t('New students')}</p>
                         <Link href={applicationsIndex.url(applications.to_review > 0 ? { query: { stage: 'to_review' } } : undefined)} className={linkClass}>
                             {applications.to_review > 0
-                                ? `Review ${count(applications.to_review)} ${applications.to_review === 1 ? 'application' : 'applications'} →`
-                                : 'Open applications →'}
+                                ? t('Review :to_review :applications →', { to_review: count(applications.to_review), applications: applications.to_review === 1 ? 'application' : 'applications' })
+                                : t('Open applications →')}
                         </Link>
                     </div>
-                    <BigNumber value={applications.total} label={applications.total === 1 ? 'application' : 'applications'} />
+                    <BigNumber value={applications.total} label={applications.total === 1 ? t('application') : t('applications')} />
                     <SplitBar
                         parts={[
                             { value: applications.admitted, tone: 'bg-success' },
@@ -164,21 +165,21 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
                         ]}
                     />
                     <div className="flex flex-wrap gap-5">
-                        <Stat value={applications.admitted} label="Admitted" />
-                        <Stat value={applications.to_review} label="To review" tone={applications.to_review > 0 ? amberText : undefined} />
-                        <Stat value={applications.waitlist} label="Waitlist" />
-                        <Stat value={applications.declined} label="Declined" />
+                        <Stat value={applications.admitted} label={t('Admitted')} />
+                        <Stat value={applications.to_review} label={t('To review')} tone={applications.to_review > 0 ? amberText : undefined} />
+                        <Stat value={applications.waitlist} label={t('Waitlist')} />
+                        <Stat value={applications.declined} label={t('Declined')} />
                     </div>
                 </div>
 
                 <div className={cardClass}>
                     <div className="flex items-baseline justify-between gap-3">
-                        <p className={capsLabelClass}>Continuing students</p>
+                        <p className={capsLabelClass}>{t('Continuing students')}</p>
                         <Link href={reEnrolment.url()} className={linkClass}>
-                            {continuing.undecided > 0 ? `Decide ${count(continuing.undecided)} →` : 'Open re-enrolment →'}
+                            {continuing.undecided > 0 ? t('Decide :undecided →', { undecided: count(continuing.undecided) }) : t('Open re-enrolment →')}
                         </Link>
                     </div>
-                    <BigNumber value={continuing.total} label={`from ${currentLabel ?? 'this year'}`} />
+                    <BigNumber value={continuing.total} label={t('from :year', { year: currentLabel ?? 'this year' })} />
                     <SplitBar
                         parts={[
                             { value: continuing.total - continuing.undecided, tone: 'bg-success' },
@@ -186,27 +187,26 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
                         ]}
                     />
                     <div className="flex flex-wrap gap-5">
-                        <Stat value={continuing.promote} label="Promote" />
-                        <Stat value={continuing.repeat} label="Repeat" />
-                        <Stat value={continuing.leaving} label="Leaving" />
-                        <Stat value={continuing.undecided} label="Not decided" tone={continuing.undecided > 0 ? amberText : undefined} />
+                        <Stat value={continuing.promote} label={t('Promote')} />
+                        <Stat value={continuing.repeat} label={t('Repeat')} />
+                        <Stat value={continuing.leaving} label={t('Leaving')} />
+                        <Stat value={continuing.undecided} label={t('Not decided')} tone={continuing.undecided > 0 ? amberText : undefined} />
                     </div>
                 </div>
 
                 <div className={cardClass}>
                     <div className="flex items-baseline justify-between gap-3">
-                        <p className={capsLabelClass}>Class placement</p>
+                        <p className={capsLabelClass}>{t('Class placement')}</p>
                         <Link href={placementPage.url()} className={linkClass}>
-                            {enrolment.unplaced > 0 ? `Place ${count(enrolment.unplaced)} →` : 'Open placement →'}
+                            {enrolment.unplaced > 0 ? t('Place :unplaced →', { unplaced: count(enrolment.unplaced) }) : t('Open placement →')}
                         </Link>
                     </div>
-                    <BigNumber value={placed} label={`of ${count(enrolment.expected)} placed`} />
+                    <BigNumber value={placed} label={t('of :expected placed', { expected: count(enrolment.expected) })} />
                     <FillBar value={placed} max={enrolment.expected} height={8} tone="bg-science" />
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        Students can be placed as soon as they are decided.
-                        Confirm opens when everyone has a class.
+                        {t('Students can be placed as soon as they are decided. Confirm opens when everyone has a class.')}
                         {continuing.graduating > 0 &&
-                            ` ${count(continuing.graduating)} final-year ${continuing.graduating === 1 ? 'student is' : 'students are'} graduating and not re-enrolled.`}
+                            t(' :graduating final-year :are graduating and not re-enrolled.', { graduating: count(continuing.graduating), are: continuing.graduating === 1 ? 'student is' : 'students are' })}
                     </p>
                 </div>
             </div>
@@ -214,15 +214,15 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
             <section className="flex flex-col gap-[14px]">
                 <div className="flex flex-wrap items-baseline justify-between gap-3">
                     <div className="flex flex-col gap-1">
-                        <p className={capsLabelClass}>Room next year</p>
+                        <p className={capsLabelClass}>{t('Room next year')}</p>
                         <p className="text-[13px] leading-4 text-text-muted">
-                            Students expected in each level, against the seats in its classes.
+                            {t('Students expected in each level, against the seats in its classes.')}
                         </p>
                     </div>
                     {short.length > 0 && (
                         <p className="flex items-center gap-[6px] text-[13px] leading-4 text-text">
                             <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                            {short.length} {short.length === 1 ? 'level needs' : 'levels need'} another class
+                            {short.length} {short.length === 1 ? t('level needs') : t('levels need')} {t('another class')}
                         </p>
                     )}
                 </div>
@@ -230,10 +230,10 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
                 {enrolment.classes === 0 && (
                     <div className="flex flex-wrap items-center justify-between gap-4 rounded-md border border-solid border-warning bg-warning-tint px-4 py-3">
                         <p className="text-[13px] leading-[19px] text-text">
-                            {enrolment.year} has no classes yet, so nobody can be placed.
+                            {enrolment.year} {t('has no classes yet, so nobody can be placed.')}
                             {copyable > 0
-                                ? ` Start with the same ${count(copyable)} classes as ${currentLabel}, then add or change them.`
-                                : ' Add a class to a level below.'}
+                                ? t(' Start with the same :copyable classes as :current_label, then add or change them.', { copyable: count(copyable), current_label: currentLabel })
+                                : t(' Add a class to a level below.')}
                         </p>
                         {copyable > 0 && (
                             <button
@@ -241,7 +241,7 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
                                 onClick={() => router.post(copyClasses.url(), {}, { preserveScroll: true })}
                                 className={solidButtonClass}
                             >
-                                Copy this year’s classes
+                                {t('Copy this year’s classes')}
                             </button>
                         )}
                     </div>
@@ -250,13 +250,13 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
                 <div className="overflow-x-auto rounded-lg border border-solid border-border">
                     <div className="flex min-w-[860px] flex-col">
                         <div className={`flex h-[34px] items-center gap-4 border-b border-solid border-border bg-surface px-4 ${capsLabelClass}`}>
-                            <span className="w-[130px] shrink-0">Level</span>
-                            <span className="w-[70px] shrink-0">Classes</span>
-                            <span className="w-20 shrink-0 text-right">Seats</span>
-                            <span className="w-[90px] shrink-0 text-right">Expected</span>
-                            <span className="flex-1">Filled</span>
-                            <span className="w-[120px] shrink-0 text-right">Placed</span>
-                            <span className="w-[130px] shrink-0">Status</span>
+                            <span className="w-[130px] shrink-0">{t('Level')}</span>
+                            <span className="w-[70px] shrink-0">{t('Classes')}</span>
+                            <span className="w-20 shrink-0 text-right">{t('Seats')}</span>
+                            <span className="w-[90px] shrink-0 text-right">{t('Expected')}</span>
+                            <span className="flex-1">{t('Filled')}</span>
+                            <span className="w-[120px] shrink-0 text-right">{t('Placed')}</span>
+                            <span className="w-[130px] shrink-0">{t('Status')}</span>
                             <span className="w-[92px] shrink-0" />
                         </div>
                         {levels.map((level, position) => (
@@ -277,7 +277,7 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
                                     <FillBar value={level.expected} max={level.seats} tone="bg-success" />
                                 </span>
                                 <span className="w-[120px] shrink-0 text-right font-mono text-[13px] leading-4 text-text">
-                                    {count(level.placed)} of {count(level.expected)}
+                                    {t(':placed of :expected', { placed: count(level.placed), expected: count(level.expected) })}
                                 </span>
                                 <span className="flex w-[130px] shrink-0">
                                     <LevelStatus level={level} />
@@ -288,7 +288,7 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
                                         onClick={() => router.post(storeClass.url(level.id), {}, { preserveScroll: true })}
                                         className={linkClass}
                                     >
-                                        Add a class
+                                        {t('Add a class')}
                                     </button>
                                 </span>
                             </div>
@@ -296,8 +296,7 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
                     </div>
                 </div>
                 <p className="text-[13px] leading-[19px] text-text-muted">
-                    Expected counts promoted students, repeaters and admitted
-                    applicants. Students who are not decided yet are not counted.
+                    {t('Expected counts promoted students, repeaters and admitted applicants. Students who are not decided yet are not counted.')}
                 </p>
             </section>
         </div>

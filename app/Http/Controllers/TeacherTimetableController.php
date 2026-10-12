@@ -180,7 +180,7 @@ class TeacherTimetableController extends Controller
     protected function span(CarbonInterface $from, CarbonInterface $to): string
     {
         return $from->month === $to->month
-            ? $from->format('D j').' – '.$to->format('D j F')
-            : $from->format('D j M').' – '.$to->format('D j M');
+            ? $from->translatedFormat('D j').' – '.$to->translatedFormat('D j F')
+            : $from->translatedFormat('D j M').' – '.$to->translatedFormat('D j M');
     }
 }

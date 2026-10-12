@@ -25,6 +25,7 @@ import {
     solidButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface ClassProp {
     id: string;
@@ -155,7 +156,7 @@ function ClassEditor({
             </div>
             <div className="flex gap-2">
                 <label className={`flex flex-1 flex-col gap-1 ${smallLabelClass}`}>
-                    Name
+                    {t('Name')}
                     <input
                         type="text"
                         value={data.name}
@@ -164,7 +165,7 @@ function ClassEditor({
                     />
                 </label>
                 <label className={`flex w-[72px] shrink-0 flex-col gap-1 ${smallLabelClass}`}>
-                    Seats
+                    {t('Seats')}
                     <input
                         type="number"
                         min={1}
@@ -176,13 +177,13 @@ function ClassEditor({
             </div>
             <ErrorText message={errors.name ?? errors.capacity} />
             <label className={`flex flex-col gap-1 ${smallLabelClass}`}>
-                Form master
+                {t('Form master')}
                 <select
                     value={data.form_master_id}
                     onChange={(e) => setData('form_master_id', e.target.value)}
                     className={smallInputClass}
                 >
-                    <option value="">No form master yet</option>
+                    <option value="">{t('No form master yet')}</option>
                     {staff.map((member) => (
                         <option key={member.id} value={member.id}>
                             {member.name}
@@ -192,7 +193,7 @@ function ClassEditor({
                 <ErrorText message={errors.form_master_id} />
             </label>
             <label className={`flex flex-col gap-1 ${smallLabelClass}`}>
-                Home room
+                {t('Home room')}
                 <select
                     value={addingRoom ? NEW_ROOM : data.home_room_id}
                     onChange={(e) => {
@@ -205,13 +206,13 @@ function ClassEditor({
                     }}
                     className={smallInputClass}
                 >
-                    <option value="">No home room yet</option>
+                    <option value="">{t('No home room yet')}</option>
                     {freeRooms.map((option) => (
                         <option key={option.id} value={option.id}>
-                            {option.code} · {option.capacity} seats
+                            {t(':code · :capacity seats', { code: option.code, capacity: option.capacity })}
                         </option>
                     ))}
-                    <option value={NEW_ROOM}>+ Add a room…</option>
+                    <option value={NEW_ROOM}>{t('+ Add a room…')}</option>
                 </select>
                 <ErrorText message={errors.home_room_id} />
             </label>
@@ -219,7 +220,7 @@ function ClassEditor({
                 <div className="flex flex-col gap-2 rounded-md border border-solid border-border bg-white p-2">
                     <div className="flex items-end gap-2">
                         <label className={`flex flex-1 flex-col gap-1 ${smallLabelClass}`}>
-                            Room name
+                            {t('Room name')}
                             <input
                                 type="text"
                                 placeholder="A5"
@@ -229,7 +230,7 @@ function ClassEditor({
                             />
                         </label>
                         <label className={`flex w-[72px] shrink-0 flex-col gap-1 ${smallLabelClass}`}>
-                            Seats
+                            {t('Seats')}
                             <input
                                 type="number"
                                 min={1}
@@ -244,7 +245,7 @@ function ClassEditor({
                             onClick={addRoom}
                             className="h-9 shrink-0 rounded-md border border-solid border-border px-3 text-[13px] font-medium text-primary hover:bg-surface disabled:opacity-50"
                         >
-                            Add
+                            {t('Add')}
                         </button>
                     </div>
                     <ErrorText message={roomError} />
@@ -256,14 +257,14 @@ function ClassEditor({
                     disabled={processing}
                     className="flex h-8 items-center rounded-md bg-primary px-[14px] text-[13px] leading-4 font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
                 >
-                    Save class
+                    {t('Save class')}
                 </button>
                 <button
                     type="button"
                     onClick={onClose}
                     className="flex h-8 items-center px-[10px] text-[13px] leading-4 font-medium text-text hover:underline"
                 >
-                    Cancel
+                    {t('Cancel')}
                 </button>
                 <span className="flex-1" />
                 <button
@@ -271,7 +272,7 @@ function ClassEditor({
                     onClick={remove}
                     className="text-[13px] leading-4 font-medium text-danger hover:underline"
                 >
-                    Remove class
+                    {t('Remove class')}
                 </button>
             </div>
             <ErrorText message={removeError} />
@@ -349,18 +350,18 @@ function LevelPanel({
                     <div className="flex flex-col gap-[2px]">
                         <span className="flex items-center gap-2 text-[14px] leading-[18px] font-semibold text-text">
                             {!level.series_allowed && <LockIcon />}
-                            Uses series
+                            {t('Uses series')}
                         </span>
                         <span className="text-[13px] leading-[18px] text-text-muted">
                             {level.series_allowed
-                                ? 'Students pick a series, then electives.'
-                                : 'Only for high school levels in the GCE subsystem.'}
+                                ? t('Students pick a series, then electives.')
+                                : t('Only for high school levels in the GCE subsystem.')}
                         </span>
                     </div>
                     <Toggle
                         checked={level.uses_series}
                         disabled={!level.series_allowed}
-                        label={`${level.name} uses series`}
+                        label={t(':level uses series', { level: level.name })}
                         onChange={toggleSeries}
                     />
                 </div>
@@ -371,7 +372,7 @@ function LevelPanel({
                     href={seriesIndex.url({ query: { level: level.id } })}
                     className="flex h-9 shrink-0 items-center justify-center gap-2 rounded-md border border-solid border-border bg-white text-[13px] leading-4 font-medium text-text hover:bg-surface"
                 >
-                    Manage series for {level.name}
+                    {t('Manage series for')} {level.name}
                     <svg width="14" height="14" viewBox="0 0 24 24">
                         <path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="#101915" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -381,7 +382,7 @@ function LevelPanel({
             <div className="flex flex-col gap-[10px]">
                 <div className="flex items-baseline justify-between">
                     <p className={capsLabelClass}>
-                        Classes · {level.classes.length} · {level.students} students
+                        {t('Classes · :classes · :students students', { classes: level.classes.length, students: level.students })}
                     </p>
                     {hasYear && (
                         <button
@@ -389,7 +390,7 @@ function LevelPanel({
                             onClick={addClass}
                             className="text-[13px] leading-4 font-medium text-primary hover:underline"
                         >
-                            + Add a class
+                            {t('+ Add a class')}
                         </button>
                     )}
                 </div>
@@ -422,8 +423,8 @@ function LevelPanel({
                                                 item.form_master ? 'text-text-muted' : 'text-warning'
                                             }`}
                                         >
-                                            {item.form_master ?? 'No form master yet'} ·{' '}
-                                            {item.home_room ? `Room ${item.home_room}` : 'No home room'}
+                                            {item.form_master ?? t('No form master yet')} ·{' '}
+                                            {item.home_room ? t('Room :home_room', { home_room: item.home_room }) : t('No home room')}
                                         </span>
                                     </span>
                                     <span className="shrink-0 text-right font-mono text-[13px] leading-4 text-text">
@@ -436,16 +437,13 @@ function LevelPanel({
                 ) : (
                     <p className="text-[13px] leading-[19px] text-text-muted">
                         {hasYear
-                            ? 'No classes yet for this level.'
-                            : 'Classes belong to an academic year. Make a year active in School Setup first.'}
+                            ? t('No classes yet for this level.')
+                            : t('Classes belong to an academic year. Make a year active in School Setup first.')}
                     </p>
                 )}
                 <ErrorText message={error} />
                 <p className="text-[13px] leading-[19px] text-text-muted">
-                    Numbers are students out of seats. A class with students
-                    or timetable lessons cannot be removed; move them first.
-                    The form master and home room are read by the timetable
-                    and report cards.
+                    {t('Numbers are students out of seats. A class with students or timetable lessons cannot be removed; move them first. The form master and home room are read by the timetable and report cards.')}
                 </p>
             </div>
         </aside>
@@ -460,12 +458,12 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
 
     return (
         <div className="flex flex-col gap-7">
-            <Head title="Levels and series" />
+            <Head title={t('Levels and series')} />
             <StructureHeader
-                trail={[{ label: 'Levels and series' }]}
-                title="Levels and series"
-                tag={`Structure${yearLabel ? ` · ${yearLabel}` : ''}`}
-                meta={`${levels.length} levels · ${classCount} classes · series on ${seriesLevels} levels`}
+                trail={[{ label: t('Levels and series') }]}
+                title={t('Levels and series')}
+                tag={t('Structure:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                meta={t(':levels levels · :class_count classes · series on :series_levels levels', { levels: levels.length, class_count: classCount, series_levels: seriesLevels })}
                 action={
                     <div className="flex items-center gap-4">
                         {levels.length > 0 && (
@@ -473,12 +471,12 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
                                 href={levelTemplates.url()}
                                 className="text-[13px] leading-4 font-medium text-primary hover:underline"
                             >
-                                Standard structure
+                                {t('Standard structure')}
                             </Link>
                         )}
                         <Link href={createLevel.url()} className={solidButtonClass}>
                             <PlusIcon />
-                            Add level
+                            {t('Add level')}
                         </Link>
                     </div>
                 }
@@ -488,13 +486,10 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
             {levels.length === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">
                     <p className="text-[13px] leading-[19px] text-text">
-                        No levels yet. Start from a standard structure to
-                        create Form 1 to Upper Sixth (or Sixième to
-                        Terminale) with their classes in one go, or add
-                        levels one at a time.
+                        {t('No levels yet. Start from a standard structure to create Form 1 to Upper Sixth (or Sixième to Terminale) with their classes in one go, or add levels one at a time.')}
                     </p>
                     <Link href={levelTemplates.url()} className={outlineButtonClass}>
-                        Start from a standard structure
+                        {t('Start from a standard structure')}
                     </Link>
                 </div>
             ) : (
@@ -502,11 +497,11 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
                     <div className="min-w-0 flex-1 overflow-x-auto">
                         <div className="flex min-w-[640px] flex-col self-start overflow-clip rounded-lg border border-solid border-border">
                             <div className="flex items-center gap-4 border-b border-solid border-border bg-surface px-4 py-2 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
-                                <span className="w-[150px] shrink-0">Level</span>
-                                <span className="w-[100px] shrink-0">Cycle</span>
-                                <span className="w-14 shrink-0 text-[11px] tracking-normal">Classes</span>
-                                <span className="w-16 shrink-0 text-[11px] tracking-normal">Students</span>
-                                <span className="flex-1">Series</span>
+                                <span className="w-[150px] shrink-0">{t('Level')}</span>
+                                <span className="w-[100px] shrink-0">{t('Cycle')}</span>
+                                <span className="w-14 shrink-0 text-[11px] tracking-normal">{t('Classes')}</span>
+                                <span className="w-16 shrink-0 text-[11px] tracking-normal">{t('Students')}</span>
+                                <span className="flex-1">{t('Series')}</span>
                             </div>
                             {levels.map((option, position) => {
                                 const active = option.id === level?.id;
@@ -542,7 +537,7 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
                                                         : 'border-border bg-surface text-text-muted'
                                                 }`}
                                             >
-                                                {CYCLE_LABELS[option.cycle]}
+                                                {t(CYCLE_LABELS[option.cycle])}
                                             </span>
                                         </span>
                                         <span className="w-14 shrink-0 font-mono text-[13px] leading-4 text-text">
@@ -556,18 +551,18 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
                                                 <>
                                                     <LockIcon />
                                                     <span className="text-[13px] leading-4 text-text-muted">
-                                                        Not available
+                                                        {t('Not available')}
                                                     </span>
                                                 </>
                                             ) : option.series.length > 0 ? (
                                                 option.series.map((range) => (
                                                     <StreamChip key={range.stream} stream={range.stream}>
-                                                        {range.label}
+                                                        {t(range.label)}
                                                     </StreamChip>
                                                 ))
                                             ) : (
                                                 <span className="text-[13px] leading-4 text-warning">
-                                                    No series set up yet
+                                                    {t('No series set up yet')}
                                                 </span>
                                             )}
                                         </span>

@@ -16,6 +16,7 @@ import {
     StatusDot,
 } from '../../components/staff/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface StaffRow {
     id: string;
@@ -86,7 +87,7 @@ function RowMenu({
         <div className="relative w-10 shrink-0">
             <button
                 type="button"
-                aria-label={`Actions for ${row.name}`}
+                aria-label={t('Actions for :row', { row: row.name })}
                 aria-expanded={open}
                 onClick={(event) => {
                     event.stopPropagation();
@@ -107,13 +108,13 @@ function RowMenu({
                     className="absolute top-full right-0 z-10 mt-1 flex w-[190px] flex-col rounded-md border border-solid border-border bg-white p-1 shadow-[0_8px_24px_rgba(16,25,21,0.12)]"
                 >
                     <Link role="menuitem" href={show.url(row.id)} className={itemClass}>
-                        Open record
+                        {t('Open record')}
                     </Link>
                     <Link role="menuitem" href={edit.url(row.id)} className={itemClass}>
-                        Edit details
+                        {t('Edit details')}
                     </Link>
                     <Link role="menuitem" href={access.url(row.id)} className={itemClass}>
-                        Portal access
+                        {t('Portal access')}
                     </Link>
                     {!row.has_account && row.invited_on && (
                         <button
@@ -129,7 +130,7 @@ function RowMenu({
                             }}
                             className={itemClass}
                         >
-                            Send a reminder
+                            {t('Send a reminder')}
                         </button>
                     )}
                 </div>
@@ -199,12 +200,12 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
-            <Head title="The staff roster" />
+            <Head title={t('The staff roster')} />
             <PageHeader
                 crumb="Roster"
-                title="The staff roster"
-                tag={`Roster${yearLabel ? ` · ${yearLabel}` : ''}`}
-                meta={`${counts.total} staff · ${counts.government} government employees · ${counts.school_paid} school-paid · ${counts.no_account} with no account yet`}
+                title={t('The staff roster')}
+                tag={t('Roster:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                meta={t(':total staff · :government government employees · :school_paid school-paid · :no_account with no account yet', { total: counts.total, government: counts.government, school_paid: counts.school_paid, no_account: counts.no_account })}
             />
 
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
@@ -225,7 +226,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                                 }`}
                             >
                                 {tab.dot && <StatusDot tone="warning" />}
-                                {tab.label}
+                                {t(tab.label)}
                             </button>
                         );
                     })}
@@ -238,8 +239,8 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                         </svg>
                         <input
                             type="search"
-                            aria-label="Search staff"
-                            placeholder="A name, a subject or a town"
+                            aria-label={t('Search staff')}
+                            placeholder={t('A name, a subject or a town')}
                             value={search}
                             onChange={(e) => onSearch(e.target.value)}
                             className="min-w-0 flex-1 bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
@@ -251,7 +252,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                         onClick={() => setShowFilters(!showFilters)}
                         className="flex h-9 items-center justify-center rounded-md border border-solid border-border px-4 text-[14px] font-medium text-primary hover:bg-surface"
                     >
-                        Filter{extraFilters > 0 ? ` · ${extraFilters}` : ''}
+                        {t('Filter')}{extraFilters > 0 ? ` · ${extraFilters}` : ''}
                     </button>
                     <Link
                         href={create.url()}
@@ -260,7 +261,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                         <svg width="14" height="14" viewBox="0 0 14 14">
                             <path d="M7 2.4v9.2M2.4 7h9.2" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
                         </svg>
-                        Add a staff member
+                        {t('Add a staff member')}
                     </Link>
                 </div>
             </div>
@@ -268,27 +269,27 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
             {showFilters && (
                 <div className="-mt-3 flex flex-wrap items-center gap-2">
                     <select
-                        aria-label="Portal role"
+                        aria-label={t('Portal role')}
                         value={filters.role}
                         onChange={(e) => visit({ role: e.target.value })}
                         className={selectClass}
                     >
-                        <option value="">Any portal role</option>
+                        <option value="">{t('Any portal role')}</option>
                         {roles.map((role) => (
                             <option key={role.value} value={role.value}>
-                                {role.label}
+                                {t(role.label)}
                             </option>
                         ))}
                     </select>
                     <select
-                        aria-label="Gender"
+                        aria-label={t('Gender')}
                         value={filters.gender}
                         onChange={(e) => visit({ gender: e.target.value })}
                         className={selectClass}
                     >
-                        <option value="">Any gender</option>
-                        <option value="female">Female</option>
-                        <option value="male">Male</option>
+                        <option value="">{t('Any gender')}</option>
+                        <option value="female">{t('Female')}</option>
+                        <option value="male">{t('Male')}</option>
                     </select>
                     {extraFilters > 0 && (
                         <button
@@ -296,7 +297,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                             onClick={() => visit({ role: '', gender: '' })}
                             className="px-2 text-[13px] font-medium text-primary hover:underline"
                         >
-                            Clear
+                            {t('Clear')}
                         </button>
                     )}
                 </div>
@@ -306,17 +307,16 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                 <div className="overflow-x-auto lg:overflow-visible">
                     <div className="flex min-w-[980px] flex-col rounded-lg border border-solid border-border bg-white">
                         <div className="flex items-center gap-4 rounded-t-lg border-b border-solid border-border bg-surface px-4 py-2">
-                            <span className={`${headCellClass} min-w-0 flex-1`}>Staff member</span>
-                            <span className={`${headCellClass} w-[88px]`}>Gender</span>
-                            <span className={`${headCellClass} w-[176px]`}>Employment</span>
-                            <span className={`${headCellClass} w-[218px]`}>Contact</span>
-                            <span className={`${headCellClass} w-[140px]`}>Portal</span>
+                            <span className={`${headCellClass} min-w-0 flex-1`}>{t('Staff member')}</span>
+                            <span className={`${headCellClass} w-[88px]`}>{t('Gender')}</span>
+                            <span className={`${headCellClass} w-[176px]`}>{t('Employment')}</span>
+                            <span className={`${headCellClass} w-[218px]`}>{t('Contact')}</span>
+                            <span className={`${headCellClass} w-[140px]`}>{t('Portal')}</span>
                             <span className="w-10 shrink-0" />
                         </div>
                         {staff.rows.length === 0 && (
                             <p className="px-4 py-8 text-center text-[13px] text-text-muted">
-                                Nobody on the roster matches. Try another name,
-                                or clear the filters.
+                                {t('Nobody on the roster matches. Try another name, or clear the filters.')}
                             </p>
                         )}
                         {staff.rows.map((row, position) => (
@@ -366,7 +366,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                                 </span>
                                 <span className="flex w-[140px] shrink-0 items-center gap-2 text-[13px] text-text">
                                     <StatusDot tone={row.has_account ? 'success' : 'warning'} />
-                                    {row.has_account ? 'Portal on' : 'No account yet'}
+                                    {row.has_account ? t('Portal on') : t('No account yet')}
                                 </span>
                                 <RowMenu
                                     row={row}
@@ -382,8 +382,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
 
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-4">
                     <p className="text-[13px] text-text-muted">
-                        {staff.rows.length} of {staff.total} shown · sorted by
-                        family name
+                        {t(':rows of :total shown · sorted by family name', { rows: staff.rows.length, total: staff.total })}
                     </p>
                     <div className="flex items-center gap-2">
                         {staff.lastPage > 1 &&
@@ -405,7 +404,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                                 ),
                             )}
                         <span className="text-[13px] text-text-muted">
-                            {counts.total} staff
+                            {t(':total staff', { total: counts.total })}
                         </span>
                     </div>
                 </div>

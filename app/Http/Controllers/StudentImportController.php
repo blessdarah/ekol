@@ -127,7 +127,7 @@ class StudentImportController extends Controller
             Storage::disk('local')->delete((string) $path);
 
             throw ValidationException::withMessages([
-                'file' => 'That file has no rows under its header line.',
+                'file' => __('That file has no rows under its header line.'),
             ]);
         }
 
@@ -135,7 +135,7 @@ class StudentImportController extends Controller
             Storage::disk('local')->delete((string) $path);
 
             throw ValidationException::withMessages([
-                'file' => 'That file has more than '.number_format(static::MAX_ROWS).' rows. Split it and import in parts.',
+                'file' => __('That file has more than :max rows. Split it and import in parts.', ['max' => number_format(static::MAX_ROWS)]),
             ]);
         }
 
@@ -170,7 +170,7 @@ class StudentImportController extends Controller
         }
 
         $request->validate($rules, [
-            'mapping.*.required' => 'Choose the column that holds this.',
+            'mapping.*.required' => __('Choose the column that holds this.'),
         ]);
 
         $mapping = [];
@@ -185,7 +185,7 @@ class StudentImportController extends Controller
 
         if (count($mapping) !== count(array_unique($mapping))) {
             throw ValidationException::withMessages([
-                'mapping' => 'Two fields point at the same column. Each needs its own.',
+                'mapping' => __('Two fields point at the same column. Each needs its own.'),
             ]);
         }
 
@@ -261,7 +261,7 @@ class StudentImportController extends Controller
 
         $this->forget($request);
 
-        $this->notify(count($ready).' students imported.');
+        $this->notify(trans_choice('{1} :count student imported.|[2,*] :count students imported.', count($ready), ['count' => count($ready)]));
 
         return redirect()->route('students');
     }

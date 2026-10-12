@@ -21,6 +21,7 @@ import {
     money,
 } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface RecordProps {
     yearLabel: string | null;
@@ -90,7 +91,7 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                     .join(' · ')}
                 action={
                     <Link href={edit.url(student.id)} className={outlineButtonClass}>
-                        Edit student
+                        {t('Edit student')}
                     </Link>
                 }
             />
@@ -100,41 +101,41 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
             <div className="flex flex-1 flex-col gap-8 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-[22px]">
                     <section className="flex flex-col gap-2">
-                        <p className={capsLabelClass}>Profile</p>
+                        <p className={capsLabelClass}>{t('Profile')}</p>
                         <dl className="flex flex-col">
-                            <Row label="Surname">{student.surname}</Row>
-                            <Row label="Name">{student.given_names}</Row>
-                            <Row label="Born">
+                            <Row label={t('Surname')}>{student.surname}</Row>
+                            <Row label={t('Name')}>{student.given_names}</Row>
+                            <Row label={t('Born')}>
                                 {fullDate(student.date_of_birth)}
-                                {student.place_of_birth ? ` in ${student.place_of_birth}` : ''} ·{' '}
-                                {GENDER_LABELS[student.gender]}
+                                {student.place_of_birth ? t(' in :place_of_birth', { place_of_birth: student.place_of_birth }) : ''} ·{' '}
+                                {t(GENDER_LABELS[student.gender])}
                             </Row>
                             {canSeePrivate && (
                                 <>
-                                    <Row label="Religion">{student.religion ?? 'Not recorded'}</Row>
-                                    <Row label="Disability">{student.disability ?? 'None'}</Row>
+                                    <Row label={t('Religion')}>{student.religion ?? t('Not recorded')}</Row>
+                                    <Row label={t('Disability')}>{student.disability ?? t('None')}</Row>
                                 </>
                             )}
-                            <Row label="Admitted">
+                            <Row label={t('Admitted')}>
                                 {fullDate(student.admitted_on)}
                                 {student.transferred_from
-                                    ? ` · transferred from ${student.transferred_from}`
+                                    ? t(' · transferred from :transferred_from', { transferred_from: student.transferred_from })
                                     : ''}
                             </Row>
                         </dl>
                     </section>
 
                     <section className="flex flex-col gap-2">
-                        <p className={capsLabelClass}>Class and series</p>
+                        <p className={capsLabelClass}>{t('Class and series')}</p>
                         <dl className="flex flex-col">
-                            <Row label="Class">
+                            <Row label={t('Class')}>
                                 {student.class
-                                    ? `${student.class.name} · ${student.class.students} students`
-                                    : 'Not placed in a class this year'}
+                                    ? t(':class · :students students', { class: student.class.name, students: student.class.students })
+                                    : t('Not placed in a class this year')}
                             </Row>
                             {student.class?.uses_series && (
                                 <>
-                                    <Row label="Series">
+                                    <Row label={t('Series')}>
                                         {student.series ? (
                                             <span className="flex items-center gap-2">
                                                 <StreamChip stream={student.series.stream}>
@@ -145,17 +146,13 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                                         ) : (
                                             <span className="flex items-center gap-[6px] text-[#8A5A12]">
                                                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                                No series yet. Until one is
-                                                chosen, there is no subject
-                                                list.
+                                                {t('No series yet. Until one is chosen, there is no subject list.')}
                                             </span>
                                         )}
                                     </Row>
                                     {student.series && (
-                                        <Row label="Subjects">
-                                            {student.series.core + student.series.electives} in the
-                                            series · {student.series.core} core,{' '}
-                                            {student.series.electives} in the elective pool
+                                        <Row label={t('Subjects')}>
+                                            {t(':electives in the series · :core core, :electives_a in the elective pool', { electives: student.series.core + student.series.electives, core: student.series.core, electives_a: student.series.electives })}
                                         </Row>
                                     )}
                                 </>
@@ -164,7 +161,7 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                     </section>
 
                     <section className="flex flex-col gap-2">
-                        <p className={capsLabelClass}>Parents and guardian</p>
+                        <p className={capsLabelClass}>{t('Parents and guardian')}</p>
                         <dl className="flex flex-col">
                             {student.guardians.map((guardian) => (
                                 <div
@@ -192,13 +189,13 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                                         <span className="flex-1" />
                                         {guardian.is_main && student.on_whatsapp && (
                                             <span className="flex h-[22px] items-center rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
-                                                WhatsApp
+                                                {t('WhatsApp')}
                                             </span>
                                         )}
                                     </dd>
                                 </div>
                             ))}
-                            <Row label="Lives with">{student.lives_with ?? 'Not recorded'}</Row>
+                            <Row label={t('Lives with')}>{student.lives_with ?? t('Not recorded')}</Row>
                         </dl>
                     </section>
                 </div>
@@ -208,7 +205,7 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                         <div className="flex flex-col gap-[14px] rounded-lg border border-solid border-border bg-surface p-4">
                             <div className="flex items-center justify-between">
                                 <p className={capsLabelClass}>
-                                    Fees{yearLabel ? ` · ${yearLabel}` : ''}
+                                    {t('Fees')}{yearLabel ? ` · ${yearLabel}` : ''}
                                 </p>
                                 <FeePill status={student.fees.status} />
                             </div>
@@ -217,12 +214,12 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                                     {money(student.fees.balance, currency)}
                                 </p>
                                 <p className="text-[13px] leading-4 text-text-muted">
-                                    still to pay, of {money(student.fees.due, currency)}
+                                    {t('still to pay, of :currency', { currency: money(student.fees.due, currency) })}
                                 </p>
                             </div>
                             <div
                                 role="progressbar"
-                                aria-label="Share of fees paid"
+                                aria-label={t('Share of fees paid')}
                                 aria-valuenow={paidShare}
                                 aria-valuemin={0}
                                 aria-valuemax={100}
@@ -234,30 +231,29 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                                 />
                             </div>
                             <p className="text-[12px] leading-[18px] text-text-muted">
-                                Payments are recorded in Fees.{' '}
+                                {t('Payments are recorded in Fees.')}{' '}
                                 <Link href={feesTab.url(student.id)} className="font-medium text-primary hover:underline">
-                                    Open the Fees tab →
+                                    {t('Open the Fees tab →')}
                                 </Link>
                             </p>
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-surface p-4">
-                            <p className={capsLabelClass}>Fees</p>
+                            <p className={capsLabelClass}>{t('Fees')}</p>
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                No fee plan was set for this student’s level
-                                at admission, so nothing is owed yet.
+                                {t('No fee plan was set for this student’s level at admission, so nothing is owed yet.')}
                             </p>
                         </div>
                     )}
                     <div className="flex flex-col gap-[10px] rounded-lg border border-dashed border-border bg-white p-4">
                         <p className="text-[13px] leading-4 font-semibold text-text">
-                            Changes to enrolment
+                            {t('Changes to enrolment')}
                         </p>
                         <Link
                             href={edit.url(student.id)}
                             className="text-[13px] leading-4 font-medium text-primary hover:underline"
                         >
-                            Move to another class
+                            {t('Move to another class')}
                         </Link>
                         {student.class?.uses_series && (
                             <Link
@@ -268,7 +264,7 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
                                 }
                                 className="text-[13px] leading-4 font-medium text-primary hover:underline"
                             >
-                                {student.series ? 'Change series' : 'Choose a series'}
+                                {student.series ? t('Change series') : t('Choose a series')}
                             </Link>
                         )}
                     </div>

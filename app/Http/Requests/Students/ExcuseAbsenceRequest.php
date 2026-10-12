@@ -27,7 +27,7 @@ class ExcuseAbsenceRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'note.required' => 'Say why the absence is excused.',
+            'note.required' => __('Say why the absence is excused.'),
         ];
     }
 }

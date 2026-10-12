@@ -380,13 +380,13 @@ class TimetableController extends Controller
     public function generate(GenerateTimetableRequest $request): RedirectResponse
     {
         [$school, $term] = static::context($request);
-        $term ??= throw ValidationException::withMessages(['generate' => 'No term is active. Make one active in School Setup first.']);
+        $term ??= throw ValidationException::withMessages(['generate' => __('No term is active. Make one active in School Setup first.')]);
 
         $data = $request->validated();
 
         if (static::inputs($school, $term)['blocking'] !== []) {
             throw ValidationException::withMessages([
-                'generate' => 'The generator cannot run yet. Fix what Check inputs lists first.',
+                'generate' => __('The generator cannot run yet. Fix what Check inputs lists first.'),
             ]);
         }
 
@@ -441,14 +441,14 @@ class TimetableController extends Controller
         $draft = $term ? TimetableVersion::draftFor($term) : null;
 
         if (! $term || ! $draft) {
-            throw ValidationException::withMessages(['publish' => 'There is no draft timetable to publish.']);
+            throw ValidationException::withMessages(['publish' => __('There is no draft timetable to publish.')]);
         }
 
         $data = $request->validated();
 
         if ($draft->slots->isEmpty() || $draft->toFix() > 0) {
             throw ValidationException::withMessages([
-                'publish' => 'This version still has lessons to place or clashes to clear. Finish the review first.',
+                'publish' => __('This version still has lessons to place or clashes to clear. Finish the review first.'),
             ]);
         }
 

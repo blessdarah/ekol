@@ -24,6 +24,7 @@ import {
     solidButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface ChangeProps {
     yearLabel: string | null;
@@ -60,7 +61,7 @@ function outcomes(taken: SeriesSubject[], target: SeriesOption): Outcome[] {
             };
         }
 
-        return { id: subject.id, name: subject.name, change: `${before} → none`, result: 'Dropped' };
+        return { id: subject.id, name: subject.name, change: t(':before → none', { before }), result: 'Dropped' };
     });
 
     for (const subject of core) {
@@ -96,18 +97,18 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
 
     return (
         <form onSubmit={submit} className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-6">
-            <Head title={`Change series · ${student.name}`} />
+            <Head title={t('Change series · :student', { student: student.name })} />
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex flex-col gap-[6px]">
                     <Breadcrumbs
                         trail={[
-                            { label: 'Students', href: students.url() },
+                            { label: t('Students'), href: students.url() },
                             { label: student.name, href: show.url(student.id) },
-                            { label: 'Change series' },
+                            { label: t('Change series') },
                         ]}
                     />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                        Change series
+                        {t('Change series')}
                     </h1>
                     <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-4 text-text-muted">
                         <span className="font-mono uppercase">
@@ -117,7 +118,7 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                     </p>
                 </div>
                 <Link href={show.url(student.id)} className={outlineButtonClass}>
-                    ← Back to the student
+                    {t('← Back to the student')}
                 </Link>
             </div>
 
@@ -125,13 +126,13 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                 <div className="flex min-w-0 flex-1 flex-col gap-[18px]">
                     <div className="flex flex-wrap items-center gap-3">
                         <span className="flex h-[34px] items-center gap-2 rounded-md border border-solid border-border bg-surface px-[14px] text-[13px] leading-4 text-text-muted">
-                            Now
+                            {t('Now')}
                             <StreamChip stream={current.stream}>{current.code}</StreamChip>
                         </span>
                         <span aria-hidden="true" className="text-[16px] leading-5 text-text-muted">
                             →
                         </span>
-                        <span className="text-[13px] leading-4 font-medium text-text">Move to</span>
+                        <span className="text-[13px] leading-4 font-medium text-text">{t('Move to')}</span>
                         <SeriesChips
                             series={series}
                             value={data.series_id}
@@ -144,7 +145,7 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
 
                     <section className="flex flex-col gap-2">
                         <div className="flex items-baseline justify-between">
-                            <p className={capsLabelClass}>What changes in the subjects</p>
+                            <p className={capsLabelClass}>{t('What changes in the subjects')}</p>
                             {target && (
                                 <span className="font-mono text-[12px] leading-4 text-text-muted">
                                     {target.code} · {limits(target, true)} · {after}
@@ -154,9 +155,7 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                         </div>
                         {!target ? (
                             <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                                Choose the series to move to. You will see
-                                which subjects are kept, added and dropped
-                                before anything changes.
+                                {t('Choose the series to move to. You will see which subjects are kept, added and dropped before anything changes.')}
                             </p>
                         ) : (
                             <ul className="flex flex-col overflow-clip rounded-lg border border-solid border-border">
@@ -189,9 +188,7 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                         )}
                         {belowMin && target && (
                             <p className="text-[13px] leading-[19px] text-[#8A5A12]">
-                                That leaves {after} subjects, below the
-                                minimum of {target.min}. After changing, add
-                                electives from Register one by one.
+                                {t('That leaves :after subjects, below the minimum of :target. After changing, add electives from Register one by one.', { after, target: target.min })}
                             </p>
                         )}
                     </section>
@@ -199,7 +196,7 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                     <div className="flex flex-col gap-3">
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <label className={`flex flex-col gap-[6px] sm:w-[240px] ${fieldLabelClass}`}>
-                                Reason
+                                {t('Reason')}
                                 <select
                                     value={data.reason}
                                     onChange={(e) => setData('reason', e.target.value)}
@@ -212,11 +209,11 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                                 <ErrorText message={errors.reason} />
                             </label>
                             <label className={`flex flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Note
+                                {t('Note')}
                                 <input
                                     type="text"
                                     maxLength={255}
-                                    placeholder="Wants to focus on humanities. Parent agreed on 3 Oct."
+                                    placeholder={t('Wants to focus on humanities. Parent agreed on 3 Oct.')}
                                     value={data.note}
                                     onChange={(e) => setData('note', e.target.value)}
                                     className={`${fieldInputClass} text-[14px]`}
@@ -231,59 +228,53 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                                 onChange={(e) => setData('parent_agreed', e.target.checked)}
                                 className="h-[18px] w-[18px] shrink-0 accent-primary"
                             />
-                            A parent or guardian agreed to this change
+                            {t('A parent or guardian agreed to this change')}
                         </label>
                         <ErrorText message={errors.parent_agreed} />
                     </div>
 
                     <div className="flex items-center justify-end gap-2">
                         <Link href={show.url(student.id)} className={outlineButtonClass}>
-                            Cancel
+                            {t('Cancel')}
                         </Link>
                         <button
                             type="submit"
                             disabled={!target || !data.parent_agreed || processing}
                             className={solidButtonClass}
                         >
-                            Change series{target ? ` to ${target.code}` : ''}
+                            {t('Change series')}{target ? t(' to :code', { code: target.code }) : ''}
                         </button>
                     </div>
                 </div>
 
                 <aside className="flex shrink-0 flex-col gap-4 border-solid border-border lg:w-[330px] lg:border-l lg:pl-7">
                     <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>What happens to marks</p>
+                        <p className={capsLabelClass}>{t('What happens to marks')}</p>
                         <p className="text-[13px] leading-[19px] text-text">
                             {dropped.length > 0
-                                ? `${dropped.map((row) => row.name).join(', ')}: marks already entered stay on the record. `
+                                ? t(':row: marks already entered stay on the record. ', { row: dropped.map((row) => row.name).join(', ') })
                                 : ''}
-                            Results already published keep a dropped subject.
-                            Results not yet published leave it out of the
-                            average.
+                            {t('Results already published keep a dropped subject. Results not yet published leave it out of the average.')}
                         </p>
                     </div>
                     <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-white p-4">
                         <p className="text-[14px] leading-[18px] font-semibold text-text">
-                            Who is told
+                            {t('Who is told')}
                         </p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            Teachers of the dropped and added subjects see
-                            the change in their class lists. The timetable
-                            and marks sheets follow the new subjects.
+                            {t('Teachers of the dropped and added subjects see the change in their class lists. The timetable and marks sheets follow the new subjects.')}
                         </p>
                     </div>
                     <div className="flex flex-col gap-2 rounded-lg border border-solid border-warning bg-warning-tint p-4">
                         <p className="text-[14px] leading-[18px] font-semibold text-[#8A5A12]">
-                            Do it early
+                            {t('Do it early')}
                         </p>
                         <p className="text-[13px] leading-[19px] text-text">
-                            Changes after marks are open leave gaps in the
-                            subjects the student joins late.
+                            {t('Changes after marks are open leave gaps in the subjects the student joins late.')}
                         </p>
                     </div>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        Every change is kept in the student’s log, with the
-                        reason and who made it.
+                        {t('Every change is kept in the student’s log, with the reason and who made it.')}
                     </p>
                 </aside>
             </div>

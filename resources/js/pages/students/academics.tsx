@@ -5,6 +5,7 @@ import { reports } from '@/actions/App/Http/Controllers/TermResultController';
 import { capsLabelClass, outlineButtonClass } from '../../components/structure/ui';
 import { StudentHeader, StudentTabs, shortDate } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { ordinalOf, t } from '../../lib/i18n';
 
 interface Column {
     id: string;
@@ -53,10 +54,7 @@ function mark(value: number | 'ABS' | null | undefined): string {
 }
 
 function ordinal(position: number): string {
-    const tail = position % 100;
-    const suffix = tail >= 11 && tail <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][position % 10] ?? 'th');
-
-    return `${position}${suffix}`;
+    return ordinalOf(position);
 }
 
 function short(name: string): string {
@@ -71,15 +69,15 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
-            <Head title={`${student.name} · Academics`} />
+            <Head title={t(':student · Academics', { student: student.name })} />
             <StudentHeader
-                trail={[{ label: student.name }, { label: 'Academics' }]}
+                trail={[{ label: student.name }, { label: t('Academics') }]}
                 title={student.name}
                 tag={[student.matricule, student.class, student.series].filter(Boolean).join(' · ')}
                 meta={[`enrolled ${student.admitted_year}`, student.level].filter(Boolean).join(' · ')}
                 action={
                     <Link href={edit.url(student.id)} className={outlineButtonClass}>
-                        Edit student
+                        {t('Edit student')}
                     </Link>
                 }
             />
@@ -97,7 +95,7 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
                                 option.id === term?.id ? 'border-primary bg-primary-tint font-semibold text-primary' : 'border-border font-medium text-text hover:bg-surface'
                             }`}
                         >
-                            {option.label}
+                            {t(option.label)}
                         </Link>
                     ))}
                 </div>
@@ -105,54 +103,54 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
 
             {!student.class ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    {student.name} is not in a class this year, so there are no marks to show.
+                    {t(':student is not in a class this year, so there are no marks to show.', { student: student.name })}
                 </p>
             ) : columns.length === 0 ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    No assessment is scheduled for {term?.label ?? 'this term'} yet. Marks appear here once one is, and teachers start entering them.
+                    {t('No assessment is scheduled for')} {term?.label ?? t('this term')} {t('yet. Marks appear here once one is, and teachers start entering them.')}
                 </p>
             ) : (
                 <div className="flex flex-1 flex-col gap-8 lg:flex-row">
                     <div className="flex min-w-0 flex-1 flex-col gap-[22px]">
                         <div className="flex flex-wrap border-y border-solid border-border">
                             <div className="flex min-w-[170px] flex-1 flex-col gap-1 py-[14px] pr-4">
-                                <span className={capsLabelClass}>{focus ? `${focus.name} average` : 'Average'}</span>
+                                <span className={capsLabelClass}>{focus ? t(':focus average', { focus: focus.name }) : t('Average')}</span>
                                 <span className="flex items-baseline gap-2">
                                     <span className="font-display text-[28px] leading-8 font-extrabold text-text">{mark(focus?.average)}</span>
-                                    <span className="font-mono text-[12px] leading-4 text-text-muted">/ 20{focus && !focus.complete ? ' · so far' : ''}</span>
+                                    <span className="font-mono text-[12px] leading-4 text-text-muted">/ 20{focus && !focus.complete ? t(' · so far') : ''}</span>
                                 </span>
                             </div>
                             <div className="flex min-w-[170px] flex-1 flex-col gap-1 border-l border-solid border-border px-4 py-[14px]">
-                                <span className={capsLabelClass}>Position in class</span>
+                                <span className={capsLabelClass}>{t('Position in class')}</span>
                                 <span className="flex items-baseline gap-2">
                                     <span className="font-display text-[28px] leading-8 font-extrabold text-text">
                                         {focus?.position ? ordinal(focus.position) : '—'}
                                     </span>
                                     <span className="font-mono text-[12px] leading-4 text-text-muted">
-                                        {focus?.position ? `of ${focus.of}` : focus ? 'not ranked while a mark is missing' : ''}
+                                        {focus?.position ? t('of :of', { of: focus.of }) : focus ? t('not ranked while a mark is missing') : ''}
                                     </span>
                                 </span>
                             </div>
                             <div className="flex min-w-[170px] flex-1 flex-col gap-1 border-l border-solid border-border py-[14px] pl-4">
-                                <span className={capsLabelClass}>Subjects</span>
+                                <span className={capsLabelClass}>{t('Subjects')}</span>
                                 <span className="flex items-baseline gap-2">
                                     <span className="font-display text-[28px] leading-8 font-extrabold text-text">{subjects.length}</span>
-                                    <span className="font-mono text-[12px] leading-4 text-text-muted">coeff. total {coefficients}</span>
+                                    <span className="font-mono text-[12px] leading-4 text-text-muted">{t('coeff. total :coefficients', { coefficients })}</span>
                                 </span>
                             </div>
                         </div>
 
                         {subjects.length === 0 ? (
                             <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                                No marks can be read yet. {coming ? `${coming.name} has not opened for marks.` : ''}
+                                {t('No marks can be read yet.')} {coming ? t(':coming has not opened for marks.', { coming: coming.name }) : ''}
                             </p>
                         ) : (
                             <div className="overflow-x-auto rounded-lg border border-solid border-border">
                                 <div className="flex min-w-[620px] flex-col">
                                     <div className={`flex h-9 items-center gap-4 border-b border-solid border-border bg-surface px-4 ${capsLabelClass}`}>
-                                        <span className="flex-1">Subject</span>
-                                        <span className="w-[170px] shrink-0">Teacher</span>
-                                        <span className="w-12 shrink-0 text-right">Coef</span>
+                                        <span className="flex-1">{t('Subject')}</span>
+                                        <span className="w-[170px] shrink-0">{t('Teacher')}</span>
+                                        <span className="w-12 shrink-0 text-right">{t('Coef')}</span>
                                         {columns.map((column) => (
                                             <span key={column.id} className="w-[76px] shrink-0 truncate text-right">
                                                 {short(column.name)}
@@ -177,7 +175,7 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
                                                 )}
                                             </span>
                                             <span className={`w-[170px] shrink-0 truncate text-[13px] leading-4 ${subject.teacher ? 'text-text' : 'text-text-muted'}`}>
-                                                {subject.teacher ?? 'No teacher'}
+                                                {subject.teacher ?? t('No teacher')}
                                             </span>
                                             <span className="w-12 shrink-0 text-right font-mono text-[13px] leading-4 text-text">{subject.coefficient}</span>
                                             {columns.map((column) => (
@@ -191,7 +189,7 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
                                         </div>
                                     ))}
                                     <div className="flex h-10 shrink-0 items-center gap-4 bg-surface px-4">
-                                        <span className="flex-1 text-[13px] leading-4 font-semibold text-text">Average</span>
+                                        <span className="flex-1 text-[13px] leading-4 font-semibold text-text">{t('Average')}</span>
                                         <span className="w-[170px] shrink-0" />
                                         <span className="w-12 shrink-0 text-right font-mono text-[13px] leading-4 text-text">{coefficients}</span>
                                         {columns.map((column) => (
@@ -199,7 +197,7 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
                                                 key={column.id}
                                                 className={`w-[76px] shrink-0 text-right ${column.average !== null ? 'font-mono text-[14px] leading-[18px] text-text' : 'text-[12px] leading-4 text-text-muted'}`}
                                             >
-                                                {column.average !== null ? `${mark(column.average)}${column.complete ? '' : '*'}` : 'Later'}
+                                                {column.average !== null ? `${mark(column.average)}${column.complete ? '' : '*'}` : t('Later')}
                                             </span>
                                         ))}
                                     </div>
@@ -208,61 +206,61 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
                         )}
 
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            Marks are out of 20.{' '}
+                            {t('Marks are out of 20.')}{' '}
                             {open
-                                ? `${open.name} marks are open until ${shortDate(open.window_ends_on)}, so the average and position can still change. `
+                                ? t(':open marks are open until :window_ends_on, so the average and position can still change. ', { open: open.name, window_ends_on: shortDate(open.window_ends_on) })
                                 : ''}
-                            {coming ? `${coming.name} has not been held yet. ` : ''}
+                            {coming ? t(':coming has not been held yet. ', { coming: coming.name }) : ''}
                             {termComplete
-                                ? `Every ${term?.label ?? 'term'} assessment is published${termAverage !== null ? `: the term average is ${termAverage.toFixed(2)}.` : ', but a mark is missing so there is no term average.'}`
-                                : 'The term average comes once every assessment of the term is published.'}
-                            {columns.some((column) => column.average !== null && !column.complete) ? ' * An average so far: a mark is still missing.' : ''}
+                                ? t('Every :term assessment is published:average', { term: term?.label ?? 'term', average: termAverage !== null ? `: the term average is ${termAverage.toFixed(2)}.` : ', but a mark is missing so there is no term average.' })
+                                : t('The term average comes once every assessment of the term is published.')}
+                            {columns.some((column) => column.average !== null && !column.complete) ? t(' * An average so far: a mark is still missing.') : ''}
                         </p>
                     </div>
 
                     <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                         <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-surface p-4">
-                            <p className={capsLabelClass}>Remark for the grade</p>
+                            <p className={capsLabelClass}>{t('Remark for the grade')}</p>
                             {remark && focus ? (
                                 <>
-                                    <p className="text-[14px] leading-[21px] text-text">{remark.text}</p>
+                                    <p className="text-[14px] leading-[21px] text-text">{t(remark.text)}</p>
                                     <p className="text-[12px] leading-4 text-text-muted">
                                         {focus.name} · {remark.grade}
-                                        {remark.form_master ? ` · form master ${remark.form_master}` : ''}
+                                        {remark.form_master ? t(' · form master :form_master', { form_master: remark.form_master }) : ''}
                                     </p>
                                 </>
                             ) : (
-                                <p className="text-[13px] leading-[19px] text-text-muted">A remark shows once there is an average to grade.</p>
+                                <p className="text-[13px] leading-[19px] text-text-muted">{t('A remark shows once there is an average to grade.')}</p>
                             )}
                         </div>
 
                         <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-white p-4">
-                            <p className="text-[14px] leading-[18px] font-semibold text-text">Report cards</p>
+                            <p className="text-[14px] leading-[18px] font-semibold text-text">{t('Report cards')}</p>
                             <ul className="flex flex-col">
                                 {columns.map((column) => (
                                     <li key={column.id} className="flex items-center justify-between gap-3 py-[5px] text-[13px] leading-4">
                                         <span className="text-text">{column.name}</span>
                                         {column.state === 'published' && canOpenReports && student.class_id ? (
                                             <Link href={reports.url({ query: { plan: column.id, class: student.class_id, student: student.id } })} className={linkClass}>
-                                                Open card →
+                                                {t('Open card →')}
                                             </Link>
                                         ) : (
                                             <span className={column.state === 'published' ? 'text-success' : 'text-text-muted'}>
-                                                {column.state === 'published' ? 'Published' : 'After publishing'}
+                                                {column.state === 'published' ? t('Published') : t('After publishing')}
                                             </span>
                                         )}
                                     </li>
                                 ))}
                                 {term && (
                                     <li className="flex items-center justify-between gap-3 py-[5px] text-[13px] leading-4">
-                                        <span className="text-text-muted">{term.label} report</span>
+                                        <span className="text-text-muted">{t(':label report', { label: term.label })}</span>
                                         {termComplete && canOpenReports && student.class_id ? (
                                             <Link href={reports.url({ query: { term: term.id, class: student.class_id, student: student.id } })} className={linkClass}>
-                                                Open card →
+                                                {t('Open card →')}
                                             </Link>
                                         ) : (
                                             <span className="text-text-muted">
-                                                {termComplete ? 'Ready' : `After ${columns.length - published.length} more ${columns.length - published.length === 1 ? 'is' : 'are'} published`}
+                                                {termComplete ? t('Ready') : t('After :published more :are published', { published: columns.length - published.length, are: columns.length - published.length === 1 ? 'is' : 'are' })}
                                             </span>
                                         )}
                                     </li>
@@ -271,11 +269,11 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
                         </div>
 
                         <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-4">
-                            <p className="text-[13px] leading-4 font-semibold text-text">Where the subjects come from</p>
+                            <p className="text-[13px] leading-4 font-semibold text-text">{t('Where the subjects come from')}</p>
                             <p className="text-[13px] leading-[19px] text-text-muted">
                                 {student.series
-                                    ? `${student.series} marks which subjects are core and which are this student’s electives. The list itself is every subject ${student.class} takes.`
-                                    : `These are the subjects ${student.class} takes, each with the coefficient of its level.`}
+                                    ? t(':series marks which subjects are core and which are this student’s electives. The list itself is every subject :class takes.', { series: student.series, class: student.class })
+                                    : t('These are the subjects :class takes, each with the coefficient of its level.', { class: student.class })}
                             </p>
                         </div>
                     </aside>

@@ -10,8 +10,8 @@ enum EmploymentType: string
     public function label(): string
     {
         return match ($this) {
-            self::SchoolPaid => 'School-paid',
-            self::Government => 'Government employee',
+            self::SchoolPaid => __('School-paid'),
+            self::Government => __('Government employee'),
         };
     }
 }

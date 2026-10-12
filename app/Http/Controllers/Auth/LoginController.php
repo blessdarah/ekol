@@ -64,7 +64,7 @@ class LoginController extends Controller
             $minutes = (int) ceil(RateLimiter::availableIn($key) / 60);
 
             return back()->withErrors([
-                'identifier' => "Too many attempts. Sign in pauses for {$minutes} minutes. You can reset your password at any time.",
+                'identifier' => __('Too many attempts. Sign in pauses for :minutes minutes. You can reset your password at any time.', ['minutes' => $minutes]),
             ]);
         }
 
@@ -76,7 +76,7 @@ class LoginController extends Controller
             $left = static::MAX_ATTEMPTS - RateLimiter::attempts($key);
 
             return back()->withErrors([
-                'identifier' => "Email or password is incorrect. You have {$left} attempts left.",
+                'identifier' => __('Email or password is incorrect. You have :left attempts left.', ['left' => $left]),
             ]);
         }
 

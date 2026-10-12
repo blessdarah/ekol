@@ -35,10 +35,10 @@ class UpdateFeeStructureRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'items.*.name.required' => 'Give the item a name.',
-            'items.*.name.distinct' => 'Two items have the same name.',
-            'items.*.amounts.*.numeric' => 'Enter the fee as a number.',
-            'items.*.amounts.*.min' => 'A fee cannot be negative.',
+            'items.*.name.required' => __('Give the item a name.'),
+            'items.*.name.distinct' => __('Two items have the same name.'),
+            'items.*.amounts.*.numeric' => __('Enter the fee as a number.'),
+            'items.*.amounts.*.min' => __('A fee cannot be negative.'),
         ];
     }
 }

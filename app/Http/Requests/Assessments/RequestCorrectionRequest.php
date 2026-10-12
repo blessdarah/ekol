@@ -28,7 +28,7 @@ class RequestCorrectionRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'reason.required' => 'Say why the mark should change.',
+            'reason.required' => __('Say why the mark should change.'),
         ];
     }
 }

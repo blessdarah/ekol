@@ -35,7 +35,7 @@ class PlaceStudentsRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'enrolment_ids.required' => 'Tick the students to place first.',
+            'enrolment_ids.required' => __('Tick the students to place first.'),
         ];
     }
 }

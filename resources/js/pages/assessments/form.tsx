@@ -17,6 +17,7 @@ import {
     segmentClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface FormProps {
     yearLabel: string;
@@ -104,19 +105,19 @@ function AssessmentForm({ yearLabel, tabs, outOf, terms, levels, defaultTerm, un
             }}
             className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5"
         >
-            <Head title={plan ? `Edit ${plan.name}` : 'Add an assessment'} />
+            <Head title={plan ? t('Edit :plan', { plan: plan.name }) : t('Add an assessment')} />
             <AssessmentHeader
                 active="calendar"
                 tabs={tabs}
-                trail={[{ label: 'Calendar', href: index.url() }, { label: plan ? plan.name : 'Add an assessment' }]}
-                title={plan ? plan.name : 'Add an assessment'}
+                trail={[{ label: t('Calendar'), href: index.url() }, { label: plan ? plan.name : t('Add an assessment') }]}
+                title={plan ? plan.name : t('Add an assessment')}
                 meta={
                     <>
                         <span className="font-mono uppercase">
                             {yearLabel}
                             {term ? ` · ${term.label}` : ''}
                         </span>
-                        <span>· one page: what, when and who</span>
+                        <span>{t('· one page: what, when and who')}</span>
                     </>
                 }
             />
@@ -124,22 +125,22 @@ function AssessmentForm({ yearLabel, tabs, outOf, terms, levels, defaultTerm, un
             <div className="flex flex-1 flex-col gap-8 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-6">
                     <section className="flex flex-col gap-3">
-                        <p className={capsLabelClass}>What</p>
+                        <p className={capsLabelClass}>{t('What')}</p>
                         <div className="flex flex-wrap gap-3">
                             <label className={`flex min-w-[200px] flex-[2] flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Name
+                                {t('Name')}
                                 <input
                                     type="text"
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="Sequence 1"
+                                    placeholder={t('Sequence 1')}
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.name} />
                             </label>
                             <div className="flex min-w-[200px] flex-[1.4] flex-col gap-[6px]">
-                                <span className={fieldLabelClass}>Type</span>
-                                <div role="radiogroup" aria-label="Type" className="flex gap-2">
+                                <span className={fieldLabelClass}>{t('Type')}</span>
+                                <div role="radiogroup" aria-label={t('Type')} className="flex gap-2">
                                     {(['sequence', 'exam'] as const).map((kind) => (
                                         <button
                                             key={kind}
@@ -149,18 +150,18 @@ function AssessmentForm({ yearLabel, tabs, outOf, terms, levels, defaultTerm, un
                                             onClick={() => setData('kind', kind)}
                                             className={segmentClass(data.kind === kind)}
                                         >
-                                            {kind === 'sequence' ? 'Sequence' : 'Exam'}
+                                            {kind === 'sequence' ? t('Sequence') : t('Exam')}
                                         </button>
                                     ))}
                                 </div>
                                 <ErrorText message={errors.kind} />
                             </div>
                             <label className={`flex min-w-[140px] flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Term
+                                {t('Term')}
                                 <select value={data.term_id} onChange={(e) => setData('term_id', e.target.value)} className={fieldInputClass}>
                                     {terms.map((option) => (
                                         <option key={option.id} value={option.id}>
-                                            {option.label}
+                                            {t(option.label)}
                                         </option>
                                     ))}
                                 </select>
@@ -170,19 +171,19 @@ function AssessmentForm({ yearLabel, tabs, outOf, terms, levels, defaultTerm, un
                     </section>
 
                     <section className="flex flex-col gap-3">
-                        <p className={capsLabelClass}>When</p>
+                        <p className={capsLabelClass}>{t('When')}</p>
                         <div className="flex flex-wrap gap-3">
-                            {dateField('held_from', 'Held from')}
-                            {dateField('held_until', 'Held until')}
-                            {dateField('window_starts_on', 'Marks open')}
-                            {dateField('window_ends_on', 'Marks close')}
+                            {dateField('held_from', t('Held from'))}
+                            {dateField('held_until', t('Held until'))}
+                            {dateField('window_starts_on', t('Marks open'))}
+                            {dateField('window_ends_on', t('Marks close'))}
                         </div>
                     </section>
 
                     <section className="flex flex-col gap-3">
-                        <p className={capsLabelClass}>Who</p>
+                        <p className={capsLabelClass}>{t('Who')}</p>
                         <div className="flex flex-col gap-[6px]">
-                            <span className={fieldLabelClass}>Levels</span>
+                            <span className={fieldLabelClass}>{t('Levels')}</span>
                             <div className="flex flex-wrap gap-2">
                                 {levels.map((level) => {
                                     const on = data.level_ids.includes(level.id);
@@ -206,16 +207,16 @@ function AssessmentForm({ yearLabel, tabs, outOf, terms, levels, defaultTerm, un
                         </div>
                         <div className="flex flex-wrap gap-3">
                             <div className={`flex min-w-[240px] flex-[2] flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Subjects
+                                {t('Subjects')}
                                 <span className="flex h-10 items-center rounded-md border border-solid border-border bg-surface px-3 text-[14px] leading-[18px] font-normal text-text">
-                                    Every subject each class takes
+                                    {t('Every subject each class takes')}
                                 </span>
                             </div>
                             <div className={`flex min-w-[160px] flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                                Marks are out of
+                                {t('Marks are out of')}
                                 <span className="flex h-10 items-center justify-between rounded-md border border-solid border-border bg-surface px-3 font-normal">
                                     <span className="font-mono text-[14px] leading-[18px] text-text">{outOf}</span>
-                                    <span className="text-[12px] leading-4 text-text-muted">School-wide</span>
+                                    <span className="text-[12px] leading-4 text-text-muted">{t('School-wide')}</span>
                                 </span>
                             </div>
                         </div>
@@ -223,19 +224,19 @@ function AssessmentForm({ yearLabel, tabs, outOf, terms, levels, defaultTerm, un
 
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <p className="text-[13px] leading-4 text-text-muted">
-                            {scheduled ? 'Scheduled already: saving keeps it scheduled.' : 'After saving you return to the calendar.'}
+                            {scheduled ? t('Scheduled already: saving keeps it scheduled.') : t('After saving you return to the calendar.')}
                         </p>
                         <div className="flex flex-wrap gap-2">
                             <Link href={index.url()} className={quietClass}>
-                                Cancel
+                                {t('Cancel')}
                             </Link>
                             {!scheduled && (
                                 <button type="button" disabled={processing} onClick={() => submit(false)} className={quietClass}>
-                                    Save as draft
+                                    {t('Save as draft')}
                                 </button>
                             )}
                             <button type="submit" disabled={processing} className={primaryClass}>
-                                {scheduled ? 'Save changes' : 'Schedule assessment'}
+                                {scheduled ? t('Save changes') : t('Schedule assessment')}
                             </button>
                         </div>
                     </div>
@@ -243,35 +244,34 @@ function AssessmentForm({ yearLabel, tabs, outOf, terms, levels, defaultTerm, un
 
                 <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     <div className="flex flex-col gap-3 rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>What teachers will see</p>
+                        <p className={capsLabelClass}>{t('What teachers will see')}</p>
                         <div className="flex flex-col gap-1 rounded-md border border-solid border-border bg-white p-3">
-                            <p className="text-[14px] leading-[18px] font-semibold text-text">{data.name || 'This assessment'} · enter your marks</p>
+                            <p className="text-[14px] leading-[18px] font-semibold text-text">{data.name || t('This assessment')} {t('· enter your marks')}</p>
                             <p className="text-[13px] leading-[18px] text-text-muted">
                                 {data.window_starts_on && data.window_ends_on
-                                    ? `Open ${range(data.window_starts_on, data.window_ends_on)}, out of ${outOf}.`
-                                    : `Out of ${outOf}. The window is not set yet.`}{' '}
-                                Use ABS if a student was absent.
+                                    ? t('Open :window_ends_on, out of :out_of.', { window_ends_on: range(data.window_starts_on, data.window_ends_on), out_of: outOf })
+                                    : t('Out of :out_of. The window is not set yet.', { out_of: outOf })}{' '}
+                                {t('Use ABS if a student was absent.')}
                             </p>
                         </div>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            This shows on each teacher’s mark sheet while the
-                            window is open.
+                            {t('This shows on each teacher’s mark sheet while the window is open.')}
                         </p>
                     </div>
                     <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-white p-4">
-                        <p className="text-[14px] leading-[18px] font-semibold text-text">Checks</p>
+                        <p className="text-[14px] leading-[18px] font-semibold text-text">{t('Checks')}</p>
                         <ul className="flex flex-col gap-2">
-                            <Check ok={inside}>Dates are inside {term?.label ?? 'the term'}</Check>
-                            <Check ok={opensWith}>The marks window opens with the tests</Check>
-                            <Check ok={closesAfter}>It closes after the last test</Check>
+                            <Check ok={inside}>{t('Dates are inside')} {term?.label ?? t('the term')}</Check>
+                            <Check ok={opensWith}>{t('The marks window opens with the tests')}</Check>
+                            <Check ok={closesAfter}>{t('It closes after the last test')}</Check>
                             {warnings.slice(0, 3).map((warning) => (
                                 <li key={warning.text} className={`flex items-start gap-2 text-[13px] leading-[18px] ${amberText}`}>
                                     <span className="mt-[6px] h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                    <span>{warning.text}</span>
+                                    <span>{t(warning.text)}</span>
                                 </li>
                             ))}
                             {warnings.length > 3 && (
-                                <li className="pl-[14px] text-[12px] leading-4 text-text-muted">and {warnings.length - 3} more with no teacher</li>
+                                <li className="pl-[14px] text-[12px] leading-4 text-text-muted">{t('and :warnings more with no teacher', { warnings: warnings.length - 3 })}</li>
                             )}
                         </ul>
                     </div>

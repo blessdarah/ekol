@@ -23,6 +23,7 @@ import {
 } from '../../components/assessments/ui';
 import { PlusIcon, capsLabelClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface CalendarProps {
     yearLabel: string | null;
@@ -40,7 +41,7 @@ function Status({ plan }: { plan: PlanSummary }) {
         return (
             <span className={`flex h-6 items-center gap-[6px] rounded-full px-[10px] text-[12px] leading-4 font-medium ${left < 0 ? `bg-warning-tint ${amberText}` : 'bg-primary-tint text-primary'}`}>
                 <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${left < 0 ? 'bg-warning' : 'bg-primary'}`} />
-                {left < 0 ? 'Marks open · window ended' : `Marks open · ${left === 0 ? 'closes today' : `${left} ${left === 1 ? 'day' : 'days'} left`}`}
+                {left < 0 ? t('Marks open · window ended') : t('Marks open · :left', { left: left === 0 ? 'closes today' : `${left} ${left === 1 ? 'day' : 'days'} left` })}
             </span>
         );
     }
@@ -49,7 +50,7 @@ function Status({ plan }: { plan: PlanSummary }) {
         return (
             <span className={`flex h-6 items-center gap-[6px] rounded-full bg-warning-tint px-[10px] text-[12px] leading-4 font-medium ${amberText}`}>
                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                Scheduled · no timetable
+                {t('Scheduled · no timetable')}
             </span>
         );
     }
@@ -58,32 +59,32 @@ function Status({ plan }: { plan: PlanSummary }) {
         return (
             <span className="flex h-6 items-center gap-[6px] rounded-full bg-success-tint px-[10px] text-[12px] leading-4 font-medium text-success">
                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-success" />
-                Published
+                {t('Published')}
             </span>
         );
     }
 
     return (
         <span className={`flex h-6 items-center rounded-full border border-border px-[10px] text-[12px] leading-4 font-medium ${plan.state === 'draft' ? 'border-dashed text-text-muted' : 'border-solid text-text'}`}>
-            {STATE_LABELS[plan.state]}
+            {t(STATE_LABELS[plan.state])}
         </span>
     );
 }
 
 function action(plan: PlanSummary): { label: string; href: string } {
     if (plan.state === 'draft') {
-        return { label: 'Set up →', href: edit.url(plan.id) };
+        return { label: t('Set up →'), href: edit.url(plan.id) };
     }
     if (plan.state === 'scheduled') {
         return plan.kind === 'exam' && !plan.has_schedule
-            ? { label: 'Set exam schedule →', href: schedule.url({ query: { plan: plan.id } }) }
-            : { label: 'Edit', href: edit.url(plan.id) };
+            ? { label: t('Set exam schedule →'), href: schedule.url({ query: { plan: plan.id } }) }
+            : { label: t('Edit'), href: edit.url(plan.id) };
     }
     if (plan.state === 'marks_open') {
-        return { label: 'Track marks →', href: progress.url({ query: { plan: plan.id } }) };
+        return { label: t('Track marks →'), href: progress.url({ query: { plan: plan.id } }) };
     }
 
-    return { label: plan.state === 'published' ? 'Results' : 'Review results →', href: results.url({ query: { plan: plan.id } }) };
+    return { label: plan.state === 'published' ? t('Results') : t('Review results →'), href: results.url({ query: { plan: plan.id } }) };
 }
 
 function Calendar({ yearLabel, tabs, counts, terms }: CalendarProps) {
@@ -91,39 +92,38 @@ function Calendar({ yearLabel, tabs, counts, terms }: CalendarProps) {
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title="Sequences & Exams" />
+            <Head title={t('Sequences & Exams')} />
             <AssessmentHeader
                 active="calendar"
                 tabs={tabs}
-                title="Sequences & Exams"
+                title={t('Sequences & Exams')}
                 meta={
                     <>
                         <span className="font-mono uppercase">
-                            {yearLabel ?? 'No year'}
+                            {yearLabel ?? t('No year')}
                             {current ? ` · ${current.label}` : ''}
                         </span>
-                        <span>· every assessment is marked out of 20</span>
+                        <span>{t('· every assessment is marked out of 20')}</span>
                     </>
                 }
                 action={
                     yearLabel && (
                         <Link href={create.url()} className={primaryClass}>
                             <PlusIcon />
-                            Add an assessment
+                            {t('Add an assessment')}
                         </Link>
                     )
                 }
             />
 
             {!yearLabel || terms.length === 0 ? (
-                <Empty title="No terms to plan in yet">
-                    Assessments belong to a term of the current academic year.
-                    Make a year active and add its terms in School Setup first.
+                <Empty title={t('No terms to plan in yet')}>
+                    {t('Assessments belong to a term of the current academic year. Make a year active and add its terms in School Setup first.')}
                 </Empty>
             ) : (
                 <>
                     <div className="flex flex-wrap items-center gap-x-[10px] gap-y-2">
-                        <span className={`mr-2 ${capsLabelClass}`}>Every assessment moves through</span>
+                        <span className={`mr-2 ${capsLabelClass}`}>{t('Every assessment moves through')}</span>
                         {ORDER.map((state, position) => (
                             <Fragment key={state}>
                                 {position > 0 && <span className="text-[13px] text-text-muted">→</span>}
@@ -136,7 +136,7 @@ function Calendar({ yearLabel, tabs, counts, terms }: CalendarProps) {
                                               : 'border-solid border-border text-text'
                                     }`}
                                 >
-                                    {STATE_LABELS[state]} · {counts[state] ?? 0}
+                                    {t(STATE_LABELS[state])} · {counts[state] ?? 0}
                                 </span>
                             </Fragment>
                         ))}
@@ -145,31 +145,31 @@ function Calendar({ yearLabel, tabs, counts, terms }: CalendarProps) {
                     <div className="overflow-x-auto rounded-lg border border-solid border-border">
                         <div className="flex min-w-[820px] flex-col">
                             <div className={`flex h-[34px] items-center gap-4 border-b border-solid border-border bg-surface px-4 ${capsLabelClass}`}>
-                                <span className="flex-1">Assessment</span>
-                                <span className="w-[110px] shrink-0">Held</span>
-                                <span className="w-[150px] shrink-0">Marks window</span>
-                                <span className="w-[230px] shrink-0">Status</span>
+                                <span className="flex-1">{t('Assessment')}</span>
+                                <span className="w-[110px] shrink-0">{t('Held')}</span>
+                                <span className="w-[150px] shrink-0">{t('Marks window')}</span>
+                                <span className="w-[230px] shrink-0">{t('Status')}</span>
                                 <span className="w-[150px] shrink-0" />
                             </div>
                             {terms.map((term) => (
                                 <Fragment key={term.id}>
                                     <div className={`flex h-[30px] items-center border-b border-solid border-border px-4 ${capsLabelClass} ${term.current ? 'text-primary' : ''}`}>
-                                        {term.label}
-                                        {term.current ? ' · now' : ''}
+                                        {t(term.label)}
+                                        {term.current ? t(' · now') : ''}
                                     </div>
                                     {term.plans.length === 0 ? (
                                         <div className="flex min-h-[46px] items-center justify-between gap-4 border-b border-solid border-border px-4 py-2 last:border-b-0">
-                                            <span className="text-[13px] leading-4 text-text-muted">No assessments planned.</span>
+                                            <span className="text-[13px] leading-4 text-text-muted">{t('No assessments planned.')}</span>
                                             <span className="flex gap-5">
                                                 <button
                                                     type="button"
                                                     onClick={() => router.post(usual.url(term.id), {}, { preserveScroll: true })}
                                                     className={linkClass}
                                                 >
-                                                    Add the usual three
+                                                    {t('Add the usual three')}
                                                 </button>
                                                 <Link href={create.url({ query: { term: term.id } })} className={linkClass}>
-                                                    Add one →
+                                                    {t('Add one →')}
                                                 </Link>
                                             </span>
                                         </div>
@@ -198,7 +198,7 @@ function Calendar({ yearLabel, tabs, counts, terms }: CalendarProps) {
                                                         <Status plan={plan} />
                                                     </span>
                                                     <Link href={next.href} className={`w-[150px] shrink-0 text-right ${linkClass}`}>
-                                                        {next.label}
+                                                        {t(next.label)}
                                                     </Link>
                                                 </div>
                                             );
@@ -209,9 +209,7 @@ function Calendar({ yearLabel, tabs, counts, terms }: CalendarProps) {
                         </div>
                     </div>
                     <p className="max-w-[900px] text-[13px] leading-[19px] text-text-muted">
-                        Marks are out of 20. Teachers enter marks in the marks
-                        window only. The term average counts each assessment in
-                        the term equally, with one coefficient per subject.
+                        {t('Marks are out of 20. Teachers enter marks in the marks window only. The term average counts each assessment in the term equally, with one coefficient per subject.')}
                     </p>
                 </>
             )}

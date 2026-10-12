@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { index as staffIndex } from '@/actions/App/Http/Controllers/StaffController';
+import { t } from '../../lib/i18n';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 
 export const GENDER_LABELS: Record<string, string> = {
@@ -55,7 +56,7 @@ export function longDate(iso: string | null, withYear = true): string {
 
     const [year, month, day] = iso.split('-');
 
-    return `${day} ${MONTHS[Number(month) - 1]}${withYear ? ` ${year}` : ''}`;
+    return `${day} ${t(MONTHS[Number(month) - 1])}${withYear ? ` ${year}` : ''}`;
 }
 
 export interface Pronouns {
@@ -113,7 +114,7 @@ export function PageHeader({
         <div className="flex flex-col gap-[6px]">
             <Breadcrumbs
                 trail={[
-                    { label: 'Teachers & Staff', href: staffIndex.url() },
+                    { label: t('Teachers & Staff'), href: staffIndex.url() },
                     ...parents,
                     { label: crumb },
                 ]}
@@ -186,13 +187,13 @@ export function FlowSteps({
                                     : 'font-medium text-text-muted'
                             }`}
                         >
-                            {step}
+                            {t(step)}
                         </span>
                     </li>
                 );
             })}
             <li className="ml-auto text-[12px] leading-4 font-medium text-text-muted">
-                Step {active + 1} of {FLOW_STEPS.length}
+                {t('Step :active of :flow_steps', { active: active + 1, flow_steps: FLOW_STEPS.length })}
             </li>
         </ol>
     );

@@ -1,3 +1,4 @@
+import { useT } from '../../lib/i18n';
 import { useEffect, useRef, useState } from 'react';
 
 export function useCountdown(expiresAt: string) {
@@ -30,6 +31,7 @@ export default function CodeBoxes({
     name?: string;
     length?: number;
 }) {
+    const t = useT();
     const [digits, setDigits] = useState<string[]>(Array(length).fill(''));
     const [focused, setFocused] = useState(0);
     const refs = useRef<(HTMLInputElement | null)[]>([]);
@@ -105,7 +107,7 @@ export default function CodeBoxes({
                                 );
                             }}
                             onFocus={() => setFocused(index)}
-                            aria-label={`Digit ${index + 1}`}
+                            aria-label={t('Digit :n', { n: index + 1 })}
                             className={`h-16 w-14 rounded-lg border border-solid text-center font-mono text-xl text-text outline-none ${
                                 focused === index
                                     ? 'border-2 border-primary'

@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * @property string $id
  * @property string $name
+ * @property string $locale
  * @property string $code
  * @property string $slug
  * @property string $ownership
@@ -64,6 +65,11 @@ class School extends Model
         'North', 'North West', 'South', 'South West', 'West',
     ];
 
+    /**
+     * The languages the app can be read in, by locale code.
+     */
+    public const array LOCALES = ['en' => 'English', 'fr' => 'Français'];
+
     protected $fillable = [
         'name',
         'code',
@@ -78,6 +84,7 @@ class School extends Model
         'logo_path',
         'school_days',
         'pass_mark',
+        'locale',
     ];
 
     /**
@@ -99,7 +106,7 @@ class School extends Model
         static::saving(function (School $school) {
             if ($school->exists && $school->isDirty('slug')) {
                 throw ValidationException::withMessages([
-                    'slug' => 'The workspace address cannot be changed.',
+                    'slug' => __('The workspace address cannot be changed.'),
                 ]);
             }
         });

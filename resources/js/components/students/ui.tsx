@@ -5,6 +5,7 @@ import { show as academicsTab } from '@/actions/App/Http/Controllers/StudentAcad
 import { show as attendanceTab } from '@/actions/App/Http/Controllers/StudentAttendanceController';
 import { index, show } from '@/actions/App/Http/Controllers/StudentController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { numberLocale, t } from '../../lib/i18n';
 
 export const GENDER_LABELS: Record<string, string> = {
     female: 'Girl',
@@ -26,7 +27,7 @@ const MONTHS = [
 export function fullDate(iso: string): string {
     const [year, month, day] = iso.split('-');
 
-    return `${Number(day)} ${MONTHS[Number(month) - 1]} ${year}`;
+    return `${Number(day)} ${t(MONTHS[Number(month) - 1])} ${year}`;
 }
 
 /** "15 Sep". */
@@ -37,11 +38,11 @@ export function shortDate(iso: string | null): string {
 
     const [, month, day] = iso.split('-');
 
-    return `${Number(day)} ${MONTHS[Number(month) - 1].slice(0, 3)}`;
+    return `${Number(day)} ${t(MONTHS[Number(month) - 1]).slice(0, 3)}`;
 }
 
 export function money(amount: number, currency?: string): string {
-    const figure = new Intl.NumberFormat('en-US', {
+    const figure = new Intl.NumberFormat(numberLocale(), {
         maximumFractionDigits: 0,
     }).format(amount);
 
@@ -67,7 +68,7 @@ export function FeePill({ status }: { status: string | null }) {
             className={`flex h-6 items-center gap-[6px] rounded-full px-[10px] text-[12px] leading-4 font-medium ${style.pill}`}
         >
             <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${style.dot}`} />
-            {style.label}
+            {t(style.label)}
         </span>
     );
 }
@@ -90,7 +91,7 @@ export function StudentHeader({
         <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex min-w-0 flex-col gap-[6px]">
                 <Breadcrumbs
-                    trail={[{ label: 'Students', href: index.url() }, ...trail]}
+                    trail={[{ label: t('Students'), href: index.url() }, ...trail]}
                 />
                 <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                     {title}
@@ -117,14 +118,14 @@ export function StudentTabs({
     overview?: boolean;
 }) {
     const tabs = [
-        { key: 'overview', label: 'Overview', href: overview ? show.url(studentId) : null, arrives: null },
-        { key: 'academics', label: 'Academics', href: overview ? academicsTab.url(studentId) : null, arrives: null },
-        { key: 'fees', label: 'Fees', href: studentTab.url(studentId), arrives: null },
-        { key: 'attendance', label: 'Attendance', href: overview ? attendanceTab.url(studentId) : null, arrives: null },
+        { key: 'overview', label: t('Overview'), href: overview ? show.url(studentId) : null, arrives: null },
+        { key: 'academics', label: t('Academics'), href: overview ? academicsTab.url(studentId) : null, arrives: null },
+        { key: 'fees', label: t('Fees'), href: studentTab.url(studentId), arrives: null },
+        { key: 'attendance', label: t('Attendance'), href: overview ? attendanceTab.url(studentId) : null, arrives: null },
     ];
 
     return (
-        <nav aria-label="Student record" className="flex gap-6 overflow-x-auto border-b border-solid border-border whitespace-nowrap">
+        <nav aria-label={t('Student record')} className="flex gap-6 overflow-x-auto border-b border-solid border-border whitespace-nowrap">
             {tabs.map((tab) =>
                 tab.key === active ? (
                     <span
@@ -132,7 +133,7 @@ export function StudentTabs({
                         aria-current="page"
                         className="-mb-px border-b-2 border-solid border-primary pb-[10px] text-[14px] leading-[18px] font-semibold text-text"
                     >
-                        {tab.label}
+                        {t(tab.label)}
                     </span>
                 ) : tab.href ? (
                     <Link
@@ -140,16 +141,16 @@ export function StudentTabs({
                         href={tab.href}
                         className="pb-[10px] text-[14px] leading-[18px] font-medium text-text-muted hover:text-text"
                     >
-                        {tab.label}
+                        {t(tab.label)}
                     </Link>
                 ) : (
                     <span
                         key={tab.key}
                         aria-disabled="true"
-                        title={tab.arrives ? `Arrives with ${tab.arrives}` : 'Not open to your role'}
+                        title={tab.arrives ? t('Arrives with :arrives', { arrives: tab.arrives }) : t('Not open to your role')}
                         className="cursor-not-allowed pb-[10px] text-[14px] leading-[18px] font-medium text-text-muted opacity-60"
                     >
-                        {tab.label}
+                        {t(tab.label)}
                     </span>
                 ),
             )}

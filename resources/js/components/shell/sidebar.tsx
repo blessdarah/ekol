@@ -1,5 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { logout } from '@/actions/App/Http/Controllers/Auth/LoginController';
+import { useT } from '../../lib/i18n';
+import LanguageSwitch from './language-switch';
 import { Icons, NAV_SECTIONS, TEACHER_NAV_SECTIONS } from './nav';
 
 export interface ShellSchool {
@@ -43,6 +45,7 @@ export default function Sidebar({
     open?: boolean;
 }) {
     const { url } = usePage();
+    const t = useT();
     const sections = user?.portal === 'teacher' ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
     const path = url.split('?')[0];
 
@@ -62,7 +65,7 @@ export default function Sidebar({
                         {school?.name ?? '…'}
                     </span>
                     <span className="text-[12px] text-text-muted">
-                        {user?.roleLabel ?? 'Administrator'}
+                        {t(user?.roleLabel ?? 'Administrator')}
                     </span>
                 </span>
                 <span className="shrink-0 text-text-muted">
@@ -75,7 +78,7 @@ export default function Sidebar({
                     <span className="h-2 w-2 shrink-0 rounded-full bg-success" />
                     <span className="flex flex-col">
                         <span className="text-[13px] font-medium text-text">
-                            {term.label}
+                            {t(term.label)}
                         </span>
                         <span className="text-[12px] text-text-muted">
                             {term.weekLabel}
@@ -89,7 +92,7 @@ export default function Sidebar({
                     <div key={section.label} className="flex flex-col gap-1">
                         {section.label && (
                             <p className="px-2 text-[11px] font-semibold tracking-[0.06em] text-text-muted uppercase">
-                                {section.label}
+                                {t(section.label)}
                             </p>
                         )}
                         {section.links.map((link) => {
@@ -113,7 +116,7 @@ export default function Sidebar({
                                         {Icons[link.icon]}
                                     </span>
                                     <span className="flex-1 truncate">
-                                        {link.label}
+                                        {t(link.label)}
                                     </span>
                                     {badge !== null && badge !== undefined && (
                                         <span className="rounded-full bg-danger-tint px-2 text-[12px] font-semibold text-danger">
@@ -127,6 +130,10 @@ export default function Sidebar({
                 ))}
             </nav>
 
+            <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
+                <span className="text-[12px] leading-4 text-text-muted">{t('Language')}</span>
+                <LanguageSwitch />
+            </div>
             <div className="flex items-center gap-3 border-t border-border px-5 py-4">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-tint text-[12px] font-bold text-primary">
                     {user ? initialsOf(user.full_name) : '··'}
@@ -136,15 +143,15 @@ export default function Sidebar({
                         {user?.full_name ?? '…'}
                     </span>
                     <span className="text-[12px] text-text-muted">
-                        {user?.roleLabel ?? ''}
+                        {user ? t(user.roleLabel) : ''}
                     </span>
                 </span>
                 <Link
                     href={logout.url()}
                     method="post"
                     as="button"
-                    aria-label="Sign out"
-                    title="Sign out"
+                    aria-label={t('Sign out')}
+                    title={t('Sign out')}
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-text-muted hover:bg-white hover:text-text"
                 >
                     <svg

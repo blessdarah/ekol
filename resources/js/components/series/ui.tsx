@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { index } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { t } from '../../lib/i18n';
 
 export interface SeriesSubject {
     id: string;
@@ -35,10 +36,10 @@ export function poolOf(series: SeriesOption): SeriesSubject[] {
 /** "Min 2 · Max 5", leaving out a limit the series does not set. */
 export function limits(series: SeriesOption, lower = false): string {
     const parts = [
-        series.min !== null ? `Min ${series.min}` : null,
-        series.max !== null ? `Max ${series.max}` : null,
+        series.min !== null ? t('Min :series', { series: series.min }) : null,
+        series.max !== null ? t('Max :series', { series: series.max }) : null,
     ].filter(Boolean);
-    const text = parts.length > 0 ? parts.join(' · ') : 'No limits set';
+    const text = parts.length > 0 ? parts.join(' · ') : t('No limits set');
 
     return lower ? text.toLowerCase() : text;
 }
@@ -48,11 +49,11 @@ export function choiceProblem(series: SeriesOption, electives: number): string |
     const total = coreOf(series).length + electives;
 
     if (series.min !== null && total < series.min) {
-        return `${series.code} needs at least ${series.min} subjects. Add ${series.min - total} more.`;
+        return t(':code needs at least :series subjects. Add :total more.', { code: series.code, series: series.min, total: series.min - total });
     }
 
     if (series.max !== null && total > series.max) {
-        return `${series.code} allows at most ${series.max} subjects. Remove ${total - series.max}.`;
+        return t(':code allows at most :series subjects. Remove :series_a.', { code: series.code, series: series.max, series_a: total - series.max });
     }
 
     return null;
@@ -78,8 +79,8 @@ export function SeriesHeader({
                 <Breadcrumbs
                     trail={
                         trail.length > 0
-                            ? [{ label: 'Series Registration', href: index.url() }, ...trail]
-                            : [{ label: 'Series Registration' }]
+                            ? [{ label: t('Series Registration'), href: index.url() }, ...trail]
+                            : [{ label: t('Series Registration') }]
                     }
                 />
                 <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
@@ -121,13 +122,13 @@ export function SeriesChips({
     })).filter((group) => group.items.length > 0);
 
     return (
-        <div role="radiogroup" aria-label="Series" className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div role="radiogroup" aria-label={t('Series')} className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {groups.map((group, position) => (
                 <div key={group.value} className="flex items-center gap-[6px]">
                     {position > 0 && <span className="mr-[10px] h-5 w-px shrink-0 bg-border" />}
                     {labelled && (
                         <span className={`mr-1 text-[13px] leading-4 font-medium ${group.text}`}>
-                            {group.label}
+                            {t(group.label)}
                         </span>
                     )}
                     {group.items.map((option) => {
@@ -143,7 +144,7 @@ export function SeriesChips({
                                 disabled={blocked}
                                 title={
                                     !option.complete
-                                        ? `${option.name} has no core subjects yet`
+                                        ? t(':option has no core subjects yet', { option: option.name })
                                         : option.name
                                 }
                                 onClick={() => onChange(option.id)}

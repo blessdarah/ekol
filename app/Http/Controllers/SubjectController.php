@@ -284,7 +284,7 @@ class SubjectController extends Controller
             return $created;
         });
 
-        $this->notify("{$created} subjects created.");
+        $this->notify(trans_choice('{1} :count subject created.|[2,*] :count subjects created.', $created, ['count' => $created]));
 
         return redirect()->route('classes.subjects');
     }
@@ -397,7 +397,7 @@ class SubjectController extends Controller
 
             if ($data['classes'] === [] || ! $staffed) {
                 throw ValidationException::withMessages([
-                    'classes' => 'Every selected class needs a teacher before you can register. Save a draft to finish later.',
+                    'classes' => __('Every selected class needs a teacher before you can register. Save a draft to finish later.'),
                 ]);
             }
         }

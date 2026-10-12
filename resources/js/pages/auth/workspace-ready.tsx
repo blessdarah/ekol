@@ -1,3 +1,4 @@
+import { useT } from '../../lib/i18n';
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import AuthLayout from '../../layouts/auth-layout';
@@ -29,6 +30,7 @@ export default function WorkspaceReady({
     studentIdExample: string;
 }) {
     const [copied, setCopied] = useState(false);
+    const t = useT();
 
     function copy() {
         void navigator.clipboard.writeText(address).then(
@@ -41,22 +43,22 @@ export default function WorkspaceReady({
         <AuthLayout
             middle={{ variant: 'stepper', steps: STEPS, active: 2 }}
         >
-            <Head title={`${school.name} is ready`} />
+            <Head title={t(':school is ready', { school: school.name })} />
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
                     <span className="inline-flex items-center gap-2 text-[13px] font-medium text-success">
                         <span className="h-[6px] w-[6px] rounded-full bg-success" />
-                        Workspace created
+                        {t('Workspace created')}
                     </span>
                     <Heading
-                        title={`${school.name} is ready`}
-                        sub="Your workspace is live. Staff will sign in at the address below."
+                        title={t(':school is ready', { school: school.name })}
+                        sub={t('Your workspace is live. Staff will sign in at the address below.')}
                     />
                 </div>
                 <div className="flex flex-col rounded-lg border border-solid border-border">
                     <div className="flex items-center gap-4 border-b border-solid border-border px-[18px] py-3">
                         <span className="w-[160px] shrink-0 text-[14px] text-text-muted">
-                            Workspace address
+                            {t('Workspace address')}
                         </span>
                         <span className="font-mono text-[14px] text-text">
                             {address.replace(/^https?:\/\//, '')}
@@ -66,12 +68,12 @@ export default function WorkspaceReady({
                             onClick={copy}
                             className="ml-auto text-[13px] font-medium text-primary hover:underline"
                         >
-                            {copied ? 'Copied' : 'Copy'}
+                            {copied ? t('Copied') : t('Copy')}
                         </button>
                     </div>
                     <div className="flex items-center gap-4 border-b border-solid border-border px-[18px] py-3">
                         <span className="w-[160px] shrink-0 text-[14px] text-text-muted">
-                            Administrator
+                            {t('Administrator')}
                         </span>
                         <span className="text-[14px] font-medium text-text">
                             {administrator.full_name}
@@ -79,7 +81,7 @@ export default function WorkspaceReady({
                     </div>
                     <div className="flex items-center gap-4 px-[18px] py-3">
                         <span className="w-[160px] shrink-0 text-[14px] text-text-muted">
-                            Student ID format
+                            {t('Student ID format')}
                         </span>
                         <span className="font-mono text-[14px] text-text">
                             {studentIdExample}
@@ -88,7 +90,7 @@ export default function WorkspaceReady({
                 </div>
                 <div className="flex flex-col gap-3">
                     <p className="text-xs font-semibold tracking-[0.06em] text-text-muted uppercase">
-                        Up next
+                        {t('Up next')}
                     </p>
                     {UP_NEXT.map((step) => (
                         <div key={step.n} className="flex items-center gap-4">
@@ -96,7 +98,7 @@ export default function WorkspaceReady({
                                 {step.n}
                             </span>
                             <span className="text-[14px] text-text">
-                                {step.text}
+                                {t(step.text)}
                             </span>
                         </div>
                     ))}
@@ -106,7 +108,7 @@ export default function WorkspaceReady({
                         href={loginUrl}
                         className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-[14px] font-medium text-white hover:bg-primary-hover"
                     >
-                        Continue to sign in
+                        {t('Continue to sign in')}
                         <svg
                             width="14"
                             height="14"
@@ -125,7 +127,7 @@ export default function WorkspaceReady({
                         </svg>
                     </Link>
                     <span className="text-[13px] text-text-muted">
-                        We also emailed you these details.
+                        {t('We also emailed you these details.')}
                     </span>
                 </div>
             </div>

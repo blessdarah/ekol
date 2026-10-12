@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { index as sheetsIndex, show as sheetPage } from '@/actions/App/Http/Controllers/MarkSheetController';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface Lesson {
     id: string;
@@ -54,11 +55,11 @@ function day(iso: string | null): string {
 
     const [, month, date] = iso.split('-');
 
-    return `${Number(date)} ${MONTHS[Number(month) - 1]}`;
+    return `${Number(date)} ${t(MONTHS[Number(month) - 1])}`;
 }
 
 function plural(count: number, one: string, many = `${one}s`): string {
-    return `${count} ${count === 1 ? one : many}`;
+    return `${count} ${count === 1 ? t(one) : t(many)}`;
 }
 
 function wait(minutes: number): string {
@@ -69,7 +70,7 @@ function wait(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const rest = minutes % 60;
 
-    return `In ${plural(hours, 'hour')}${rest > 0 ? ` ${rest} min` : ''}`;
+    return t('In :hour:rest', { hour: plural(hours, 'hour'), rest: rest > 0 ? ` ${rest} min` : '' });
 }
 
 function Card({ title, note, children, className = '' }: { title: string; note?: string; children: ReactNode; className?: string }) {
@@ -99,17 +100,17 @@ const LESSON_PILLS: Record<Lesson['state'], { label: string; pill: string }> = {
 function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmarked, next, sheets, openSheets, closesOn }: TodayProps) {
     const summary = [
         hasTimetable ? plural(lessons.length, 'lesson') + ' today' : 'no timetable published yet',
-        ...(unmarked > 0 ? [`${unmarked} attendance still to mark`] : []),
+        ...(unmarked > 0 ? [t(':unmarked attendance still to mark', { unmarked })] : []),
         plural(openSheets, 'mark sheet') + ' open',
     ].join(' · ');
     const upcoming = sheets.filter((sheet) => !sheet.open);
 
     return (
         <div className="flex flex-col gap-6">
-            <Head title="Today" />
+            <Head title={t('Today')} />
             <div className="flex flex-wrap items-end justify-between gap-6">
                 <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
-                    <p className={`${monoCaps} text-text-muted`}>Today · {date}</p>
+                    <p className={`${monoCaps} text-text-muted`}>{t('Today · :date', { date })}</p>
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {greeting}, {name}
                     </h1>
@@ -117,10 +118,10 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
                 </div>
                 <div className="flex gap-3">
                     <Link href="/my-timetable" className="flex h-9 items-center rounded-md border border-solid border-border px-[14px] text-[14px] leading-[18px] font-medium text-text hover:bg-surface">
-                        My timetable
+                        {t('My timetable')}
                     </Link>
                     <Link href={sheetsIndex.url()} className="flex h-9 items-center rounded-md bg-primary px-4 text-[14px] leading-[18px] font-medium text-white hover:bg-primary-hover">
-                        Enter marks
+                        {t('Enter marks')}
                     </Link>
                 </div>
             </div>
@@ -130,40 +131,40 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
                     <>
                         <div className="flex min-w-0 flex-1 flex-col gap-2">
                             <p className={`${monoCaps} text-primary`}>
-                                {next.state === 'now' ? 'Now' : wait(next.in_minutes ?? 0)} · {next.starts_at} – {next.ends_at}
+                                {next.state === 'now' ? t('Now') : wait(next.in_minutes ?? 0)} · {next.starts_at} – {next.ends_at}
                             </p>
                             <p className="font-display text-[20px] leading-[26px] font-semibold text-text">
                                 {next.class} · {next.subject}
                             </p>
                             <p className="text-[13px] leading-[18px] text-text-muted">
-                                {next.room ? `Room ${next.room}` : 'No room set'} · {plural(next.students, 'student')}
+                                {next.room ? t('Room :room', { room: next.room }) : t('No room set')} · {plural(next.students, 'student')}
                             </p>
                         </div>
                         <div className="flex gap-3">
                             <Link href={`/attendance?lesson=${next.id}`} className="flex h-9 items-center rounded-md bg-primary px-4 text-[14px] leading-[18px] font-medium text-white hover:bg-primary-hover">
-                                Take attendance
+                                {t('Take attendance')}
                             </Link>
                             <Link href="/teaching-log" className="flex h-9 items-center rounded-md border border-solid border-[#C9DED4] bg-white px-4 text-[14px] leading-[18px] font-medium text-text hover:bg-surface">
-                                Start lesson
+                                {t('Start lesson')}
                             </Link>
                         </div>
                     </>
                 ) : (
                     <div className="flex flex-col gap-2">
-                        <p className={`${monoCaps} text-primary`}>Next lesson</p>
+                        <p className={`${monoCaps} text-primary`}>{t('Next lesson')}</p>
                         <p className="font-display text-[20px] leading-[26px] font-semibold text-text">
                             {!hasTimetable
-                                ? 'No timetable is published yet'
+                                ? t('No timetable is published yet')
                                 : lessons.length > 0
-                                  ? 'Your lessons are done for today'
+                                  ? t('Your lessons are done for today')
                                   : isSchoolDay
-                                    ? 'You have no lessons today'
-                                    : 'No school today'}
+                                    ? t('You have no lessons today')
+                                    : t('No school today')}
                         </p>
                         <p className="text-[13px] leading-[18px] text-text-muted">
                             {hasTimetable
-                                ? 'Your next lesson shows here on your next teaching day.'
-                                : 'Your lessons appear here once the school publishes the term’s timetable.'}
+                                ? t('Your next lesson shows here on your next teaching day.')
+                                : t('Your lessons appear here once the school publishes the term’s timetable.')}
                         </p>
                     </div>
                 )}
@@ -171,12 +172,12 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
 
             <div className="flex flex-col gap-6 xl:flex-row">
                 <Card
-                    title="Marks to enter"
+                    title={t('Marks to enter')}
                     note={openSheets > 0 ? `${openSheets} open${closesOn ? ` · ${openSheets === 1 ? 'closes' : 'all close'} ${day(closesOn)}` : ''}` : undefined}
                     className="xl:flex-[1.75]"
                 >
                     {sheets.length === 0 ? (
-                        <Pending>Nothing to enter. A sheet appears here when an assessment is scheduled for a class you teach.</Pending>
+                        <Pending>{t('Nothing to enter. A sheet appears here when an assessment is scheduled for a class you teach.')}</Pending>
                     ) : (
                         sheets.map((sheet, position) => {
                             const share = sheet.students > 0 ? Math.round((sheet.entered / sheet.students) * 100) : 0;
@@ -209,7 +210,7 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
                                                 </span>
                                             </div>
                                             <div className="flex min-w-0 flex-1 items-center justify-end gap-3">
-                                                {sheet.submitted && <span className="text-[12px] leading-4 text-success">Submitted</span>}
+                                                {sheet.submitted && <span className="text-[12px] leading-4 text-success">{t('Submitted')}</span>}
                                                 <Link
                                                     href={sheetPage.url(sheet.id)}
                                                     className={
@@ -218,13 +219,13 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
                                                             : outlineButton
                                                     }
                                                 >
-                                                    {sheet.submitted ? 'Review' : resume ? 'Resume' : 'Start'}
+                                                    {sheet.submitted ? t('Review') : resume ? t('Resume') : t('Start')}
                                                 </Link>
                                             </div>
                                         </>
                                     ) : (
                                         <p className="min-w-0 flex-1 text-right text-[13px] leading-4 font-medium text-text-muted opacity-70">
-                                            Opens {day(sheet.opens_on)}
+                                            {t('Opens :opens_on', { opens_on: day(sheet.opens_on) })}
                                         </p>
                                     )}
                                 </div>
@@ -234,30 +235,30 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
                     {sheets.length > 0 && (
                         <p className="border-t border-solid border-border bg-row-alt px-4 py-3 text-[12px] leading-4 text-text-muted">
                             {openSheets === 0
-                                ? 'Nothing is owed right now.'
+                                ? t('Nothing is owed right now.')
                                 : upcoming.length === 0
-                                  ? 'Nothing else is coming up.'
-                                  : `${plural(upcoming.length, 'more sheet')} ${upcoming.length === 1 ? 'opens' : 'open'} later.`}
+                                  ? t('Nothing else is coming up.')
+                                  : t(':sheet :open later.', { sheet: plural(upcoming.length, 'more sheet'), open: upcoming.length === 1 ? 'opens' : 'open' })}
                         </p>
                     )}
                 </Card>
 
-                <Card title="Today’s lessons" note={hasTimetable ? String(lessons.length) : undefined} className="xl:flex-1">
+                <Card title={t('Today’s lessons')} note={hasTimetable ? String(lessons.length) : undefined} className="xl:flex-1">
                     {lessons.length === 0 ? (
                         <Pending>
                             {!hasTimetable
-                                ? 'The term’s timetable is not published yet.'
+                                ? t('The term’s timetable is not published yet.')
                                 : isSchoolDay
-                                  ? 'No lessons on your timetable today.'
-                                  : 'Not a school day.'}
+                                  ? t('No lessons on your timetable today.')
+                                  : t('Not a school day.')}
                         </Pending>
                     ) : (
                         lessons.map((lesson, position) => {
                             const focus = lesson.id === next?.id;
                             const pill = lesson.marked
-                                ? { label: 'Marked', pill: 'bg-success-tint text-success' }
+                                ? { label: t('Marked'), pill: 'bg-success-tint text-success' }
                                 : lesson.state === 'done'
-                                  ? { label: 'Not marked', pill: 'bg-warning-tint text-[#8A5A12]' }
+                                  ? { label: t('Not marked'), pill: 'bg-warning-tint text-[#8A5A12]' }
                                   : LESSON_PILLS[lesson.state];
 
                             return (
@@ -272,10 +273,10 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
                                             {lesson.class} · {lesson.subject}
                                         </span>
                                         <span className="text-[12px] leading-4 text-text-muted">
-                                            {lesson.room ? `Room ${lesson.room}` : 'No room'} · {plural(lesson.students, 'student')}
+                                            {lesson.room ? t('Room :room', { room: lesson.room }) : t('No room')} · {plural(lesson.students, 'student')}
                                         </span>
                                     </span>
-                                    <span className={`shrink-0 rounded-full px-2 py-[3px] text-[12px] leading-4 font-medium ${pill.pill}`}>{pill.label}</span>
+                                    <span className={`shrink-0 rounded-full px-2 py-[3px] text-[12px] leading-4 font-medium ${pill.pill}`}>{t(pill.label)}</span>
                                 </Link>
                             );
                         })
@@ -284,15 +285,13 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
             </div>
 
             <div className="flex flex-col gap-6 xl:flex-row">
-                <Card title="Teaching log" className="xl:flex-[1.75]">
+                <Card title={t('Teaching log')} className="xl:flex-[1.75]">
                     <Pending>
-                        Lessons you have taught but not logged will be listed
-                        here, with the topic and homework to fill in. The
-                        teaching log is not built yet.
+                        {t('Lessons you have taught but not logged will be listed here, with the topic and homework to fill in. The teaching log is not built yet.')}
                     </Pending>
                 </Card>
-                <Card title="Lesson notes" className="xl:flex-1">
-                    <Pending>Notes that are due will be listed here. Lesson notes are not built yet.</Pending>
+                <Card title={t('Lesson notes')} className="xl:flex-1">
+                    <Pending>{t('Notes that are due will be listed here. Lesson notes are not built yet.')}</Pending>
                 </Card>
             </div>
 
@@ -302,9 +301,7 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
                     <path d="M7 4.5V7.5" fill="none" stroke="#56625C" strokeWidth="1.5" strokeLinecap="round" />
                     <circle cx="7" cy="9.6" r="0.8" fill="#56625C" />
                 </svg>
-                A sheet you save is a draft until you submit it. After the
-                marks window closes, nobody can change a mark without the
-                school reopening it.
+                {t('A sheet you save is a draft until you submit it. After the marks window closes, nobody can change a mark without the school reopening it.')}
             </p>
         </div>
     );

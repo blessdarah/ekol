@@ -147,7 +147,7 @@ class StudentController extends Controller
 
         if (! $year) {
             throw ValidationException::withMessages([
-                'class_id' => 'Students are placed in a class of an academic year. Make a year active in School Setup first.',
+                'class_id' => __('Students are placed in a class of an academic year. Make a year active in School Setup first.'),
             ]);
         }
 
@@ -175,7 +175,7 @@ class StudentController extends Controller
             return $student;
         });
 
-        $this->notify("{$student->full_name} registered as {$student->admission_no}.");
+        $this->notify(__(':name registered as :matricule.', ['name' => $student->full_name, 'matricule' => $student->admission_no]));
 
         return $request->boolean('another')
             ? redirect()->route('students.create')
@@ -506,7 +506,7 @@ class StudentController extends Controller
 
         if (! $main || trim((string) ($main['phone'] ?? '')) === '') {
             throw ValidationException::withMessages([
-                'main_contact' => 'The main contact needs a name and a phone number.',
+                'main_contact' => __('The main contact needs a name and a phone number.'),
             ]);
         }
 
@@ -517,13 +517,13 @@ class StudentController extends Controller
 
         if ($taken >= $class->capacity) {
             throw ValidationException::withMessages([
-                'class_id' => "{$class->name} is full, {$taken} of {$class->capacity}. Choose another class or add seats under Levels.",
+                'class_id' => __(':name is full, :taken of :capacity. Choose another class or add seats under Levels.', ['name' => $class->name, 'taken' => $taken, 'capacity' => $class->capacity]),
             ]);
         }
 
         if ($data['series_id'] && Series::whereKey($data['series_id'])->value('level_id') !== $class->level_id) {
             throw ValidationException::withMessages([
-                'series_id' => 'That series belongs to another level.',
+                'series_id' => __('That series belongs to another level.'),
             ]);
         }
 
@@ -536,7 +536,7 @@ class StudentController extends Controller
 
         if ($twin && ! ($data['allow_duplicate'] ?? false)) {
             throw ValidationException::withMessages([
-                'duplicate' => "{$twin->full_name} ({$twin->admission_no}) has the same name and date of birth.",
+                'duplicate' => __(':full_name (:admission_no) has the same name and date of birth.', ['full_name' => $twin->full_name, 'admission_no' => $twin->admission_no]),
             ]);
         }
 

@@ -62,20 +62,20 @@ class GradingController extends Controller
             $above = $bands->get($position - 1);
 
             if ($band['to'] < $band['from']) {
-                throw ValidationException::withMessages(['bands' => "Grade {$band['letter']} ends below where it starts."]);
+                throw ValidationException::withMessages(['bands' => __('Grade :letter ends below where it starts.', ['letter' => $band['letter']])]);
             }
 
             if ($position === 0 ? abs($band['to'] - $top) > 0.001 : abs($above['from'] - $band['to'] - 0.01) > 0.001) {
                 throw ValidationException::withMessages([
                     'bands' => $position === 0
-                        ? "The top grade must end at {$top}."
-                        : "Grade {$band['letter']} must end at ".number_format($above['from'] - 0.01, 2).", just below grade {$above['letter']}.",
+                        ? __('The top grade must end at :top.', ['top' => $top])
+                        : __('Grade :letter must end at :value, just below grade :above.', ['letter' => $band['letter'], 'value' => number_format($above['from'] - 0.01, 2), 'above' => $above['letter']]),
                 ]);
             }
         }
 
         if (abs($bands->last()['from']) > 0.001) {
-            throw ValidationException::withMessages(['bands' => 'The lowest grade must start at 0.']);
+            throw ValidationException::withMessages(['bands' => __('The lowest grade must start at 0.')]);
         }
 
         DB::transaction(function () use ($school, $data, $bands, $user) {

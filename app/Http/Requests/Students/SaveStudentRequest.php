@@ -70,7 +70,7 @@ class SaveStudentRequest extends SchoolRequest
     public function messages(): array
     {
         return [
-            'previous_school.required_if_accepted' => 'Enter the school the student is transferring from.',
+            'previous_school.required_if_accepted' => __('Enter the school the student is transferring from.'),
         ];
     }
 }

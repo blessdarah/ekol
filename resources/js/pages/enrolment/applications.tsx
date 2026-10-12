@@ -16,6 +16,7 @@ import {
 import { PlusIcon, capsLabelClass, solidButtonClass } from '../../components/structure/ui';
 import { shortDate } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface Filters {
     stage: string;
@@ -90,17 +91,17 @@ function Applications({ enrolment, counts, filters, levels, applications }: Appl
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title="Applications" />
+            <Head title={t('Applications')} />
             <EnrolmentHeader
                 active="applications"
                 progress={enrolment}
-                trail={[{ label: 'Applications' }]}
-                title="Applications"
-                meta="record each application here, then review it"
+                trail={[{ label: t('Applications') }]}
+                title={t('Applications')}
+                meta={t('record each application here, then review it')}
                 action={
                     <Link href={create.url()} className={solidButtonClass}>
                         <PlusIcon />
-                        Add application
+                        {t('Add application')}
                     </Link>
                 }
             />
@@ -125,7 +126,7 @@ function Applications({ enrolment, counts, filters, levels, applications }: Appl
                                 {tab.key === 'to_review' && (counts.to_review ?? 0) > 0 && (
                                     <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                                 )}
-                                {tab.label} · {count(counts[tab.count] ?? 0)}
+                                {t(tab.label)} · {count(counts[tab.count] ?? 0)}
                             </button>
                         );
                     })}
@@ -136,22 +137,22 @@ function Applications({ enrolment, counts, filters, levels, applications }: Appl
                             <circle cx="11" cy="11" r="7" fill="none" stroke="#56625C" strokeWidth="2" />
                             <path d="M16 16l5 5" fill="none" stroke="#56625C" strokeWidth="2" strokeLinecap="round" />
                         </svg>
-                        <span className="sr-only">Search applications</span>
+                        <span className="sr-only">{t('Search applications')}</span>
                         <input
                             type="search"
                             value={search}
                             onChange={(e) => onSearch(e.target.value)}
-                            placeholder="Name or reference"
+                            placeholder={t('Name or reference')}
                             className="w-full bg-transparent text-[14px] leading-[18px] text-text outline-none placeholder:text-text-muted"
                         />
                     </label>
                     <select
-                        aria-label="Applying to"
+                        aria-label={t('Applying to')}
                         value={filters.level}
                         onChange={(e) => visit({ level: e.target.value })}
                         className="h-9 rounded-md border border-solid border-border bg-white px-3 text-[13px] leading-4 font-medium text-text outline-none focus:border-primary"
                     >
-                        <option value="">Applying to: any level</option>
+                        <option value="">{t('Applying to: any level')}</option>
                         {levels.map((level) => (
                             <option key={level.id} value={level.id}>
                                 {level.name}
@@ -164,17 +165,17 @@ function Applications({ enrolment, counts, filters, levels, applications }: Appl
             {applications.rows.length === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-5">
                     <p className="text-[14px] leading-[18px] font-semibold text-text">
-                        {filtered ? 'No application matches' : `No applications for ${enrolment.year} yet`}
+                        {filtered ? t('No application matches') : t('No applications for :year yet', { year: enrolment.year })}
                     </p>
                     <p className="max-w-[560px] text-[13px] leading-[19px] text-text">
                         {filtered
-                            ? 'Try another stage, level or name.'
-                            : 'When a family applies, record the application here. It waits under To review until someone admits, waitlists or declines it.'}
+                            ? t('Try another stage, level or name.')
+                            : t('When a family applies, record the application here. It waits under To review until someone admits, waitlists or declines it.')}
                     </p>
                     {!filtered && (
                         <Link href={create.url()} className={solidButtonClass}>
                             <PlusIcon />
-                            Add application
+                            {t('Add application')}
                         </Link>
                     )}
                 </div>
@@ -182,11 +183,11 @@ function Applications({ enrolment, counts, filters, levels, applications }: Appl
                 <div className="overflow-x-auto rounded-lg border border-solid border-border">
                     <div className="flex min-w-[880px] flex-col">
                         <div className={`flex h-9 items-center gap-4 border-b border-solid border-border bg-surface px-4 ${capsLabelClass}`}>
-                            <span className="w-[250px] shrink-0">Applicant</span>
-                            <span className="w-[120px] shrink-0">Applying to</span>
-                            <span className="flex-1">Coming from</span>
-                            <span className="w-20 shrink-0">Applied</span>
-                            <span className="w-40 shrink-0">Stage</span>
+                            <span className="w-[250px] shrink-0">{t('Applicant')}</span>
+                            <span className="w-[120px] shrink-0">{t('Applying to')}</span>
+                            <span className="flex-1">{t('Coming from')}</span>
+                            <span className="w-20 shrink-0">{t('Applied')}</span>
+                            <span className="w-40 shrink-0">{t('Stage')}</span>
                             <span className="w-[70px] shrink-0" />
                         </div>
                         {applications.rows.map((row) => (
@@ -208,7 +209,7 @@ function Applications({ enrolment, counts, filters, levels, applications }: Appl
                                     <StagePill stage={row.stage === 'to_review' && row.missing > 0 ? 'documents' : row.stage} />
                                 </span>
                                 <span className="w-[70px] shrink-0 text-right text-[13px] leading-4 font-medium text-primary">
-                                    {row.stage === 'to_review' ? 'Review' : 'Open'}
+                                    {row.stage === 'to_review' ? t('Review') : t('Open')}
                                 </span>
                             </Link>
                         ))}
@@ -219,7 +220,7 @@ function Applications({ enrolment, counts, filters, levels, applications }: Appl
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex flex-wrap items-center gap-4">
                     <p className="text-[13px] leading-4 text-text-muted">
-                        {applications.rows.length} of {count(applications.total)} shown · newest first
+                        {t(':rows of :total shown · newest first', { rows: applications.rows.length, total: count(applications.total) })}
                     </p>
                     {applications.lastPage > 1 && (
                         <div className="flex items-center gap-1">
@@ -229,7 +230,7 @@ function Applications({ enrolment, counts, filters, levels, applications }: Appl
                                 onClick={() => visit({ page: applications.page - 1 })}
                                 className="flex h-7 items-center rounded-md px-3 text-[13px] text-text hover:bg-surface disabled:opacity-40"
                             >
-                                ← Newer
+                                {t('← Newer')}
                             </button>
                             <span className="px-1 font-mono text-[12px] text-text-muted">
                                 {applications.page} / {applications.lastPage}
@@ -240,13 +241,13 @@ function Applications({ enrolment, counts, filters, levels, applications }: Appl
                                 onClick={() => visit({ page: applications.page + 1 })}
                                 className="flex h-7 items-center rounded-md px-3 text-[13px] text-text hover:bg-surface disabled:opacity-40"
                             >
-                                Older →
+                                {t('Older →')}
                             </button>
                         </div>
                     )}
                 </div>
                 <Link href={reEnrolment.url()} className={nextStepClass}>
-                    Next: re-enrolment →
+                    {t('Next: re-enrolment →')}
                 </Link>
             </div>
         </div>

@@ -9,6 +9,7 @@ import {
 } from '@/actions/App/Http/Controllers/EnrolmentController';
 import { capsLabelClass } from '../structure/ui';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { numberLocale, t } from '../../lib/i18n';
 
 /** Where enrolment stands; every enrolment page receives it. */
 export interface EnrolmentProgress {
@@ -35,7 +36,7 @@ export const nextStepClass =
     'flex h-[34px] items-center rounded-md border border-solid border-primary bg-white px-4 text-[13px] leading-4 font-semibold text-primary hover:bg-primary-tint';
 
 export function count(value: number): string {
-    return new Intl.NumberFormat('en-US').format(value);
+    return new Intl.NumberFormat(numberLocale()).format(value);
 }
 
 /** "Form 2", "Form 2 and Form 4", "Form 1, Form 2 and Form 4". */
@@ -44,7 +45,7 @@ export function listed(names: string[]): string {
         return names.join('');
     }
 
-    return `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+    return t(':slice and :names', { slice: names.slice(0, -1).join(', '), names: names[names.length - 1] });
 }
 
 export const STAGES: Record<string, { label: string; pill: string; dot?: string }> = {
@@ -65,7 +66,7 @@ export function StagePill({ stage, small = false }: { stage: string; small?: boo
             } ${style.pill}`}
         >
             {style.dot && <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${style.dot}`} />}
-            {style.label}
+            {t(style.label)}
         </span>
     );
 }
@@ -87,28 +88,28 @@ function TabBadge({ tone, children }: { tone: 'todo' | 'quiet' | 'done'; childre
 export function EnrolmentTabs({ active, progress }: { active: EnrolmentTab; progress: EnrolmentProgress }) {
     const done = progress.confirmed || progress.ready;
     const badge = (left: number, label: string = count(left)) =>
-        left > 0 ? <TabBadge tone="todo">{label}</TabBadge> : done ? <TabBadge tone="done">done</TabBadge> : null;
+        left > 0 ? <TabBadge tone="todo">{label}</TabBadge> : done ? <TabBadge tone="done">{t('done')}</TabBadge> : null;
 
     const tabs: { key: EnrolmentTab; label: string; href: string; badge?: ReactNode; locked?: boolean }[] = [
-        { key: 'overview', label: 'Overview', href: index.url() },
-        { key: 'applications', label: 'Applications', href: applications.url(), badge: badge(progress.to_review) },
-        { key: 're-enrolment', label: 'Re-enrolment', href: reEnrolment.url(), badge: badge(progress.undecided) },
+        { key: 'overview', label: t('Overview'), href: index.url() },
+        { key: 'applications', label: t('Applications'), href: applications.url(), badge: badge(progress.to_review) },
+        { key: 're-enrolment', label: t('Re-enrolment'), href: reEnrolment.url(), badge: badge(progress.undecided) },
         {
             key: 'placement',
-            label: 'Class placement',
+            label: t('Class placement'),
             href: placement.url(),
             badge:
                 progress.unplaced > 0 ? (
-                    <TabBadge tone="quiet">{count(progress.unplaced)} left</TabBadge>
+                    <TabBadge tone="quiet">{t(':unplaced left', { unplaced: count(progress.unplaced) })}</TabBadge>
                 ) : (
                     badge(0)
                 ),
         },
-        { key: 'confirm', label: 'Confirm', href: confirm.url(), locked: !done },
+        { key: 'confirm', label: t('Confirm'), href: confirm.url(), locked: !done },
     ];
 
     return (
-        <nav aria-label="Enrolment steps" className="flex flex-wrap gap-x-7 border-b border-solid border-border">
+        <nav aria-label={t('Enrolment steps')} className="flex flex-wrap gap-x-7 border-b border-solid border-border">
             {tabs.map((tab) => (
                 <Link
                     key={tab.key}
@@ -120,7 +121,7 @@ export function EnrolmentTabs({ active, progress }: { active: EnrolmentTab; prog
                             : `border-transparent font-medium text-text-muted hover:text-text ${tab.locked ? 'opacity-60' : ''}`
                     }`}
                 >
-                    {tab.label}
+                    {t(tab.label)}
                     {tab.badge}
                 </Link>
             ))}
@@ -154,15 +155,15 @@ export function EnrolmentHeader({
                     <Breadcrumbs
                         trail={
                             trail.length > 0
-                                ? [{ label: 'Enrolment', href: index.url() }, ...trail]
-                                : [{ label: 'Enrolment' }]
+                                ? [{ label: t('Enrolment'), href: index.url() }, ...trail]
+                                : [{ label: t('Enrolment') }]
                         }
                     />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {title}
                     </h1>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">
-                        {status ?? <span className="font-mono uppercase">Enrolment · {progress.year}</span>}
+                        {status ?? <span className="font-mono uppercase">{t('Enrolment · :year', { year: progress.year })}</span>}
                         {meta && <span>· {meta}</span>}
                     </div>
                 </div>
@@ -225,16 +226,14 @@ export function NoYear({ currentLabel, setupHref }: { currentLabel: string | nul
     return (
         <div className="flex flex-col gap-3 rounded-md bg-surface p-5">
             <p className="text-[14px] leading-[18px] font-semibold text-text">
-                There is no next year to enrol for yet
+                {t('There is no next year to enrol for yet')}
             </p>
             <p className="max-w-[640px] text-[13px] leading-[19px] text-text">
-                Enrolment prepares the academic year after
-                {currentLabel ? ` ${currentLabel}` : ' the current one'}: new
-                applications, who is promoted or repeats, and which class each
-                student sits in. Add that year in School Setup and it opens here.
+                {t('Enrolment prepares the academic year after')}
+                {currentLabel ? ` ${currentLabel}` : t(' the current one')}{t(': new applications, who is promoted or repeats, and which class each student sits in. Add that year in School Setup and it opens here.')}
             </p>
             <Link href={setupHref} className={linkClass}>
-                Open School Setup →
+                {t('Open School Setup →')}
             </Link>
         </div>
     );

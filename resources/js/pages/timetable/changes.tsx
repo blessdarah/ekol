@@ -14,6 +14,7 @@ import {
     quietActionClass,
 } from '../../components/timetable/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 type Mode = 'cover' | 'swap' | 'room';
 
@@ -111,28 +112,27 @@ function Changes(props: ChangesProps) {
 
     return (
         <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
-            <Head title="Timetable changes" />
+            <Head title={t('Timetable changes')} />
             <TimetableHeader
                 page="changes"
                 phase={phase}
-                trail={[{ label: 'Changes' }]}
-                title="Changes"
+                trail={[{ label: t('Changes') }]}
+                title={t('Changes')}
                 meta={
                     live !== null
-                        ? `Version ${live} is live. Cover a lesson, swap two lessons or change a room. No new version needed.`
-                        : 'Changes apply to a published timetable, and none is live yet.'
+                        ? t('Version :live is live. Cover a lesson, swap two lessons or change a room. No new version needed.', { live })
+                        : t('Changes apply to a published timetable, and none is live yet.')
                 }
             />
 
             {live === null ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-5">
-                    <p className="text-[14px] leading-[18px] font-semibold text-text">Nothing is published yet</p>
+                    <p className="text-[14px] leading-[18px] font-semibold text-text">{t('Nothing is published yet')}</p>
                     <p className="max-w-[600px] text-[13px] leading-[19px] text-text">
-                        Covers, swaps and room changes are made against the
-                        live timetable. Build and publish version {phase.draft} first.
+                        {t('Covers, swaps and room changes are made against the live timetable. Build and publish version :draft first.', { draft: phase.draft })}
                     </p>
                     <Link href={overview.url()} className={linkClass}>
-                        Back to the overview →
+                        {t('Back to the overview →')}
                     </Link>
                 </div>
             ) : (
@@ -151,19 +151,19 @@ function Changes(props: ChangesProps) {
                                             : 'border-border font-medium text-text hover:bg-surface'
                                     }`}
                                 >
-                                    {option.label}
+                                    {t(option.label)}
                                 </button>
                             ))}
                         </div>
 
-                        <p className={capsLabelClass}>{MODES.find((option) => option.key === mode)?.label}</p>
+                        <p className={capsLabelClass}>{t(MODES.find((option) => option.key === mode)?.label)}</p>
 
                         <div className="flex flex-col gap-4 sm:flex-row">
                             {mode === 'cover' ? (
                                 <label className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                                    Teacher who is away
+                                    {t('Teacher who is away')}
                                     <select value={props.teacher ?? ''} onChange={(e) => visit({ teacher: e.target.value })} className={inputClass}>
-                                        <option value="">Choose a teacher</option>
+                                        <option value="">{t('Choose a teacher')}</option>
                                         {(props.teachers ?? []).map((teacher) => (
                                             <option key={teacher.id} value={teacher.id}>
                                                 {teacher.name}
@@ -173,7 +173,7 @@ function Changes(props: ChangesProps) {
                                 </label>
                             ) : (
                                 <label className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                                    Class
+                                    {t('Class')}
                                     <select
                                         value={props.class ?? ''}
                                         onChange={(e) => {
@@ -183,7 +183,7 @@ function Changes(props: ChangesProps) {
                                         }}
                                         className={inputClass}
                                     >
-                                        <option value="">Choose a class</option>
+                                        <option value="">{t('Choose a class')}</option>
                                         {(props.classes ?? []).map((option) => (
                                             <option key={option.id} value={option.id}>
                                                 {option.name}
@@ -193,7 +193,7 @@ function Changes(props: ChangesProps) {
                                 </label>
                             )}
                             <label className={`flex shrink-0 flex-col gap-[6px] sm:w-[200px] ${fieldLabelClass}`}>
-                                Day
+                                {t('Day')}
                                 <input
                                     type="date"
                                     value={date}
@@ -210,16 +210,16 @@ function Changes(props: ChangesProps) {
                                 {lessons.length === 0 ? (
                                     <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
                                         {props.isSchoolDay
-                                            ? 'This teacher has no lessons that day, so there is nothing to cover.'
-                                            : 'That day is not a school day.'}
+                                            ? t('This teacher has no lessons that day, so there is nothing to cover.')
+                                            : t('That day is not a school day.')}
                                     </p>
                                 ) : (
                                     <div className="overflow-x-auto rounded-lg border border-solid border-border">
                                         <div className="flex min-w-[560px] flex-col">
                                             <div className={`flex h-8 items-center gap-4 border-b border-solid border-border bg-surface px-[14px] ${capsLabelClass}`}>
-                                                <span className="w-[60px] shrink-0">Period</span>
-                                                <span className="flex-1">Lesson</span>
-                                                <span className="w-[240px] shrink-0">Cover by</span>
+                                                <span className="w-[60px] shrink-0">{t('Period')}</span>
+                                                <span className="flex-1">{t('Lesson')}</span>
+                                                <span className="w-[240px] shrink-0">{t('Cover by')}</span>
                                             </div>
                                             {lessons.map((lesson, position) => {
                                                 const value = covers[lesson.id] ?? lesson.covers[0]?.id ?? '';
@@ -235,26 +235,26 @@ function Changes(props: ChangesProps) {
                                                     >
                                                         <span className="w-[60px] shrink-0 font-mono text-[13px] leading-4 text-text">{lesson.period}</span>
                                                         <span className="flex min-w-0 flex-1 flex-col">
-                                                            <span className="truncate text-[14px] leading-[18px] font-medium text-text">{lesson.title}</span>
+                                                            <span className="truncate text-[14px] leading-[18px] font-medium text-text">{t(lesson.title)}</span>
                                                             <span className={`text-[12px] leading-4 ${weak ? amberText : 'text-text-muted'}`}>
                                                                 {lesson.covers.length === 0
-                                                                    ? 'Nobody is free in this period'
+                                                                    ? t('Nobody is free in this period')
                                                                     : weak
-                                                                      ? 'Not a teacher of the subject · supervised study'
-                                                                      : `Room ${lesson.room ?? 'not set'}`}
+                                                                      ? t('Not a teacher of the subject · supervised study')
+                                                                      : t('Room :set', { set: lesson.room ?? 'not set' })}
                                                             </span>
                                                         </span>
                                                         <select
-                                                            aria-label={`Cover for ${lesson.title}`}
+                                                            aria-label={t('Cover for :title', { title: lesson.title })}
                                                             value={value}
                                                             disabled={lesson.covers.length === 0}
                                                             onChange={(e) => setCovers({ ...covers, [lesson.id]: e.target.value })}
                                                             className="h-[34px] w-[240px] shrink-0 rounded-md border border-solid border-border bg-white px-[10px] text-[13px] leading-4 text-text outline-none focus:border-primary disabled:opacity-50"
                                                         >
-                                                            <option value="">No cover</option>
+                                                            <option value="">{t('No cover')}</option>
                                                             {lesson.covers.map((cover) => (
                                                                 <option key={cover.id} value={cover.id}>
-                                                                    {cover.teaches ? `${cover.name} · free, teaches it` : `Supervised study · ${cover.name}`}
+                                                                    {cover.teaches ? t(':cover · free, teaches it', { cover: cover.name }) : t('Supervised study · :cover', { cover: cover.name })}
                                                                 </option>
                                                             ))}
                                                         </select>
@@ -271,41 +271,41 @@ function Changes(props: ChangesProps) {
                             <div className="flex flex-col gap-4">
                                 {slots.length === 0 ? (
                                     <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                                        This class has no lessons on the live timetable.
+                                        {t('This class has no lessons on the live timetable.')}
                                     </p>
                                 ) : (
                                     <div className="flex flex-col gap-4 sm:flex-row">
                                         <label className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                                            {mode === 'swap' ? 'First lesson' : 'Lesson'}
+                                            {mode === 'swap' ? t('First lesson') : t('Lesson')}
                                             <select value={first} onChange={(e) => setFirst(e.target.value)} className={inputClass}>
-                                                <option value="">Choose a lesson</option>
+                                                <option value="">{t('Choose a lesson')}</option>
                                                 {slots.map((slot) => (
                                                     <option key={slot.id} value={slot.id}>
-                                                        {slot.label}
-                                                        {mode === 'room' ? ` · ${slot.room ?? 'no room'}` : ''}
+                                                        {t(slot.label)}
+                                                        {mode === 'room' ? ` · ${slot.room ?? t('no room')}` : ''}
                                                     </option>
                                                 ))}
                                             </select>
                                         </label>
                                         {mode === 'swap' ? (
                                             <label className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                                                Swap with
+                                                {t('Swap with')}
                                                 <select value={second} onChange={(e) => setSecond(e.target.value)} className={inputClass}>
-                                                    <option value="">Choose a lesson</option>
+                                                    <option value="">{t('Choose a lesson')}</option>
                                                     {slots
                                                         .filter((slot) => slot.id !== first)
                                                         .map((slot) => (
                                                             <option key={slot.id} value={slot.id}>
-                                                                {slot.label}
+                                                                {t(slot.label)}
                                                             </option>
                                                         ))}
                                                 </select>
                                             </label>
                                         ) : (
                                             <label className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
-                                                New room
+                                                {t('New room')}
                                                 <select value={room} onChange={(e) => setRoom(e.target.value)} className={inputClass}>
-                                                    <option value="">Choose a room</option>
+                                                    <option value="">{t('Choose a room')}</option>
                                                     {(props.rooms ?? [])
                                                         .filter((option) => option.id !== slots.find((slot) => slot.id === first)?.room_id)
                                                         .map((option) => (
@@ -319,7 +319,7 @@ function Changes(props: ChangesProps) {
                                     </div>
                                 )}
                                 <TickBox checked={wholeWeek} onChange={setWholeWeek}>
-                                    For the whole week of {shortDate(date)}, not only that day
+                                    {t('For the whole week of :date, not only that day', { date: shortDate(date) })}
                                 </TickBox>
                             </div>
                         )}
@@ -329,45 +329,44 @@ function Changes(props: ChangesProps) {
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <p className="text-[13px] leading-4 text-text-muted">
                                 {mode === 'cover'
-                                    ? 'Suggestions are teachers free in that period, those who teach the subject first.'
-                                    : 'The change is logged here. Whether the room or the teachers are free is for you to check.'}
+                                    ? t('Suggestions are teachers free in that period, those who teach the subject first.')
+                                    : t('The change is logged here. Whether the room or the teachers are free is for you to check.')}
                             </p>
                             <div className="flex gap-2">
                                 <Link href={index.url({ query: { mode } })} className={quietActionClass}>
-                                    Cancel
+                                    {t('Cancel')}
                                 </Link>
                                 <button type="button" disabled={!ready} onClick={submit} className={primaryActionClass}>
-                                    {mode === 'cover' ? 'Assign cover' : mode === 'swap' ? 'Swap the lessons' : 'Change the room'}
+                                    {mode === 'cover' ? t('Assign cover') : mode === 'swap' ? t('Swap the lessons') : t('Change the room')}
                                 </button>
                             </div>
                         </div>
                     </div>
 
                     <aside className="flex shrink-0 flex-col gap-3 border-solid border-border lg:w-[320px] lg:border-l lg:pl-7">
-                        <p className={capsLabelClass}>Recent changes</p>
+                        <p className={capsLabelClass}>{t('Recent changes')}</p>
                         {recent.length === 0 ? (
-                            <p className="text-[13px] leading-[19px] text-text-muted">No changes yet this term.</p>
+                            <p className="text-[13px] leading-[19px] text-text-muted">{t('No changes yet this term.')}</p>
                         ) : (
                             <ul className="flex flex-col border-t border-solid border-border">
                                 {recent.map((change) => (
                                     <li key={change.id} className="flex flex-col gap-1 border-b border-solid border-border py-[10px]">
-                                        <span className="text-[13px] leading-[18px] text-text">{change.summary}</span>
+                                        <span className="text-[13px] leading-[18px] text-text">{t(change.summary)}</span>
                                         <span className="font-mono text-[11px] leading-[14px] text-text-muted">
                                             {shortDate(change.on)}
-                                            {change.by ? ` · by ${change.by}` : ''}
+                                            {change.by ? t(' · by :by', { by: change.by }) : ''}
                                         </span>
                                     </li>
                                 ))}
                             </ul>
                         )}
                         <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-4">
-                            <p className="text-[13px] leading-4 font-semibold text-text">When to make a new version</p>
+                            <p className="text-[13px] leading-4 font-semibold text-text">{t('When to make a new version')}</p>
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                If a teacher or class changes for good, go to
-                                Check inputs and start version {phase.draft}.
+                                {t('If a teacher or class changes for good, go to Check inputs and start version :draft.', { draft: phase.draft })}
                             </p>
                             <Link href={checks.url()} className={linkClass}>
-                                Open Check inputs →
+                                {t('Open Check inputs →')}
                             </Link>
                         </div>
                     </aside>

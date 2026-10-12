@@ -22,6 +22,7 @@ import {
     textInputClass,
 } from '../../components/staff/ui';
 import { withAppShell } from '../../layouts/app-layout';
+import { t } from '../../lib/i18n';
 
 interface MemberProp {
     id: string;
@@ -103,21 +104,21 @@ function Register({
     ).toUpperCase();
 
     const checklist = [
-        { label: 'Full name', done: !!data.given_name.trim() && !!data.family_name.trim() },
-        { label: 'Gender', done: !!data.gender },
-        { label: 'Address', done: !!data.address.trim() },
-        { label: 'Email', done: !!data.email.trim() },
-        { label: 'Phone', done: !!data.phone.trim() },
-        { label: 'Highest qualification', done: !!data.qualification.trim() },
+        { label: t('Full name'), done: !!data.given_name.trim() && !!data.family_name.trim() },
+        { label: t('Gender'), done: !!data.gender },
+        { label: t('Address'), done: !!data.address.trim() },
+        { label: t('Email'), done: !!data.email.trim() },
+        { label: t('Phone'), done: !!data.phone.trim() },
+        { label: t('Highest qualification'), done: !!data.qualification.trim() },
         {
-            label: 'Photo, or an avatar we generate',
+            label: t('Photo, or an avatar we generate'),
             done: !!preview || !!member?.photo_url || initials.length === 2,
         },
     ];
 
     function choosePhoto(file: File) {
         if (file.size > 2 * 1024 * 1024) {
-            setPhotoError('Photo must be smaller than 2 MB.');
+            setPhotoError(t('Photo must be smaller than 2 MB.'));
 
             return;
         }
@@ -144,7 +145,7 @@ function Register({
             onSubmit={submit}
             className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7"
         >
-            <Head title={member ? 'Edit a staff record' : 'Register a staff member'} />
+            <Head title={member ? t('Edit a staff record') : t('Register a staff member')} />
             <PageHeader
                 crumb={member ? 'Edit' : 'Register'}
                 parents={
@@ -157,12 +158,12 @@ function Register({
                           ]
                         : []
                 }
-                title={member ? 'Edit a staff record' : 'Register a staff member'}
-                tag={`${member ? 'Record' : 'Registration'}${yearLabel ? ` · ${yearLabel}` : ''}`}
+                title={member ? t('Edit a staff record') : t('Register a staff member')}
+                tag={`${member ? t('Record') : t('Registration')}${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={
                     member
-                        ? 'corrections are normal, and every change is kept in the log'
-                        : `seven fields are required before ${they.subject} can be saved`
+                        ? t('corrections are normal, and every change is kept in the log')
+                        : t('seven fields are required before :subject can be saved', { subject: they.subject })
                 }
             />
             {!member && <FlowSteps active={0} />}
@@ -171,7 +172,7 @@ function Register({
                 aside={
                     <>
                         <div className="flex flex-col gap-3">
-                            <p className={sectionLabelClass}>Seven required fields</p>
+                            <p className={sectionLabelClass}>{t('Seven required fields')}</p>
                             <ul className="flex flex-col gap-2">
                                 {checklist.map((item) => (
                                     <li
@@ -179,15 +180,13 @@ function Register({
                                         className="flex items-center gap-2 text-[13px] leading-[1.35] text-text"
                                     >
                                         <Check done={item.done} />
-                                        {item.label}
+                                        {t(item.label)}
                                     </li>
                                 ))}
                             </ul>
                         </div>
-                        <Note title="We do not verify with anyone">
-                            Nothing here is checked against a government
-                            database. The school records what it knows on the
-                            person, and corrects it later if it was wrong.
+                        <Note title={t('We do not verify with anyone')}>
+                            {t('Nothing here is checked against a government database. The school records what it knows on the person, and corrects it later if it was wrong.')}
                         </Note>
                         <div className="mt-auto flex flex-col gap-2">
                             <button
@@ -195,20 +194,20 @@ function Register({
                                 disabled={processing}
                                 className={`${primaryButtonClass} w-full`}
                             >
-                                {member ? 'Save corrections' : 'Save and continue'}
+                                {member ? t('Save corrections') : t('Save and continue')}
                             </button>
                             <Link
                                 href={member ? show.url(member.id) : index.url()}
                                 className={`${quietLinkClass} justify-center`}
                             >
-                                {member ? 'Back to the record' : 'Back to roster'}
+                                {member ? t('Back to the record') : t('Back to roster')}
                             </Link>
                         </div>
                     </>
                 }
             >
                 <section className="flex flex-col gap-3">
-                    <p className={sectionLabelClass}>1 · The person</p>
+                    <p className={sectionLabelClass}>{t('1 · The person')}</p>
                     <div className="flex flex-col gap-4 sm:flex-row">
                         <div className="flex w-[180px] shrink-0 flex-col gap-2">
                             <Avatar
@@ -218,7 +217,7 @@ function Register({
                                 bordered
                             />
                             <label className="flex h-8 cursor-pointer items-center rounded-md border border-solid border-border px-3 text-[13px] font-medium text-primary hover:bg-surface">
-                                {preview || member?.photo_url ? 'Change the photo' : 'Add a photo'}
+                                {preview || member?.photo_url ? t('Change the photo') : t('Add a photo')}
                                 <input
                                     type="file"
                                     accept="image/png,image/jpeg,image/webp"
@@ -233,15 +232,14 @@ function Register({
                                 />
                             </label>
                             <p className="text-[12px] leading-[1.5] text-text-muted">
-                                No photo? We generate an avatar from{' '}
-                                {they.possessive} initials.
+                                {t('No photo? We generate an avatar from :possessive initials.', { possessive: they.possessive })}
                             </p>
                             <FieldError message={photoError ?? errors.photo} />
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col gap-3">
                             <div className="flex flex-col gap-3 sm:flex-row">
                                 <label className={`flex flex-1 flex-col gap-1 ${fieldLabelClass}`}>
-                                    Given name
+                                    {t('Given name')}
                                     <input
                                         type="text"
                                         value={data.given_name}
@@ -252,7 +250,7 @@ function Register({
                                     <FieldError message={errors.given_name} />
                                 </label>
                                 <label className={`flex flex-1 flex-col gap-1 ${fieldLabelClass}`}>
-                                    Family name
+                                    {t('Family name')}
                                     <input
                                         type="text"
                                         value={data.family_name}
@@ -265,14 +263,14 @@ function Register({
                             </div>
                             <div
                                 role="radiogroup"
-                                aria-label="Gender"
+                                aria-label={t('Gender')}
                                 className="flex flex-col gap-2"
                             >
-                                <span className={fieldLabelClass}>Gender</span>
+                                <span className={fieldLabelClass}>{t('Gender')}</span>
                                 <div className="flex gap-2">
                                     {[
-                                        { value: 'female', label: 'Female' },
-                                        { value: 'male', label: 'Male' },
+                                        { value: 'female', label: t('Female') },
+                                        { value: 'male', label: t('Male') },
                                     ].map((option) => (
                                         <button
                                             key={option.value}
@@ -282,7 +280,7 @@ function Register({
                                             onClick={() => setData('gender', option.value)}
                                             className={choiceClass(data.gender === option.value)}
                                         >
-                                            {option.label}
+                                            {t(option.label)}
                                         </button>
                                     ))}
                                 </div>
@@ -294,11 +292,11 @@ function Register({
 
                 <section className="flex flex-col gap-3">
                     <p className={sectionLabelClass}>
-                        2 · How to reach {they.object}
+                        {t('2 · How to reach :object', { object: they.object })}
                     </p>
                     <div className="flex flex-col gap-3 sm:flex-row">
                         <label className={`flex flex-1 flex-col gap-1 ${fieldLabelClass}`}>
-                            Email
+                            {t('Email')}
                             <input
                                 type="email"
                                 value={data.email}
@@ -309,7 +307,7 @@ function Register({
                             <FieldError message={errors.email} />
                         </label>
                         <label className={`flex flex-col gap-1 sm:w-[220px] ${fieldLabelClass}`}>
-                            Phone
+                            {t('Phone')}
                             <input
                                 type="tel"
                                 value={data.phone}
@@ -321,7 +319,7 @@ function Register({
                         </label>
                     </div>
                     <label className={`flex flex-col gap-1 ${fieldLabelClass}`}>
-                        Address
+                        {t('Address')}
                         <input
                             type="text"
                             value={data.address}
@@ -334,13 +332,13 @@ function Register({
                 </section>
 
                 <section className="flex flex-col gap-3">
-                    <p className={sectionLabelClass}>3 · Qualification and work</p>
+                    <p className={sectionLabelClass}>{t('3 · Qualification and work')}</p>
                     <label className={`flex flex-col gap-1 ${fieldLabelClass}`}>
-                        Highest qualification
+                        {t('Highest qualification')}
                         <input
                             type="text"
                             list="staff-qualifications"
-                            placeholder="Master of Science · Physics"
+                            placeholder={t('Master of Science · Physics')}
                             value={data.qualification}
                             onChange={(e) => setData('qualification', e.target.value)}
                             className={textInputClass}
@@ -354,14 +352,14 @@ function Register({
                     </label>
                     <div
                         role="radiogroup"
-                        aria-label="Employment type"
+                        aria-label={t('Employment type')}
                         className="flex flex-col gap-2"
                     >
-                        <span className={fieldLabelClass}>Employment type</span>
+                        <span className={fieldLabelClass}>{t('Employment type')}</span>
                         <div className="flex flex-wrap gap-2">
                             {[
-                                { value: 'school_paid', label: 'School-paid' },
-                                { value: 'government', label: 'Government employee' },
+                                { value: 'school_paid', label: t('School-paid') },
+                                { value: 'government', label: t('Government employee') },
                             ].map((option) => (
                                 <button
                                     key={option.value}
@@ -371,7 +369,7 @@ function Register({
                                     onClick={() => setData('employment_type', option.value)}
                                     className={choiceClass(data.employment_type === option.value)}
                                 >
-                                    {option.label}
+                                    {t(option.label)}
                                 </button>
                             ))}
                         </div>

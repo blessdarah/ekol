@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property string $full_name
  * @property string $initials
  * @property string $email
+ * @property string|null $locale
  * @property UserRole $role
  * @property string $phone
  * @property bool $is_form_master
@@ -53,7 +54,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
  */
-#[Fillable(['school_id', 'staff_code', 'full_name', 'initials', 'email', 'role', 'phone', 'is_form_master', 'invited_at', 'setup_completed_at', 'password', 'given_name', 'family_name', 'gender', 'address', 'qualification', 'employment_type', 'photo_path', 'joined_on', 'teaching_days', 'max_periods_week', 'max_periods_day', 'unavailable_times', 'invitation_token_hash', 'invitation_channel', 'invitation_expires_at'])]
+#[Fillable(['school_id', 'staff_code', 'full_name', 'initials', 'email', 'role', 'phone', 'is_form_master', 'invited_at', 'setup_completed_at', 'password', 'given_name', 'family_name', 'gender', 'address', 'qualification', 'employment_type', 'photo_path', 'joined_on', 'teaching_days', 'max_periods_week', 'max_periods_day', 'unavailable_times', 'invitation_token_hash', 'invitation_channel', 'invitation_expires_at', 'locale'])]
 #[Hidden(['password', 'remember_token', 'invitation_token_hash'])]
 class User extends Authenticatable
 {

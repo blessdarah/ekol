@@ -1,3 +1,4 @@
+import { useT } from '../../lib/i18n';
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 
 export function Eyebrow({ children }: { children: ReactNode }) {
@@ -126,6 +127,7 @@ export function PasswordField({
 }) {
     const [value, setValue] = useState('');
     const [show, setShow] = useState(false);
+    const t = useT();
 
     let score = 0;
     if (value.length >= 8) {
@@ -145,7 +147,7 @@ export function PasswordField({
     }
 
     return (
-        <Field label={label} error={error}>
+        <Field label={label === '' ? '' : t(label)} error={error}>
             <span className="relative flex">
                 <input
                     type={show ? 'text' : 'password'}
@@ -160,7 +162,7 @@ export function PasswordField({
                     onClick={() => setShow(!show)}
                     className="absolute top-1/2 right-3 -translate-y-1/2 text-[13px] font-medium text-text-muted hover:text-text"
                 >
-                    {show ? 'Hide' : 'Show'}
+                    {show ? t('Hide') : t('Show')}
                 </button>
             </span>
             {meter && value.length > 0 && (
@@ -180,7 +182,7 @@ export function PasswordField({
                         ))}
                     </span>
                     <span className="text-[12px] text-text-muted">
-                        {METER_LABELS[score]}
+                        {t(METER_LABELS[score])}
                     </span>
                 </span>
             )}

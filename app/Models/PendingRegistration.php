@@ -113,11 +113,11 @@ class PendingRegistration extends Model
         $this->assertNotConsumed();
 
         if (now()->greaterThan($this->expires_at)) {
-            throw ValidationException::withMessages(['code' => 'This code has expired. Request a new one.']);
+            throw ValidationException::withMessages(['code' => __('This code has expired. Request a new one.')]);
         }
 
         if ($this->attempts >= static::MAX_ATTEMPTS) {
-            throw ValidationException::withMessages(['code' => 'Too many attempts. Request a new code.']);
+            throw ValidationException::withMessages(['code' => __('Too many attempts. Request a new code.')]);
         }
     }
 
@@ -128,7 +128,7 @@ class PendingRegistration extends Model
     public function assertNotConsumed(): void
     {
         if ($this->consumed_at) {
-            throw ValidationException::withMessages(['code' => 'This registration has already been completed.']);
+            throw ValidationException::withMessages(['code' => __('This registration has already been completed.')]);
         }
     }
 
@@ -169,6 +169,7 @@ class PendingRegistration extends Model
                 'subsystem' => $schoolData['subsystem'] ?? null,
                 'currency' => $schoolData['currency'] ?? 'XAF',
                 'timezone' => $schoolData['timezone'] ?? 'Africa/Douala',
+                'locale' => $schoolData['locale'] ?? 'en',
             ]);
 
             $year = $this->seedAcademicYear($school);

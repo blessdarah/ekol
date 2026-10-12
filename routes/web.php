@@ -12,6 +12,7 @@ use App\Http\Controllers\EnrolmentController;
 use App\Http\Controllers\ExamScheduleController;
 use App\Http\Controllers\FeeController;
 use App\Http\Controllers\GradingController;
+use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MarkSheetController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SeriesRegistrationController;
@@ -30,6 +31,7 @@ use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\TimetableReviewController;
 use App\Http\Controllers\TimetableRoomController;
 use App\Http\Middleware\ResolveSchool;
+use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -46,7 +48,9 @@ Route::inertia('/', 'welcome')->name('home');
  * correct because login happens on the school host itself.
  */
 
-Route::middleware(ResolveSchool::class)->group(function () {
+Route::post('/locale', [LocaleController::class, 'update'])->middleware([ResolveSchool::class, SetLocale::class])->name('locale.update');
+
+Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
     Route::post('/login/find-school', [LoginController::class, 'findSchool'])->name('login.find');
@@ -208,7 +212,6 @@ Route::middleware(ResolveSchool::class)->group(function () {
             Route::get('/payments/{payment}/receipt', [FeeController::class, 'receipt'])->name('fees.receipt');
         });
 
-
         Route::group(['prefix' => 'assessments'], function () {
             Route::get('/', [AssessmentController::class, 'index'])->name('assessments');
             Route::get('/new', [AssessmentController::class, 'create'])->name('assessments.create');
@@ -242,7 +245,7 @@ Route::middleware(ResolveSchool::class)->group(function () {
     });
 });
 
-Route::group(['prefix' => 'register'], function () {
+Route::group(['prefix' => 'register', 'middleware' => SetLocale::class], function () {
     Route::get('/', [RegistrationController::class, 'showSchoolStep'])->name('register.school');
     Route::get('/slug-check', [RegistrationController::class, 'slugCheck'])->name('register.slug-check');
     Route::post('/school', [RegistrationController::class, 'storeSchoolStep'])->name('register.school.store');
