@@ -399,6 +399,8 @@ class TimetableController extends Controller
             'to_fix' => $draft->forget()->toFix(),
         ]);
 
+        $this->notify('Timetable generated.');
+
         return back();
     }
 
@@ -467,6 +469,8 @@ class TimetableController extends Controller
                 'effective_on' => $data['effective_on'],
             ]);
         });
+
+        $this->notify('Timetable published.');
 
         return redirect()->route('timetable');
     }

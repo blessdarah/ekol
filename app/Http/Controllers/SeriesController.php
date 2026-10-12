@@ -124,6 +124,8 @@ class SeriesController extends Controller
             $this->audit($request, $school, $series, 'created', $data);
         });
 
+        $this->notify('Series added.');
+
         return redirect()->route('classes.series', ['level' => $level->id]);
     }
 
@@ -140,6 +142,8 @@ class SeriesController extends Controller
             $this->spread($school, $target, $data);
             $this->audit($request, $school, $target, 'configured', $data);
         });
+
+        $this->notify('Series saved.');
 
         return redirect()->route('classes.series', ['level' => $level->id]);
     }

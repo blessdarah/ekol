@@ -135,7 +135,9 @@ class RegistrationController extends Controller
         $pending->assertNotConsumed();
         $pending->reissue();
 
-        return back()->with('status', 'A new code was sent.');
+        $this->notify('A new code was sent.');
+
+        return back();
     }
 
     public function channel(ChooseChannelRequest $request): RedirectResponse
@@ -148,7 +150,9 @@ class RegistrationController extends Controller
         $pending->update(['channel' => $data['channel']]);
         $pending->reissue();
 
-        return back()->with('status', "Code will arrive by {$data['channel']}.");
+        $this->notify("Code will arrive by {$data['channel']}.");
+
+        return back();
     }
 
     public function updateEmail(UpdatePendingEmailRequest $request): RedirectResponse
@@ -163,7 +167,9 @@ class RegistrationController extends Controller
         $pending->update(['admin_payload' => $payload]);
         $pending->reissue();
 
-        return back()->with('status', 'Email updated. A new code was sent.');
+        $this->notify('Email updated. A new code was sent.');
+
+        return back();
     }
 
     public function showReady(): Response|RedirectResponse

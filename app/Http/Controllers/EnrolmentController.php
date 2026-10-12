@@ -247,6 +247,8 @@ class EnrolmentController extends Controller
             $this->audit($request, $school, 'academic_year', $next->id, 'classes_copied', ['classes' => $classes->count()]);
         });
 
+        $this->notify('Classes copied to the coming year.');
+
         return back();
     }
 
@@ -279,6 +281,8 @@ class EnrolmentController extends Controller
         ]);
 
         $this->audit($request, $school, 'school_class', $class->id, 'created', ['name' => $name, 'year' => $next->label]);
+
+        $this->notify('Class added.');
 
         return back();
     }
@@ -420,6 +424,8 @@ class EnrolmentController extends Controller
             }
         });
 
+        $this->notify('Class promoted.');
+
         return back();
     }
 
@@ -526,6 +532,8 @@ class EnrolmentController extends Controller
             ]);
         });
 
+        $this->notify('Students placed.');
+
         return back();
     }
 
@@ -582,6 +590,8 @@ class EnrolmentController extends Controller
             ]);
         });
 
+        $this->notify('Level placed.');
+
         return back();
     }
 
@@ -606,6 +616,8 @@ class EnrolmentController extends Controller
 
             $this->audit($request, $school, 'school_class', $data['class_id'], 'students_unplaced', ['students' => $moved]);
         });
+
+        $this->notify('Class cleared.');
 
         return back();
     }
@@ -672,6 +684,8 @@ class EnrolmentController extends Controller
             $next->update(['enrolment_confirmed_at' => now()]);
             $this->audit($request, $school, 'academic_year', $next->id, 'enrolment_confirmed', ['students' => $placed->count()]);
         });
+
+        $this->notify('Enrolment confirmed.');
 
         return back();
     }

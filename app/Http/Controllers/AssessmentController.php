@@ -171,6 +171,8 @@ class AssessmentController extends Controller
             $this->audit($request, $school, $plan, $data['schedule'] ? 'scheduled' : 'drafted', $data['fields']);
         });
 
+        $this->notify('Assessment saved.');
+
         return redirect()->route('assessments');
     }
 
@@ -192,6 +194,8 @@ class AssessmentController extends Controller
             $this->settle($target, $data['schedule'] || $target->state === AssessmentState::Scheduled);
             $this->audit($request, $school, $target, 'updated', $data['fields']);
         });
+
+        $this->notify('Assessment saved.');
 
         return redirect()->route('assessments');
     }
@@ -224,6 +228,8 @@ class AssessmentController extends Controller
                 $this->audit($request, $school, $plan, 'drafted', ['name' => $name]);
             }
         });
+
+        $this->notify('The usual assessments were added as drafts.');
 
         return back();
     }
@@ -297,6 +303,8 @@ class AssessmentController extends Controller
         $target->moveTo(AssessmentState::MarksClosed, ['closed_at' => now()]);
         $this->audit($request, $school, $target, 'marks_closed', []);
 
+        $this->notify('Marks entry closed.');
+
         return redirect()->route('assessments.results', ['plan' => $target->id]);
     }
 
@@ -330,6 +338,8 @@ class AssessmentController extends Controller
 
             $this->audit($request, $school, $target, 'window_moved', ['from' => $before, 'to' => $data['window_ends_on']]);
         });
+
+        $this->notify('Marks window updated.');
 
         return back();
     }
@@ -409,6 +419,8 @@ class AssessmentController extends Controller
 
         $target->moveTo(AssessmentState::Published, ['published_at' => now(), 'published_by' => $request->user()?->id]);
         $this->audit($request, $school, $target, 'published', []);
+
+        $this->notify('Results published.');
 
         return redirect()->route('assessments.reports', ['plan' => $target->id]);
     }

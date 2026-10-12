@@ -145,6 +145,8 @@ class StudentImportController extends Controller
             'mapping' => null,
         ]);
 
+        $this->notify('File uploaded. Match its columns next.');
+
         return redirect()->route('students.import');
     }
 
@@ -188,6 +190,8 @@ class StudentImportController extends Controller
         }
 
         $request->session()->put(static::SESSION_KEY, [...$state, 'mapping' => $mapping]);
+
+        $this->notify('Columns matched.');
 
         return redirect()->route('students.import');
     }
@@ -257,7 +261,9 @@ class StudentImportController extends Controller
 
         $this->forget($request);
 
-        return redirect()->route('students')->with('status', count($ready).' students imported.');
+        $this->notify(count($ready).' students imported.');
+
+        return redirect()->route('students');
     }
 
     public function problems(Request $request): StreamedResponse
@@ -310,6 +316,8 @@ class StudentImportController extends Controller
     {
         StudentController::schoolFor($request);
         $this->forget($request);
+
+        $this->notify('Import cleared.');
 
         return redirect()->route('students.import');
     }

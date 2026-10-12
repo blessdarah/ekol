@@ -175,8 +175,10 @@ class StudentController extends Controller
             return $student;
         });
 
+        $this->notify("{$student->full_name} registered as {$student->admission_no}.");
+
         return $request->boolean('another')
-            ? redirect()->route('students.create')->with('status', "{$student->full_name} registered as {$student->admission_no}.")
+            ? redirect()->route('students.create')
             : redirect()->route('students.show', $student->id);
     }
 
@@ -212,6 +214,8 @@ class StudentController extends Controller
             $this->linkSibling($school, $target, $data['link_sibling_id'] ?? null);
             $this->audit($request, $school, $target, 'updated', ['class_id' => $data['class_id']]);
         });
+
+        $this->notify('Student record saved.');
 
         return redirect()->route('students.show', $target->id);
     }

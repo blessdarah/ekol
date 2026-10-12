@@ -220,6 +220,8 @@ class MarkSheetController extends Controller
             ]);
         });
 
+        $this->notify('Marks saved.');
+
         return back();
     }
 

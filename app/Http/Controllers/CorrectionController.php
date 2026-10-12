@@ -105,6 +105,8 @@ class CorrectionController extends Controller
 
         $this->audit($request, $school, $correction, 'requested');
 
+        $this->notify('Correction requested.');
+
         return back();
     }
 
@@ -137,6 +139,8 @@ class CorrectionController extends Controller
 
             $this->audit($request, $school, $target, $approved ? 'approved' : 'declined');
         });
+
+        $this->notify('Decision recorded.');
 
         return redirect()->route('assessments.corrections');
     }

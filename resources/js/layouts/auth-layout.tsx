@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import Stepper, { type Step } from '../components/auth/stepper';
+import Toasts from '../components/shell/toasts';
 
 export function LogoMark() {
     return (
@@ -59,6 +60,7 @@ export default function AuthLayout({
 }) {
     return (
         <div className="font-auth flex min-h-screen bg-bg text-text antialiased">
+            <Toasts />
             <aside className="flex w-[440px] shrink-0 flex-col justify-between border-r border-border bg-surface px-12 py-10">
                 <div className="flex flex-col gap-12">
                     <LogoMark />

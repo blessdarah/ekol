@@ -202,6 +202,8 @@ class SetupController extends Controller
             'after' => $school->only(array_keys($dirty)),
         ]);
 
+        $this->notify('School profile saved.');
+
         return back();
     }
 
@@ -218,6 +220,8 @@ class SetupController extends Controller
         ]);
 
         $this->audit($request, 'academic_year', $year->id, 'created', $data);
+
+        $this->notify('Academic year added.');
 
         return back();
     }
@@ -251,6 +255,8 @@ class SetupController extends Controller
             'before' => $before,
             'after' => $this->yearPayload($target),
         ]);
+
+        $this->notify('Academic year saved.');
 
         return back();
     }
@@ -301,6 +307,8 @@ class SetupController extends Controller
             'label' => $target->label,
         ]);
 
+        $this->notify('Academic year made current.');
+
         return back();
     }
 
@@ -339,6 +347,8 @@ class SetupController extends Controller
 
         $this->audit($request, 'fee_installment_template', $year->id, 'schedule_saved', $data);
 
+        $this->notify('Installments saved.');
+
         return back();
     }
 
@@ -361,6 +371,8 @@ class SetupController extends Controller
         $this->audit($request, 'assessment', $school->id, 'windows_saved', [
             'count' => count($data['assessments']),
         ]);
+
+        $this->notify('Marks windows saved.');
 
         return back();
     }
@@ -424,6 +436,8 @@ class SetupController extends Controller
             'school_days' => $data['school_days'] ?? null,
         ]);
 
+        $this->notify('School day saved.');
+
         return back();
     }
 
@@ -458,6 +472,8 @@ class SetupController extends Controller
             'count' => count($data['terms']),
         ]);
 
+        $this->notify('Terms saved.');
+
         return back();
     }
 
@@ -490,6 +506,8 @@ class SetupController extends Controller
         $this->audit($request, 'term', $target->id, 'activated', [
             'label' => $target->label,
         ]);
+
+        $this->notify('Term made active.');
 
         return back();
     }

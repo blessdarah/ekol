@@ -107,6 +107,8 @@ class GradingController extends Controller
             ]);
         });
 
+        $this->notify('Grading saved.');
+
         return back();
     }
 

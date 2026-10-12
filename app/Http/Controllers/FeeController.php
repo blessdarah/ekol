@@ -264,6 +264,8 @@ class FeeController extends Controller
             ]);
         });
 
+        $this->notify('Fees saved.');
+
         return back();
     }
 
@@ -317,6 +319,8 @@ class FeeController extends Controller
                 'level_id' => $data['level_id'] ?? null,
             ]);
         });
+
+        $this->notify('Billing done.');
 
         return back();
     }
@@ -414,6 +418,8 @@ class FeeController extends Controller
 
             return $payment;
         });
+
+        $this->notify('Payment recorded.');
 
         return redirect()->route('fees.receipt', $payment->id);
     }
@@ -569,6 +575,8 @@ class FeeController extends Controller
             $this->audit($request, $school, 'invoice', $target->id, 'exemption_granted', $exemption->only(['kind', 'percent', 'amount', 'reason']));
         });
 
+        $this->notify('Exemption saved.');
+
         return back();
     }
 
@@ -585,6 +593,8 @@ class FeeController extends Controller
                 $this->audit($request, $school, 'invoice', $target->id, 'exemption_removed', $exemption->only(['kind', 'percent', 'amount', 'reason']));
             });
         }
+
+        $this->notify('Exemption removed.');
 
         return back();
     }

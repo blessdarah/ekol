@@ -155,6 +155,8 @@ class ApplicationController extends Controller
             return $application;
         });
 
+        $this->notify('Application recorded.');
+
         return redirect()->route('enrolment.applications.show', $application->id);
     }
 
@@ -228,6 +230,8 @@ class ApplicationController extends Controller
         $target->update(['documents' => array_values($data['documents'])]);
         $this->audit($request, $school, $target, 'documents_updated', ['received' => $target->documents]);
 
+        $this->notify('Documents updated.');
+
         return back();
     }
 
@@ -267,6 +271,8 @@ class ApplicationController extends Controller
             $target->save();
             $this->audit($request, $school, $target, $stage->value, ['student' => $target->student_id]);
         });
+
+        $this->notify('Decision recorded.');
 
         return $following
             ? redirect()->route('enrolment.applications.show', $following->id)

@@ -195,6 +195,8 @@ class SeriesRegistrationController extends Controller
 
         $next = $data['next_id'] ?? null;
 
+        $this->notify('Series registered.');
+
         return $next
             ? redirect()->route('series.one', ['level' => $level->id, 'student' => $next])
             : redirect()->route('series', ['level' => $level->id]);
@@ -262,6 +264,8 @@ class SeriesRegistrationController extends Controller
                 $this->audit($request, $school, $student, 'series_registered', ['series' => $series->code, 'bulk' => true]);
             }
         });
+
+        $this->notify('Students registered.');
 
         return redirect()->route('series', ['level' => $level->id]);
     }
@@ -375,6 +379,8 @@ class SeriesRegistrationController extends Controller
                 'note' => $data['note'] ?? null,
             ]);
         });
+
+        $this->notify('Series changed.');
 
         return redirect()->route('students.show', $target->id);
     }

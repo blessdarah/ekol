@@ -125,6 +125,8 @@ class SubjectController extends Controller
             return $subject;
         });
 
+        $this->notify('Subject saved.');
+
         return redirect()->route('classes.subjects.show', $subject->id);
     }
 
@@ -143,6 +145,8 @@ class SubjectController extends Controller
                 'classes' => count($data['classes']),
             ]);
         });
+
+        $this->notify('Subject saved.');
 
         return redirect()->route('classes.subjects.show', $target->id);
     }
@@ -280,7 +284,9 @@ class SubjectController extends Controller
             return $created;
         });
 
-        return redirect()->route('classes.subjects')->with('status', "{$created} subjects created.");
+        $this->notify("{$created} subjects created.");
+
+        return redirect()->route('classes.subjects');
     }
 
     /**

@@ -83,6 +83,8 @@ class TimetableRoomController extends Controller
 
         $this->audit($request, $school, $room, 'created', $room->only(['code', 'kind', 'capacity']));
 
+        $this->notify('Room added.');
+
         return redirect()->route('timetable.rooms', ['room' => $room->id]);
     }
 
@@ -119,6 +121,8 @@ class TimetableRoomController extends Controller
             ]);
         });
 
+        $this->notify('Room saved.');
+
         return back();
     }
 
@@ -142,6 +146,8 @@ class TimetableRoomController extends Controller
 
             $this->audit($request, $school, $target, 'retired', ['code' => $target->code, 'lessons_without_room' => $moved]);
         });
+
+        $this->notify('Room removed.');
 
         return redirect()->route('timetable.rooms');
     }

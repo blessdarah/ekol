@@ -199,6 +199,8 @@ class AttendanceController extends Controller
             ]);
         });
 
+        $this->notify('Register saved.');
+
         return back();
     }
 

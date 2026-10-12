@@ -122,6 +122,8 @@ class StudentAttendanceController extends Controller
             'diff' => ['date' => $record->date->toDateString(), 'note' => $record->note],
         ]);
 
+        $this->notify('Absence excused.');
+
         return back();
     }
 

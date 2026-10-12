@@ -136,6 +136,8 @@ class StaffController extends Controller
             return $member;
         });
 
+        $this->notify('Staff member added.');
+
         return redirect()->route('staff.access', $member->id);
     }
 
@@ -211,6 +213,8 @@ class StaffController extends Controller
             ]);
         });
 
+        $this->notify('Staff details saved.');
+
         return redirect()->route('staff.show', $member->id);
     }
 
@@ -264,6 +268,8 @@ class StaffController extends Controller
             $this->invite($request, $school, $member, $data['channel']);
         }
 
+        $this->notify('Portal access saved.');
+
         return redirect()->route('staff.show', $member->id);
     }
 
@@ -278,6 +284,8 @@ class StaffController extends Controller
                 'channel' => $member->invitation_channel,
             ]);
         }
+
+        $this->notify('Invitation sent again.');
 
         return back();
     }
@@ -296,6 +304,8 @@ class StaffController extends Controller
             'before' => $before,
             'after' => $member->only(array_keys($data)),
         ]);
+
+        $this->notify('Teaching hours saved.');
 
         return back();
     }

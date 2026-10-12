@@ -154,6 +154,8 @@ class ExamScheduleController extends Controller
 
         $this->audit($request, $school, $target, 'paper_saved', $paper->only(['level_id', 'subject_id', 'held_on', 'starts_at', 'room_id']));
 
+        $this->notify('Paper saved.');
+
         return back();
     }
 
@@ -164,6 +166,8 @@ class ExamScheduleController extends Controller
 
         $target->papers()->whereKey($paper)->delete();
         $this->audit($request, $school, $target, 'paper_removed', ['paper' => $paper]);
+
+        $this->notify('Paper removed.');
 
         return back();
     }
@@ -193,6 +197,8 @@ class ExamScheduleController extends Controller
 
         $target->update(['schedule_published_at' => now()]);
         $this->audit($request, $school, $target, 'schedule_published', ['papers' => $papers->count()]);
+
+        $this->notify('Exam schedule published.');
 
         return redirect()->route('assessments');
     }

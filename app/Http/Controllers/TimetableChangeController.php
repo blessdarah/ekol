@@ -197,6 +197,8 @@ class TimetableChangeController extends Controller
             }
         });
 
+        $this->notify('Change logged.');
+
         return back();
     }
 

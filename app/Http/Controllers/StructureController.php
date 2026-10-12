@@ -199,6 +199,8 @@ class StructureController extends Controller
             return $level;
         });
 
+        $this->notify('Level added.');
+
         return redirect()->route('classes', ['level' => $level->id]);
     }
 
@@ -287,6 +289,8 @@ class StructureController extends Controller
             }
         });
 
+        $this->notify('Levels created.');
+
         return redirect()->route('classes');
     }
 
@@ -313,6 +317,8 @@ class StructureController extends Controller
 
         $target->update($data);
         $this->audit($request, $school, 'level', $target->id, 'series_toggled', $data);
+
+        $this->notify('Level saved.');
 
         return back();
     }
@@ -355,6 +361,8 @@ class StructureController extends Controller
 
         $this->audit($request, $school, 'school_class', $class->id, 'created', ['name' => $name]);
 
+        $this->notify('Class added.');
+
         return back();
     }
 
@@ -376,6 +384,8 @@ class StructureController extends Controller
                 'after' => $target->only(array_keys($data)),
             ]);
         });
+
+        $this->notify('Class saved.');
 
         return back();
     }
@@ -404,6 +414,8 @@ class StructureController extends Controller
             $this->syncFormMasterFlags([$master]);
         });
 
+        $this->notify('Class removed.');
+
         return back();
     }
 
@@ -426,6 +438,8 @@ class StructureController extends Controller
         ]);
 
         $this->audit($request, $school, 'room', $room->id, 'created', $data);
+
+        $this->notify('Room added.');
 
         return back();
     }

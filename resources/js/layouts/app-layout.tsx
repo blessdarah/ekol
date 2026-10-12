@@ -5,6 +5,7 @@ import Sidebar, {
     type ShellTerm,
     type ShellUser,
 } from '../components/shell/sidebar';
+import Toasts from '../components/shell/toasts';
 
 export interface ShellSharedProps {
     school: ShellSchool | null;
@@ -41,6 +42,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <main className="font-auth flex flex-1 justify-center px-10 py-7">
                 <div className="w-full max-w-[1112px]">{children}</div>
             </main>
+            <Toasts />
         </div>
     );
 }

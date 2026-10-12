@@ -144,3 +144,33 @@ test('term chip hides without a current term and badge hides at zero', function 
             ->where('term', null)
             ->where('feeBadge', null));
 });
+
+test('an action tells the user what happened with a one-time message', function () {
+    $school = School::create([
+        'name' => 'Toast Academy', 'code' => 'TA', 'slug' => 'toasta',
+        'cycle' => SchoolCycle::Secondary, 'currency' => 'XAF', 'timezone' => 'Africa/Douala',
+    ]);
+    $admin = User::factory()->create(['school_id' => $school->id, 'role' => UserRole::Admin]);
+
+    $this->actingAs($admin)
+        ->from('http://toasta.ekol.test/setup')
+        ->post('http://toasta.ekol.test/setup/years', [
+            'label' => '2025/26', 'starts_on' => '2025-09-01', 'ends_on' => '2026-07-31',
+        ])
+        ->assertRedirect()
+        ->assertInertiaFlash('toast.type', 'success')
+        ->assertInertiaFlash('toast.message', 'Academic year added.');
+
+    $this->actingAs($admin)
+        ->get('http://toasta.ekol.test/setup')
+        ->assertInertia(fn (Assert $page) => $page->hasFlash('toast.message', 'Academic year added.'));
+
+    $this->actingAs($admin)
+        ->get('http://toasta.ekol.test/setup')
+        ->assertInertia(fn (Assert $page) => $page->missingFlash('toast'));
+
+    $this->actingAs($admin)
+        ->post('http://toasta.ekol.test/setup/years', ['label' => ''])
+        ->assertSessionHasErrors('label')
+        ->assertInertiaFlashMissing('toast');
+});
