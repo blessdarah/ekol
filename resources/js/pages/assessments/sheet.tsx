@@ -150,7 +150,7 @@ function Sheet({ canManage, passMark, sheet, plan, open, siblings, previous, row
                         ]}
                     />
                     <div className="flex flex-wrap items-center gap-3">
-                        <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">{sheet.subject}</h1>
+                        <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">{sheet.subject}</h1>
                         <span
                             className={`flex h-6 items-center gap-[6px] rounded-full px-[10px] text-[12px] leading-4 font-medium ${
                                 open ? 'bg-success-tint text-success' : 'border border-solid border-border bg-surface text-text-muted'

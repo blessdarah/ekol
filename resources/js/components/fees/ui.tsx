@@ -67,7 +67,7 @@ export function FeesHeader({
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex min-w-0 flex-col gap-[6px]">
                     <Breadcrumbs trail={trail.length > 0 ? [{ label: 'Fees', href: index.url() }, ...trail] : [{ label: 'Fees' }]} />
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {title}
                     </h1>
                     {(tag || meta) && (
@@ -79,7 +79,7 @@ export function FeesHeader({
                 </div>
                 {action}
             </div>
-            <nav className="flex gap-6 border-b border-solid border-border">
+            <nav className="flex gap-6 overflow-x-auto border-b border-solid border-border whitespace-nowrap">
                 {tabs.map((tab) => (
                     <Link
                         key={tab.key}

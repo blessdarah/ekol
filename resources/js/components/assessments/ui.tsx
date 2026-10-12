@@ -166,7 +166,7 @@ export function AssessmentHeader({
                                 : [{ label: 'Sequences & Exams' }]
                         }
                     />
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {title}
                     </h1>
                     {meta && <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">{meta}</div>}

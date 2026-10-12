@@ -68,7 +68,7 @@ function Access({ yearLabel, member, roles, schoolName, termLabel }: AccessProps
     return (
         <form
             onSubmit={submit}
-            className="flex min-h-[calc(100vh-56px)] flex-col gap-7"
+            className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7"
         >
             <Head title="Portal access" />
             <PageHeader

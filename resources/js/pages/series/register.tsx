@@ -144,7 +144,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
     }
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col lg:flex-row">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col lg:flex-row">
             <Head title={student ? student.name : 'Register one by one'} />
 
             <aside className="flex shrink-0 flex-col border-solid border-border lg:-my-7 lg:-ml-10 lg:w-[300px] lg:border-r">
@@ -240,7 +240,7 @@ function RegisterOne({ hasTerm, level, counts, tab, q, students, student, nextId
                             { label: level.name },
                         ]}
                     />
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {student ? student.name : 'Everyone is registered'}
                     </h1>
                     {student && (

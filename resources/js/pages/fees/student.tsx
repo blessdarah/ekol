@@ -287,7 +287,7 @@ function StudentFees({ currency, student, invoices, invoice, today, methods }: S
                     <Breadcrumbs
                         trail={[{ label: 'Fees', href: feesIndex.url() }, ...trail.slice(0, -1).map((label) => ({ label })), { label: trail[trail.length - 1] ?? student.name }]}
                     />
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {student.name}
                     </h1>
                     <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-4 text-text-muted">

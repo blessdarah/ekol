@@ -337,7 +337,7 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
     const shown = rooms.filter((room) => GROUPS.find((option) => option.key === group)?.test(room.kind));
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Rooms" />
             <TimetableHeader
                 page="setup"

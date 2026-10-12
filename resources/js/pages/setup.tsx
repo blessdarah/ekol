@@ -1332,7 +1332,7 @@ function SetupPage({
             <Head title="School Setup" />
             <div className="flex flex-col gap-7">
                 <div className="flex flex-wrap items-end justify-between gap-2">
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         School Setup
                     </h1>
                     <p

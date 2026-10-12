@@ -142,7 +142,7 @@ function Register({
     return (
         <form
             onSubmit={submit}
-            className="flex min-h-[calc(100vh-56px)] flex-col gap-7"
+            className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7"
         >
             <Head title={member ? 'Edit a staff record' : 'Register a staff member'} />
             <PageHeader

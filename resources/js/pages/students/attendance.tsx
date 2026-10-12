@@ -114,7 +114,7 @@ function StudentAttendance({ canExcuse, termLabel, student, stats, term, schoolD
     ];
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title={`${student.name} · Attendance`} />
             <StudentHeader
                 trail={[{ label: student.name }, { label: 'Attendance' }]}

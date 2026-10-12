@@ -30,7 +30,7 @@ function Sheets({ canManage, sheets }: SheetsProps) {
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex flex-col gap-[6px]">
                     <Breadcrumbs trail={[{ label: 'Marks' }]} />
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">My mark sheets</h1>
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">My mark sheets</h1>
                     <p className="text-[13px] leading-4 text-text-muted">One sheet per subject, class and assessment. Each is out of 20.</p>
                 </div>
                 {canManage && (

@@ -39,7 +39,7 @@ function Publish({ phase, checks, warnings, diff, defaultDate, termEnds }: Publi
     const mono = 'shrink-0 font-mono text-[13px] leading-4';
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title={`Publish version ${phase.draft}`} />
             <TimetableHeader
                 page="publish"

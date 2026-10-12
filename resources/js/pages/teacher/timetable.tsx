@@ -62,7 +62,7 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                 <Head title="My timetable" />
                 <div className="flex flex-col gap-[6px]">
                     <p className={`${monoCaps} text-text-muted`}>{termLabel ?? 'No active term'}</p>
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">My timetable</h1>
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">My timetable</h1>
                 </div>
                 <div className="flex flex-col gap-2 rounded-lg bg-surface p-5">
                     <p className="text-[14px] leading-[18px] font-semibold text-text">
@@ -89,7 +89,7 @@ function Timetable({ termLabel, yearLabel, week, version, summary, days = [], pe
                         {termLabel}
                         {yearLabel ? ` · ${yearLabel}` : ''} · Week {week.number} of {week.of}
                     </p>
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">My timetable</h1>
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">My timetable</h1>
                     <p className="text-[14px] leading-5 text-text-muted">
                         {plural(summary.subjects, 'subject')} · {plural(summary.classes, 'class', 'classes')} · {plural(summary.rooms, 'room')} ·{' '}
                         {plural(summary.periods, 'period')} a week · {plural(summary.free, 'free period')}

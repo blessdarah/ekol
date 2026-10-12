@@ -59,9 +59,12 @@ export default function AuthLayout({
     children: ReactNode;
 }) {
     return (
-        <div className="font-auth flex min-h-screen bg-bg text-text antialiased">
+        <div className="font-auth flex min-h-screen flex-col bg-bg text-text antialiased lg:flex-row">
             <Toasts />
-            <aside className="flex w-[440px] shrink-0 flex-col justify-between border-r border-border bg-surface px-12 py-10">
+            <div className="flex items-center border-b border-border bg-surface px-5 py-4 lg:hidden">
+                <LogoMark />
+            </div>
+            <aside className="hidden w-[440px] shrink-0 flex-col justify-between border-r border-border bg-surface px-12 py-10 lg:flex">
                 <div className="flex flex-col gap-12">
                     <LogoMark />
                     {middle.variant === 'stepper' && (
@@ -96,10 +99,10 @@ export default function AuthLayout({
                 </div>
                 <PrivacyNote />
             </aside>
-            <main className="flex flex-1 justify-center px-8 py-10">
+            <main className="flex flex-1 justify-center px-5 py-8 sm:px-8 sm:py-10">
                 <div className="w-full max-w-[592px]">
                     {topbar && (
-                        <div className="mb-10 flex justify-end text-[13px]">
+                        <div className="mb-6 flex justify-end text-[13px] sm:mb-10">
                             {topbar}
                         </div>
                     )}

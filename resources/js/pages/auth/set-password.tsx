@@ -127,7 +127,7 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                 <p className="text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                                     {schoolName}
                                 </p>
-                                <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                                <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                                     Set your password
                                 </h1>
                                 <p className="text-[16px] leading-6 text-text-muted">
@@ -239,7 +239,7 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                         <p className="text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                             {schoolName}
                         </p>
-                        <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                        <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                             This link is no longer open
                         </h1>
                         <p className="text-[16px] leading-6 text-text-muted">

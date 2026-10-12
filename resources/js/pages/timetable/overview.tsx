@@ -83,7 +83,7 @@ function Overview({ phase, summary, setupLine, warnings = 0, firstProblem, live 
                 <Head title="Timetable" />
                 <div className="flex flex-col gap-[6px]">
                     <Breadcrumbs trail={[{ label: 'Timetable' }]} />
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         Timetable
                     </h1>
                 </div>
@@ -122,7 +122,7 @@ function Overview({ phase, summary, setupLine, warnings = 0, firstProblem, live 
     ];
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Timetable" />
             <TimetableHeader
                 page="overview"

@@ -166,7 +166,7 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
     }, []);
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title="The subject roster" />
             <StructureHeader
                 trail={[{ label: 'Subjects' }]}

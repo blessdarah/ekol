@@ -95,7 +95,7 @@ function Corrections({ tabs, show, counts, canDecide, list, current }: Correctio
     const impact = current?.impact;
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Corrections" />
             <AssessmentHeader
                 active="corrections"

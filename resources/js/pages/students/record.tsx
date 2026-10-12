@@ -74,7 +74,7 @@ function StudentRecord({ yearLabel, currency, canSeePrivate, student }: RecordPr
             : 0;
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title={student.name} />
             <StudentHeader
                 trail={[{ label: student.name }]}

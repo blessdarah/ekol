@@ -70,7 +70,7 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
     const published = columns.filter((column) => column.state === 'published');
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title={`${student.name} · Academics`} />
             <StudentHeader
                 trail={[{ label: student.name }, { label: 'Academics' }]}

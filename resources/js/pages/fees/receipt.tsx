@@ -64,7 +64,7 @@ function Receipt({ issuer, currency, receipt, student }: ReceiptProps) {
                 <div className="flex flex-col gap-1 rounded-md bg-surface p-4">
                     <p className="text-[13px] leading-4 text-text-muted">Received</p>
                     <p className="flex items-baseline gap-[6px]">
-                        <span className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                        <span className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                             {figure(receipt.amount)}
                         </span>
                         <span className="text-[16px] leading-5 font-medium text-text-muted">{currency}</span>

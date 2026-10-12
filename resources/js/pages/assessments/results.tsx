@@ -66,7 +66,7 @@ function Results({ tabs, plans, plan, classes, class: current, passMark, stats, 
               : `${plan.name} · marks still open · results so far`;
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Results" />
             <AssessmentHeader
                 active="results"

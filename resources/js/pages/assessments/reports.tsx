@@ -41,7 +41,7 @@ function Reports({ tabs, issuer, yearLabel, options, scope, classes, class: curr
     const query = (extra: Record<string, string>) => ({ query: { [scope.kind]: scope.id, ...extra } });
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Report cards" />
             <AssessmentHeader
                 active="reports"

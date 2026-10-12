@@ -95,7 +95,7 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
     }
 
     return (
-        <form onSubmit={submit} className="flex min-h-[calc(100vh-56px)] flex-col gap-6">
+        <form onSubmit={submit} className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-6">
             <Head title={`Change series · ${student.name}`} />
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex flex-col gap-[6px]">
@@ -106,7 +106,7 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                             { label: 'Change series' },
                         ]}
                     />
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         Change series
                     </h1>
                     <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-4 text-text-muted">

@@ -92,7 +92,7 @@ export function StudentHeader({
                 <Breadcrumbs
                     trail={[{ label: 'Students', href: index.url() }, ...trail]}
                 />
-                <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                     {title}
                 </h1>
                 <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-4 text-text-muted">
@@ -124,7 +124,7 @@ export function StudentTabs({
     ];
 
     return (
-        <nav aria-label="Student record" className="flex gap-6 border-b border-solid border-border">
+        <nav aria-label="Student record" className="flex gap-6 overflow-x-auto border-b border-solid border-border whitespace-nowrap">
             {tabs.map((tab) =>
                 tab.key === active ? (
                     <span

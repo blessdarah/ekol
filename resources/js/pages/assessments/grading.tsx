@@ -61,7 +61,7 @@ function Grading({ tabs, outOf, passMark, bands, standard, isStandard, canEdit }
                 event.preventDefault();
                 submit();
             }}
-            className="flex min-h-[calc(100vh-56px)] flex-col gap-5"
+            className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5"
         >
             <Head title="Grading and remarks" />
             <AssessmentHeader

@@ -33,18 +33,26 @@ export default function Sidebar({
     term,
     user,
     feeBadge,
+    open = false,
 }: {
     school: ShellSchool | null;
     term: ShellTerm | null;
     user: ShellUser | null;
     feeBadge: number | null;
+    /** Whether the menu is slid in, on screens too narrow to keep it in view. */
+    open?: boolean;
 }) {
     const { url } = usePage();
     const sections = user?.portal === 'teacher' ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
     const path = url.split('?')[0];
 
     return (
-        <aside className="font-auth sticky top-0 flex h-screen print:hidden w-[248px] shrink-0 flex-col border-r border-solid border-border bg-surface antialiased">
+        <aside
+            id="app-menu"
+            className={`font-auth fixed inset-y-0 left-0 z-50 flex h-dvh w-[280px] max-w-[85vw] shrink-0 flex-col border-r border-solid border-border bg-surface antialiased transition-transform duration-200 lg:visible lg:sticky lg:top-0 lg:z-auto lg:w-[248px] lg:max-w-none lg:translate-x-0 print:hidden ${
+                open ? 'translate-x-0' : 'invisible -translate-x-full'
+            }`}
+        >
             <div className="flex items-center gap-3 px-5 pt-6 pb-5">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary font-display text-[14px] font-extrabold text-white">
                     {school ? school.code.slice(0, 2).toUpperCase() : '··'}

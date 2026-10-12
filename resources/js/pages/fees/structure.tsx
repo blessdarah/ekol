@@ -189,7 +189,7 @@ function StructureForm({
                 event.preventDefault();
                 save();
             }}
-            className="flex min-h-[calc(100vh-56px)] flex-col gap-5"
+            className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5"
         >
             <Head title="Fee structure" />
             <FeesHeader

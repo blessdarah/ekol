@@ -110,7 +110,7 @@ function Today({ date, greeting, name, hasTimetable, isSchoolDay, lessons, unmar
             <div className="flex flex-wrap items-end justify-between gap-6">
                 <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
                     <p className={`${monoCaps} text-text-muted`}>Today · {date}</p>
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {greeting}, {name}
                     </h1>
                     <p className="text-[14px] leading-5 text-text-muted">{summary}</p>

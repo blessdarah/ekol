@@ -481,7 +481,7 @@ function ImportStudents(props: ImportProps) {
     const stepIndex = { upload: 0, match: 1, check: 2 }[props.step];
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-6">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-6">
             <Head title="Import students" />
             <StudentHeader
                 trail={[{ label: 'Import' }]}

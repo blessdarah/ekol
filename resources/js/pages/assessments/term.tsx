@@ -27,7 +27,7 @@ function TermAndYear({ tabs, passMark, terms, term, annual, classes, class: curr
     const allDone = terms.length > 0 && terms.every((option) => option.complete);
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Term and year" />
             <AssessmentHeader
                 active="term"

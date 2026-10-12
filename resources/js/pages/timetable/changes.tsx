@@ -110,7 +110,7 @@ function Changes(props: ChangesProps) {
     const ready = mode === 'cover' ? chosen.length > 0 : mode === 'swap' ? first !== '' && second !== '' && first !== second : first !== '' && room !== '';
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Timetable changes" />
             <TimetableHeader
                 page="changes"

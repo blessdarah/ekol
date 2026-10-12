@@ -91,7 +91,7 @@ function LevelTemplates({
     }
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title="Start from a standard structure" />
             <StructureHeader
                 trail={[levelsCrumb, { label: 'Standard structure' }]}

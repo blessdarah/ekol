@@ -45,7 +45,7 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
     const notSetUp = series.filter((item) => item.core.length === 0);
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Series Registration" />
             <SeriesHeader
                 title="Series Registration"

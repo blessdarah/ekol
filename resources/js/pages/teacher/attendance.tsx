@@ -401,7 +401,7 @@ function Attendance({ dateLabel, date, weekLabel, hasTimetable, lessons, lesson,
                     {weekLabel ? ` · ${weekLabel}` : ''}
                     {current ? ` · ${current.period} · ${current.time}` : ''}
                 </p>
-                <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">Take attendance</h1>
+                <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">Take attendance</h1>
                 <p className="text-[14px] leading-5 text-text-muted">
                     {current
                         ? `${current.class} · ${current.subject}${current.room ? ` · Room ${current.room}` : ''} · one register per lesson, not per class`

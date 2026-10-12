@@ -102,7 +102,7 @@ function AssessmentForm({ yearLabel, tabs, outOf, terms, levels, defaultTerm, un
                 event.preventDefault();
                 submit(true);
             }}
-            className="flex min-h-[calc(100vh-56px)] flex-col gap-5"
+            className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5"
         >
             <Head title={plan ? `Edit ${plan.name}` : 'Add an assessment'} />
             <AssessmentHeader

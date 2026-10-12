@@ -152,7 +152,7 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
     const offered = new Set((selected?.moves ?? []).map((move) => `${move.weekday}|${move.period_id}`));
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Review the timetable" />
             <TimetableHeader
                 page="review"

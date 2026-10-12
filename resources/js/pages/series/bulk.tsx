@@ -104,7 +104,7 @@ function RegisterMany({ yearLabel, hasTerm, level, students, series, staffed }: 
         }`;
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-6">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-6">
             <Head title="Register many at once" />
             <SeriesHeader
                 trail={[{ label: 'Register many at once' }]}

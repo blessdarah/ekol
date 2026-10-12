@@ -421,7 +421,7 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
     }
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title={member.name} />
             <PageHeader
                 crumb={member.name}

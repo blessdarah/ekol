@@ -229,7 +229,7 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
     }
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title={TITLES[step]} />
             <StructureHeader
                 trail={[subjectsCrumb, { label: 'Templates' }]}

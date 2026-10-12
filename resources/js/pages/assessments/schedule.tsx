@@ -219,7 +219,7 @@ function Schedule({ tabs, plans, plan, levels = [], level, rows = [], rooms = []
     const locked = plan.state === 'published';
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
             <Head title="Exam schedule" />
             <AssessmentHeader
                 active="schedule"

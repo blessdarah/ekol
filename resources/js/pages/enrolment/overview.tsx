@@ -71,7 +71,7 @@ function SplitBar({ parts }: { parts: { value: number; tone: string }[] }) {
 function BigNumber({ value, label }: { value: number; label: string }) {
     return (
         <div className="flex items-baseline gap-2">
-            <span className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+            <span className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                 {count(value)}
             </span>
             <span className="text-[14px] leading-[18px] text-text-muted">{label}</span>
@@ -110,7 +110,7 @@ function Overview({ enrolment, currentLabel, startsOn, applications, continuing,
                 <Head title="Enrolment" />
                 <div className="flex flex-col gap-[6px]">
                     <Breadcrumbs trail={[{ label: 'Enrolment' }]} />
-                    <h1 className="font-display text-[40px] leading-[44px] font-extrabold tracking-[-0.02em] text-text">
+                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         Enrolment
                     </h1>
                 </div>

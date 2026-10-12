@@ -198,7 +198,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
     }, []);
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title="The staff roster" />
             <PageHeader
                 crumb="Roster"

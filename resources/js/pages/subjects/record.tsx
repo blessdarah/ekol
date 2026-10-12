@@ -59,7 +59,7 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
         subject.level_names.length > 0 ? subject.level_names.join(', ') : 'No level yet';
 
     return (
-        <div className="flex min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
             <Head title={subject.name} />
             <StructureHeader
                 trail={[subjectsCrumb, { label: subject.name }]}
