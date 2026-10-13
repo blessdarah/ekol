@@ -346,3 +346,24 @@ test('a person without a password cannot sign in', function () {
 
     $this->assertGuest();
 });
+
+test('a teacher who works in two schools has an account in each with the same email', function () {
+    $first = staffSchool();
+    $second = staffSchool(['name' => 'Second Academy', 'code' => 'SA', 'slug' => 'seconda']);
+    staffAdmin($first, ['role' => UserRole::Teacher, 'email' => 'part.time@example.com', 'phone' => '+237600000101']);
+    $admin = staffAdmin($second);
+
+    $this->actingAs($admin)
+        ->post('http://seconda.ekol.test/staff', staffPayload(['email' => 'part.time@example.com']))
+        ->assertSessionHasNoErrors();
+
+    $accounts = User::where('email', 'part.time@example.com')->get();
+
+    expect($accounts)->toHaveCount(2)
+        ->and($accounts->pluck('school_id')->sort()->values()->all())
+        ->toBe(collect([$first->id, $second->id])->sort()->values()->all());
+
+    $this->actingAs($admin)
+        ->post('http://seconda.ekol.test/staff', staffPayload(['email' => 'part.time@example.com', 'phone' => '+237600000102']))
+        ->assertSessionHasErrors('email');
+});
