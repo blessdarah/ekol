@@ -12,6 +12,7 @@ use App\Http\Controllers\EnrolmentController;
 use App\Http\Controllers\ExamScheduleController;
 use App\Http\Controllers\FeeController;
 use App\Http\Controllers\GradingController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MarkSheetController;
 use App\Http\Controllers\SeriesController;
@@ -34,7 +35,8 @@ use App\Http\Middleware\ResolveSchool;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'welcome')->name('home');
+Route::get('/', [LandingController::class, 'show'])->middleware([ResolveSchool::class, SetLocale::class])->name('home');
+Route::post('/demo', [LandingController::class, 'storeDemo'])->middleware([SetLocale::class, 'throttle:6,1'])->name('demo.store');
 
 /*
  * School tenancy resolves from the subdomain (ResolveSchool): requests on
