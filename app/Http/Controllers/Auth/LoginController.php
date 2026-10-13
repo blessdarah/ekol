@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class LoginController extends Controller
 {
@@ -95,13 +96,16 @@ class LoginController extends Controller
             : redirect()->intended(route('dashboard'));
     }
 
-    public function findSchool(FindSchoolRequest $request): RedirectResponse
+    /**
+     * Send the visitor to their school's own sign-in page. That page
+     * is on another address, so the browser has to load it in full: an
+     * ordinary redirect would be followed in the background and blocked.
+     */
+    public function findSchool(FindSchoolRequest $request): SymfonyResponse
     {
         $data = $request->validated();
 
-        $host = $request->getHost();
-
-        return redirect()->away("//{$data['slug']}.{$host}/login");
+        return Inertia::location("{$request->getScheme()}://{$data['slug']}.{$request->getHttpHost()}/login");
     }
 
     public function logout(Request $request): RedirectResponse

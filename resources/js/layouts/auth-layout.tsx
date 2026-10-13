@@ -134,12 +134,16 @@ export function TopBar({
     return (
         <p className="text-text-muted">
             {text}{' '}
-            <Link
-                href={href}
-                className="font-semibold text-text hover:underline"
-            >
-                {linkText}
-            </Link>
+            {/^(https?:)?\/\//.test(href) ? (
+                // Another address, such as a school's own: a full page load.
+                <a href={href} className="font-semibold text-text hover:underline">
+                    {linkText}
+                </a>
+            ) : (
+                <Link href={href} className="font-semibold text-text hover:underline">
+                    {linkText}
+                </Link>
+            )}
         </p>
     );
 }
