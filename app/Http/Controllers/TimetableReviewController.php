@@ -289,8 +289,19 @@ class TimetableReviewController extends Controller
                 throw ValidationException::withMessages(['move' => __(':full_name already teaches on :when.', ['full_name' => $teacher?->full_name, 'when' => $when])]);
             }
 
-            if ($teacher && $period && ! TimetableVersion::teacherWorks($teacher, $school, $weekday, $period, $world['periods'])) {
-                throw ValidationException::withMessages(['move' => __(':full_name does not work on :when, by the staff record.', ['full_name' => $teacher->full_name, 'when' => $when])]);
+            if ($teacher && $period && ! TimetableVersion::teacherWorks(
+                $teacher,
+                $school,
+                $weekday,
+                $period,
+                $world['periods']
+            )) {
+                throw ValidationException::withMessages([
+                    'move' => __(
+                        ':full_name does not work on :when, by the staff record.',
+                        ['full_name' => $teacher->full_name, 'when' => $when]
+                    ),
+                ]);
             }
         }
 
