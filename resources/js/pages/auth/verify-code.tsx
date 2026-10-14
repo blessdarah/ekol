@@ -3,11 +3,7 @@ import { Form, Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import AuthLayout, { TopBar } from '../../layouts/auth-layout';
 import CodeBoxes, { useCountdown } from '../../components/auth/code-boxes';
-import {
-    Eyebrow,
-    Heading,
-    PrimaryButton,
-} from '../../components/auth/field';
+import { Eyebrow, Heading, PrimaryButton } from '../../components/auth/field';
 
 const STEPS = [
     { title: 'School', sub: 'Name, location and type' },
@@ -43,10 +39,20 @@ export default function VerifyCode({
             <Head title={t('Check your email')} />
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                    <Eyebrow>{t('Step :step of :total', { step: 3, total: 3 })}</Eyebrow>
+                    <Eyebrow>
+                        {t('Step :step of :total', { step: 3, total: 3 })}
+                    </Eyebrow>
                     <Heading
                         title={t('Check your email')}
-                        sub={email ? t('We sent a 6-digit code to :email.', { email }) : t('We sent a 6-digit code to your email address.')}
+                        sub={
+                            email
+                                ? t('We sent a 6-digit code to :email.', {
+                                      email,
+                                  })
+                                : t(
+                                      'We sent a 6-digit code to your email address.',
+                                  )
+                        }
                     />
                 </div>
                 <Form action="/register/verify" method="post">
@@ -73,7 +79,9 @@ export default function VerifyCode({
                                         {t('Resend code')}
                                     </button>
                                 ) : (
-                                    <span>{t('Resend in :time', { time: label })}</span>
+                                    <span>
+                                        {t('Resend in :time', { time: label })}
+                                    </span>
                                 )}
                                 <span className="h-[14px] w-px bg-border" />
                                 {channel === 'email' ? (
@@ -155,7 +163,9 @@ export default function VerifyCode({
                         {t('Not arriving?')}
                     </p>
                     <p className="text-[13px] text-text-muted">
-                        {t('Check your spam folder first. On a slow connection a code can take a minute to arrive.')}
+                        {t(
+                            'Check your spam folder first. On a slow connection a code can take a minute to arrive.',
+                        )}
                     </p>
                 </div>
             </div>

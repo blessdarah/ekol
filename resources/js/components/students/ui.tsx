@@ -19,8 +19,18 @@ export const RELATION_LABELS: Record<string, string> = {
 };
 
 const MONTHS = [
-    'January', 'February', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
 ];
 
 /** "6 November 2009". */
@@ -49,12 +59,29 @@ export function money(amount: number, currency?: string): string {
     return currency ? `${figure} ${currency}` : figure;
 }
 
-const FEE_STYLES: Record<string, { label: string; pill: string; dot: string }> = {
-    paid: { label: 'Paid', pill: 'bg-success-tint text-success', dot: 'bg-success' },
-    partial: { label: 'Partial', pill: 'bg-warning-tint text-[#8A5A12]', dot: 'bg-warning' },
-    due: { label: 'Due', pill: 'bg-surface text-text-muted', dot: 'bg-text-muted' },
-    overdue: { label: 'Overdue', pill: 'bg-danger-tint text-danger', dot: 'bg-danger' },
-};
+const FEE_STYLES: Record<string, { label: string; pill: string; dot: string }> =
+    {
+        paid: {
+            label: 'Paid',
+            pill: 'bg-success-tint text-success',
+            dot: 'bg-success',
+        },
+        partial: {
+            label: 'Partial',
+            pill: 'bg-warning-tint text-[#8A5A12]',
+            dot: 'bg-warning',
+        },
+        due: {
+            label: 'Due',
+            pill: 'bg-surface text-text-muted',
+            dot: 'bg-text-muted',
+        },
+        overdue: {
+            label: 'Overdue',
+            pill: 'bg-danger-tint text-danger',
+            dot: 'bg-danger',
+        },
+    };
 
 export function FeePill({ status }: { status: string | null }) {
     const style = status ? FEE_STYLES[status] : undefined;
@@ -67,7 +94,9 @@ export function FeePill({ status }: { status: string | null }) {
         <span
             className={`flex h-6 items-center gap-[6px] rounded-full px-[10px] text-[12px] leading-4 font-medium ${style.pill}`}
         >
-            <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${style.dot}`} />
+            <span
+                className={`h-[6px] w-[6px] shrink-0 rounded-full ${style.dot}`}
+            />
             {t(style.label)}
         </span>
     );
@@ -91,7 +120,10 @@ export function StudentHeader({
         <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex min-w-0 flex-col gap-[6px]">
                 <Breadcrumbs
-                    trail={[{ label: t('Students'), href: index.url() }, ...trail]}
+                    trail={[
+                        { label: t('Students'), href: index.url() },
+                        ...trail,
+                    ]}
                 />
                 <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                     {title}
@@ -125,14 +157,37 @@ export function StudentTabs({
     overview?: boolean;
 }) {
     const tabs = [
-        { key: 'overview', label: t('Overview'), href: overview ? show.url(studentId) : null, arrives: null },
-        { key: 'academics', label: t('Academics'), href: overview ? academicsTab.url(studentId) : null, arrives: null },
-        { key: 'fees', label: t('Fees'), href: studentTab.url(studentId), arrives: null },
-        { key: 'attendance', label: t('Attendance'), href: overview ? attendanceTab.url(studentId) : null, arrives: null },
+        {
+            key: 'overview',
+            label: t('Overview'),
+            href: overview ? show.url(studentId) : null,
+            arrives: null,
+        },
+        {
+            key: 'academics',
+            label: t('Academics'),
+            href: overview ? academicsTab.url(studentId) : null,
+            arrives: null,
+        },
+        {
+            key: 'fees',
+            label: t('Fees'),
+            href: studentTab.url(studentId),
+            arrives: null,
+        },
+        {
+            key: 'attendance',
+            label: t('Attendance'),
+            href: overview ? attendanceTab.url(studentId) : null,
+            arrives: null,
+        },
     ];
 
     return (
-        <nav aria-label={t('Student record')} className="flex gap-6 overflow-x-auto border-b border-solid border-border whitespace-nowrap">
+        <nav
+            aria-label={t('Student record')}
+            className="flex gap-6 overflow-x-auto border-b border-solid border-border whitespace-nowrap"
+        >
             {tabs.map((tab) =>
                 tab.key === active ? (
                     <span
@@ -154,7 +209,13 @@ export function StudentTabs({
                     <span
                         key={tab.key}
                         aria-disabled="true"
-                        title={tab.arrives ? t('Arrives with :arrives', { arrives: tab.arrives }) : t('Not open to your role')}
+                        title={
+                            tab.arrives
+                                ? t('Arrives with :arrives', {
+                                      arrives: tab.arrives,
+                                  })
+                                : t('Not open to your role')
+                        }
                         className="cursor-not-allowed pb-[10px] text-[14px] leading-[18px] font-medium text-text-muted opacity-60"
                     >
                         {t(tab.label)}
@@ -187,32 +248,61 @@ export function StudentSteps({
     const hrefOf = (id: string) => (hrefs[active] ?? show.url)(id);
     const stepClass =
         'flex h-9 min-w-0 items-center gap-2 rounded-md border border-solid border-border bg-white px-3 text-[13px] leading-4 font-medium text-text hover:bg-surface';
-    const endClass = 'flex h-9 items-center gap-2 rounded-md border border-dashed border-border px-3 text-[13px] leading-4 text-text-muted';
+    const endClass =
+        'flex h-9 items-center gap-2 rounded-md border border-dashed border-border px-3 text-[13px] leading-4 text-text-muted';
 
     if (!neighbours || neighbours.total < 2) {
         return null;
     }
 
     return (
-        <nav aria-label={t('Other students')} className="flex items-center justify-between gap-3 border-t border-solid border-border pt-5">
+        <nav
+            aria-label={t('Other students')}
+            className="flex items-center justify-between gap-3 border-t border-solid border-border pt-5"
+        >
             {neighbours.previous ? (
-                <Link href={hrefOf(neighbours.previous.id)} rel="prev" className={stepClass} title={neighbours.previous.name}>
+                <Link
+                    href={hrefOf(neighbours.previous.id)}
+                    rel="prev"
+                    className={stepClass}
+                    title={neighbours.previous.name}
+                >
                     <span aria-hidden="true">←</span>
-                    <span className="hidden text-text-muted sm:inline">{t('Previous')}</span>
+                    <span className="hidden text-text-muted sm:inline">
+                        {t('Previous')}
+                    </span>
                     <span className="truncate">{neighbours.previous.name}</span>
-                    {neighbours.previous.class && <span className="hidden shrink-0 text-text-muted lg:inline">· {neighbours.previous.class}</span>}
+                    {neighbours.previous.class && (
+                        <span className="hidden shrink-0 text-text-muted lg:inline">
+                            · {neighbours.previous.class}
+                        </span>
+                    )}
                 </Link>
             ) : (
                 <span className={endClass}>{t('First student')}</span>
             )}
             <span className="hidden shrink-0 font-mono text-[12px] leading-4 text-text-muted md:inline">
-                {t(':position of :total students', { position: neighbours.position, total: neighbours.total })}
+                {t(':position of :total students', {
+                    position: neighbours.position,
+                    total: neighbours.total,
+                })}
             </span>
             {neighbours.next ? (
-                <Link href={hrefOf(neighbours.next.id)} rel="next" className={stepClass} title={neighbours.next.name}>
+                <Link
+                    href={hrefOf(neighbours.next.id)}
+                    rel="next"
+                    className={stepClass}
+                    title={neighbours.next.name}
+                >
                     <span className="truncate">{neighbours.next.name}</span>
-                    {neighbours.next.class && <span className="hidden shrink-0 text-text-muted lg:inline">· {neighbours.next.class}</span>}
-                    <span className="hidden text-text-muted sm:inline">{t('Next')}</span>
+                    {neighbours.next.class && (
+                        <span className="hidden shrink-0 text-text-muted lg:inline">
+                            · {neighbours.next.class}
+                        </span>
+                    )}
+                    <span className="hidden text-text-muted sm:inline">
+                        {t('Next')}
+                    </span>
                     <span aria-hidden="true">→</span>
                 </Link>
             ) : (

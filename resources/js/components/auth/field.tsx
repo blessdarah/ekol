@@ -9,13 +9,7 @@ export function Eyebrow({ children }: { children: ReactNode }) {
     );
 }
 
-export function Heading({
-    title,
-    sub,
-}: {
-    title: string;
-    sub?: string;
-}) {
+export function Heading({ title, sub }: { title: string; sub?: string }) {
     return (
         <div className="flex flex-col gap-2">
             <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
@@ -190,13 +184,7 @@ export function PasswordField({
     );
 }
 
-export function ErrorBanner({
-    title,
-    body,
-}: {
-    title: string;
-    body?: string;
-}) {
+export function ErrorBanner({ title, body }: { title: string; body?: string }) {
     return (
         <div className="flex items-start gap-3 rounded-lg border border-solid border-danger bg-danger-tint px-[14px] py-3">
             <svg

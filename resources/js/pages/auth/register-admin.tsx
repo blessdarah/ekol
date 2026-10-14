@@ -27,11 +27,7 @@ const ROLES = [
     'accountant',
 ];
 
-export default function RegisterAdmin({
-    schoolName,
-}: {
-    schoolName: string;
-}) {
+export default function RegisterAdmin({ schoolName }: { schoolName: string }) {
     const [role, setRole] = useState('admin');
     const t = useT();
 
@@ -49,13 +45,21 @@ export default function RegisterAdmin({
             <Head title={t('Create your account')} />
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                    <Eyebrow>{t('Step :step of :total', { step: 2, total: 3 })}</Eyebrow>
+                    <Eyebrow>
+                        {t('Step :step of :total', { step: 2, total: 3 })}
+                    </Eyebrow>
                     <Heading
                         title={t('Create your account')}
-                        sub={t('You will manage :school from this account.', { school: schoolName })}
+                        sub={t('You will manage :school from this account.', {
+                            school: schoolName,
+                        })}
                     />
                 </div>
-                <Form action="/register/admin" method="post" onKeyDown={submitOnEnter}>
+                <Form
+                    action="/register/admin"
+                    method="post"
+                    onKeyDown={submitOnEnter}
+                >
                     {({ errors, processing }) => (
                         <div className="flex flex-col gap-4">
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_200px]">
@@ -79,11 +83,19 @@ export default function RegisterAdmin({
                                         className={`${inputClass} bg-white`}
                                     >
                                         {ROLES.map((option) => (
-                                            <option
-                                                key={option}
-                                                value={option}
-                                            >
-                                                {t(option.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '))}
+                                            <option key={option} value={option}>
+                                                {t(
+                                                    option
+                                                        .split('_')
+                                                        .map(
+                                                            (word) =>
+                                                                word
+                                                                    .charAt(0)
+                                                                    .toUpperCase() +
+                                                                word.slice(1),
+                                                        )
+                                                        .join(' '),
+                                                )}
                                             </option>
                                         ))}
                                     </select>
@@ -114,7 +126,9 @@ export default function RegisterAdmin({
                                     className="mt-[2px] h-[18px] w-[18px] shrink-0 accent-primary"
                                 />
                                 <span>
-                                    {t('I am authorised to register this school, and I agree to the terms of use.')}
+                                    {t(
+                                        'I am authorised to register this school, and I agree to the terms of use.',
+                                    )}
                                 </span>
                             </label>
                             {errors.authorisation && (

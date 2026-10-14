@@ -27,7 +27,9 @@ export default function Breadcrumbs({ trail }: { trail: Crumb[] }) {
                                         {t(crumb.label)}
                                     </Link>
                                 ) : (
-                                    <span aria-current={last ? 'page' : undefined}>
+                                    <span
+                                        aria-current={last ? 'page' : undefined}
+                                    >
                                         {t(crumb.label)}
                                     </span>
                                 )}

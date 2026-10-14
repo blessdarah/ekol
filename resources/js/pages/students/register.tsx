@@ -37,8 +37,20 @@ interface RegisterProps {
     disabilityTypes: string[];
     livesWithOptions: string[];
     levels: { id: string; name: string; uses_series: boolean }[];
-    classes: { id: string; name: string; level_id: string; capacity: number; students: number }[];
-    series: { id: string; code: string; name: string; stream: string; level_id: string }[];
+    classes: {
+        id: string;
+        name: string;
+        level_id: string;
+        capacity: number;
+        students: number;
+    }[];
+    series: {
+        id: string;
+        code: string;
+        name: string;
+        stream: string;
+        level_id: string;
+    }[];
     feePlans: {
         level_id: string;
         amount: number;
@@ -66,7 +78,13 @@ interface RegisterProps {
         lives_with: string | null;
         class_id: string | null;
         series_id: string | null;
-        guardians: { relation: string; name: string; phone: string | null; occupation: string | null; is_main: boolean }[];
+        guardians: {
+            relation: string;
+            name: string;
+            phone: string | null;
+            occupation: string | null;
+            is_main: boolean;
+        }[];
     } | null;
 }
 
@@ -94,7 +112,11 @@ function YesNo({
     return (
         <div className="flex flex-wrap items-center justify-between gap-3">
             <span className={fieldLabelClass}>{label}</span>
-            <div role="radiogroup" aria-label={label} className="flex w-[200px] shrink-0 gap-2">
+            <div
+                role="radiogroup"
+                aria-label={label}
+                className="flex w-[200px] shrink-0 gap-2"
+            >
                 {[false, true].map((option) => (
                     <button
                         key={String(option)}
@@ -134,19 +156,34 @@ function Tick({
     );
 }
 
-function Check({ tone, children }: { tone: 'done' | 'todo' | 'warn'; children: React.ReactNode }) {
-    const dot = { done: 'bg-success', todo: 'bg-border', warn: 'bg-warning' }[tone];
+function Check({
+    tone,
+    children,
+}: {
+    tone: 'done' | 'todo' | 'warn';
+    children: React.ReactNode;
+}) {
+    const dot = { done: 'bg-success', todo: 'bg-border', warn: 'bg-warning' }[
+        tone
+    ];
 
     return (
         <li className="flex items-start gap-2 text-[13px] leading-[18px] text-text-muted">
-            <span className={`mt-[6px] h-[6px] w-[6px] shrink-0 rounded-full ${dot}`} />
+            <span
+                className={`mt-[6px] h-[6px] w-[6px] shrink-0 rounded-full ${dot}`}
+            />
             {children}
         </li>
     );
 }
 
-function guardianOf(student: RegisterProps['student'], relation: Relation): GuardianForm {
-    const found = student?.guardians.find((guardian) => guardian.relation === relation);
+function guardianOf(
+    student: RegisterProps['student'],
+    relation: Relation,
+): GuardianForm {
+    const found = student?.guardians.find(
+        (guardian) => guardian.relation === relation,
+    );
 
     return {
         name: found?.name ?? '',
@@ -156,8 +193,18 @@ function guardianOf(student: RegisterProps['student'], relation: Relation): Guar
 }
 
 function Register(props: RegisterProps) {
-    const { student, classes, levels, series, feePlans, currency, canSeePrivate } = props;
-    const startClass = classes.find((option) => option.id === student?.class_id);
+    const {
+        student,
+        classes,
+        levels,
+        series,
+        feePlans,
+        currency,
+        canSeePrivate,
+    } = props;
+    const startClass = classes.find(
+        (option) => option.id === student?.class_id,
+    );
     const form = useForm({
         surname: student?.surname ?? '',
         given_names: student?.given_names ?? '',
@@ -172,13 +219,15 @@ function Register(props: RegisterProps) {
         previous_school: student?.previous_school ?? '',
         previous_class: student?.previous_class ?? '',
         previous_year_left: student?.previous_year_left?.toString() ?? '',
-        transfer_certificate_received: student?.transfer_certificate_received ?? false,
+        transfer_certificate_received:
+            student?.transfer_certificate_received ?? false,
         last_report_received: student?.last_report_received ?? false,
         on_whatsapp: student?.on_whatsapp ?? true,
         lives_with: student?.lives_with ?? '',
         class_id: student?.class_id ?? '',
         series_id: student?.series_id ?? '',
-        main_contact: (student?.guardians.find((guardian) => guardian.is_main)?.relation ?? 'father') as Relation,
+        main_contact: (student?.guardians.find((guardian) => guardian.is_main)
+            ?.relation ?? 'father') as Relation,
         allow_duplicate: false,
     });
     const { data, setData, processing } = form;
@@ -190,14 +239,18 @@ function Register(props: RegisterProps) {
         guardian: guardianOf(student, 'guardian'),
     });
     const [showGuardian, setShowGuardian] = useState(
-        !!student?.guardians.some((guardian) => guardian.relation === 'guardian'),
+        !!student?.guardians.some(
+            (guardian) => guardian.relation === 'guardian',
+        ),
     );
     const [sibling, setSibling] = useState<Sibling | null>(null);
     const [linked, setLinked] = useState<string | null>(null);
     const [dismissed, setDismissed] = useState<string | null>(null);
 
     const level = levels.find((option) => option.id === levelId);
-    const levelClasses = classes.filter((option) => option.level_id === levelId);
+    const levelClasses = classes.filter(
+        (option) => option.level_id === levelId,
+    );
     const chosenClass = classes.find((option) => option.id === data.class_id);
     const levelSeries = series.filter((option) => option.level_id === levelId);
     const plan = feePlans.find((option) => option.level_id === levelId);
@@ -205,8 +258,11 @@ function Register(props: RegisterProps) {
     const mainPhone = main.phone.trim();
     const classHasRoom =
         !!chosenClass &&
-        (chosenClass.students < chosenClass.capacity || chosenClass.id === student?.class_id);
-    const guardianError = Object.entries(errors).find(([key]) => key.startsWith('guardians'))?.[1];
+        (chosenClass.students < chosenClass.capacity ||
+            chosenClass.id === student?.class_id);
+    const guardianError = Object.entries(errors).find(([key]) =>
+        key.startsWith('guardians'),
+    )?.[1];
 
     // Another student whose parent has this phone is probably a sibling.
     useEffect(() => {
@@ -230,8 +286,12 @@ function Register(props: RegisterProps) {
                 headers: { Accept: 'application/json' },
                 signal: controller.signal,
             })
-                .then((response) => (response.ok ? response.json() : { sibling: null }))
-                .then((body: { sibling: Sibling | null }) => setSibling(body.sibling))
+                .then((response) =>
+                    response.ok ? response.json() : { sibling: null },
+                )
+                .then((body: { sibling: Sibling | null }) =>
+                    setSibling(body.sibling),
+                )
                 .catch(() => undefined);
         }, 400);
 
@@ -242,7 +302,10 @@ function Register(props: RegisterProps) {
     }, [mainPhone, student]);
 
     function setGuardian(relation: Relation, patch: Partial<GuardianForm>) {
-        setGuardians({ ...guardians, [relation]: { ...guardians[relation], ...patch } });
+        setGuardians({
+            ...guardians,
+            [relation]: { ...guardians[relation], ...patch },
+        });
     }
 
     function chooseLevel(id: string) {
@@ -297,7 +360,9 @@ function Register(props: RegisterProps) {
             }}
             className="flex flex-col gap-6"
         >
-            <Head title={student ? t('Edit a student') : t('Register a student')} />
+            <Head
+                title={student ? t('Edit a student') : t('Register a student')}
+            />
             <StudentHeader
                 trail={
                     student
@@ -311,8 +376,12 @@ function Register(props: RegisterProps) {
                         : [{ label: t('Add student') }]
                 }
                 title={student ? t('Edit a student') : t('Register a student')}
-                tag={t('Enrolment:year_label', { year_label: props.yearLabel ? ` · ${props.yearLabel}` : '' })}
-                meta={t('identity, background, class, parents and fees in one go')}
+                tag={t('Enrolment:year_label', {
+                    year_label: props.yearLabel ? ` · ${props.yearLabel}` : '',
+                })}
+                meta={t(
+                    'identity, background, class, parents and fees in one go',
+                )}
             />
 
             <div className="flex flex-col gap-8 lg:flex-row">
@@ -320,39 +389,55 @@ function Register(props: RegisterProps) {
                     <section className="flex flex-col gap-[14px]">
                         <p className={capsLabelClass}>{t('Student')}</p>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}
+                            >
                                 {t('Surname')}
                                 <input
                                     type="text"
                                     value={data.surname}
-                                    onChange={(e) => setData('surname', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('surname', e.target.value)
+                                    }
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.surname} />
                             </label>
-                            <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}
+                            >
                                 {t('Name')}
                                 <input
                                     type="text"
                                     value={data.given_names}
-                                    onChange={(e) => setData('given_names', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('given_names', e.target.value)
+                                    }
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.given_names} />
                             </label>
                         </div>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <label className={`flex flex-col gap-2 sm:w-[176px] ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-col gap-2 sm:w-[176px] ${fieldLabelClass}`}
+                            >
                                 {t('Date of birth')}
                                 <input
                                     type="date"
                                     value={data.date_of_birth}
-                                    onChange={(e) => setData('date_of_birth', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('date_of_birth', e.target.value)
+                                    }
                                     className={`${fieldInputClass} font-mono text-[14px]`}
                                 />
                                 <ErrorText message={errors.date_of_birth} />
                             </label>
-                            <div role="radiogroup" aria-label={t('Gender')} className={`flex flex-col gap-2 sm:w-[160px] ${fieldLabelClass}`}>
+                            <div
+                                role="radiogroup"
+                                aria-label={t('Gender')}
+                                className={`flex flex-col gap-2 sm:w-[160px] ${fieldLabelClass}`}
+                            >
                                 {t('Gender')}
                                 <div className="flex gap-2">
                                     {[
@@ -363,9 +448,15 @@ function Register(props: RegisterProps) {
                                             key={option.value}
                                             type="button"
                                             role="radio"
-                                            aria-checked={data.gender === option.value}
-                                            onClick={() => setData('gender', option.value)}
-                                            className={segmentClass(data.gender === option.value)}
+                                            aria-checked={
+                                                data.gender === option.value
+                                            }
+                                            onClick={() =>
+                                                setData('gender', option.value)
+                                            }
+                                            className={segmentClass(
+                                                data.gender === option.value,
+                                            )}
                                         >
                                             {t(option.label)}
                                         </button>
@@ -373,40 +464,59 @@ function Register(props: RegisterProps) {
                                 </div>
                                 <ErrorText message={errors.gender} />
                             </div>
-                            <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}
+                            >
                                 {t('Place of birth')}
                                 <input
                                     type="text"
                                     value={data.place_of_birth}
-                                    onChange={(e) => setData('place_of_birth', e.target.value)}
+                                    onChange={(e) =>
+                                        setData(
+                                            'place_of_birth',
+                                            e.target.value,
+                                        )
+                                    }
                                     className={fieldInputClass}
                                 />
                             </label>
                         </div>
                         <div className="flex flex-col gap-3 sm:flex-row">
                             {canSeePrivate && (
-                                <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                                <label
+                                    className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}
+                                >
                                     {t('Religion')}
                                     <select
                                         value={data.religion}
-                                        onChange={(e) => setData('religion', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('religion', e.target.value)
+                                        }
                                         className={fieldInputClass}
                                     >
-                                        <option value="">{t('Not recorded')}</option>
+                                        <option value="">
+                                            {t('Not recorded')}
+                                        </option>
                                         {props.religions.map((religion) => (
-                                            <option key={religion}>{religion}</option>
+                                            <option key={religion}>
+                                                {religion}
+                                            </option>
                                         ))}
                                     </select>
                                 </label>
                             )}
-                            <div className={`flex flex-col gap-2 sm:w-[252px] ${fieldLabelClass}`}>
+                            <div
+                                className={`flex flex-col gap-2 sm:w-[252px] ${fieldLabelClass}`}
+                            >
                                 {t('Matricule')}
                                 <span className="flex h-10 items-center justify-between rounded-md border border-solid border-border bg-surface px-3">
                                     <span className="font-mono text-[16px] leading-5 font-normal text-text">
                                         {props.matricule}
                                     </span>
                                     <span className="text-[12px] leading-4 font-medium text-text-muted">
-                                        {student ? t('Never changes') : t('Automatic')}
+                                        {student
+                                            ? t('Never changes')
+                                            : t('Automatic')}
                                     </span>
                                 </span>
                             </div>
@@ -418,43 +528,71 @@ function Register(props: RegisterProps) {
                         {canSeePrivate && (
                             <div className="flex flex-col gap-[10px]">
                                 <YesNo
-                                    label={t('Does the student have a disability?')}
+                                    label={t(
+                                        'Does the student have a disability?',
+                                    )}
                                     value={data.has_disability}
-                                    onChange={(next) => setData('has_disability', next)}
+                                    onChange={(next) =>
+                                        setData('has_disability', next)
+                                    }
                                 />
                                 {data.has_disability && (
                                     <div className="flex flex-col gap-3 rounded-md bg-surface p-[14px] sm:flex-row">
-                                        <div className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                                        <div
+                                            className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}
+                                        >
                                             {t('Type')}
                                             <div className="flex flex-wrap gap-[6px]">
-                                                {props.disabilityTypes.map((type) => {
-                                                    const on = data.disability_types.includes(type);
+                                                {props.disabilityTypes.map(
+                                                    (type) => {
+                                                        const on =
+                                                            data.disability_types.includes(
+                                                                type,
+                                                            );
 
-                                                    return (
-                                                        <button
-                                                            key={type}
-                                                            type="button"
-                                                            aria-pressed={on}
-                                                            onClick={() => toggleType(type)}
-                                                            className={`flex h-8 items-center rounded-sm border border-solid px-[10px] text-[13px] leading-4 ${
-                                                                on
-                                                                    ? 'border-primary bg-primary-tint font-medium text-primary'
-                                                                    : 'border-border bg-white font-normal text-text'
-                                                            }`}
-                                                        >
-                                                            {type}
-                                                        </button>
-                                                    );
-                                                })}
+                                                        return (
+                                                            <button
+                                                                key={type}
+                                                                type="button"
+                                                                aria-pressed={
+                                                                    on
+                                                                }
+                                                                onClick={() =>
+                                                                    toggleType(
+                                                                        type,
+                                                                    )
+                                                                }
+                                                                className={`flex h-8 items-center rounded-sm border border-solid px-[10px] text-[13px] leading-4 ${
+                                                                    on
+                                                                        ? 'border-primary bg-primary-tint font-medium text-primary'
+                                                                        : 'border-border bg-white font-normal text-text'
+                                                                }`}
+                                                            >
+                                                                {type}
+                                                            </button>
+                                                        );
+                                                    },
+                                                )}
                                             </div>
                                         </div>
-                                        <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
-                                            {t('Support the school should give')}
+                                        <label
+                                            className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}
+                                        >
+                                            {t(
+                                                'Support the school should give',
+                                            )}
                                             <input
                                                 type="text"
-                                                placeholder={t('Sits in the front row')}
+                                                placeholder={t(
+                                                    'Sits in the front row',
+                                                )}
                                                 value={data.disability_support}
-                                                onChange={(e) => setData('disability_support', e.target.value)}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'disability_support',
+                                                        e.target.value,
+                                                    )
+                                                }
                                                 className={`${fieldInputClass} text-[14px]`}
                                             />
                                         </label>
@@ -466,52 +604,92 @@ function Register(props: RegisterProps) {
                             <YesNo
                                 label={t('Transferred from another school?')}
                                 value={data.transferred}
-                                onChange={(next) => setData('transferred', next)}
+                                onChange={(next) =>
+                                    setData('transferred', next)
+                                }
                             />
                             {data.transferred && (
                                 <div className="flex flex-col gap-3 rounded-md bg-surface p-[14px]">
                                     <div className="flex flex-col gap-3 sm:flex-row">
-                                        <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                                        <label
+                                            className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}
+                                        >
                                             {t('Previous school')}
                                             <input
                                                 type="text"
                                                 value={data.previous_school}
-                                                onChange={(e) => setData('previous_school', e.target.value)}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'previous_school',
+                                                        e.target.value,
+                                                    )
+                                                }
                                                 className={fieldInputClass}
                                             />
                                         </label>
-                                        <label className={`flex flex-col gap-2 sm:w-[150px] ${fieldLabelClass}`}>
+                                        <label
+                                            className={`flex flex-col gap-2 sm:w-[150px] ${fieldLabelClass}`}
+                                        >
                                             {t('Last class')}
                                             <input
                                                 type="text"
                                                 placeholder={t('Form 3')}
                                                 value={data.previous_class}
-                                                onChange={(e) => setData('previous_class', e.target.value)}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'previous_class',
+                                                        e.target.value,
+                                                    )
+                                                }
                                                 className={fieldInputClass}
                                             />
                                         </label>
-                                        <label className={`flex flex-col gap-2 sm:w-[110px] ${fieldLabelClass}`}>
+                                        <label
+                                            className={`flex flex-col gap-2 sm:w-[110px] ${fieldLabelClass}`}
+                                        >
                                             {t('Year left')}
                                             <input
                                                 type="number"
                                                 min={1990}
                                                 value={data.previous_year_left}
-                                                onChange={(e) => setData('previous_year_left', e.target.value)}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'previous_year_left',
+                                                        e.target.value,
+                                                    )
+                                                }
                                                 className={`${fieldInputClass} font-mono`}
                                             />
                                         </label>
                                     </div>
-                                    <ErrorText message={errors.previous_school ?? errors.previous_year_left} />
+                                    <ErrorText
+                                        message={
+                                            errors.previous_school ??
+                                            errors.previous_year_left
+                                        }
+                                    />
                                     <div className="flex flex-wrap gap-6">
                                         <Tick
-                                            checked={data.transfer_certificate_received}
-                                            onChange={(next) => setData('transfer_certificate_received', next)}
+                                            checked={
+                                                data.transfer_certificate_received
+                                            }
+                                            onChange={(next) =>
+                                                setData(
+                                                    'transfer_certificate_received',
+                                                    next,
+                                                )
+                                            }
                                         >
                                             {t('Transfer certificate received')}
                                         </Tick>
                                         <Tick
                                             checked={data.last_report_received}
-                                            onChange={(next) => setData('last_report_received', next)}
+                                            onChange={(next) =>
+                                                setData(
+                                                    'last_report_received',
+                                                    next,
+                                                )
+                                            }
                                         >
                                             {t('Last report card received')}
                                         </Tick>
@@ -524,35 +702,60 @@ function Register(props: RegisterProps) {
                     <section className="flex flex-col gap-[14px]">
                         <p className={capsLabelClass}>{t('Class')}</p>
                         <div className="flex flex-col gap-3 sm:flex-row">
-                            <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}
+                            >
                                 {t('Level')}
                                 <select
                                     value={levelId}
-                                    onChange={(e) => chooseLevel(e.target.value)}
+                                    onChange={(e) =>
+                                        chooseLevel(e.target.value)
+                                    }
                                     className={fieldInputClass}
                                 >
-                                    <option value="">{t('Choose a level')}</option>
+                                    <option value="">
+                                        {t('Choose a level')}
+                                    </option>
                                     {levels.map((option) => (
-                                        <option key={option.id} value={option.id}>
+                                        <option
+                                            key={option.id}
+                                            value={option.id}
+                                        >
                                             {option.name}
                                         </option>
                                     ))}
                                 </select>
                             </label>
-                            <label className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-1 flex-col gap-2 ${fieldLabelClass}`}
+                            >
                                 {t('Class')}
                                 <select
                                     value={data.class_id}
                                     disabled={!levelId}
-                                    onChange={(e) => setData('class_id', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('class_id', e.target.value)
+                                    }
                                     className={`${fieldInputClass} disabled:bg-surface`}
                                 >
                                     <option value="">
-                                        {levelId ? t('Choose a class') : t('Choose a level first')}
+                                        {levelId
+                                            ? t('Choose a class')
+                                            : t('Choose a level first')}
                                     </option>
                                     {levelClasses.map((option) => (
-                                        <option key={option.id} value={option.id}>
-                                            {t(':option · :students of :capacity', { option: option.name, students: option.students, capacity: option.capacity })}
+                                        <option
+                                            key={option.id}
+                                            value={option.id}
+                                        >
+                                            {t(
+                                                ':option · :students of :capacity',
+                                                {
+                                                    option: option.name,
+                                                    students: option.students,
+                                                    capacity: option.capacity,
+                                                },
+                                            )}
                                         </option>
                                     ))}
                                 </select>
@@ -561,15 +764,21 @@ function Register(props: RegisterProps) {
                         <ErrorText message={errors.class_id} />
                         {levels.length === 0 && (
                             <p className="text-[13px] leading-[19px] text-warning">
-                                {t('There are no levels or classes yet. Add them under Classes & Subjects first.')}
+                                {t(
+                                    'There are no levels or classes yet. Add them under Classes & Subjects first.',
+                                )}
                             </p>
                         )}
                         {level?.uses_series && (
                             <div className="flex flex-col gap-2">
                                 <p className="flex items-baseline gap-2">
-                                    <span className={fieldLabelClass}>{t('Series')}</span>
+                                    <span className={fieldLabelClass}>
+                                        {t('Series')}
+                                    </span>
                                     <span className="text-[12px] leading-4 text-text-muted">
-                                        {t('optional · :level uses series', { level: level.name })}
+                                        {t('optional · :level uses series', {
+                                            level: level.name,
+                                        })}
                                     </span>
                                 </p>
                                 <div className="flex flex-wrap items-center gap-2">
@@ -577,16 +786,27 @@ function Register(props: RegisterProps) {
                                         const on = data.series_id === option.id;
                                         const newStream =
                                             position > 0 &&
-                                            levelSeries[position - 1].stream !== option.stream;
+                                            levelSeries[position - 1].stream !==
+                                                option.stream;
 
                                         return (
-                                            <span key={option.id} className="flex items-center gap-2">
-                                                {newStream && <span className="h-5 w-px shrink-0 bg-border" />}
+                                            <span
+                                                key={option.id}
+                                                className="flex items-center gap-2"
+                                            >
+                                                {newStream && (
+                                                    <span className="h-5 w-px shrink-0 bg-border" />
+                                                )}
                                                 <button
                                                     type="button"
                                                     aria-pressed={on}
                                                     title={option.name}
-                                                    onClick={() => setData('series_id', on ? '' : option.id)}
+                                                    onClick={() =>
+                                                        setData(
+                                                            'series_id',
+                                                            on ? '' : option.id,
+                                                        )
+                                                    }
                                                     className={`flex h-8 min-w-11 shrink-0 items-center justify-center rounded-md border border-solid px-2 font-mono text-[13px] leading-4 ${
                                                         on
                                                             ? 'border-primary bg-primary-tint font-semibold text-primary'
@@ -601,7 +821,9 @@ function Register(props: RegisterProps) {
                                     <span className="pl-2 text-[13px] leading-4 text-text-muted">
                                         {levelSeries.length > 0
                                             ? t('Leave empty to choose later.')
-                                            : t('No series are set up for this level yet.')}
+                                            : t(
+                                                  'No series are set up for this level yet.',
+                                              )}
                                     </span>
                                 </div>
                                 <ErrorText message={errors.series_id} />
@@ -610,11 +832,17 @@ function Register(props: RegisterProps) {
                     </section>
 
                     <section className="flex flex-col gap-[14px]">
-                        <p className={capsLabelClass}>{t('Parents and guardian')}</p>
+                        <p className={capsLabelClass}>
+                            {t('Parents and guardian')}
+                        </p>
                         <div className="flex flex-col gap-4 md:flex-row">
                             {relations.map((relation) => {
                                 const isMain = data.main_contact === relation;
-                                const title = { father: 'Father', mother: 'Mother', guardian: 'Guardian' }[relation];
+                                const title = {
+                                    father: 'Father',
+                                    mother: 'Mother',
+                                    guardian: 'Guardian',
+                                }[relation];
 
                                 return (
                                     <fieldset
@@ -632,37 +860,66 @@ function Register(props: RegisterProps) {
                                             ) : (
                                                 <button
                                                     type="button"
-                                                    onClick={() => setData('main_contact', relation)}
+                                                    onClick={() =>
+                                                        setData(
+                                                            'main_contact',
+                                                            relation,
+                                                        )
+                                                    }
                                                     className="text-[13px] leading-4 font-medium text-primary hover:underline"
                                                 >
                                                     {t('Make main contact')}
                                                 </button>
                                             )}
                                         </div>
-                                        <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                                        <label
+                                            className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                                        >
                                             {t('Surname and name')}
                                             <input
                                                 type="text"
                                                 value={guardians[relation].name}
-                                                onChange={(e) => setGuardian(relation, { name: e.target.value })}
+                                                onChange={(e) =>
+                                                    setGuardian(relation, {
+                                                        name: e.target.value,
+                                                    })
+                                                }
                                                 className={smallInputClass}
                                             />
                                         </label>
-                                        <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                                        <label
+                                            className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                                        >
                                             {t('Phone')}
                                             <input
                                                 type="tel"
-                                                value={guardians[relation].phone}
-                                                onChange={(e) => setGuardian(relation, { phone: e.target.value })}
+                                                value={
+                                                    guardians[relation].phone
+                                                }
+                                                onChange={(e) =>
+                                                    setGuardian(relation, {
+                                                        phone: e.target.value,
+                                                    })
+                                                }
                                                 className={`${smallInputClass} font-mono`}
                                             />
                                         </label>
-                                        <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                                        <label
+                                            className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                                        >
                                             {t('Occupation')}
                                             <input
                                                 type="text"
-                                                value={guardians[relation].occupation}
-                                                onChange={(e) => setGuardian(relation, { occupation: e.target.value })}
+                                                value={
+                                                    guardians[relation]
+                                                        .occupation
+                                                }
+                                                onChange={(e) =>
+                                                    setGuardian(relation, {
+                                                        occupation:
+                                                            e.target.value,
+                                                    })
+                                                }
                                                 className={smallInputClass}
                                             />
                                         </label>
@@ -670,10 +927,23 @@ function Register(props: RegisterProps) {
                                 );
                             })}
                         </div>
-                        <ErrorText message={errors.main_contact ?? errors.guardians ?? guardianError} />
+                        <ErrorText
+                            message={
+                                errors.main_contact ??
+                                errors.guardians ??
+                                guardianError
+                            }
+                        />
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            <Tick checked={data.on_whatsapp} onChange={(next) => setData('on_whatsapp', next)}>
-                                {t('The main contact is also on WhatsApp. Notices go there.')}
+                            <Tick
+                                checked={data.on_whatsapp}
+                                onChange={(next) =>
+                                    setData('on_whatsapp', next)
+                                }
+                            >
+                                {t(
+                                    'The main contact is also on WhatsApp. Notices go there.',
+                                )}
                             </Tick>
                             {!showGuardian && (
                                 <button
@@ -685,11 +955,15 @@ function Register(props: RegisterProps) {
                                 </button>
                             )}
                         </div>
-                        <label className={`flex flex-col gap-2 sm:w-[252px] ${fieldLabelClass}`}>
+                        <label
+                            className={`flex flex-col gap-2 sm:w-[252px] ${fieldLabelClass}`}
+                        >
                             {t('Lives with')}
                             <select
                                 value={data.lives_with}
-                                onChange={(e) => setData('lives_with', e.target.value)}
+                                onChange={(e) =>
+                                    setData('lives_with', e.target.value)
+                                }
                                 className={fieldInputClass}
                             >
                                 <option value="">{t('Not recorded')}</option>
@@ -714,49 +988,77 @@ function Register(props: RegisterProps) {
                                         </span>
                                         {plan.items.length > 1 &&
                                             plan.items.map((item) => (
-                                                <span key={item.name} className="text-[12px] leading-4 text-text-muted">
-                                                    {item.name} · {money(item.amount)}
+                                                <span
+                                                    key={item.name}
+                                                    className="text-[12px] leading-4 text-text-muted"
+                                                >
+                                                    {item.name} ·{' '}
+                                                    {money(item.amount)}
                                                 </span>
                                             ))}
                                     </div>
                                     <div className="flex min-w-0 flex-1 flex-wrap gap-2">
-                                        {plan.installments.map((installment) => (
-                                            <div
-                                                key={installment.seq}
-                                                className="flex min-w-[110px] flex-1 flex-col gap-[2px] rounded-md border border-solid border-border bg-white px-[10px] py-[6px]"
-                                            >
-                                                <span className="text-[12px] leading-4 text-text-muted">
-                                                    {ORDINALS[installment.seq - 1] ?? `#${installment.seq}`} ·{' '}
-                                                    {shortDate(installment.due_on)}
-                                                </span>
-                                                <span className="font-mono text-[13px] leading-4 text-text">
-                                                    {money(installment.amount)}
-                                                </span>
-                                            </div>
-                                        ))}
+                                        {plan.installments.map(
+                                            (installment) => (
+                                                <div
+                                                    key={installment.seq}
+                                                    className="flex min-w-[110px] flex-1 flex-col gap-[2px] rounded-md border border-solid border-border bg-white px-[10px] py-[6px]"
+                                                >
+                                                    <span className="text-[12px] leading-4 text-text-muted">
+                                                        {ORDINALS[
+                                                            installment.seq - 1
+                                                        ] ??
+                                                            `#${installment.seq}`}{' '}
+                                                        ·{' '}
+                                                        {shortDate(
+                                                            installment.due_on,
+                                                        )}
+                                                    </span>
+                                                    <span className="font-mono text-[13px] leading-4 text-text">
+                                                        {money(
+                                                            installment.amount,
+                                                        )}
+                                                    </span>
+                                                </div>
+                                            ),
+                                        )}
                                     </div>
                                 </div>
                             ) : (
                                 <p className="rounded-md bg-surface px-[14px] py-3 text-[13px] leading-[19px] text-text-muted">
                                     {levelId
-                                        ? t('No fee plan is set for :level this year, so nothing is billed at admission.', { level: level?.name })
-                                        : t('Choose a level to see its fee plan.')}
+                                        ? t(
+                                              'No fee plan is set for :level this year, so nothing is billed at admission.',
+                                              { level: level?.name },
+                                          )
+                                        : t(
+                                              'Choose a level to see its fee plan.',
+                                          )}
                                 </p>
                             )}
                         </section>
                     )}
 
                     {errors.duplicate && (
-                        <div role="alert" className="flex flex-col gap-[10px] rounded-lg border border-solid border-warning bg-warning-tint p-4">
+                        <div
+                            role="alert"
+                            className="flex flex-col gap-[10px] rounded-lg border border-solid border-warning bg-warning-tint p-4"
+                        >
                             <p className="text-[14px] leading-[18px] font-semibold text-[#8A5A12]">
                                 {t('Possible duplicate')}
                             </p>
-                            <p className="text-[13px] leading-[19px] text-text">{errors.duplicate}</p>
+                            <p className="text-[13px] leading-[19px] text-text">
+                                {errors.duplicate}
+                            </p>
                             <Tick
                                 checked={data.allow_duplicate}
-                                onChange={(next) => setData('allow_duplicate', next)}
+                                onChange={(next) =>
+                                    setData('allow_duplicate', next)
+                                }
                             >
-                                {t('This is a different student. Register anyway.')}
+                                {t(
+                                    'This is a different student. Register anyway.',
+                                )}
                             </Tick>
                         </div>
                     )}
@@ -767,7 +1069,9 @@ function Register(props: RegisterProps) {
                         </p>
                         <div className="flex flex-wrap gap-2">
                             <Link
-                                href={student ? show.url(student.id) : index.url()}
+                                href={
+                                    student ? show.url(student.id) : index.url()
+                                }
                                 className={outlineButtonClass}
                             >
                                 {t('Cancel')}
@@ -782,8 +1086,14 @@ function Register(props: RegisterProps) {
                                     {t('Save and add another')}
                                 </button>
                             )}
-                            <button type="submit" disabled={processing} className={solidButtonClass}>
-                                {student ? t('Save changes') : t('Register student')}
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className={solidButtonClass}
+                            >
+                                {student
+                                    ? t('Save changes')
+                                    : t('Register student')}
                             </button>
                         </div>
                     </div>
@@ -792,9 +1102,13 @@ function Register(props: RegisterProps) {
                 <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-surface p-4">
                         <p className={capsLabelClass}>{t('Matricule')}</p>
-                        <p className="font-mono text-[22px] leading-7 text-text">{props.matricule}</p>
+                        <p className="font-mono text-[22px] leading-7 text-text">
+                            {props.matricule}
+                        </p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            {t('School prefix, admission year and the next free number. It never changes.')}
+                            {t(
+                                'School prefix, admission year and the next free number. It never changes.',
+                            )}
                         </p>
                     </div>
 
@@ -804,7 +1118,10 @@ function Register(props: RegisterProps) {
                                 {t('Linked as siblings')}
                             </p>
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                {t('With :sibling (:matricule).', { sibling: sibling.name, matricule: sibling.matricule })}
+                                {t('With :sibling (:matricule).', {
+                                    sibling: sibling.name,
+                                    matricule: sibling.matricule,
+                                })}
                             </p>
                             <button
                                 type="button"
@@ -815,32 +1132,41 @@ function Register(props: RegisterProps) {
                             </button>
                         </div>
                     )}
-                    {sibling && linked !== sibling.id && dismissed !== sibling.id && (
-                        <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-warning bg-warning-tint p-4">
-                            <p className="text-[14px] leading-[18px] font-semibold text-[#8A5A12]">
-                                {t('Possible sibling')}
-                            </p>
-                            <p className="text-[13px] leading-[19px] text-text">
-                                {t(':sibling (:matricule) has a :relation with the same phone number.', { sibling: sibling.name, matricule: sibling.matricule, relation: sibling.relation })}
-                            </p>
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setLinked(sibling.id)}
-                                    className="flex h-[30px] items-center rounded-md border border-solid border-border bg-white px-3 text-[13px] leading-4 font-medium text-text"
-                                >
-                                    {t('Link as siblings')}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setDismissed(sibling.id)}
-                                    className="flex h-[30px] items-center px-[10px] text-[13px] leading-4 font-medium text-primary hover:underline"
-                                >
-                                    {t('Not related')}
-                                </button>
+                    {sibling &&
+                        linked !== sibling.id &&
+                        dismissed !== sibling.id && (
+                            <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-warning bg-warning-tint p-4">
+                                <p className="text-[14px] leading-[18px] font-semibold text-[#8A5A12]">
+                                    {t('Possible sibling')}
+                                </p>
+                                <p className="text-[13px] leading-[19px] text-text">
+                                    {t(
+                                        ':sibling (:matricule) has a :relation with the same phone number.',
+                                        {
+                                            sibling: sibling.name,
+                                            matricule: sibling.matricule,
+                                            relation: sibling.relation,
+                                        },
+                                    )}
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setLinked(sibling.id)}
+                                        className="flex h-[30px] items-center rounded-md border border-solid border-border bg-white px-3 text-[13px] leading-4 font-medium text-text"
+                                    >
+                                        {t('Link as siblings')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDismissed(sibling.id)}
+                                        className="flex h-[30px] items-center px-[10px] text-[13px] leading-4 font-medium text-primary hover:underline"
+                                    >
+                                        {t('Not related')}
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
                     {canSeePrivate && (
                         <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-white p-4">
@@ -848,7 +1174,9 @@ function Register(props: RegisterProps) {
                                 {t('Private details')}
                             </p>
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                {t('Religion and disability are visible only to the principal and the administrator. They never appear on report cards or receipts.')}
+                                {t(
+                                    'Religion and disability are visible only to the principal and the administrator. They never appear on report cards or receipts.',
+                                )}
                             </p>
                         </div>
                     )}
@@ -860,30 +1188,64 @@ function Register(props: RegisterProps) {
                         <ul className="flex flex-col gap-[10px]">
                             <Check
                                 tone={
-                                    data.surname.trim() && data.given_names.trim() && data.date_of_birth
+                                    data.surname.trim() &&
+                                    data.given_names.trim() &&
+                                    data.date_of_birth
                                         ? 'done'
                                         : 'todo'
                                 }
                             >
                                 {t('Surname, name and date of birth')}
                             </Check>
-                            <Check tone={!chosenClass ? 'todo' : classHasRoom ? 'done' : 'warn'}>
+                            <Check
+                                tone={
+                                    !chosenClass
+                                        ? 'todo'
+                                        : classHasRoom
+                                          ? 'done'
+                                          : 'warn'
+                                }
+                            >
                                 {chosenClass
-                                    ? t(':chosen_class :full: :students of :capacity', { chosen_class: chosenClass.name, full: classHasRoom ? 'has room' : 'is full', students: chosenClass.students, capacity: chosenClass.capacity })
+                                    ? t(
+                                          ':chosen_class :full: :students of :capacity',
+                                          {
+                                              chosen_class: chosenClass.name,
+                                              full: classHasRoom
+                                                  ? 'has room'
+                                                  : 'is full',
+                                              students: chosenClass.students,
+                                              capacity: chosenClass.capacity,
+                                          },
+                                      )
                                     : t('A class with room')}
                             </Check>
-                            <Check tone={main.name.trim() && mainPhone ? 'done' : 'todo'}>
+                            <Check
+                                tone={
+                                    main.name.trim() && mainPhone
+                                        ? 'done'
+                                        : 'todo'
+                                }
+                            >
                                 {t('A main contact with a phone number')}
                             </Check>
                             {data.transferred && !data.last_report_received && (
                                 <Check tone="warn">
                                     {t('Last report card')}
-                                    {data.previous_school ? t(' from :previous_school', { previous_school: data.previous_school }) : ''} {t('not received yet.')}
+                                    {data.previous_school
+                                        ? t(' from :previous_school', {
+                                              previous_school:
+                                                  data.previous_school,
+                                          })
+                                        : ''}{' '}
+                                    {t('not received yet.')}
                                 </Check>
                             )}
                             {level?.uses_series && !data.series_id && (
                                 <Check tone="warn">
-                                    {t('No series yet. The student shows under No series until one is chosen.')}
+                                    {t(
+                                        'No series yet. The student shows under No series until one is chosen.',
+                                    )}
                                 </Check>
                             )}
                         </ul>

@@ -12,7 +12,10 @@ const STEPS = [
 
 const UP_NEXT = [
     { n: '01', text: 'Sign in with your email and password' },
-    { n: '02', text: 'Add your logo, terms and fee installments in School Setup' },
+    {
+        n: '02',
+        text: 'Add your logo, terms and fee installments in School Setup',
+    },
     { n: '03', text: 'Invite your teachers' },
 ];
 
@@ -40,9 +43,7 @@ export default function WorkspaceReady({
     }
 
     return (
-        <AuthLayout
-            middle={{ variant: 'stepper', steps: STEPS, active: 2 }}
-        >
+        <AuthLayout middle={{ variant: 'stepper', steps: STEPS, active: 2 }}>
             <Head title={t(':school is ready', { school: school.name })} />
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
@@ -52,7 +53,9 @@ export default function WorkspaceReady({
                     </span>
                     <Heading
                         title={t(':school is ready', { school: school.name })}
-                        sub={t('Your workspace is live. Staff will sign in at the address below.')}
+                        sub={t(
+                            'Your workspace is live. Staff will sign in at the address below.',
+                        )}
                     />
                 </div>
                 <div className="flex flex-col rounded-lg border border-solid border-border">

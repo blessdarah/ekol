@@ -107,13 +107,25 @@ function RowMenu({
                     onClick={(event) => event.stopPropagation()}
                     className="absolute top-full right-0 z-10 mt-1 flex w-[190px] flex-col rounded-md border border-solid border-border bg-white p-1 shadow-[0_8px_24px_rgba(16,25,21,0.12)]"
                 >
-                    <Link role="menuitem" href={show.url(row.id)} className={itemClass}>
+                    <Link
+                        role="menuitem"
+                        href={show.url(row.id)}
+                        className={itemClass}
+                    >
                         {t('Open record')}
                     </Link>
-                    <Link role="menuitem" href={edit.url(row.id)} className={itemClass}>
+                    <Link
+                        role="menuitem"
+                        href={edit.url(row.id)}
+                        className={itemClass}
+                    >
                         {t('Edit details')}
                     </Link>
-                    <Link role="menuitem" href={access.url(row.id)} className={itemClass}>
+                    <Link
+                        role="menuitem"
+                        href={access.url(row.id)}
+                        className={itemClass}
+                    >
                         {t('Portal access')}
                     </Link>
                     {!row.has_account && row.invited_on && (
@@ -199,13 +211,23 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
     }, []);
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('The staff roster')} />
             <PageHeader
                 crumb="Roster"
                 title={t('The staff roster')}
-                tag={t('Roster:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
-                meta={t(':total staff · :government government employees · :school_paid school-paid · :no_account with no account yet', { total: counts.total, government: counts.government, school_paid: counts.school_paid, no_account: counts.no_account })}
+                tag={t('Roster:year_label', {
+                    year_label: yearLabel ? ` · ${yearLabel}` : '',
+                })}
+                meta={t(
+                    ':total staff · :government government employees · :school_paid school-paid · :no_account with no account yet',
+                    {
+                        total: counts.total,
+                        government: counts.government,
+                        school_paid: counts.school_paid,
+                        no_account: counts.no_account,
+                    },
+                )}
             />
 
             <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
@@ -233,9 +255,27 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <label className="flex h-9 w-[260px] items-center gap-2 rounded-md border border-solid border-border bg-white px-3 focus-within:border-primary">
-                        <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
-                            <circle cx="11" cy="11" r="7" fill="none" stroke="#56625C" strokeWidth="2" />
-                            <path d="M16.5 16.5L21 21" fill="none" stroke="#56625C" strokeWidth="2" strokeLinecap="round" />
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            className="shrink-0"
+                        >
+                            <circle
+                                cx="11"
+                                cy="11"
+                                r="7"
+                                fill="none"
+                                stroke="#56625C"
+                                strokeWidth="2"
+                            />
+                            <path
+                                d="M16.5 16.5L21 21"
+                                fill="none"
+                                stroke="#56625C"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                            />
                         </svg>
                         <input
                             type="search"
@@ -252,14 +292,21 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                         onClick={() => setShowFilters(!showFilters)}
                         className="flex h-9 items-center justify-center rounded-md border border-solid border-border px-4 text-[14px] font-medium text-primary hover:bg-surface"
                     >
-                        {t('Filter')}{extraFilters > 0 ? ` · ${extraFilters}` : ''}
+                        {t('Filter')}
+                        {extraFilters > 0 ? ` · ${extraFilters}` : ''}
                     </button>
                     <Link
                         href={create.url()}
                         className="flex h-9 shrink-0 items-center gap-2 rounded-md bg-primary px-4 text-[13px] leading-4 font-semibold text-white hover:bg-primary-hover"
                     >
                         <svg width="14" height="14" viewBox="0 0 14 14">
-                            <path d="M7 2.4v9.2M2.4 7h9.2" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+                            <path
+                                d="M7 2.4v9.2M2.4 7h9.2"
+                                fill="none"
+                                stroke="#fff"
+                                strokeWidth="1.6"
+                                strokeLinecap="round"
+                            />
                         </svg>
                         {t('Add a staff member')}
                     </Link>
@@ -307,16 +354,28 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                 <div className="overflow-x-auto lg:overflow-visible">
                     <div className="flex min-w-[980px] flex-col rounded-lg border border-solid border-border bg-white">
                         <div className="flex items-center gap-4 rounded-t-lg border-b border-solid border-border bg-surface px-4 py-2">
-                            <span className={`${headCellClass} min-w-0 flex-1`}>{t('Staff member')}</span>
-                            <span className={`${headCellClass} w-[88px]`}>{t('Gender')}</span>
-                            <span className={`${headCellClass} w-[176px]`}>{t('Employment')}</span>
-                            <span className={`${headCellClass} w-[218px]`}>{t('Contact')}</span>
-                            <span className={`${headCellClass} w-[140px]`}>{t('Portal')}</span>
+                            <span className={`${headCellClass} min-w-0 flex-1`}>
+                                {t('Staff member')}
+                            </span>
+                            <span className={`${headCellClass} w-[88px]`}>
+                                {t('Gender')}
+                            </span>
+                            <span className={`${headCellClass} w-[176px]`}>
+                                {t('Employment')}
+                            </span>
+                            <span className={`${headCellClass} w-[218px]`}>
+                                {t('Contact')}
+                            </span>
+                            <span className={`${headCellClass} w-[140px]`}>
+                                {t('Portal')}
+                            </span>
                             <span className="w-10 shrink-0" />
                         </div>
                         {staff.rows.length === 0 && (
                             <p className="px-4 py-8 text-center text-[13px] text-text-muted">
-                                {t('Nobody on the roster matches. Try another name, or clear the filters.')}
+                                {t(
+                                    'Nobody on the roster matches. Try another name, or clear the filters.',
+                                )}
                             </p>
                         )}
                         {staff.rows.map((row, position) => (
@@ -324,7 +383,9 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                                 key={row.id}
                                 onClick={() => router.visit(show.url(row.id))}
                                 className={`flex cursor-pointer items-center gap-4 border-b border-solid border-border px-4 py-3 last:rounded-b-lg last:border-b-0 hover:bg-surface ${
-                                    position % 2 === 1 ? 'bg-row-alt' : 'bg-white'
+                                    position % 2 === 1
+                                        ? 'bg-row-alt'
+                                        : 'bg-white'
                                 }`}
                             >
                                 <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -336,20 +397,27 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                                     <div className="flex min-w-0 flex-col">
                                         <Link
                                             href={show.url(row.id)}
-                                            onClick={(event) => event.stopPropagation()}
+                                            onClick={(event) =>
+                                                event.stopPropagation()
+                                            }
                                             className="truncate text-[14px] leading-[1.35] font-semibold text-text hover:underline"
                                         >
                                             {row.name}
                                         </Link>
                                         <span className="truncate text-[13px] leading-[1.35] text-text-muted">
-                                            {[row.role_label, row.subjects.join(', ')]
+                                            {[
+                                                row.role_label,
+                                                row.subjects.join(', '),
+                                            ]
                                                 .filter(Boolean)
                                                 .join(' · ')}
                                         </span>
                                     </div>
                                 </div>
                                 <span className="w-[88px] shrink-0 text-[14px] text-text">
-                                    {row.gender ? GENDER_LABELS[row.gender] : '—'}
+                                    {row.gender
+                                        ? GENDER_LABELS[row.gender]
+                                        : '—'}
                                 </span>
                                 <span className="w-[176px] shrink-0 text-[14px] text-text">
                                     {row.employment_type
@@ -365,14 +433,24 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                                     </span>
                                 </span>
                                 <span className="flex w-[140px] shrink-0 items-center gap-2 text-[13px] text-text">
-                                    <StatusDot tone={row.has_account ? 'success' : 'warning'} />
-                                    {row.has_account ? t('Portal on') : t('No account yet')}
+                                    <StatusDot
+                                        tone={
+                                            row.has_account
+                                                ? 'success'
+                                                : 'warning'
+                                        }
+                                    />
+                                    {row.has_account
+                                        ? t('Portal on')
+                                        : t('No account yet')}
                                 </span>
                                 <RowMenu
                                     row={row}
                                     open={openMenu === row.id}
                                     onToggle={() =>
-                                        setOpenMenu(openMenu === row.id ? null : row.id)
+                                        setOpenMenu(
+                                            openMenu === row.id ? null : row.id,
+                                        )
                                     }
                                 />
                             </div>
@@ -382,27 +460,33 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
 
                 <div className="mt-auto flex flex-wrap items-center justify-between gap-4">
                     <p className="text-[13px] text-text-muted">
-                        {t(':rows of :total shown · sorted by family name', { rows: staff.rows.length, total: staff.total })}
+                        {t(':rows of :total shown · sorted by family name', {
+                            rows: staff.rows.length,
+                            total: staff.total,
+                        })}
                     </p>
                     <div className="flex items-center gap-2">
                         {staff.lastPage > 1 &&
-                            Array.from({ length: staff.lastPage }, (_, i) => i + 1).map(
-                                (page) => (
-                                    <button
-                                        key={page}
-                                        type="button"
-                                        aria-current={page === staff.page ? 'page' : undefined}
-                                        onClick={() => visit({ page })}
-                                        className={`flex h-7 items-center rounded-md px-3 text-[13px] text-primary ${
-                                            page === staff.page
-                                                ? 'border border-solid border-primary bg-primary-tint font-semibold'
-                                                : 'hover:bg-surface'
-                                        }`}
-                                    >
-                                        {page}
-                                    </button>
-                                ),
-                            )}
+                            Array.from(
+                                { length: staff.lastPage },
+                                (_, i) => i + 1,
+                            ).map((page) => (
+                                <button
+                                    key={page}
+                                    type="button"
+                                    aria-current={
+                                        page === staff.page ? 'page' : undefined
+                                    }
+                                    onClick={() => visit({ page })}
+                                    className={`flex h-7 items-center rounded-md px-3 text-[13px] text-primary ${
+                                        page === staff.page
+                                            ? 'border border-solid border-primary bg-primary-tint font-semibold'
+                                            : 'hover:bg-surface'
+                                    }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
                         <span className="text-[13px] text-text-muted">
                             {t(':total staff', { total: counts.total })}
                         </span>

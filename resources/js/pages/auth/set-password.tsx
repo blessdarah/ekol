@@ -58,7 +58,7 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
     }
 
     return (
-        <div className="font-auth flex min-h-screen bg-bg text-text antialiased">
+        <div className="flex min-h-screen bg-bg font-auth text-text antialiased">
             <Head title={t('Set your password')} />
             <aside className="hidden w-[440px] shrink-0 flex-col justify-between border-r border-solid border-border bg-surface px-12 py-10 lg:flex">
                 <div className="flex flex-col gap-20">
@@ -73,7 +73,10 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                     {member.formal_name}
                                 </p>
                                 <p className="font-mono text-[12px] leading-4 text-text-muted">
-                                    {[member.role_label, member.subjects.join(', ')]
+                                    {[
+                                        member.role_label,
+                                        member.subjects.join(', '),
+                                    ]
                                         .filter(Boolean)
                                         .join(' · ')}
                                 </p>
@@ -82,9 +85,16 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                 {[
                                     [t('School'), schoolName],
                                     [t('Portal role'), t(member.role_label)],
-                                    [t('Subjects'), member.subjects.join(', ') || t('None assigned yet')],
+                                    [
+                                        t('Subjects'),
+                                        member.subjects.join(', ') ||
+                                            t('None assigned yet'),
+                                    ],
                                 ].map(([label, value]) => (
-                                    <div key={label} className="flex items-baseline gap-3">
+                                    <div
+                                        key={label}
+                                        className="flex items-baseline gap-3"
+                                    >
                                         <dt className="w-24 shrink-0 text-[12px] leading-[18px] text-text-muted">
                                             {label}
                                         </dt>
@@ -102,7 +112,9 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                         {t('Only you know it')}
                     </p>
                     <p className="text-[14px] leading-[21px] text-text">
-                        {t('Your password stays on your device. The school sees that you have joined, never what you type.')}
+                        {t(
+                            'Your password stays on your device. The school sees that you have joined, never what you type.',
+                        )}
                     </p>
                 </div>
             </aside>
@@ -110,7 +122,10 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
             <main className="flex flex-1 flex-col gap-12 px-6 pt-10 pb-14 sm:px-24">
                 <p className="flex h-5 w-full max-w-[592px] items-center justify-end gap-[6px] text-[14px] leading-[18px] text-text-muted">
                     {t('Already have a password?')}
-                    <Link href="/login" className="font-semibold text-primary hover:underline">
+                    <Link
+                        href="/login"
+                        className="font-semibold text-primary hover:underline"
+                    >
                         {t('Sign in')}
                     </Link>
                 </p>
@@ -132,7 +147,9 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                     {t('Set your password')}
                                 </h1>
                                 <p className="text-[16px] leading-6 text-text-muted">
-                                    {t('Your school has registered you. Choose a password to open your portal account and see your classes.')}
+                                    {t(
+                                        'Your school has registered you. Choose a password to open your portal account and see your classes.',
+                                    )}
                                 </p>
                             </div>
 
@@ -148,7 +165,9 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                         id="password"
                                         type={visible ? 'text' : 'password'}
                                         value={data.password}
-                                        onChange={(e) => setData('password', e.target.value)}
+                                        onChange={(e) =>
+                                            setData('password', e.target.value)
+                                        }
                                         autoComplete="new-password"
                                         aria-describedby="password-rule"
                                         className={`min-w-0 flex-1 bg-transparent font-mono text-[18px] leading-6 text-text outline-none ${visible ? '' : 'tracking-[0.18em]'}`}
@@ -159,9 +178,26 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                         className="flex shrink-0 items-center gap-[10px] text-[12px] leading-4 font-medium text-primary"
                                     >
                                         {visible ? t('Hide') : t('Show')}
-                                        <svg width="16" height="16" viewBox="0 0 24 24">
-                                            <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="#56625C" strokeWidth="1.7" strokeLinejoin="round" />
-                                            <circle cx="12" cy="12" r="3" fill="none" stroke="#56625C" strokeWidth="1.7" />
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"
+                                                fill="none"
+                                                stroke="#56625C"
+                                                strokeWidth="1.7"
+                                                strokeLinejoin="round"
+                                            />
+                                            <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="3"
+                                                fill="none"
+                                                stroke="#56625C"
+                                                strokeWidth="1.7"
+                                            />
                                         </svg>
                                     </button>
                                 </div>
@@ -186,13 +222,19 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                         id="password-rule"
                                         className="text-[12px] leading-[18px] text-text-muted"
                                     >
-                                        {t('At least :count characters, with one number.', { count: MIN_LENGTH })}
+                                        {t(
+                                            'At least :count characters, with one number.',
+                                            { count: MIN_LENGTH },
+                                        )}
                                     </p>
                                     <span className="flex-1" />
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setData('password', generatePassword());
+                                            setData(
+                                                'password',
+                                                generatePassword(),
+                                            );
                                             setVisible(true);
                                         }}
                                         className="text-[12px] leading-[18px] font-medium text-primary hover:underline"
@@ -201,7 +243,10 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                     </button>
                                 </div>
                                 {errors.password && (
-                                    <p role="alert" className="text-[13px] leading-4 text-danger">
+                                    <p
+                                        role="alert"
+                                        className="text-[13px] leading-4 text-danger"
+                                    >
                                         {errors.password}
                                     </p>
                                 )}
@@ -216,7 +261,9 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                     {t('Set my password')}
                                 </button>
                                 <p className="text-[13px] leading-[18px] text-text-muted">
-                                    {t('You can change it later in your profile.')}
+                                    {t(
+                                        'You can change it later in your profile.',
+                                    )}
                                 </p>
                             </div>
 
@@ -225,7 +272,9 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                     {t('Why we ask')}
                                 </p>
                                 <p className="text-[13px] leading-5 text-text-muted">
-                                    {t('This is the only step where you choose a password. From here on you sign in with it instead of a code.')}
+                                    {t(
+                                        'This is the only step where you choose a password. From here on you sign in with it instead of a code.',
+                                    )}
                                 </p>
                             </div>
                         </form>
@@ -239,7 +288,9 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                             {t('This link is no longer open')}
                         </h1>
                         <p className="text-[16px] leading-6 text-text-muted">
-                            {t('Invitation links work for seven days and only once. Ask your school to send it again, or sign in if you have already chosen a password.')}
+                            {t(
+                                'Invitation links work for seven days and only once. Ask your school to send it again, or sign in if you have already chosen a password.',
+                            )}
                         </p>
                     </div>
                 )}

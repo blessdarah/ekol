@@ -12,9 +12,11 @@ The auth flow works end-to-end but its pages are unstyled placeholders (generic 
 ## Capabilities
 
 ### New Capabilities
+
 - `auth-ui-paper`: Paper-faithful UI for auth screens 10–16 on shared layout + tokens.
 
 ### Modified Capabilities
+
 - `tenant-core`: schools gains ownership/region/town (location removed), users phone per-school UQ and slug already covered by pending deltas — this delta restates the full final schools/users requirements so archive order stays clean (see design).
 
 ## Impact

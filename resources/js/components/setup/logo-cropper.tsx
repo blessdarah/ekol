@@ -68,7 +68,10 @@ export default function LogoCropper({
 
     function onPointerDown(event: PointerEvent<HTMLDivElement>) {
         event.currentTarget.setPointerCapture(event.pointerId);
-        drag.current = { x: event.clientX - offset.x, y: event.clientY - offset.y };
+        drag.current = {
+            x: event.clientX - offset.x,
+            y: event.clientY - offset.y,
+        };
     }
 
     function onPointerMove(event: PointerEvent<HTMLDivElement>) {
@@ -144,12 +147,16 @@ export default function LogoCropper({
                         {t('Crop logo')}
                     </h2>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        {t('Logos must be square. Drag the image and zoom to choose the part to keep.')}
+                        {t(
+                            'Logos must be square. Drag the image and zoom to choose the part to keep.',
+                        )}
                     </p>
                 </div>
                 <div
                     tabIndex={0}
-                    aria-label={t('Crop area. Drag or use the arrow keys to move the image.')}
+                    aria-label={t(
+                        'Crop area. Drag or use the arrow keys to move the image.',
+                    )}
                     onPointerDown={onPointerDown}
                     onPointerMove={onPointerMove}
                     onPointerUp={() => (drag.current = null)}

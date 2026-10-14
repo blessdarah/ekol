@@ -46,13 +46,14 @@ export default function Sidebar({
 }) {
     const { url } = usePage();
     const t = useT();
-    const sections = user?.portal === 'teacher' ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
+    const sections =
+        user?.portal === 'teacher' ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
     const path = url.split('?')[0];
 
     return (
         <aside
             id="app-menu"
-            className={`font-auth fixed inset-y-0 left-0 z-50 flex h-dvh w-[280px] max-w-[85vw] shrink-0 flex-col border-r border-solid border-border bg-surface antialiased transition-transform duration-200 lg:visible lg:sticky lg:top-0 lg:z-auto lg:w-[248px] lg:max-w-none lg:translate-x-0 print:hidden ${
+            className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-[280px] max-w-[85vw] shrink-0 flex-col border-r border-solid border-border bg-surface font-auth antialiased transition-transform duration-200 lg:visible lg:sticky lg:top-0 lg:z-auto lg:w-[248px] lg:max-w-none lg:translate-x-0 print:hidden ${
                 open ? 'translate-x-0' : 'invisible -translate-x-full'
             }`}
         >
@@ -131,7 +132,9 @@ export default function Sidebar({
             </nav>
 
             <div className="flex items-center justify-between gap-3 border-t border-border px-5 py-3">
-                <span className="text-[12px] leading-4 text-text-muted">{t('Language')}</span>
+                <span className="text-[12px] leading-4 text-text-muted">
+                    {t('Language')}
+                </span>
                 <LanguageSwitch />
             </div>
             <div className="flex items-center gap-3 border-t border-border px-5 py-4">

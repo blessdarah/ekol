@@ -59,7 +59,10 @@ export default function CodeBoxes({
     }
 
     function onPaste(index: number, text: string) {
-        const chars = text.replace(/\D/g, '').slice(0, length - index).split('');
+        const chars = text
+            .replace(/\D/g, '')
+            .slice(0, length - index)
+            .split('');
 
         if (chars.length === 0) {
             return;
@@ -101,10 +104,7 @@ export default function CodeBoxes({
                             onKeyDown={(e) => onKeyDown(index, e.key)}
                             onPaste={(e) => {
                                 e.preventDefault();
-                                onPaste(
-                                    index,
-                                    e.clipboardData.getData('text'),
-                                );
+                                onPaste(index, e.clipboardData.getData('text'));
                             }}
                             onFocus={() => setFocused(index)}
                             aria-label={t('Digit :n', { n: index + 1 })}

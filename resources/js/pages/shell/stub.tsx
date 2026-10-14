@@ -10,11 +10,14 @@ function ShellStub({ section, flow }: { section: string; flow: string }) {
                 <p className="text-xs font-semibold tracking-[0.06em] text-text-muted uppercase">
                     {t('Coming soon')}
                 </p>
-                <h1 className="font-display mt-2 text-[28px] leading-[1.2] font-bold text-text">
+                <h1 className="mt-2 font-display text-[28px] leading-[1.2] font-bold text-text">
                     {section}
                 </h1>
                 <p className="mt-2 text-[14px] text-text-muted">
-                    {t('Arriving in the :flow. This page holds its place in the sidebar until then.', { flow })}
+                    {t(
+                        'Arriving in the :flow. This page holds its place in the sidebar until then.',
+                        { flow },
+                    )}
                 </p>
                 <Link
                     href="/dashboard"

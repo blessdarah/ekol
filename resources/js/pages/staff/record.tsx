@@ -74,7 +74,10 @@ const EMPLOYMENT_NOTES: Record<string, string> = {
 };
 
 function describeTime(time: UnavailableTime, separator = ' '): string {
-    const span = time.from === time.to ? time.from : t(':from to :to', { from: time.from, to: time.to });
+    const span =
+        time.from === time.to
+            ? time.from
+            : t(':from to :to', { from: time.from, to: time.to });
 
     return [`${WEEKDAY_NAMES[time.weekday]}${separator}${span}`, time.reason]
         .filter(Boolean)
@@ -123,7 +126,9 @@ function HoursDialog({
     });
     const { data, setData, errors, processing } = form;
     const they = pronounsFor(member.gender);
-    const firstDay = WEEKDAYS.findIndex((_, i) => (schoolDays & (1 << i)) !== 0);
+    const firstDay = WEEKDAYS.findIndex(
+        (_, i) => (schoolDays & (1 << i)) !== 0,
+    );
     const [adding, setAdding] = useState(false);
     const [draft, setDraft] = useState<UnavailableTime>({
         weekday: Math.max(0, firstDay),
@@ -206,7 +211,9 @@ function HoursDialog({
 
                 <div className="flex flex-col gap-2">
                     <span className="text-[13px] leading-4 font-medium text-text">
-                        {t('Days :subject can teach', { subject: they.subject })}
+                        {t('Days :subject can teach', {
+                            subject: they.subject,
+                        })}
                     </span>
                     <div className="flex flex-wrap gap-2">
                         {WEEKDAYS.map((name) => t(name)).map((day, i) => {
@@ -223,7 +230,12 @@ function HoursDialog({
                                     key={day}
                                     type="button"
                                     aria-pressed={on}
-                                    onClick={() => setData('teaching_days', data.teaching_days ^ bit)}
+                                    onClick={() =>
+                                        setData(
+                                            'teaching_days',
+                                            data.teaching_days ^ bit,
+                                        )
+                                    }
                                     className={`flex h-9 w-16 shrink-0 items-center justify-center rounded-md border border-solid text-[13px] leading-4 ${
                                         on
                                             ? 'border-primary bg-primary-tint font-semibold text-primary'
@@ -247,7 +259,9 @@ function HoursDialog({
                             max={60}
                             placeholder={t('No limit')}
                             value={data.max_periods_week}
-                            onChange={(e) => setData('max_periods_week', e.target.value)}
+                            onChange={(e) =>
+                                setData('max_periods_week', e.target.value)
+                            }
                             className={fieldClass}
                         />
                         <FieldError message={errors.max_periods_week} />
@@ -260,7 +274,9 @@ function HoursDialog({
                             max={12}
                             placeholder="6"
                             value={data.max_periods_day}
-                            onChange={(e) => setData('max_periods_day', e.target.value)}
+                            onChange={(e) =>
+                                setData('max_periods_day', e.target.value)
+                            }
                             className={fieldClass}
                         />
                         <FieldError message={errors.max_periods_day} />
@@ -269,7 +285,9 @@ function HoursDialog({
 
                 <div className="flex flex-col gap-2">
                     <span className="text-[13px] leading-4 font-medium text-text">
-                        {t('Times :subject cannot teach', { subject: they.subject })}
+                        {t('Times :subject cannot teach', {
+                            subject: they.subject,
+                        })}
                     </span>
                     {data.unavailable_times.map((time, position) => (
                         <div
@@ -284,7 +302,9 @@ function HoursDialog({
                                 onClick={() =>
                                     setData(
                                         'unavailable_times',
-                                        data.unavailable_times.filter((_, i) => i !== position),
+                                        data.unavailable_times.filter(
+                                            (_, i) => i !== position,
+                                        ),
                                     )
                                 }
                                 className="text-[13px] leading-4 font-medium text-danger hover:underline"
@@ -298,7 +318,12 @@ function HoursDialog({
                             <select
                                 aria-label={t('Day')}
                                 value={draft.weekday}
-                                onChange={(e) => setDraft({ ...draft, weekday: Number(e.target.value) })}
+                                onChange={(e) =>
+                                    setDraft({
+                                        ...draft,
+                                        weekday: Number(e.target.value),
+                                    })
+                                }
                                 className={smallSelectClass}
                             >
                                 {WEEKDAY_NAMES.map((day, i) =>
@@ -312,18 +337,24 @@ function HoursDialog({
                             <select
                                 aria-label={t('From period')}
                                 value={draft.from}
-                                onChange={(e) => setDraft({ ...draft, from: e.target.value })}
+                                onChange={(e) =>
+                                    setDraft({ ...draft, from: e.target.value })
+                                }
                                 className={smallSelectClass}
                             >
                                 {periods.map((period) => (
                                     <option key={period}>{period}</option>
                                 ))}
                             </select>
-                            <span className="text-[13px] text-text-muted">{t('to')}</span>
+                            <span className="text-[13px] text-text-muted">
+                                {t('to')}
+                            </span>
                             <select
                                 aria-label={t('To period')}
                                 value={draft.to}
-                                onChange={(e) => setDraft({ ...draft, to: e.target.value })}
+                                onChange={(e) =>
+                                    setDraft({ ...draft, to: e.target.value })
+                                }
                                 className={smallSelectClass}
                             >
                                 {periods.map((period) => (
@@ -336,7 +367,12 @@ function HoursDialog({
                                 placeholder={t('Reason, e.g. staff meeting')}
                                 maxLength={100}
                                 value={draft.reason ?? ''}
-                                onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
+                                onChange={(e) =>
+                                    setDraft({
+                                        ...draft,
+                                        reason: e.target.value,
+                                    })
+                                }
                                 className={`${smallSelectClass} min-w-[140px] flex-1`}
                             />
                             <button
@@ -353,18 +389,24 @@ function HoursDialog({
                             onClick={() => setAdding(true)}
                             className="self-start text-[13px] leading-4 font-medium text-primary hover:underline"
                         >
-                            {t('+ Add a time :subject cannot teach', { subject: they.subject })}
+                            {t('+ Add a time :subject cannot teach', {
+                                subject: they.subject,
+                            })}
                         </button>
                     ) : (
                         <p className="text-[13px] leading-[18px] text-text-muted">
-                            {t('Add the school’s periods in School Setup to block out times.')}
+                            {t(
+                                'Add the school’s periods in School Setup to block out times.',
+                            )}
                         </p>
                     )}
                     <FieldError message={errors.unavailable_times} />
                 </div>
 
                 <p className="rounded-md bg-surface p-3 text-[13px] leading-[18px] text-text-muted">
-                    {t('The live timetable is not touched. New limits apply the next time you generate.')}
+                    {t(
+                        'The live timetable is not touched. New limits apply the next time you generate.',
+                    )}
                 </p>
 
                 <div className="flex items-center justify-end gap-2">
@@ -388,7 +430,13 @@ function HoursDialog({
     );
 }
 
-function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: RecordProps) {
+function StaffRecord({
+    yearLabel,
+    member,
+    schoolDays,
+    periods,
+    lastEdit,
+}: RecordProps) {
     const [changingHours, setChangingHours] = useState(false);
     const [reminded, setReminded] = useState(false);
     const [reminderError, setReminderError] = useState<string | null>(null);
@@ -420,12 +468,14 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
     }
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={member.name} />
             <PageHeader
                 crumb={member.name}
                 title={t('One staff record')}
-                tag={t('Record:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                tag={t('Record:year_label', {
+                    year_label: yearLabel ? ` · ${yearLabel}` : '',
+                })}
                 meta={[
                     member.formal_name,
                     member.role_label,
@@ -446,8 +496,9 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                             {member.has_account ? (
                                 <div className="flex items-center gap-2 text-[13px] leading-[1.5] text-text">
                                     <StatusDot tone="success" />
-                                    {capitalise(they.subject)} {they.has} {t('set')}{' '}
-                                    {they.possessive} {t('password and can sign in.')}
+                                    {capitalise(they.subject)} {they.has}{' '}
+                                    {t('set')} {they.possessive}{' '}
+                                    {t('password and can sign in.')}
                                 </div>
                             ) : (
                                 <>
@@ -455,13 +506,45 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                                         <div className="flex items-center gap-2 text-[13px] leading-[1.5] text-text">
                                             <StatusDot tone="warning" />
                                             {!member.invited_on
-                                                ? t('No invitation has been sent yet.')
+                                                ? t(
+                                                      'No invitation has been sent yet.',
+                                                  )
                                                 : member.invitation_expired
-                                                  ? t('The invitation sent on :invited_on has expired.', { invited_on: longDate(member.invited_on, false) })
-                                                  : t(':subject :has not yet opened the invitation sent on :invited_on.', { subject: capitalise(they.subject), has: they.has, invited_on: longDate(member.invited_on, false) })}
+                                                  ? t(
+                                                        'The invitation sent on :invited_on has expired.',
+                                                        {
+                                                            invited_on:
+                                                                longDate(
+                                                                    member.invited_on,
+                                                                    false,
+                                                                ),
+                                                        },
+                                                    )
+                                                  : t(
+                                                        ':subject :has not yet opened the invitation sent on :invited_on.',
+                                                        {
+                                                            subject: capitalise(
+                                                                they.subject,
+                                                            ),
+                                                            has: they.has,
+                                                            invited_on:
+                                                                longDate(
+                                                                    member.invited_on,
+                                                                    false,
+                                                                ),
+                                                        },
+                                                    )}
                                         </div>
                                         <p className="text-[13px] leading-[1.5] text-text-muted">
-                                            {t('Until :subject :does, :subject :has no portal login, and :possessive subjects sit empty on the timetable.', { subject: they.subject, does: they.does, has: they.has, possessive: they.possessive })}
+                                            {t(
+                                                'Until :subject :does, :subject :has no portal login, and :possessive subjects sit empty on the timetable.',
+                                                {
+                                                    subject: they.subject,
+                                                    does: they.does,
+                                                    has: they.has,
+                                                    possessive: they.possessive,
+                                                },
+                                            )}
                                         </p>
                                     </div>
                                     {member.invited_on ? (
@@ -484,21 +567,40 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                                         </Link>
                                     )}
                                     {reminded && !reminderError && (
-                                        <p role="status" className="text-[12px] leading-4 text-success">
-                                            {t('A fresh link is on its way. It works for seven days.')}
+                                        <p
+                                            role="status"
+                                            className="text-[12px] leading-4 text-success"
+                                        >
+                                            {t(
+                                                'A fresh link is on its way. It works for seven days.',
+                                            )}
                                         </p>
                                     )}
-                                    <FieldError message={reminderError ?? undefined} />
+                                    <FieldError
+                                        message={reminderError ?? undefined}
+                                    />
                                 </>
                             )}
                         </div>
                         <Note title={t('Corrections are normal')}>
-                            {t('Nothing in this record was checked with a government body. If a detail is wrong, change it here and :subject :sees the correction in :possessive portal.', { subject: they.subject, sees: they.sees, possessive: they.possessive })}
+                            {t(
+                                'Nothing in this record was checked with a government body. If a detail is wrong, change it here and :subject :sees the correction in :possessive portal.',
+                                {
+                                    subject: they.subject,
+                                    sees: they.sees,
+                                    possessive: they.possessive,
+                                },
+                            )}
                         </Note>
                         <div className="mt-auto flex flex-col gap-2">
                             <p className="text-[12px] leading-[1.5] text-text-muted">
                                 {lastEdit
-                                    ? t('Last edited:by on :on. ', { by: lastEdit.by ? ` by the ${lastEdit.by}` : '', on: longDate(lastEdit.on, false) })
+                                    ? t('Last edited:by on :on. ', {
+                                          by: lastEdit.by
+                                              ? ` by the ${lastEdit.by}`
+                                              : '',
+                                          on: longDate(lastEdit.on, false),
+                                      })
                                     : ''}
                                 {t('Every change is kept in the log.')}
                             </p>
@@ -507,9 +609,14 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                                     href={edit.url(member.id)}
                                     className="flex h-9 items-center rounded-md border border-solid border-border px-4 text-[14px] font-medium text-primary hover:bg-surface"
                                 >
-                                    {t('Edit :possessive record', { possessive: they.possessive })}
+                                    {t('Edit :possessive record', {
+                                        possessive: they.possessive,
+                                    })}
                                 </Link>
-                                <Link href={index.url()} className={quietLinkClass}>
+                                <Link
+                                    href={index.url()}
+                                    className={quietLinkClass}
+                                >
                                     {t('Back to roster')}
                                 </Link>
                             </div>
@@ -534,14 +641,19 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                         </p>
                     </div>
                     <span className="ml-auto flex h-7 shrink-0 items-center gap-2 rounded-md border border-solid border-border px-3 text-[13px] font-medium text-text">
-                        <StatusDot tone={member.has_account ? 'success' : 'warning'} />
-                        {member.has_account ? t('Portal on') : t('No portal account')}
+                        <StatusDot
+                            tone={member.has_account ? 'success' : 'warning'}
+                        />
+                        {member.has_account
+                            ? t('Portal on')
+                            : t('No portal account')}
                     </span>
                 </div>
 
                 <section className="flex flex-col gap-2">
                     <p className={sectionLabelClass}>
-                        {t('Who')} {they.subject} {they.subject === 'they' ? t('are') : t('is')}
+                        {t('Who')} {they.subject}{' '}
+                        {they.subject === 'they' ? t('are') : t('is')}
                     </p>
                     <dl className="flex flex-col">
                         <Row label={t('Gender')}>
@@ -557,7 +669,9 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                 </section>
 
                 <section className="flex flex-col gap-2">
-                    <p className={sectionLabelClass}>{t(':their work here', { their: Their })}</p>
+                    <p className={sectionLabelClass}>
+                        {t(':their work here', { their: Their })}
+                    </p>
                     <dl className="flex flex-col">
                         <Row label={t('Portal role')}>
                             {member.role_label}{' '}
@@ -585,7 +699,9 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                 <section className="flex flex-col gap-2">
                     <div className="flex items-baseline justify-between">
                         <p className={sectionLabelClass}>
-                            {t(':their teaching days and hours', { their: Their })}
+                            {t(':their teaching days and hours', {
+                                their: Their,
+                            })}
                         </p>
                         <button
                             type="button"
@@ -601,32 +717,36 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                                 {t('Teaching days')}
                             </dt>
                             <dd className="flex flex-wrap gap-[6px]">
-                                {WEEKDAYS.map((name) => t(name)).map((day, i) => {
-                                    const bit = 1 << i;
+                                {WEEKDAYS.map((name) => t(name)).map(
+                                    (day, i) => {
+                                        const bit = 1 << i;
 
-                                    if ((schoolDays & bit) === 0) {
-                                        return null;
-                                    }
+                                        if ((schoolDays & bit) === 0) {
+                                            return null;
+                                        }
 
-                                    return (
-                                        <span
-                                            key={day}
-                                            className={`flex h-[26px] w-11 shrink-0 items-center justify-center rounded-sm text-[12px] leading-4 ${
-                                                (teachingDays & bit) !== 0
-                                                    ? 'bg-primary-tint font-semibold text-primary'
-                                                    : 'border border-solid border-border text-text-muted'
-                                            }`}
-                                        >
-                                            {day}
-                                        </span>
-                                    );
-                                })}
+                                        return (
+                                            <span
+                                                key={day}
+                                                className={`flex h-[26px] w-11 shrink-0 items-center justify-center rounded-sm text-[12px] leading-4 ${
+                                                    (teachingDays & bit) !== 0
+                                                        ? 'bg-primary-tint font-semibold text-primary'
+                                                        : 'border border-solid border-border text-text-muted'
+                                                }`}
+                                            >
+                                                {day}
+                                            </span>
+                                        );
+                                    },
+                                )}
                             </dd>
                         </div>
                         <Row label={t('Most periods a week')}>
                             {member.max_periods_week ?? t('No limit')} ·{' '}
                             {they.subject}{' '}
-                            {they.subject === 'they' ? t('teach') : t('teaches')}{' '}
+                            {they.subject === 'they'
+                                ? t('teach')
+                                : t('teaches')}{' '}
                             {member.periods_taught} {t('now')}
                         </Row>
                         <Row label={t('Most periods a day')}>
@@ -638,7 +758,9 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                             {member.unavailable_times.length > 0 ? (
                                 <span className="flex flex-col gap-1">
                                     {member.unavailable_times.map((time, i) => (
-                                        <span key={i}>{describeTime(time)}</span>
+                                        <span key={i}>
+                                            {describeTime(time)}
+                                        </span>
                                     ))}
                                 </span>
                             ) : (
@@ -647,7 +769,9 @@ function StaffRecord({ yearLabel, member, schoolDays, periods, lastEdit }: Recor
                         </Row>
                     </dl>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        {t('If nothing is set, a teacher can teach every day, up to 6 periods a day. The timetable only reads this.')}
+                        {t(
+                            'If nothing is set, a teacher can teach every day, up to 6 periods a day. The timetable only reads this.',
+                        )}
                     </p>
                 </section>
             </SplitLayout>

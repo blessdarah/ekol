@@ -83,7 +83,8 @@ function Staffing({ row }: { row: SubjectRow }) {
             <span className="flex items-start gap-[6px] text-[13px] leading-4 text-text">
                 <span className="mt-[5px] h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                 <span>
-                    {plural(row.classes, 'class', 'classes')} {t('· in a series but not taught in')}{' '}
+                    {plural(row.classes, 'class', 'classes')}{' '}
+                    {t('· in a series but not taught in')}{' '}
                     {row.not_taught.join(', ')}
                 </span>
             </span>
@@ -97,7 +98,9 @@ function Staffing({ row }: { row: SubjectRow }) {
                 {plural(row.classes, 'class', 'classes')} ·{' '}
                 {row.teachers === 0
                     ? t('no teacher yet')
-                    : t(':unstaffed without a teacher', { unstaffed: row.unstaffed })}
+                    : t(':unstaffed without a teacher', {
+                          unstaffed: row.unstaffed,
+                      })}
             </span>
         );
     }
@@ -110,7 +113,14 @@ function Staffing({ row }: { row: SubjectRow }) {
     );
 }
 
-function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjects }: RosterProps) {
+function SubjectRoster({
+    yearLabel,
+    counts,
+    departments,
+    levels,
+    filters,
+    subjects,
+}: RosterProps) {
     const [search, setSearch] = useState(filters.q);
     const [showFilters, setShowFilters] = useState(filters.level !== '');
     const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -167,13 +177,27 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
     }, []);
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('The subject roster')} />
             <StructureHeader
                 trail={[{ label: t('Subjects') }]}
                 title={t('The subject roster')}
-                tag={t('Subjects:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
-                meta={t(':subjects · :departments · :needs_teacher :need a teacher', { subjects: plural(counts.total, 'subject', 'subjects'), departments: plural(counts.departments, 'department', 'departments'), needs_teacher: counts.needs_teacher, need: counts.needs_teacher === 1 ? 'needs' : 'need' })}
+                tag={t('Subjects:year_label', {
+                    year_label: yearLabel ? ` · ${yearLabel}` : '',
+                })}
+                meta={t(
+                    ':subjects · :departments · :needs_teacher :need a teacher',
+                    {
+                        subjects: plural(counts.total, 'subject', 'subjects'),
+                        departments: plural(
+                            counts.departments,
+                            'department',
+                            'departments',
+                        ),
+                        needs_teacher: counts.needs_teacher,
+                        need: counts.needs_teacher === 1 ? 'needs' : 'need',
+                    },
+                )}
             />
             <StructureTabs active="subjects" />
 
@@ -183,7 +207,9 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                         type="button"
                         aria-pressed={!filters.department && !filters.needs}
                         onClick={() => visit({ department: '', needs: false })}
-                        className={tabClass(!filters.department && !filters.needs)}
+                        className={tabClass(
+                            !filters.department && !filters.needs,
+                        )}
                     >
                         {t('All subjects')}
                     </button>
@@ -193,7 +219,9 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                             type="button"
                             aria-pressed={filters.department === department}
                             onClick={() => visit({ department, needs: false })}
-                            className={tabClass(filters.department === department)}
+                            className={tabClass(
+                                filters.department === department,
+                            )}
                         >
                             {department}
                         </button>
@@ -210,9 +238,27 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <label className="flex h-9 w-[260px] items-center gap-2 rounded-md border border-solid border-border bg-white px-3 focus-within:border-primary">
-                        <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
-                            <circle cx="11" cy="11" r="7" fill="none" stroke="#56625C" strokeWidth="2" />
-                            <path d="M16.5 16.5L21 21" fill="none" stroke="#56625C" strokeWidth="2" strokeLinecap="round" />
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            className="shrink-0"
+                        >
+                            <circle
+                                cx="11"
+                                cy="11"
+                                r="7"
+                                fill="none"
+                                stroke="#56625C"
+                                strokeWidth="2"
+                            />
+                            <path
+                                d="M16.5 16.5L21 21"
+                                fill="none"
+                                stroke="#56625C"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                            />
                         </svg>
                         <input
                             type="search"
@@ -229,7 +275,8 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                         onClick={() => setShowFilters(!showFilters)}
                         className="flex h-9 items-center justify-center rounded-md border border-solid border-border px-4 text-[14px] font-medium text-primary hover:bg-surface"
                     >
-                        {t('Filter')}{filters.level ? ' · 1' : ''}
+                        {t('Filter')}
+                        {filters.level ? ' · 1' : ''}
                     </button>
                     <Link href={create.url()} className={solidButtonClass}>
                         <PlusIcon />
@@ -268,7 +315,9 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
             {counts.total === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">
                     <p className="text-[13px] leading-[19px] text-text">
-                        {t('No subjects yet. Register one from scratch, or start from a prepared set and give each subject its classes and teachers in one go.')}
+                        {t(
+                            'No subjects yet. Register one from scratch, or start from a prepared set and give each subject its classes and teachers in one go.',
+                        )}
                     </p>
                     <Link href={templates.url()} className={outlineButtonClass}>
                         {t('Use a template')}
@@ -279,30 +328,52 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                     <div className="overflow-x-auto lg:overflow-visible">
                         <div className="flex min-w-[1080px] flex-col rounded-lg border border-solid border-border bg-white">
                             <div className="flex items-center gap-4 rounded-t-lg border-b border-solid border-border bg-surface px-4 py-2">
-                                <span className={`${headClass} min-w-[200px] flex-1`}>{t('Subject')}</span>
-                                <span className={`${headClass} w-[88px]`}>{t('Code')}</span>
-                                <span className={`${headClass} w-[120px]`}>{t('Department')}</span>
-                                <span className={`${headClass} w-[130px]`}>{t('Levels')}</span>
-                                <span className={`${headClass} w-16`}>{t('Coeff.')}</span>
-                                <span className={`${headClass} w-[220px]`}>{t('Classes & teachers')}</span>
-                                <span className={`${headClass} w-[100px]`}>{t('Periods')}</span>
+                                <span
+                                    className={`${headClass} min-w-[200px] flex-1`}
+                                >
+                                    {t('Subject')}
+                                </span>
+                                <span className={`${headClass} w-[88px]`}>
+                                    {t('Code')}
+                                </span>
+                                <span className={`${headClass} w-[120px]`}>
+                                    {t('Department')}
+                                </span>
+                                <span className={`${headClass} w-[130px]`}>
+                                    {t('Levels')}
+                                </span>
+                                <span className={`${headClass} w-16`}>
+                                    {t('Coeff.')}
+                                </span>
+                                <span className={`${headClass} w-[220px]`}>
+                                    {t('Classes & teachers')}
+                                </span>
+                                <span className={`${headClass} w-[100px]`}>
+                                    {t('Periods')}
+                                </span>
                                 <span className="w-10 shrink-0" />
                             </div>
                             {subjects.rows.length === 0 && (
                                 <p className="px-4 py-8 text-center text-[13px] text-text-muted">
-                                    {t('No subject matches. Try another name, or clear the filters.')}
+                                    {t(
+                                        'No subject matches. Try another name, or clear the filters.',
+                                    )}
                                 </p>
                             )}
                             {subjects.rows.map((row) => (
                                 <div
                                     key={row.id}
-                                    onClick={() => router.visit(show.url(row.id))}
+                                    onClick={() =>
+                                        router.visit(show.url(row.id))
+                                    }
                                     className="flex h-[62px] shrink-0 cursor-pointer items-center gap-4 border-b border-solid border-border px-4 py-2 last:rounded-b-lg last:border-b-0 hover:bg-surface"
                                 >
                                     <span className="flex min-w-[200px] flex-1 flex-col">
                                         <Link
                                             href={show.url(row.id)}
-                                            onClick={(event) => event.stopPropagation()}
+                                            onClick={(event) =>
+                                                event.stopPropagation()
+                                            }
                                             className="truncate text-[16px] leading-5 font-medium text-text hover:underline"
                                         >
                                             {row.name}
@@ -327,29 +398,64 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
                                         <Staffing row={row} />
                                     </span>
                                     <span className="w-[100px] shrink-0 font-mono text-[13px] leading-4 text-text">
-                                        {t(':periods / wk', { periods: row.periods })}
+                                        {t(':periods / wk', {
+                                            periods: row.periods,
+                                        })}
                                     </span>
                                     <span className="relative flex w-10 shrink-0 justify-center">
                                         <button
                                             type="button"
-                                            aria-label={t('Actions for :row', { row: row.name })}
+                                            aria-label={t('Actions for :row', {
+                                                row: row.name,
+                                            })}
                                             aria-expanded={openMenu === row.id}
                                             onClick={(event) => {
                                                 event.stopPropagation();
-                                                setOpenMenu(openMenu === row.id ? null : row.id);
+                                                setOpenMenu(
+                                                    openMenu === row.id
+                                                        ? null
+                                                        : row.id,
+                                                );
                                             }}
                                             className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-primary-tint"
                                         >
-                                            <svg width="16" height="16" viewBox="0 0 16 16">
-                                                <circle cx="3" cy="8" r="1" fill="none" stroke="#56625C" strokeWidth="1.6" />
-                                                <circle cx="8" cy="8" r="1" fill="none" stroke="#56625C" strokeWidth="1.6" />
-                                                <circle cx="13" cy="8" r="1" fill="none" stroke="#56625C" strokeWidth="1.6" />
+                                            <svg
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 16 16"
+                                            >
+                                                <circle
+                                                    cx="3"
+                                                    cy="8"
+                                                    r="1"
+                                                    fill="none"
+                                                    stroke="#56625C"
+                                                    strokeWidth="1.6"
+                                                />
+                                                <circle
+                                                    cx="8"
+                                                    cy="8"
+                                                    r="1"
+                                                    fill="none"
+                                                    stroke="#56625C"
+                                                    strokeWidth="1.6"
+                                                />
+                                                <circle
+                                                    cx="13"
+                                                    cy="8"
+                                                    r="1"
+                                                    fill="none"
+                                                    stroke="#56625C"
+                                                    strokeWidth="1.6"
+                                                />
                                             </svg>
                                         </button>
                                         {openMenu === row.id && (
                                             <span
                                                 role="menu"
-                                                onClick={(event) => event.stopPropagation()}
+                                                onClick={(event) =>
+                                                    event.stopPropagation()
+                                                }
                                                 className="absolute top-full right-0 z-10 mt-1 flex w-[170px] flex-col rounded-md border border-solid border-border bg-white p-1 shadow-[0_8px_24px_rgba(16,25,21,0.12)]"
                                             >
                                                 <Link
@@ -376,15 +482,25 @@ function SubjectRoster({ yearLabel, counts, departments, levels, filters, subjec
 
                     <div className="mt-auto flex flex-wrap items-center justify-between gap-4">
                         <p className="text-[13px] text-text-muted">
-                            {t(':rows of :total shown · sorted by code', { rows: subjects.rows.length, total: subjects.total })}
+                            {t(':rows of :total shown · sorted by code', {
+                                rows: subjects.rows.length,
+                                total: subjects.total,
+                            })}
                         </p>
                         <div className="flex items-center gap-2">
                             {subjects.lastPage > 1 &&
-                                Array.from({ length: subjects.lastPage }, (_, i) => i + 1).map((page) => (
+                                Array.from(
+                                    { length: subjects.lastPage },
+                                    (_, i) => i + 1,
+                                ).map((page) => (
                                     <button
                                         key={page}
                                         type="button"
-                                        aria-current={page === subjects.page ? 'page' : undefined}
+                                        aria-current={
+                                            page === subjects.page
+                                                ? 'page'
+                                                : undefined
+                                        }
                                         onClick={() => visit({ page })}
                                         className={`flex h-7 items-center rounded-md px-3 text-[13px] text-primary ${
                                             page === subjects.page

@@ -60,7 +60,11 @@ interface Plan {
 
 const STEPS = ['Choose a set', 'Classes & teachers', 'Review'];
 
-const TITLES = ['Start from a template', 'Classes & teachers', 'Review and create'];
+const TITLES = [
+    'Start from a template',
+    'Classes & teachers',
+    'Review and create',
+];
 
 function isReady(plan: Plan): boolean {
     return (
@@ -71,7 +75,8 @@ function isReady(plan: Plan): boolean {
 
 function staffing(plan: Plan): string {
     const rows = Object.values(plan.assignments);
-    const teachers = new Set(rows.map((row) => row.staff_id).filter(Boolean)).size;
+    const teachers = new Set(rows.map((row) => row.staff_id).filter(Boolean))
+        .size;
     const classes = `${rows.length} ${rows.length === 1 ? 'class' : 'classes'}`;
 
     if (rows.length === 0) {
@@ -105,7 +110,14 @@ function Progress({ step }: { step: number }) {
                         >
                             {position < step ? (
                                 <svg width="12" height="12" viewBox="0 0 12 12">
-                                    <path d="M2.6 6.2 4.9 8.5 9.4 3.9" fill="none" stroke="#0E4D3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path
+                                        d="M2.6 6.2 4.9 8.5 9.4 3.9"
+                                        fill="none"
+                                        stroke="#0E4D3A"
+                                        strokeWidth="1.8"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
                                 </svg>
                             ) : (
                                 position + 1
@@ -120,13 +132,22 @@ function Progress({ step }: { step: number }) {
                 </li>
             ))}
             <li className="ml-auto text-[13px] leading-4 text-text-muted">
-                {t('Step :step of :steps', { step: step + 1, steps: STEPS.length })}
+                {t('Step :step of :steps', {
+                    step: step + 1,
+                    steps: STEPS.length,
+                })}
             </li>
         </ol>
     );
 }
 
-function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) {
+function Templates({
+    yearLabel,
+    sets,
+    levels,
+    classes,
+    staff,
+}: TemplatesProps) {
     const [step, setStep] = useState(0);
     const [setKey, setSetKey] = useState(sets[0]?.key ?? '');
     const set = sets.find((option) => option.key === setKey) ?? sets[0];
@@ -139,13 +160,22 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
     const [creating, setCreating] = useState(false);
 
     const available = set.subjects.filter((subject) => !subject.registered);
-    const picked = available.filter((subject) => !unticked.includes(subject.code));
+    const picked = available.filter(
+        (subject) => !unticked.includes(subject.code),
+    );
     const alreadyRegistered = set.subjects.length - available.length;
-    const active = picked.find((subject) => subject.code === current) ?? picked[0];
+    const active =
+        picked.find((subject) => subject.code === current) ?? picked[0];
     const activePlan = active ? plans[active.code] : undefined;
-    const ready = picked.filter((subject) => plans[subject.code] && isReady(plans[subject.code]));
+    const ready = picked.filter(
+        (subject) => plans[subject.code] && isReady(plans[subject.code]),
+    );
     const periods = picked.reduce(
-        (sum, subject) => sum + (plans[subject.code] ? totalPeriods(plans[subject.code].assignments) : 0),
+        (sum, subject) =>
+            sum +
+            (plans[subject.code]
+                ? totalPeriods(plans[subject.code].assignments)
+                : 0),
         0,
     );
 
@@ -193,7 +223,10 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
         const kept: Assignments = {};
 
         for (const option of classes) {
-            if (levelIds.includes(option.level_id) && plans[code].assignments[option.id]) {
+            if (
+                levelIds.includes(option.level_id) &&
+                plans[code].assignments[option.id]
+            ) {
                 kept[option.id] = plans[code].assignments[option.id];
             }
         }
@@ -230,16 +263,21 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
     }
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={t(TITLES[step])} />
             <StructureHeader
                 trail={[subjectsCrumb, { label: t('Templates') }]}
                 title={t(TITLES[step])}
-                tag={t('Subject setup:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                tag={t('Subject setup:year_label', {
+                    year_label: yearLabel ? ` · ${yearLabel}` : '',
+                })}
                 meta={
                     step === 0
                         ? t('create many subjects in one go')
-                        : t(':picked subjects from :set', { picked: picked.length, set: set.name })
+                        : t(':picked subjects from :set', {
+                              picked: picked.length,
+                              set: set.name,
+                          })
                 }
             />
             <Progress step={step} />
@@ -248,7 +286,11 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                 <div className="flex flex-1 flex-col gap-8 lg:flex-row">
                     <div className="flex shrink-0 flex-col gap-3 lg:w-[340px]">
                         <p className={capsLabelClass}>{t('Template sets')}</p>
-                        <div role="radiogroup" aria-label={t('Template sets')} className="flex flex-col gap-[10px]">
+                        <div
+                            role="radiogroup"
+                            aria-label={t('Template sets')}
+                            className="flex flex-col gap-[10px]"
+                        >
                             {sets.map((option) => {
                                 const selected = option.key === set.key;
 
@@ -267,7 +309,9 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                     >
                                         <span
                                             className={`mt-px h-[18px] w-[18px] shrink-0 rounded-full border-solid bg-white ${
-                                                selected ? 'border-[5px] border-primary' : 'border border-border'
+                                                selected
+                                                    ? 'border-[5px] border-primary'
+                                                    : 'border border-border'
                                             }`}
                                         />
                                         <span className="flex flex-1 flex-col gap-1">
@@ -280,7 +324,10 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                             <span
                                                 className={`pt-[2px] font-mono text-[12px] leading-4 ${selected ? 'text-primary' : 'text-text-muted'}`}
                                             >
-                                                {t(':subjects subjects', { subjects: option.subjects.length })}
+                                                {t(':subjects subjects', {
+                                                    subjects:
+                                                        option.subjects.length,
+                                                })}
                                             </span>
                                         </span>
                                     </button>
@@ -289,7 +336,10 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                         </div>
                         <p className="flex items-center gap-[6px] pt-1 text-[13px] leading-[18px] text-text-muted">
                             {t('Need just one subject?')}
-                            <Link href={create.url()} className="font-medium text-primary hover:underline">
+                            <Link
+                                href={create.url()}
+                                className="font-medium text-primary hover:underline"
+                            >
                                 {t('Register it from scratch')}
                             </Link>
                         </p>
@@ -297,28 +347,44 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
 
                     <div className="flex min-w-0 flex-1 flex-col gap-3">
                         <div className="flex flex-col gap-1">
-                            <p className={capsLabelClass}>{t('Subjects in this set')}</p>
+                            <p className={capsLabelClass}>
+                                {t('Subjects in this set')}
+                            </p>
                             <p className="text-[13px] leading-4 text-text-muted">
-                                {t('Untick any you do not need. Coefficients and levels come from the template. You can change the levels next.')}
+                                {t(
+                                    'Untick any you do not need. Coefficients and levels come from the template. You can change the levels next.',
+                                )}
                             </p>
                         </div>
                         <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
                             <div className="flex h-8 shrink-0 items-center gap-3 bg-surface px-3 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                                 <span className="w-[18px] shrink-0" />
                                 <span className="flex-1">{t('Subject')}</span>
-                                <span className="w-[84px] shrink-0">{t('Code')}</span>
-                                <span className="w-16 shrink-0">{t('Levels')}</span>
-                                <span className="w-11 shrink-0">{t('Coeff')}</span>
+                                <span className="w-[84px] shrink-0">
+                                    {t('Code')}
+                                </span>
+                                <span className="w-16 shrink-0">
+                                    {t('Levels')}
+                                </span>
+                                <span className="w-11 shrink-0">
+                                    {t('Coeff')}
+                                </span>
                             </div>
                             {set.subjects.map((subject, position) => {
-                                const on = !subject.registered && !unticked.includes(subject.code);
-                                const tone = on ? 'text-text' : 'text-text-muted';
+                                const on =
+                                    !subject.registered &&
+                                    !unticked.includes(subject.code);
+                                const tone = on
+                                    ? 'text-text'
+                                    : 'text-text-muted';
 
                                 return (
                                     <label
                                         key={subject.code}
                                         className={`flex h-[38px] shrink-0 items-center gap-3 border-t border-solid border-border px-3 ${
-                                            subject.registered ? '' : 'cursor-pointer'
+                                            subject.registered
+                                                ? ''
+                                                : 'cursor-pointer'
                                         } ${position % 2 === 1 || subject.registered ? 'bg-row-alt' : ''}`}
                                     >
                                         <input
@@ -328,14 +394,23 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                             onChange={() =>
                                                 setUnticked(
                                                     on
-                                                        ? [...unticked, subject.code]
-                                                        : unticked.filter((code) => code !== subject.code),
+                                                        ? [
+                                                              ...unticked,
+                                                              subject.code,
+                                                          ]
+                                                        : unticked.filter(
+                                                              (code) =>
+                                                                  code !==
+                                                                  subject.code,
+                                                          ),
                                                 )
                                             }
                                             className="h-[18px] w-[18px] shrink-0 accent-primary"
                                         />
                                         <span className="flex min-w-0 flex-1 items-center gap-2">
-                                            <span className={`truncate text-[14px] leading-[18px] font-medium ${tone}`}>
+                                            <span
+                                                className={`truncate text-[14px] leading-[18px] font-medium ${tone}`}
+                                            >
                                                 {subject.name}
                                             </span>
                                             {subject.registered && (
@@ -344,13 +419,17 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                                 </span>
                                             )}
                                         </span>
-                                        <span className={`w-[84px] shrink-0 font-mono text-[12px] leading-4 ${tone}`}>
+                                        <span
+                                            className={`w-[84px] shrink-0 font-mono text-[12px] leading-4 ${tone}`}
+                                        >
                                             {subject.code}
                                         </span>
                                         <span className="w-16 shrink-0 text-[13px] leading-4 text-text-muted">
                                             {subject.levels_label}
                                         </span>
-                                        <span className={`w-11 shrink-0 font-mono text-[13px] leading-4 ${tone}`}>
+                                        <span
+                                            className={`w-11 shrink-0 font-mono text-[13px] leading-4 ${tone}`}
+                                        >
                                             {subject.coefficient}
                                         </span>
                                     </label>
@@ -358,21 +437,33 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                             })}
                             <div className="flex h-9 shrink-0 items-center justify-between border-t border-solid border-border bg-surface px-3">
                                 <span className="text-[13px] leading-4 text-text-muted">
-                                    {t(':subjects subjects in the set', { subjects: set.subjects.length })}
+                                    {t(':subjects subjects in the set', {
+                                        subjects: set.subjects.length,
+                                    })}
                                 </span>
                                 <span className="flex items-baseline gap-[6px]">
                                     <span className="font-mono text-[13px] leading-4 text-text">
-                                        {t(':picked selected', { picked: picked.length })}
+                                        {t(':picked selected', {
+                                            picked: picked.length,
+                                        })}
                                     </span>
                                     <span className="text-[13px] leading-4 text-text-muted">
-                                        {t('· :already_registered already registered', { already_registered: alreadyRegistered })}
+                                        {t(
+                                            '· :already_registered already registered',
+                                            {
+                                                already_registered:
+                                                    alreadyRegistered,
+                                            },
+                                        )}
                                     </span>
                                 </span>
                             </div>
                         </div>
                         {classes.length === 0 && (
                             <p className="text-[13px] leading-[19px] text-warning">
-                                {t('There are no classes yet, so subjects will be created as drafts with no classes. Add levels and classes first to assign teachers here.')}
+                                {t(
+                                    'There are no classes yet, so subjects will be created as drafts with no classes. Add levels and classes first to assign teachers here.',
+                                )}
                             </p>
                         )}
                     </div>
@@ -383,11 +474,16 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                 <div className="flex flex-1 flex-col gap-8 lg:flex-row">
                     <div className="flex shrink-0 flex-col gap-3 lg:w-[300px]">
                         <div className="flex items-center justify-between">
-                            <p className={capsLabelClass}>{t(':picked subjects', { picked: picked.length })}</p>
+                            <p className={capsLabelClass}>
+                                {t(':picked subjects', {
+                                    picked: picked.length,
+                                })}
+                            </p>
                             {picked.length - ready.length > 0 && (
                                 <span className="flex h-6 items-center gap-[6px] rounded-full bg-warning-tint px-[10px] text-[12px] leading-4 font-medium text-[#8A5A12]">
                                     <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                    {picked.length - ready.length} {t('need teachers')}
+                                    {picked.length - ready.length}{' '}
+                                    {t('need teachers')}
                                 </span>
                             )}
                         </div>
@@ -417,14 +513,21 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                             {subject.name}
                                         </span>
                                         <span className="font-mono text-[12px] leading-4 text-text-muted">
-                                            {rows.filter((row) => row.staff_id).length} / {rows.length}
+                                            {
+                                                rows.filter(
+                                                    (row) => row.staff_id,
+                                                ).length
+                                            }{' '}
+                                            / {rows.length}
                                         </span>
                                     </button>
                                 );
                             })}
                         </div>
                         <p className="text-[13px] leading-[18px] text-text-muted">
-                            {t('Classes with a teacher, out of classes taking the subject.')}
+                            {t(
+                                'Classes with a teacher, out of classes taking the subject.',
+                            )}
                         </p>
                     </div>
 
@@ -439,11 +542,15 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                 </p>
                             </div>
                             <p className="flex h-8 items-center gap-2 rounded-md border border-solid border-border bg-surface px-3">
-                                <span className="text-[13px] leading-4 text-text-muted">{t('Coefficient')}</span>
+                                <span className="text-[13px] leading-4 text-text-muted">
+                                    {t('Coefficient')}
+                                </span>
                                 <span className="font-mono text-[14px] leading-[18px] text-text">
                                     {active.coefficient}
                                 </span>
-                                <span className="text-[12px] leading-4 text-text-muted">{t('from template')}</span>
+                                <span className="text-[12px] leading-4 text-text-muted">
+                                    {t('from template')}
+                                </span>
                             </p>
                         </div>
                         <LevelPicker
@@ -461,7 +568,9 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                 onChange={(e) => setSameTeacher(e.target.value)}
                                 className="h-[30px] w-[200px] rounded-md border border-solid border-border bg-white px-[10px] text-[14px] text-text outline-none focus:border-primary"
                             >
-                                <option value="">{t('Choose a teacher')}</option>
+                                <option value="">
+                                    {t('Choose a teacher')}
+                                </option>
                                 {staff.map((member) => (
                                     <option key={member.id} value={member.id}>
                                         {member.name}
@@ -478,11 +587,15 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                             </button>
                         </div>
                         <ClassTable
-                            classes={classes.filter((option) => activePlan.level_ids.includes(option.level_id))}
+                            classes={classes.filter((option) =>
+                                activePlan.level_ids.includes(option.level_id),
+                            )}
                             staff={staff}
                             value={activePlan.assignments}
                             defaultPeriods={active.weekly_periods}
-                            onChange={(assignments) => updatePlan(active.code, { assignments })}
+                            onChange={(assignments) =>
+                                updatePlan(active.code, { assignments })
+                            }
                         />
                     </div>
                 </div>
@@ -493,10 +606,30 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                     <div className="flex min-w-0 flex-1 flex-col gap-5">
                         <dl className="flex border-y border-solid border-border">
                             {[
-                                [t('To create'), picked.length, 'subjects', 'text-text'],
-                                ['Ready', ready.length, 'fully staffed', 'text-success'],
-                                ['Drafts', picked.length - ready.length, 'need a teacher', 'text-[#8A5A12]'],
-                                ['Periods', periods, 'per week, all classes', 'text-text'],
+                                [
+                                    t('To create'),
+                                    picked.length,
+                                    'subjects',
+                                    'text-text',
+                                ],
+                                [
+                                    'Ready',
+                                    ready.length,
+                                    'fully staffed',
+                                    'text-success',
+                                ],
+                                [
+                                    'Drafts',
+                                    picked.length - ready.length,
+                                    'need a teacher',
+                                    'text-[#8A5A12]',
+                                ],
+                                [
+                                    'Periods',
+                                    periods,
+                                    'per week, all classes',
+                                    'text-text',
+                                ],
                             ].map(([label, value, note, tone], position) => (
                                 <div
                                     key={label as string}
@@ -504,10 +637,14 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                 >
                                     <dt className={capsLabelClass}>{label}</dt>
                                     <dd className="flex flex-col gap-1">
-                                        <span className={`font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] ${tone}`}>
+                                        <span
+                                            className={`font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] ${tone}`}
+                                        >
                                             {value}
                                         </span>
-                                        <span className="text-[13px] leading-4 text-text-muted">{note}</span>
+                                        <span className="text-[13px] leading-4 text-text-muted">
+                                            {note}
+                                        </span>
                                     </dd>
                                 </div>
                             ))}
@@ -515,53 +652,66 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                         <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
                             <div className="flex h-8 shrink-0 items-center gap-3 bg-surface px-3 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                                 <span className="flex-1">{t('Subject')}</span>
-                                <span className="w-11 shrink-0">{t('Coeff')}</span>
-                                <span className="w-[170px] shrink-0">{t('Classes & teachers')}</span>
-                                <span className="w-16 shrink-0">{t('Periods')}</span>
-                                <span className="w-[92px] shrink-0">{t('Status')}</span>
+                                <span className="w-11 shrink-0">
+                                    {t('Coeff')}
+                                </span>
+                                <span className="w-[170px] shrink-0">
+                                    {t('Classes & teachers')}
+                                </span>
+                                <span className="w-16 shrink-0">
+                                    {t('Periods')}
+                                </span>
+                                <span className="w-[92px] shrink-0">
+                                    {t('Status')}
+                                </span>
                             </div>
-                            {(showAll ? picked : picked.slice(0, 8)).map((subject, position) => {
-                                const plan = plans[subject.code];
-                                const done = isReady(plan);
+                            {(showAll ? picked : picked.slice(0, 8)).map(
+                                (subject, position) => {
+                                    const plan = plans[subject.code];
+                                    const done = isReady(plan);
 
-                                return (
-                                    <div
-                                        key={subject.code}
-                                        className={`flex h-[38px] shrink-0 items-center gap-3 border-t border-solid border-border px-3 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
-                                    >
-                                        <span className="flex-1 truncate text-[14px] leading-[18px] font-medium text-text">
-                                            {subject.name}
-                                        </span>
-                                        <span className="w-11 shrink-0 font-mono text-[13px] leading-4 text-text">
-                                            {subject.coefficient}
-                                        </span>
-                                        <span className="flex w-[170px] shrink-0 items-center gap-[6px] text-[13px] leading-4 text-text">
-                                            {!done && (
-                                                <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                            )}
-                                            {staffing(plan)}
-                                        </span>
-                                        <span className="w-16 shrink-0 font-mono text-[13px] leading-4 text-text">
-                                            {totalPeriods(plan.assignments)}
-                                        </span>
-                                        <span
-                                            className={`flex h-[22px] w-[92px] shrink-0 items-center gap-[6px] rounded-full px-2 text-[12px] leading-4 font-medium ${
-                                                done
-                                                    ? 'bg-success-tint text-success'
-                                                    : 'bg-warning-tint text-[#8A5A12]'
-                                            }`}
+                                    return (
+                                        <div
+                                            key={subject.code}
+                                            className={`flex h-[38px] shrink-0 items-center gap-3 border-t border-solid border-border px-3 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
                                         >
+                                            <span className="flex-1 truncate text-[14px] leading-[18px] font-medium text-text">
+                                                {subject.name}
+                                            </span>
+                                            <span className="w-11 shrink-0 font-mono text-[13px] leading-4 text-text">
+                                                {subject.coefficient}
+                                            </span>
+                                            <span className="flex w-[170px] shrink-0 items-center gap-[6px] text-[13px] leading-4 text-text">
+                                                {!done && (
+                                                    <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
+                                                )}
+                                                {staffing(plan)}
+                                            </span>
+                                            <span className="w-16 shrink-0 font-mono text-[13px] leading-4 text-text">
+                                                {totalPeriods(plan.assignments)}
+                                            </span>
                                             <span
-                                                className={`h-[6px] w-[6px] shrink-0 rounded-full ${done ? 'bg-success' : 'bg-warning'}`}
-                                            />
-                                            {done ? t('Ready') : t('Draft')}
-                                        </span>
-                                    </div>
-                                );
-                            })}
+                                                className={`flex h-[22px] w-[92px] shrink-0 items-center gap-[6px] rounded-full px-2 text-[12px] leading-4 font-medium ${
+                                                    done
+                                                        ? 'bg-success-tint text-success'
+                                                        : 'bg-warning-tint text-[#8A5A12]'
+                                                }`}
+                                            >
+                                                <span
+                                                    className={`h-[6px] w-[6px] shrink-0 rounded-full ${done ? 'bg-success' : 'bg-warning'}`}
+                                                />
+                                                {done ? t('Ready') : t('Draft')}
+                                            </span>
+                                        </div>
+                                    );
+                                },
+                            )}
                             <div className="flex h-9 shrink-0 items-center justify-between border-t border-solid border-border bg-surface px-3">
                                 <span className="text-[13px] leading-4 text-text-muted">
-                                    {showAll ? picked.length : Math.min(8, picked.length)} {t('of')} {picked.length} {t('shown')}
+                                    {showAll
+                                        ? picked.length
+                                        : Math.min(8, picked.length)}{' '}
+                                    {t('of')} {picked.length} {t('shown')}
                                 </span>
                                 {picked.length > 8 && (
                                     <button
@@ -569,7 +719,11 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                         onClick={() => setShowAll(!showAll)}
                                         className="text-[13px] leading-4 font-medium text-primary hover:underline"
                                     >
-                                        {showAll ? t('Show fewer') : t('Show all :picked', { picked: picked.length })}
+                                        {showAll
+                                            ? t('Show fewer')
+                                            : t('Show all :picked', {
+                                                  picked: picked.length,
+                                              })}
                                     </button>
                                 )}
                             </div>
@@ -578,12 +732,16 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
 
                     <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                         <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-surface p-4">
-                            <p className={capsLabelClass}>{t('When you create')}</p>
+                            <p className={capsLabelClass}>
+                                {t('When you create')}
+                            </p>
                             <p className="font-display text-[16px] leading-[22px] font-bold text-text">
                                 {t('Ready subjects go live straight away.')}
                             </p>
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                {t('They open for marks entry and the timetable. Drafts wait under Needs teacher in the roster until every class has one.')}
+                                {t(
+                                    'They open for marks entry and the timetable. Drafts wait under Needs teacher in the roster until every class has one.',
+                                )}
                             </p>
                         </div>
                         {alreadyRegistered + unticked.length > 0 && (
@@ -594,13 +752,15 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                                 {alreadyRegistered > 0 && (
                                     <p className="flex items-center gap-2 text-[13px] leading-4 text-text-muted">
                                         <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-success" />
-                                        {alreadyRegistered} {t('already registered')}
+                                        {alreadyRegistered}{' '}
+                                        {t('already registered')}
                                     </p>
                                 )}
                                 {unticked.length > 0 && (
                                     <p className="flex items-center gap-2 text-[13px] leading-4 text-text-muted">
                                         <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-success" />
-                                        {unticked.length} {t('template subjects you unticked')}
+                                        {unticked.length}{' '}
+                                        {t('template subjects you unticked')}
                                     </p>
                                 )}
                             </div>
@@ -613,10 +773,18 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                 <div className="flex flex-col gap-1">
                     <p className="text-[13px] leading-4 text-text-muted">
                         {step === 0 &&
-                            t('Subjects you already have are left alone. Next, choose classes and teachers.')}
+                            t(
+                                'Subjects you already have are left alone. Next, choose classes and teachers.',
+                            )}
                         {step === 1 &&
-                            t(':ready of :picked subjects are fully staffed. The rest are saved as drafts.', { ready: ready.length, picked: picked.length })}
-                        {step === 2 && t('You can edit any subject afterwards from the roster.')}
+                            t(
+                                ':ready of :picked subjects are fully staffed. The rest are saved as drafts.',
+                                { ready: ready.length, picked: picked.length },
+                            )}
+                        {step === 2 &&
+                            t(
+                                'You can edit any subject afterwards from the roster.',
+                            )}
                     </p>
                     <ErrorText message={error} />
                 </div>
@@ -626,7 +794,11 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                             {t('Cancel')}
                         </Link>
                     ) : (
-                        <button type="button" onClick={() => setStep(step - 1)} className={outlineButtonClass}>
+                        <button
+                            type="button"
+                            onClick={() => setStep(step - 1)}
+                            className={outlineButtonClass}
+                        >
                             {t('Back')}
                         </button>
                     )}
@@ -637,17 +809,30 @@ function Templates({ yearLabel, sets, levels, classes, staff }: TemplatesProps) 
                             onClick={startPlans}
                             className={solidButtonClass}
                         >
-                            {t('Continue with :picked subjects', { picked: picked.length })}
+                            {t('Continue with :picked subjects', {
+                                picked: picked.length,
+                            })}
                         </button>
                     )}
                     {step === 1 && (
-                        <button type="button" onClick={() => setStep(2)} className={solidButtonClass}>
+                        <button
+                            type="button"
+                            onClick={() => setStep(2)}
+                            className={solidButtonClass}
+                        >
                             {t('Continue to review')}
                         </button>
                     )}
                     {step === 2 && (
-                        <button type="button" disabled={creating} onClick={createAll} className={solidButtonClass}>
-                            {t('Create :picked subjects', { picked: picked.length })}
+                        <button
+                            type="button"
+                            disabled={creating}
+                            onClick={createAll}
+                            className={solidButtonClass}
+                        >
+                            {t('Create :picked subjects', {
+                                picked: picked.length,
+                            })}
                         </button>
                     )}
                 </div>

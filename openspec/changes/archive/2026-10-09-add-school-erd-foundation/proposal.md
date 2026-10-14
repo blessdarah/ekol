@@ -15,6 +15,7 @@ The Paper School System ERD page (6 artboards, 27 tables) is the agreed data sha
 ## Capabilities
 
 ### New Capabilities
+
 - `tenant-core`: school tenant root, term time anchor, unified users (staff), student records.
 - `academic-structure`: levels, school_class (not `class`), series + per-term student_series junction.
 - `curriculum-coefficients`: subjects, subject×level coefficient matrix, append-only coefficient_version, subject_teacher junction.
@@ -23,6 +24,7 @@ The Paper School System ERD page (6 artboards, 27 tables) is the agreed data sha
 - `operations-audit`: timetable slots + tenant-scoped periods, rooms, attendance, teaching logs, polymorphic audit_event.
 
 ### Modified Capabilities
+
 - None (greenfield foundation; existing `users/cache/jobs` migrations superseded for `users` — see Impact).
 
 ## Impact

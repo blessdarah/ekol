@@ -43,8 +43,19 @@ interface RecordProps {
         disability: string | null;
         admitted_on: string;
         transferred_from: string | null;
-        class: { name: string; students: number; level: string | null; uses_series: boolean } | null;
-        series: { code: string; name: string; stream: string; core: number; electives: number } | null;
+        class: {
+            name: string;
+            students: number;
+            level: string | null;
+            uses_series: boolean;
+        } | null;
+        series: {
+            code: string;
+            name: string;
+            stream: string;
+            core: number;
+            electives: number;
+        } | null;
         guardians: {
             relation: string;
             name: string;
@@ -71,19 +82,33 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
     );
 }
 
-function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student }: RecordProps) {
+function StudentRecord({
+    neighbours,
+    yearLabel,
+    currency,
+    canSeePrivate,
+    student,
+}: RecordProps) {
     const paidShare =
         student.fees && student.fees.due > 0
-            ? Math.round(((student.fees.due - student.fees.balance) / student.fees.due) * 100)
+            ? Math.round(
+                  ((student.fees.due - student.fees.balance) /
+                      student.fees.due) *
+                      100,
+              )
             : 0;
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex flex-col gap-5 lg:min-h-[calc(100vh-56px)]">
             <Head title={student.name} />
             <StudentHeader
                 trail={[{ label: student.name }]}
                 title={student.name}
-                tag={[student.matricule, student.class?.name, student.series?.code]
+                tag={[
+                    student.matricule,
+                    student.class?.name,
+                    student.series?.code,
+                ]
                     .filter(Boolean)
                     .join(' · ')}
                 meta={[
@@ -93,7 +118,10 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                     .filter(Boolean)
                     .join(' · ')}
                 action={
-                    <Link href={edit.url(student.id)} className={outlineButtonClass}>
+                    <Link
+                        href={edit.url(student.id)}
+                        className={outlineButtonClass}
+                    >
                         {t('Edit student')}
                     </Link>
                 }
@@ -110,30 +138,50 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                             <Row label={t('Name')}>{student.given_names}</Row>
                             <Row label={t('Born')}>
                                 {fullDate(student.date_of_birth)}
-                                {student.place_of_birth ? t(' in :place_of_birth', { place_of_birth: student.place_of_birth }) : ''} ·{' '}
-                                {t(GENDER_LABELS[student.gender])}
+                                {student.place_of_birth
+                                    ? t(' in :place_of_birth', {
+                                          place_of_birth:
+                                              student.place_of_birth,
+                                      })
+                                    : ''}{' '}
+                                · {t(GENDER_LABELS[student.gender])}
                             </Row>
                             {canSeePrivate && (
                                 <>
-                                    <Row label={t('Religion')}>{student.religion ?? t('Not recorded')}</Row>
-                                    <Row label={t('Disability')}>{student.disability ?? t('None')}</Row>
+                                    <Row label={t('Religion')}>
+                                        {student.religion ?? t('Not recorded')}
+                                    </Row>
+                                    <Row label={t('Disability')}>
+                                        {student.disability ?? t('None')}
+                                    </Row>
                                 </>
                             )}
                             <Row label={t('Admitted')}>
                                 {fullDate(student.admitted_on)}
                                 {student.transferred_from
-                                    ? t(' · transferred from :transferred_from', { transferred_from: student.transferred_from })
+                                    ? t(
+                                          ' · transferred from :transferred_from',
+                                          {
+                                              transferred_from:
+                                                  student.transferred_from,
+                                          },
+                                      )
                                     : ''}
                             </Row>
                         </dl>
                     </section>
 
                     <section className="flex flex-col gap-2">
-                        <p className={capsLabelClass}>{t('Class and series')}</p>
+                        <p className={capsLabelClass}>
+                            {t('Class and series')}
+                        </p>
                         <dl className="flex flex-col">
                             <Row label={t('Class')}>
                                 {student.class
-                                    ? t(':class · :students students', { class: student.class.name, students: student.class.students })
+                                    ? t(':class · :students students', {
+                                          class: student.class.name,
+                                          students: student.class.students,
+                                      })
                                     : t('Not placed in a class this year')}
                             </Row>
                             {student.class?.uses_series && (
@@ -141,7 +189,11 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                                     <Row label={t('Series')}>
                                         {student.series ? (
                                             <span className="flex items-center gap-2">
-                                                <StreamChip stream={student.series.stream}>
+                                                <StreamChip
+                                                    stream={
+                                                        student.series.stream
+                                                    }
+                                                >
                                                     {student.series.code}
                                                 </StreamChip>
                                                 {student.series.name}
@@ -149,13 +201,27 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                                         ) : (
                                             <span className="flex items-center gap-[6px] text-[#8A5A12]">
                                                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                                {t('No series yet. Until one is chosen, there is no subject list.')}
+                                                {t(
+                                                    'No series yet. Until one is chosen, there is no subject list.',
+                                                )}
                                             </span>
                                         )}
                                     </Row>
                                     {student.series && (
                                         <Row label={t('Subjects')}>
-                                            {t(':electives in the series · :core core, :electives_a in the elective pool', { electives: student.series.core + student.series.electives, core: student.series.core, electives_a: student.series.electives })}
+                                            {t(
+                                                ':electives in the series · :core core, :electives_a in the elective pool',
+                                                {
+                                                    electives:
+                                                        student.series.core +
+                                                        student.series
+                                                            .electives,
+                                                    core: student.series.core,
+                                                    electives_a:
+                                                        student.series
+                                                            .electives,
+                                                },
+                                            )}
                                         </Row>
                                     )}
                                 </>
@@ -164,7 +230,9 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                     </section>
 
                     <section className="flex flex-col gap-2">
-                        <p className={capsLabelClass}>{t('Parents and guardian')}</p>
+                        <p className={capsLabelClass}>
+                            {t('Parents and guardian')}
+                        </p>
                         <dl className="flex flex-col">
                             {student.guardians.map((guardian) => (
                                 <div
@@ -177,9 +245,13 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                                         </span>
                                         <span className="text-[12px] leading-4 text-text-muted">
                                             {[
-                                                RELATION_LABELS[guardian.relation],
+                                                RELATION_LABELS[
+                                                    guardian.relation
+                                                ],
                                                 guardian.occupation?.toLowerCase(),
-                                                guardian.is_main ? 'main contact' : null,
+                                                guardian.is_main
+                                                    ? 'main contact'
+                                                    : null,
                                             ]
                                                 .filter(Boolean)
                                                 .join(' · ')}
@@ -190,15 +262,18 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                                             {guardian.phone ?? '—'}
                                         </span>
                                         <span className="flex-1" />
-                                        {guardian.is_main && student.on_whatsapp && (
-                                            <span className="flex h-[22px] items-center rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
-                                                {t('WhatsApp')}
-                                            </span>
-                                        )}
+                                        {guardian.is_main &&
+                                            student.on_whatsapp && (
+                                                <span className="flex h-[22px] items-center rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
+                                                    {t('WhatsApp')}
+                                                </span>
+                                            )}
                                     </dd>
                                 </div>
                             ))}
-                            <Row label={t('Lives with')}>{student.lives_with ?? t('Not recorded')}</Row>
+                            <Row label={t('Lives with')}>
+                                {student.lives_with ?? t('Not recorded')}
+                            </Row>
                         </dl>
                     </section>
                 </div>
@@ -208,7 +283,8 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                         <div className="flex flex-col gap-[14px] rounded-lg border border-solid border-border bg-surface p-4">
                             <div className="flex items-center justify-between">
                                 <p className={capsLabelClass}>
-                                    {t('Fees')}{yearLabel ? ` · ${yearLabel}` : ''}
+                                    {t('Fees')}
+                                    {yearLabel ? ` · ${yearLabel}` : ''}
                                 </p>
                                 <FeePill status={student.fees.status} />
                             </div>
@@ -217,7 +293,12 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                                     {money(student.fees.balance, currency)}
                                 </p>
                                 <p className="text-[13px] leading-4 text-text-muted">
-                                    {t('still to pay, of :currency', { currency: money(student.fees.due, currency) })}
+                                    {t('still to pay, of :currency', {
+                                        currency: money(
+                                            student.fees.due,
+                                            currency,
+                                        ),
+                                    })}
                                 </p>
                             </div>
                             <div
@@ -235,7 +316,10 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                             </div>
                             <p className="text-[12px] leading-[18px] text-text-muted">
                                 {t('Payments are recorded in Fees.')}{' '}
-                                <Link href={feesTab.url(student.id)} className="font-medium text-primary hover:underline">
+                                <Link
+                                    href={feesTab.url(student.id)}
+                                    className="font-medium text-primary hover:underline"
+                                >
                                     {t('Open the Fees tab →')}
                                 </Link>
                             </p>
@@ -244,7 +328,9 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                         <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-surface p-4">
                             <p className={capsLabelClass}>{t('Fees')}</p>
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                {t('No fee plan was set for this student’s level at admission, so nothing is owed yet.')}
+                                {t(
+                                    'No fee plan was set for this student’s level at admission, so nothing is owed yet.',
+                                )}
                             </p>
                         </div>
                     )}
@@ -263,11 +349,15 @@ function StudentRecord({ neighbours, yearLabel, currency, canSeePrivate, student
                                 href={
                                     student.series
                                         ? changeSeries.url(student.id)
-                                        : chooseSeries.url({ query: { student: student.id } })
+                                        : chooseSeries.url({
+                                              query: { student: student.id },
+                                          })
                                 }
                                 className="text-[13px] leading-4 font-medium text-primary hover:underline"
                             >
-                                {student.series ? t('Change series') : t('Choose a series')}
+                                {student.series
+                                    ? t('Change series')
+                                    : t('Choose a series')}
                             </Link>
                         )}
                     </div>

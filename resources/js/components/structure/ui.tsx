@@ -40,11 +40,36 @@ export function segmentClass(selected: boolean): string {
     }`;
 }
 
-export function LockIcon({ size = 12, tone = '#56625C' }: { size?: number; tone?: string }) {
+export function LockIcon({
+    size = 12,
+    tone = '#56625C',
+}: {
+    size?: number;
+    tone?: string;
+}) {
     return (
-        <svg width={size} height={size} viewBox="0 0 24 24" className="shrink-0">
-            <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke={tone} strokeWidth="2.5" />
-            <path d="M8 11V7a4 4 0 018 0v4" fill="none" stroke={tone} strokeWidth="2.5" />
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            className="shrink-0"
+        >
+            <rect
+                x="5"
+                y="11"
+                width="14"
+                height="10"
+                rx="2"
+                fill="none"
+                stroke={tone}
+                strokeWidth="2.5"
+            />
+            <path
+                d="M8 11V7a4 4 0 018 0v4"
+                fill="none"
+                stroke={tone}
+                strokeWidth="2.5"
+            />
         </svg>
     );
 }
@@ -52,7 +77,13 @@ export function LockIcon({ size = 12, tone = '#56625C' }: { size?: number; tone?
 export function PlusIcon() {
     return (
         <svg width="14" height="14" viewBox="0 0 24 24" className="shrink-0">
-            <path d="M12 5v14M5 12h14" fill="none" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
+            <path
+                d="M12 5v14M5 12h14"
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+            />
         </svg>
     );
 }
@@ -104,7 +135,10 @@ export function StructureHeader({
             <div className="flex flex-col gap-[6px]">
                 <Breadcrumbs
                     trail={[
-                        { label: t('Classes & Subjects'), href: levelsIndex.url() },
+                        {
+                            label: t('Classes & Subjects'),
+                            href: levelsIndex.url(),
+                        },
                         ...trail,
                     ]}
                 />
@@ -121,7 +155,11 @@ export function StructureHeader({
     );
 }
 
-export function StructureTabs({ active }: { active: 'subjects' | 'levels' | 'series' }) {
+export function StructureTabs({
+    active,
+}: {
+    active: 'subjects' | 'levels' | 'series';
+}) {
     const tabs = [
         { key: 'subjects', label: t('Subjects'), href: subjectsIndex.url() },
         { key: 'levels', label: t('Levels'), href: levelsIndex.url() },
@@ -148,11 +186,19 @@ export function StructureTabs({ active }: { active: 'subjects' | 'levels' | 'ser
     );
 }
 
-export function StreamChip({ stream, children }: { stream: string; children: ReactNode }) {
+export function StreamChip({
+    stream,
+    children,
+}: {
+    stream: string;
+    children: ReactNode;
+}) {
     return (
         <span
             className={`flex h-[22px] items-center rounded-sm px-2 font-mono text-[12px] leading-4 ${
-                stream === 'arts' ? 'bg-arts-tint text-arts' : 'bg-science-tint text-science'
+                stream === 'arts'
+                    ? 'bg-arts-tint text-arts'
+                    : 'bg-science-tint text-science'
             }`}
         >
             {children}
@@ -175,7 +221,13 @@ export function ErrorText({ message }: { message?: string | null }) {
 export function RemoveIcon({ tone }: { tone: string }) {
     return (
         <svg width="10" height="10" viewBox="0 0 10 10" className="shrink-0">
-            <path d="M2 2l6 6M8 2L2 8" fill="none" stroke={tone} strokeWidth="1.5" strokeLinecap="round" />
+            <path
+                d="M2 2l6 6M8 2L2 8"
+                fill="none"
+                stroke={tone}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+            />
         </svg>
     );
 }

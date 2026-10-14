@@ -60,7 +60,10 @@ export function LevelPicker({
                 label={t('Add a level')}
                 addLabel={t('Add a level')}
                 chosen={value.length}
-                summary={t(':value of :levels levels', { value: value.length, levels: levels.length })}
+                summary={t(':value of :levels levels', {
+                    value: value.length,
+                    levels: levels.length,
+                })}
                 options={levels.filter((level) => !value.includes(level.id))}
                 onAdd={(id) => onChange([...value, id])}
             >
@@ -74,9 +77,13 @@ export function LevelPicker({
                             {level.name}
                             <button
                                 type="button"
-                                aria-label={t('Remove :level', { level: level.name })}
+                                aria-label={t('Remove :level', {
+                                    level: level.name,
+                                })}
                                 onClick={() =>
-                                    onChange(value.filter((id) => id !== level.id))
+                                    onChange(
+                                        value.filter((id) => id !== level.id),
+                                    )
                                 }
                             >
                                 <RemoveIcon tone="#0E4D3A" />
@@ -131,7 +138,9 @@ export function ClassTable({
     if (classes.length === 0) {
         return (
             <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                {t('Pick at least one level that has classes. Classes are added under Levels.')}
+                {t(
+                    'Pick at least one level that has classes. Classes are added under Levels.',
+                )}
             </p>
         );
     }
@@ -154,7 +163,9 @@ export function ClassTable({
                     >
                         <input
                             type="checkbox"
-                            aria-label={t(':option takes this subject', { option: option.name })}
+                            aria-label={t(':option takes this subject', {
+                                option: option.name,
+                            })}
                             checked={!!row}
                             onChange={() => toggle(option.id)}
                             className="h-[18px] w-[18px] shrink-0 accent-primary"
@@ -172,10 +183,14 @@ export function ClassTable({
                         {row ? (
                             <>
                                 <select
-                                    aria-label={t('Teacher for :option', { option: option.name })}
+                                    aria-label={t('Teacher for :option', {
+                                        option: option.name,
+                                    })}
                                     value={row.staff_id}
                                     onChange={(e) =>
-                                        patch(option.id, { staff_id: e.target.value })
+                                        patch(option.id, {
+                                            staff_id: e.target.value,
+                                        })
                                     }
                                     className={`${cellInputClass} min-w-0 flex-1 ${
                                         row.staff_id
@@ -183,19 +198,29 @@ export function ClassTable({
                                             : 'border-warning bg-warning-tint text-[#8A5A12]'
                                     }`}
                                 >
-                                    <option value="">{t('Select a teacher')}</option>
+                                    <option value="">
+                                        {t('Select a teacher')}
+                                    </option>
                                     {staff.map((member) => (
-                                        <option key={member.id} value={member.id}>
+                                        <option
+                                            key={member.id}
+                                            value={member.id}
+                                        >
                                             {member.name}
                                         </option>
                                     ))}
                                 </select>
-                                <label className={`${cellInputClass} flex w-32 shrink-0 items-center justify-between focus-within:border-primary`}>
+                                <label
+                                    className={`${cellInputClass} flex w-32 shrink-0 items-center justify-between focus-within:border-primary`}
+                                >
                                     <input
                                         type="number"
                                         min={1}
                                         max={20}
-                                        aria-label={t('Weekly periods for :option', { option: option.name })}
+                                        aria-label={t(
+                                            'Weekly periods for :option',
+                                            { option: option.name },
+                                        )}
                                         value={row.weekly_periods}
                                         onChange={(e) =>
                                             patch(option.id, {
@@ -211,10 +236,14 @@ export function ClassTable({
                             </>
                         ) : (
                             <>
-                                <span className={`${cellInputClass} flex min-w-0 flex-1 items-center text-text-muted opacity-[0.64]`}>
+                                <span
+                                    className={`${cellInputClass} flex min-w-0 flex-1 items-center text-text-muted opacity-[0.64]`}
+                                >
                                     {t('Not offered in this class')}
                                 </span>
-                                <span className={`${cellInputClass} flex w-32 shrink-0 items-center font-mono text-text-muted opacity-[0.64]`}>
+                                <span
+                                    className={`${cellInputClass} flex w-32 shrink-0 items-center font-mono text-text-muted opacity-[0.64]`}
+                                >
                                     0
                                 </span>
                             </>
@@ -228,8 +257,17 @@ export function ClassTable({
                         <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                     )}
                     {unstaffedCount(value) > 0
-                        ? t(':value :need a teacher', { value: unstaffedCount(value), need: unstaffedCount(value) === 1 ? 'class needs' : 'classes need' })
-                        : t(':selected of :classes classes selected', { selected: selected.length, classes: classes.length })}
+                        ? t(':value :need a teacher', {
+                              value: unstaffedCount(value),
+                              need:
+                                  unstaffedCount(value) === 1
+                                      ? 'class needs'
+                                      : 'classes need',
+                          })
+                        : t(':selected of :classes classes selected', {
+                              selected: selected.length,
+                              classes: classes.length,
+                          })}
                 </span>
                 <span className="flex items-baseline gap-[6px]">
                     <span className="font-mono text-[13px] leading-4 text-text">

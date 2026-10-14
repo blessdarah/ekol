@@ -5,12 +5,14 @@ Paper screen 08 defines six setup zones; the codebase has the admin shell, domai
 ## Goals / Non-Goals
 
 **Goals:**
+
 - Six autosaved zones on the existing admin shell, token-faithful to screen 08.
 - Installment template table + materialization + oldest-first rule specced for the future payment flow.
 - Logo lifecycle (upload, validate, serve to login/cards/receipts).
 - Both immutability rules enforced at validation + model layers with disabled UI states.
 
 **Non-Goals:**
+
 - No timetable generation (consumes periods/weekdays later), no dashboard content, no password-reset.
 - No school-switcher behavior, no role-based setup visibility (founding admins and later admins share the page).
 - No backfill (pre-release wipe/rebuild); no new design tokens.
