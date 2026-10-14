@@ -1,5 +1,5 @@
-
-import { t } from '../../lib/i18n';export interface SegmentOption {
+import { t } from '../../lib/i18n';
+export interface SegmentOption {
     value: string;
     label: string;
 }

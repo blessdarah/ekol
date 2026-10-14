@@ -50,11 +50,7 @@ export default function RegisterSchool({
 
     const availability =
         slug.length >= 3 && data.available !== undefined ? (
-            <span
-                className={
-                    data.available ? 'text-success' : 'text-danger'
-                }
-            >
+            <span className={data.available ? 'text-success' : 'text-danger'}>
                 {data.available ? (
                     <>
                         <span className="mr-1 inline-block h-[6px] w-[6px] rounded-full bg-success align-middle" />
@@ -80,13 +76,21 @@ export default function RegisterSchool({
             <Head title={t('Register your school')} />
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
-                    <Eyebrow>{t('Step :step of :total', { step: 1, total: 3 })}</Eyebrow>
+                    <Eyebrow>
+                        {t('Step :step of :total', { step: 1, total: 3 })}
+                    </Eyebrow>
                     <Heading
                         title={t('Register your school')}
-                        sub={t('Create a private workspace for your school. You will be its first administrator.')}
+                        sub={t(
+                            'Create a private workspace for your school. You will be its first administrator.',
+                        )}
                     />
                 </div>
-                <Form action="/register/school" method="post" onKeyDown={submitOnEnter}>
+                <Form
+                    action="/register/school"
+                    method="post"
+                    onKeyDown={submitOnEnter}
+                >
                     {({ errors, processing }) => (
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-[6px] text-[13px] font-medium text-text">
@@ -95,18 +99,28 @@ export default function RegisterSchool({
                                     name="locale"
                                     value={locale}
                                     onChange={switchLocale}
-                                    options={Object.entries(locales).map(([value, label]) => ({ value, label }))}
+                                    options={Object.entries(locales).map(
+                                        ([value, label]) => ({ value, label }),
+                                    )}
                                 />
                                 <span className="text-[12px] font-normal text-text-muted">
-                                    {t('The language your school works in. Each person can still choose their own.')}
+                                    {t(
+                                        'The language your school works in. Each person can still choose their own.',
+                                    )}
                                 </span>
-                                {errors.locale && <span className="font-normal text-danger">{errors.locale}</span>}
+                                {errors.locale && (
+                                    <span className="font-normal text-danger">
+                                        {errors.locale}
+                                    </span>
+                                )}
                             </div>
                             <Field label={t('School name')} error={errors.name}>
                                 <input
                                     type="text"
                                     name="name"
-                                    placeholder={t('Government Bilingual High School, Bamenda')}
+                                    placeholder={t(
+                                        'Government Bilingual High School, Bamenda',
+                                    )}
                                     className={inputClass}
                                 />
                             </Field>
@@ -155,12 +169,13 @@ export default function RegisterSchool({
                                     name="ownership"
                                     value={ownership}
                                     onChange={setOwnership}
-                                    options={ownershipOptions.map(
-                                        (option) => ({
-                                            value: option,
-                                            label: t(option.charAt(0).toUpperCase() + option.slice(1)),
-                                        }),
-                                    )}
+                                    options={ownershipOptions.map((option) => ({
+                                        value: option,
+                                        label: t(
+                                            option.charAt(0).toUpperCase() +
+                                                option.slice(1),
+                                        ),
+                                    }))}
                                 />
                                 {errors.ownership && (
                                     <span className="font-normal text-danger">
@@ -169,7 +184,10 @@ export default function RegisterSchool({
                                 )}
                             </div>
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <Field label={t('Region')} error={errors.region}>
+                                <Field
+                                    label={t('Region')}
+                                    error={errors.region}
+                                >
                                     <select
                                         name="region"
                                         defaultValue=""
@@ -179,10 +197,7 @@ export default function RegisterSchool({
                                             {t('Select region')}
                                         </option>
                                         {regions.map((region) => (
-                                            <option
-                                                key={region}
-                                                value={region}
-                                            >
+                                            <option key={region} value={region}>
                                                 {t(region)}
                                             </option>
                                         ))}
@@ -203,12 +218,17 @@ export default function RegisterSchool({
                                     name="subsystem"
                                     value={subsystem}
                                     onChange={setSubsystem}
-                                    options={subsystemOptions.map(
-                                        (option) => ({
-                                            value: option,
-                                            label: t(option === 'anglophone' ? 'Anglophone (GCE)' : option.charAt(0).toUpperCase() + option.slice(1)),
-                                        }),
-                                    )}
+                                    options={subsystemOptions.map((option) => ({
+                                        value: option,
+                                        label: t(
+                                            option === 'anglophone'
+                                                ? 'Anglophone (GCE)'
+                                                : option
+                                                      .charAt(0)
+                                                      .toUpperCase() +
+                                                      option.slice(1),
+                                        ),
+                                    }))}
                                 />
                                 {errors.subsystem && (
                                     <span className="font-normal text-danger">
@@ -223,7 +243,9 @@ export default function RegisterSchool({
                                     {t('Continue')}
                                 </PrimaryButton>
                                 <span className="text-[13px] text-text-muted">
-                                    {t('You can change all of this later in School Setup.')}
+                                    {t(
+                                        'You can change all of this later in School Setup.',
+                                    )}
                                 </span>
                             </div>
                         </div>

@@ -5,11 +5,13 @@ Paper screens 10–16 (verified via tree reads + screenshots of 10 and 15) defin
 ## Goals / Non-Goals
 
 **Goals:**
+
 - All 7 auth screens visually faithful to Paper on one shared layout + token-driven classes.
 - Backend gaps closed: ownership/region/town columns, authorisation validation, SMS-instead + change-email endpoints, ready-details email, remember-me, dynamic parent domain, ready→school-login target, forgot-password placeholder.
 - Zero visual-regression risk to the app shell: only `auth/*`, `dashboard`, `setup` pages touched.
 
 **Non-Goals:**
+
 - No full password-reset flow (placeholder page only), no screen 08/01 builds, no dashboard/setup content.
 - No new design tokens (file set suffices); no responsiveness work beyond the 1440px frames (mobile follow-up).
 - No visual snapshot testing (Pest asserts props/content, not pixels).

@@ -21,8 +21,18 @@ export interface SeriesOption {
 }
 
 export const STREAMS = [
-    { value: 'science', label: 'Science', text: 'text-science', on: 'border-science bg-science-tint text-science' },
-    { value: 'arts', label: 'Arts', text: 'text-arts', on: 'border-arts bg-arts-tint text-arts' },
+    {
+        value: 'science',
+        label: 'Science',
+        text: 'text-science',
+        on: 'border-science bg-science-tint text-science',
+    },
+    {
+        value: 'arts',
+        label: 'Arts',
+        text: 'text-arts',
+        on: 'border-arts bg-arts-tint text-arts',
+    },
 ];
 
 export function coreOf(series: SeriesOption): SeriesSubject[] {
@@ -45,15 +55,26 @@ export function limits(series: SeriesOption, lower = false): string {
 }
 
 /** Why this choice cannot be saved yet, or null when it can. */
-export function choiceProblem(series: SeriesOption, electives: number): string | null {
+export function choiceProblem(
+    series: SeriesOption,
+    electives: number,
+): string | null {
     const total = coreOf(series).length + electives;
 
     if (series.min !== null && total < series.min) {
-        return t(':code needs at least :series subjects. Add :total more.', { code: series.code, series: series.min, total: series.min - total });
+        return t(':code needs at least :series subjects. Add :total more.', {
+            code: series.code,
+            series: series.min,
+            total: series.min - total,
+        });
     }
 
     if (series.max !== null && total > series.max) {
-        return t(':code allows at most :series subjects. Remove :series_a.', { code: series.code, series: series.max, series_a: total - series.max });
+        return t(':code allows at most :series subjects. Remove :series_a.', {
+            code: series.code,
+            series: series.max,
+            series_a: total - series.max,
+        });
     }
 
     return null;
@@ -79,7 +100,13 @@ export function SeriesHeader({
                 <Breadcrumbs
                     trail={
                         trail.length > 0
-                            ? [{ label: t('Series Registration'), href: index.url() }, ...trail]
+                            ? [
+                                  {
+                                      label: t('Series Registration'),
+                                      href: index.url(),
+                                  },
+                                  ...trail,
+                              ]
                             : [{ label: t('Series Registration') }]
                     }
                 />
@@ -88,8 +115,15 @@ export function SeriesHeader({
                 </h1>
                 {(tag || meta) && (
                     <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-4 text-text-muted">
-                        {tag && <span className="font-mono uppercase">{tag}</span>}
-                        {meta && <span>{tag ? '· ' : ''}{meta}</span>}
+                        {tag && (
+                            <span className="font-mono uppercase">{tag}</span>
+                        )}
+                        {meta && (
+                            <span>
+                                {tag ? '· ' : ''}
+                                {meta}
+                            </span>
+                        )}
                     </p>
                 )}
             </div>
@@ -115,25 +149,37 @@ export function SeriesChips({
     labelled?: boolean;
     onChange: (id: string) => void;
 }) {
-    const box = size === 'large' ? 'h-10 min-w-[52px] text-[14px]' : 'h-[30px] min-w-10 text-[12px]';
+    const box =
+        size === 'large'
+            ? 'h-10 min-w-[52px] text-[14px]'
+            : 'h-[30px] min-w-10 text-[12px]';
     const groups = STREAMS.map((stream) => ({
         ...stream,
         items: series.filter((option) => option.stream === stream.value),
     })).filter((group) => group.items.length > 0);
 
     return (
-        <div role="radiogroup" aria-label={t('Series')} className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div
+            role="radiogroup"
+            aria-label={t('Series')}
+            className="flex flex-wrap items-center gap-x-4 gap-y-2"
+        >
             {groups.map((group, position) => (
                 <div key={group.value} className="flex items-center gap-[6px]">
-                    {position > 0 && <span className="mr-[10px] h-5 w-px shrink-0 bg-border" />}
+                    {position > 0 && (
+                        <span className="mr-[10px] h-5 w-px shrink-0 bg-border" />
+                    )}
                     {labelled && (
-                        <span className={`mr-1 text-[13px] leading-4 font-medium ${group.text}`}>
+                        <span
+                            className={`mr-1 text-[13px] leading-4 font-medium ${group.text}`}
+                        >
                             {t(group.label)}
                         </span>
                     )}
                     {group.items.map((option) => {
                         const selected = option.id === value;
-                        const blocked = !option.complete || option.id === disabledId;
+                        const blocked =
+                            !option.complete || option.id === disabledId;
 
                         return (
                             <button
@@ -144,7 +190,10 @@ export function SeriesChips({
                                 disabled={blocked}
                                 title={
                                     !option.complete
-                                        ? t(':option has no core subjects yet', { option: option.name })
+                                        ? t(
+                                              ':option has no core subjects yet',
+                                              { option: option.name },
+                                          )
                                         : option.name
                                 }
                                 onClick={() => onChange(option.id)}

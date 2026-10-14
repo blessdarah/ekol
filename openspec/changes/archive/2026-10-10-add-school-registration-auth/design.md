@@ -5,12 +5,14 @@ Paper screens 09–16 define the access flow: school registration (10–12) → 
 ## Goals / Non-Goals
 
 **Goals:**
+
 - End-to-end registration for a new tenant per screens 10–13, verified before anything persists.
 - Subdomain-resolved tenancy with session-scoped data access.
 - Branded email-or-phone sign-in with safe error states and first-visit setup routing.
 - All decisions traceable to the explore session; new schema limited to `slug` (+ nullable `location` from screen 10), phone UQ, `setup_completed_at`, and the staging table.
 
 **Non-Goals:**
+
 - No password-reset flow, no role-based permissions UI (role remains a placeholder enum).
 - No SMS provider integration beyond a logged fallback channel (provider choice deferred).
 - No multi-school membership for one human (one row per school; shared email across schools stays rejected).

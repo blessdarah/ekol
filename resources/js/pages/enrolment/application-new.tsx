@@ -1,7 +1,13 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import { index, store } from '@/actions/App/Http/Controllers/ApplicationController';
-import { EnrolmentHeader, type EnrolmentProgress } from '../../components/enrolment/ui';
+import {
+    index,
+    store,
+} from '@/actions/App/Http/Controllers/ApplicationController';
+import {
+    EnrolmentHeader,
+    type EnrolmentProgress,
+} from '../../components/enrolment/ui';
 import {
     ErrorText,
     capsLabelClass,
@@ -41,7 +47,13 @@ const smallInputClass =
 
 const blank: GuardianForm = { name: '', phone: '', occupation: '' };
 
-function NewApplication({ enrolment, levels, religions, documents, canSeePrivate }: NewApplicationProps) {
+function NewApplication({
+    enrolment,
+    levels,
+    religions,
+    documents,
+    canSeePrivate,
+}: NewApplicationProps) {
     const form = useForm({
         surname: '',
         given_names: '',
@@ -65,11 +77,18 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
         mother: blank,
         guardian: blank,
     });
-    const guardianError = Object.entries(errors).find(([key]) => key.startsWith('guardians'))?.[1];
-    const asked = Object.entries(documents).filter(([key]) => data.transferred || key !== 'transfer_certificate');
+    const guardianError = Object.entries(errors).find(([key]) =>
+        key.startsWith('guardians'),
+    )?.[1];
+    const asked = Object.entries(documents).filter(
+        ([key]) => data.transferred || key !== 'transfer_certificate',
+    );
 
     function setGuardian(relation: Relation, patch: Partial<GuardianForm>) {
-        setGuardians({ ...guardians, [relation]: { ...guardians[relation], ...patch } });
+        setGuardians({
+            ...guardians,
+            [relation]: { ...guardians[relation], ...patch },
+        });
     }
 
     function toggleDocument(key: string) {
@@ -87,8 +106,12 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
             religion: values.religion || null,
             disability: values.disability.trim() || null,
             previous_school: values.previous_school.trim() || null,
-            documents: values.documents.filter((key) => values.transferred || key !== 'transfer_certificate'),
-            guardians: RELATIONS.filter(({ key }) => guardians[key].name.trim() !== '').map(({ key }) => ({
+            documents: values.documents.filter(
+                (key) => values.transferred || key !== 'transfer_certificate',
+            ),
+            guardians: RELATIONS.filter(
+                ({ key }) => guardians[key].name.trim() !== '',
+            ).map(({ key }) => ({
                 relation: key,
                 name: guardians[key].name,
                 phone: guardians[key].phone || null,
@@ -110,7 +133,10 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
             <EnrolmentHeader
                 active="applications"
                 progress={enrolment}
-                trail={[{ label: t('Applications'), href: index.url() }, { label: t('Add an application') }]}
+                trail={[
+                    { label: t('Applications'), href: index.url() },
+                    { label: t('Add an application') },
+                ]}
                 title={t('Add an application')}
                 meta={t('it gets a reference and waits under To review')}
             />
@@ -120,49 +146,74 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                     <section className="flex flex-col gap-[14px]">
                         <p className={capsLabelClass}>{t('Applicant')}</p>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                            >
                                 {t('Surname')}
                                 <input
                                     type="text"
                                     value={data.surname}
-                                    onChange={(e) => setData('surname', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('surname', e.target.value)
+                                    }
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.surname} />
                             </label>
-                            <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                            >
                                 {t('Given names')}
                                 <input
                                     type="text"
                                     value={data.given_names}
-                                    onChange={(e) => setData('given_names', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('given_names', e.target.value)
+                                    }
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.given_names} />
                             </label>
-                            <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                            >
                                 {t('Date of birth')}
                                 <input
                                     type="date"
                                     value={data.date_of_birth}
-                                    onChange={(e) => setData('date_of_birth', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('date_of_birth', e.target.value)
+                                    }
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.date_of_birth} />
                             </label>
-                            <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                            >
                                 {t('Place of birth')}
                                 <input
                                     type="text"
                                     value={data.place_of_birth}
-                                    onChange={(e) => setData('place_of_birth', e.target.value)}
+                                    onChange={(e) =>
+                                        setData(
+                                            'place_of_birth',
+                                            e.target.value,
+                                        )
+                                    }
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.place_of_birth} />
                             </label>
                             <div className="flex flex-col gap-[6px]">
-                                <span className={fieldLabelClass}>{t('Gender')}</span>
-                                <div role="radiogroup" aria-label={t('Gender')} className="flex gap-2">
+                                <span className={fieldLabelClass}>
+                                    {t('Gender')}
+                                </span>
+                                <div
+                                    role="radiogroup"
+                                    aria-label={t('Gender')}
+                                    className="flex gap-2"
+                                >
                                     {[
                                         { value: 'female', label: t('Girl') },
                                         { value: 'male', label: t('Boy') },
@@ -171,9 +222,15 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                             key={option.value}
                                             type="button"
                                             role="radio"
-                                            aria-checked={data.gender === option.value}
-                                            onClick={() => setData('gender', option.value)}
-                                            className={segmentClass(data.gender === option.value)}
+                                            aria-checked={
+                                                data.gender === option.value
+                                            }
+                                            onClick={() =>
+                                                setData('gender', option.value)
+                                            }
+                                            className={segmentClass(
+                                                data.gender === option.value,
+                                            )}
                                         >
                                             {t(option.label)}
                                         </button>
@@ -181,14 +238,20 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                 </div>
                                 <ErrorText message={errors.gender} />
                             </div>
-                            <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                            >
                                 {t('Applying to')}
                                 <select
                                     value={data.level_id}
-                                    onChange={(e) => setData('level_id', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('level_id', e.target.value)
+                                    }
                                     className={fieldInputClass}
                                 >
-                                    <option value="">{t('Choose a level')}</option>
+                                    <option value="">
+                                        {t('Choose a level')}
+                                    </option>
                                     {levels.map((level) => (
                                         <option key={level.id} value={level.id}>
                                             {level.name}
@@ -199,32 +262,55 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                             </label>
                             {canSeePrivate && (
                                 <>
-                                    <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                                    <label
+                                        className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                                    >
                                         {t('Religion')}
                                         <select
                                             value={data.religion}
-                                            onChange={(e) => setData('religion', e.target.value)}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'religion',
+                                                    e.target.value,
+                                                )
+                                            }
                                             className={fieldInputClass}
                                         >
-                                            <option value="">{t('Not given')}</option>
+                                            <option value="">
+                                                {t('Not given')}
+                                            </option>
                                             {religions.map((religion) => (
-                                                <option key={religion} value={religion}>
+                                                <option
+                                                    key={religion}
+                                                    value={religion}
+                                                >
                                                     {religion}
                                                 </option>
                                             ))}
                                         </select>
                                         <ErrorText message={errors.religion} />
                                     </label>
-                                    <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                                    <label
+                                        className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                                    >
                                         {t('Disability or support needed')}
                                         <input
                                             type="text"
                                             value={data.disability}
-                                            onChange={(e) => setData('disability', e.target.value)}
-                                            placeholder={t('Leave empty for none')}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'disability',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder={t(
+                                                'Leave empty for none',
+                                            )}
                                             className={fieldInputClass}
                                         />
-                                        <ErrorText message={errors.disability} />
+                                        <ErrorText
+                                            message={errors.disability}
+                                        />
                                     </label>
                                 </>
                             )}
@@ -234,15 +320,27 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                     <section className="flex flex-col gap-[14px]">
                         <p className={capsLabelClass}>{t('Coming from')}</p>
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            <span className={fieldLabelClass}>{t('Transferring from another secondary school?')}</span>
-                            <div role="radiogroup" aria-label={t('Transferring')} className="flex w-[200px] shrink-0 gap-2">
+                            <span className={fieldLabelClass}>
+                                {t(
+                                    'Transferring from another secondary school?',
+                                )}
+                            </span>
+                            <div
+                                role="radiogroup"
+                                aria-label={t('Transferring')}
+                                className="flex w-[200px] shrink-0 gap-2"
+                            >
                                 {[false, true].map((option) => (
                                     <button
                                         key={String(option)}
                                         type="button"
                                         role="radio"
-                                        aria-checked={data.transferred === option}
-                                        onClick={() => setData('transferred', option)}
+                                        aria-checked={
+                                            data.transferred === option
+                                        }
+                                        onClick={() =>
+                                            setData('transferred', option)
+                                        }
                                         className={`${segmentClass(data.transferred === option)} h-[34px]`}
                                     >
                                         {option ? t('Yes') : t('No')}
@@ -251,32 +349,52 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                             </div>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
-                                {data.transferred ? t('School transferring from') : t('Last school attended')}
+                            <label
+                                className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                            >
+                                {data.transferred
+                                    ? t('School transferring from')
+                                    : t('Last school attended')}
                                 <input
                                     type="text"
                                     value={data.previous_school}
-                                    onChange={(e) => setData('previous_school', e.target.value)}
+                                    onChange={(e) =>
+                                        setData(
+                                            'previous_school',
+                                            e.target.value,
+                                        )
+                                    }
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.previous_school} />
                             </label>
-                            <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                            >
                                 {t('Class there')}
                                 <input
                                     type="text"
                                     value={data.previous_class}
-                                    onChange={(e) => setData('previous_class', e.target.value)}
+                                    onChange={(e) =>
+                                        setData(
+                                            'previous_class',
+                                            e.target.value,
+                                        )
+                                    }
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.previous_class} />
                             </label>
-                            <label className={`flex flex-col gap-[6px] sm:col-span-2 ${fieldLabelClass}`}>
+                            <label
+                                className={`flex flex-col gap-[6px] sm:col-span-2 ${fieldLabelClass}`}
+                            >
                                 {t('Reason for applying')}
                                 <input
                                     type="text"
                                     value={data.reason}
-                                    onChange={(e) => setData('reason', e.target.value)}
+                                    onChange={(e) =>
+                                        setData('reason', e.target.value)
+                                    }
                                     className={fieldInputClass}
                                 />
                                 <ErrorText message={errors.reason} />
@@ -285,7 +403,9 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                     </section>
 
                     <section className="flex flex-col gap-[14px]">
-                        <p className={capsLabelClass}>{t('Parents and guardian')}</p>
+                        <p className={capsLabelClass}>
+                            {t('Parents and guardian')}
+                        </p>
                         <div className="flex flex-col gap-4 md:flex-row">
                             {RELATIONS.map(({ key, title }) => (
                                 <fieldset
@@ -303,53 +423,84 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                                         ) : (
                                             <button
                                                 type="button"
-                                                onClick={() => setData('main_contact', key)}
+                                                onClick={() =>
+                                                    setData('main_contact', key)
+                                                }
                                                 className="text-[13px] leading-4 font-medium text-primary hover:underline"
                                             >
                                                 {t('Make main contact')}
                                             </button>
                                         )}
                                     </div>
-                                    <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                                    <label
+                                        className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                                    >
                                         {t('Surname and name')}
                                         <input
                                             type="text"
                                             value={guardians[key].name}
-                                            onChange={(e) => setGuardian(key, { name: e.target.value })}
+                                            onChange={(e) =>
+                                                setGuardian(key, {
+                                                    name: e.target.value,
+                                                })
+                                            }
                                             className={smallInputClass}
                                         />
                                     </label>
-                                    <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                                    <label
+                                        className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                                    >
                                         {t('Phone')}
                                         <input
                                             type="tel"
                                             value={guardians[key].phone}
-                                            onChange={(e) => setGuardian(key, { phone: e.target.value })}
+                                            onChange={(e) =>
+                                                setGuardian(key, {
+                                                    phone: e.target.value,
+                                                })
+                                            }
                                             className={`${smallInputClass} font-mono`}
                                         />
                                     </label>
-                                    <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                                    <label
+                                        className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                                    >
                                         {t('Occupation')}
                                         <input
                                             type="text"
                                             value={guardians[key].occupation}
-                                            onChange={(e) => setGuardian(key, { occupation: e.target.value })}
+                                            onChange={(e) =>
+                                                setGuardian(key, {
+                                                    occupation: e.target.value,
+                                                })
+                                            }
                                             className={smallInputClass}
                                         />
                                     </label>
                                 </fieldset>
                             ))}
                         </div>
-                        <ErrorText message={errors.main_contact ?? errors.guardians ?? guardianError} />
+                        <ErrorText
+                            message={
+                                errors.main_contact ??
+                                errors.guardians ??
+                                guardianError
+                            }
+                        />
                     </section>
                 </div>
 
                 <aside className="flex shrink-0 flex-col gap-5 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     <div className="flex flex-col gap-[14px] rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className={capsLabelClass}>{t('Documents received')}</p>
+                        <p className={capsLabelClass}>
+                            {t('Documents received')}
+                        </p>
                         <div className="flex flex-col gap-[10px]">
                             {asked.map(([key, label]) => (
-                                <label key={key} className="flex cursor-pointer items-center gap-[10px] text-[13px] leading-[18px] text-text">
+                                <label
+                                    key={key}
+                                    className="flex cursor-pointer items-center gap-[10px] text-[13px] leading-[18px] text-text"
+                                >
                                     <input
                                         type="checkbox"
                                         checked={data.documents.includes(key)}
@@ -361,21 +512,34 @@ function NewApplication({ enrolment, levels, religions, documents, canSeePrivate
                             ))}
                         </div>
                         <p className="text-[13px] leading-[18px] text-text-muted">
-                            {t('Tick what the family has handed in. The rest shows as missing and can be ticked later.')}
+                            {t(
+                                'Tick what the family has handed in. The rest shows as missing and can be ticked later.',
+                            )}
                         </p>
                         <div className="flex flex-col gap-2">
-                            <button type="submit" disabled={processing} className={`${solidButtonClass} h-10 text-[14px]`}>
+                            <button
+                                type="submit"
+                                disabled={processing}
+                                className={`${solidButtonClass} h-10 text-[14px]`}
+                            >
                                 {t('Save application')}
                             </button>
-                            <Link href={index.url()} className={outlineButtonClass}>
+                            <Link
+                                href={index.url()}
+                                className={outlineButtonClass}
+                            >
                                 {t('Cancel')}
                             </Link>
                         </div>
                     </div>
                     <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-white p-4">
-                        <p className="text-[13px] leading-4 font-semibold text-text">{t('Not a student yet')}</p>
+                        <p className="text-[13px] leading-4 font-semibold text-text">
+                            {t('Not a student yet')}
+                        </p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            {t('Saving creates no student and no matricule. That happens when the application is admitted.')}
+                            {t(
+                                'Saving creates no student and no matricule. That happens when the application is admitted.',
+                            )}
                         </p>
                     </div>
                 </aside>

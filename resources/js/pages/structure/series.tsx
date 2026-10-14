@@ -36,11 +36,24 @@ interface SeriesProps {
 }
 
 const STREAMS = [
-    { value: 'science', label: 'Science', tone: 'text-science', tint: 'bg-science-tint' },
+    {
+        value: 'science',
+        label: 'Science',
+        tone: 'text-science',
+        tint: 'bg-science-tint',
+    },
     { value: 'arts', label: 'Arts', tone: 'text-arts', tint: 'bg-arts-tint' },
 ];
 
-function Card({ item, tone, tint }: { item: SeriesCard; tone: string; tint: string }) {
+function Card({
+    item,
+    tone,
+    tint,
+}: {
+    item: SeriesCard;
+    tone: string;
+    tint: string;
+}) {
     const complete = item.core.length > 0;
 
     return (
@@ -75,12 +88,17 @@ function Card({ item, tone, tint }: { item: SeriesCard; tone: string; tint: stri
                 <span
                     className={`text-[13px] leading-[18px] ${complete ? 'text-text-muted' : 'text-[#8A5A12]'}`}
                 >
-                    {complete ? item.core.join(', ') : t('No core subjects set yet')}
+                    {complete
+                        ? item.core.join(', ')
+                        : t('No core subjects set yet')}
                 </span>
             </span>
             <span className="flex items-center justify-between border-t border-solid border-border pt-[10px]">
                 <span className="font-mono text-[12px] leading-4 text-text">
-                    {t(':core core · :electives electives', { core: item.core.length, electives: item.electives })}
+                    {t(':core core · :electives electives', {
+                        core: item.core.length,
+                        electives: item.electives,
+                    })}
                 </span>
                 <span className="text-[12px] leading-4 text-text-muted">
                     {t(':students students', { students: item.students })}
@@ -90,7 +108,14 @@ function Card({ item, tone, tint }: { item: SeriesCard; tone: string; tint: stri
     );
 }
 
-function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series }: SeriesProps) {
+function SeriesByLevel({
+    yearLabel,
+    levels,
+    level,
+    enrolled,
+    registered,
+    series,
+}: SeriesProps) {
     const unassigned = Math.max(0, enrolled - registered);
 
     return (
@@ -99,10 +124,20 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
             <StructureHeader
                 trail={[levelsCrumb, { label: t('Series setup') }]}
                 title={t('Levels and series')}
-                tag={t('Structure:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                tag={t('Structure:year_label', {
+                    year_label: yearLabel ? ` · ${yearLabel}` : '',
+                })}
                 meta={
                     level
-                        ? t(':level · :series series · :registered of :enrolled students registered', { level: level.name, series: series.length, registered, enrolled })
+                        ? t(
+                              ':level · :series series · :registered of :enrolled students registered',
+                              {
+                                  level: level.name,
+                                  series: series.length,
+                                  registered,
+                                  enrolled,
+                              },
+                          )
                         : t('no level uses series yet')
                 }
                 action={
@@ -121,8 +156,13 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
 
             {!level ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    {t('Series are for high school levels in the GCE subsystem. Turn “Uses series” on for a level under')}{' '}
-                    <Link href={levelsIndex.url()} className="font-medium text-primary hover:underline">
+                    {t(
+                        'Series are for high school levels in the GCE subsystem. Turn “Uses series” on for a level under',
+                    )}{' '}
+                    <Link
+                        href={levelsIndex.url()}
+                        className="font-medium text-primary hover:underline"
+                    >
                         {t('Levels')}
                     </Link>{' '}
                     {t('and it appears here.')}
@@ -140,8 +180,12 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
                                 return (
                                     <Link
                                         key={option.id}
-                                        href={index.url({ query: { level: option.id } })}
-                                        aria-current={selected ? 'page' : undefined}
+                                        href={index.url({
+                                            query: { level: option.id },
+                                        })}
+                                        aria-current={
+                                            selected ? 'page' : undefined
+                                        }
                                         className={`flex h-8 items-center rounded-full border border-solid px-[14px] text-[13px] leading-4 ${
                                             selected
                                                 ? 'border-primary bg-primary-tint font-semibold text-primary'
@@ -162,19 +206,27 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
 
                     {series.length === 0 && (
                         <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                            {t('No series yet for :level. Add the first one, such as S1 · Science 1.', { level: level.name })}
+                            {t(
+                                'No series yet for :level. Add the first one, such as S1 · Science 1.',
+                                { level: level.name },
+                            )}
                         </p>
                     )}
 
                     {STREAMS.map((stream) => {
-                        const group = series.filter((item) => item.stream === stream.value);
+                        const group = series.filter(
+                            (item) => item.stream === stream.value,
+                        );
 
                         if (group.length === 0) {
                             return null;
                         }
 
                         return (
-                            <section key={stream.value} className="flex flex-col gap-3">
+                            <section
+                                key={stream.value}
+                                className="flex flex-col gap-3"
+                            >
                                 <p className="flex items-baseline gap-3">
                                     <span
                                         className={`text-[12px] leading-4 font-semibold tracking-[0.06em] uppercase ${stream.tone}`}
@@ -182,7 +234,9 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
                                         {t(stream.label)}
                                     </span>
                                     <span className="text-[13px] leading-4 text-text-muted">
-                                        {t(':group series', { group: group.length })}
+                                        {t(':group series', {
+                                            group: group.length,
+                                        })}
                                     </span>
                                 </p>
                                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -202,7 +256,10 @@ function SeriesByLevel({ yearLabel, levels, level, enrolled, registered, series 
                     {unassigned > 0 && (
                         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface px-4 py-3">
                             <p className="text-[14px] leading-[18px] text-text">
-                                {t(':unassigned :level students have no series yet. They are registered in Series Registration.', { unassigned, level: level.name })}
+                                {t(
+                                    ':unassigned :level students have no series yet. They are registered in Series Registration.',
+                                    { unassigned, level: level.name },
+                                )}
                             </p>
                             <Link
                                 href="/series"

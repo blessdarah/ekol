@@ -5,12 +5,14 @@ Paper ERD boards ERD 02 ("School, Year, Term, People"), ERD 03 ("Academic Struct
 ## Goals / Non-Goals
 
 **Goals:**
+
 - `academic_years` table parented under `schools`, referenced by terms, fee plans, school classes and enrolments.
 - `enrolments` carrying per-year class placement with the four-screen lifecycle (admitted → placed → enrolled, plus re-enrolment decisions).
 - All edits in place in the five existing migration files; zero file renumbering.
 - Foundation test rewritten around year + enrolment; pint + Pest green on both pgsql and sqlite.
 
 **Non-Goals:**
+
 - No backfill/data migration (wipe-and-rebuild per instruction).
 - No enrolment UI, no registration bootstrap, no year rollover command (separate changes).
 - No RLS or tenancy middleware changes (`BelongsToSchool` convention extends to the two new models as-is).

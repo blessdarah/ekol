@@ -1,14 +1,22 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { type DragEvent, useState } from 'react';
 import { index as changes } from '@/actions/App/Http/Controllers/TimetableChangeController';
-import { generator, index as overview, publishing } from '@/actions/App/Http/Controllers/TimetableController';
+import {
+    generator,
+    index as overview,
+    publishing,
+} from '@/actions/App/Http/Controllers/TimetableController';
 import {
     destroy as removeSlot,
     show as review,
     store as placeLesson,
     update as updateSlot,
 } from '@/actions/App/Http/Controllers/TimetableReviewController';
-import { ErrorText, LockIcon, capsLabelClass } from '../../components/structure/ui';
+import {
+    ErrorText,
+    LockIcon,
+    capsLabelClass,
+} from '../../components/structure/ui';
 import {
     TickBox,
     TimetableHeader,
@@ -99,17 +107,38 @@ const VIEWS: { key: View; label: string; noun: string }[] = [
 
 const visitOptions = { preserveScroll: true, preserveState: true } as const;
 
-function Review({ phase, version, view, picker, current, days, periods, cells, closed, unplaced, clashes, selected }: ReviewProps) {
+function Review({
+    phase,
+    version,
+    view,
+    picker,
+    current,
+    days,
+    periods,
+    cells,
+    closed,
+    unplaced,
+    clashes,
+    selected,
+}: ReviewProps) {
     const errors = usePage().props.errors as Record<string, string | undefined>;
     const [search, setSearch] = useState('');
     const [dragging, setDragging] = useState(false);
     const readOnly = version.live;
     const noun = VIEWS.find((option) => option.key === view)?.noun ?? 'class';
-    const listed = picker.filter((row) => row.name.toLowerCase().includes(search.trim().toLowerCase()));
+    const listed = picker.filter((row) =>
+        row.name.toLowerCase().includes(search.trim().toLowerCase()),
+    );
 
-    function url(patch: { view?: View; id?: string; slot?: string; lesson?: string }): string {
+    function url(patch: {
+        view?: View;
+        id?: string;
+        slot?: string;
+        lesson?: string;
+    }): string {
         const query: Record<string, string> = { view: patch.view ?? view };
-        const id = 'id' in patch ? patch.id : patch.view ? undefined : current?.id;
+        const id =
+            'id' in patch ? patch.id : patch.view ? undefined : current?.id;
 
         if (id) {
             query.id = id;
@@ -131,13 +160,20 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
         router.get(url(patch), {}, { ...visitOptions, replace: true });
     }
 
-    function change(slotId: string, data: Record<string, string | number | boolean | null>) {
+    function change(
+        slotId: string,
+        data: Record<string, string | number | boolean | null>,
+    ) {
         router.patch(updateSlot.url(slotId), data, visitOptions);
     }
 
     function drop(token: string, weekday: number, periodId: string) {
         if (token.startsWith('lesson:')) {
-            router.post(placeLesson.url(), { lesson_id: token.slice(7), weekday, period_id: periodId }, visitOptions);
+            router.post(
+                placeLesson.url(),
+                { lesson_id: token.slice(7), weekday, period_id: periodId },
+                visitOptions,
+            );
         } else if (token) {
             change(token, { weekday, period_id: periodId });
         }
@@ -149,35 +185,64 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
         drop(event.dataTransfer.getData('text/plain'), weekday, periodId);
     }
 
-    const active = selected ? (selected.type === 'slot' ? selected.id : `lesson:${selected.id}`) : '';
-    const offered = new Set((selected?.moves ?? []).map((move) => `${move.weekday}|${move.period_id}`));
+    const active = selected
+        ? selected.type === 'slot'
+            ? selected.id
+            : `lesson:${selected.id}`
+        : '';
+    const offered = new Set(
+        (selected?.moves ?? []).map(
+            (move) => `${move.weekday}|${move.period_id}`,
+        ),
+    );
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex flex-col gap-5 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('Review the timetable')} />
             <TimetableHeader
                 page="review"
                 phase={phase}
-                trail={[{ label: readOnly ? t('Live timetable') : t('Review') }]}
-                title={readOnly ? t('The live timetable') : t('Review the timetable')}
+                trail={[
+                    { label: readOnly ? t('Live timetable') : t('Review') },
+                ]}
+                title={
+                    readOnly
+                        ? t('The live timetable')
+                        : t('Review the timetable')
+                }
                 meta={
                     readOnly
-                        ? t('Version :number · what the school works from. It changes only through Changes or a new version.', { number: version.number })
-                        : t('Draft version :number · look at it by class, by teacher or by room, and fix what is flagged.', { number: version.number })
+                        ? t(
+                              'Version :number · what the school works from. It changes only through Changes or a new version.',
+                              { number: version.number },
+                          )
+                        : t(
+                              'Draft version :number · look at it by class, by teacher or by room, and fix what is flagged.',
+                              { number: version.number },
+                          )
                 }
                 action={
                     readOnly ? (
                         <>
-                            <Link href={overview.url()} className={quietActionClass}>
+                            <Link
+                                href={overview.url()}
+                                className={quietActionClass}
+                            >
                                 {t('← Overview')}
                             </Link>
-                            <Link href={changes.url()} className={primaryActionClass}>
+                            <Link
+                                href={changes.url()}
+                                className={primaryActionClass}
+                            >
                                 {t('Open Changes')}
                             </Link>
                         </>
                     ) : (
                         <>
-                            <Link href={generator.url()} className={quietActionClass}>
+                            <Link
+                                href={generator.url()}
+                                className={quietActionClass}
+                            >
                                 {t('← Generate again')}
                             </Link>
                             <Link
@@ -200,9 +265,13 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                             <Link
                                 key={option.key}
                                 href={url({ view: option.key })}
-                                aria-current={option.key === view ? 'page' : undefined}
+                                aria-current={
+                                    option.key === view ? 'page' : undefined
+                                }
                                 className={`flex h-7 flex-1 items-center justify-center rounded-[6px] text-[12px] leading-4 ${
-                                    option.key === view ? 'bg-white font-semibold text-text' : 'font-medium text-text-muted hover:text-text'
+                                    option.key === view
+                                        ? 'bg-white font-semibold text-text'
+                                        : 'font-medium text-text-muted hover:text-text'
                                 }`}
                             >
                                 {t(option.label)}
@@ -228,21 +297,29 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                     preserveScroll
                                     aria-current={on ? 'true' : undefined}
                                     className={`flex h-[34px] shrink-0 items-center justify-between gap-2 rounded-md border border-solid px-[10px] ${
-                                        on ? 'border-primary bg-primary-tint' : 'border-transparent hover:bg-surface'
+                                        on
+                                            ? 'border-primary bg-primary-tint'
+                                            : 'border-transparent hover:bg-surface'
                                     }`}
                                 >
-                                    <span className={`min-w-0 truncate text-[13px] leading-4 ${on ? 'font-semibold text-primary' : 'font-medium text-text'}`}>
+                                    <span
+                                        className={`min-w-0 truncate text-[13px] leading-4 ${on ? 'font-semibold text-primary' : 'font-medium text-text'}`}
+                                    >
                                         {row.name}
                                     </span>
                                     {row.meta !== null ? (
-                                        <span className={`shrink-0 font-mono text-[11px] leading-[14px] ${row.clash ? 'text-danger' : row.note ? amberText : 'text-text-muted'}`}>
+                                        <span
+                                            className={`shrink-0 font-mono text-[11px] leading-[14px] ${row.clash ? 'text-danger' : row.note ? amberText : 'text-text-muted'}`}
+                                        >
                                             {row.meta}
                                             {row.note && ` · ${row.note}`}
                                         </span>
                                     ) : row.issues > 0 ? (
                                         <span
                                             className={`flex h-[18px] shrink-0 items-center rounded-full px-[6px] font-mono text-[11px] leading-[14px] ${
-                                                row.clash ? 'bg-danger-tint text-danger' : `bg-warning-tint ${amberText}`
+                                                row.clash
+                                                    ? 'bg-danger-tint text-danger'
+                                                    : `bg-warning-tint ${amberText}`
                                             }`}
                                         >
                                             {row.issues}
@@ -254,15 +331,36 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                             );
                         })}
                         {listed.length === 0 && (
-                            <p className="px-[10px] py-2 text-[13px] leading-4 text-text-muted">{t('No :noun matches.', { noun })}</p>
+                            <p className="px-[10px] py-2 text-[13px] leading-4 text-text-muted">
+                                {t('No :noun matches.', { noun })}
+                            </p>
                         )}
                     </div>
                     <p className="text-[12px] leading-[17px] text-text-muted">
                         {view === 'class'
-                            ? t('Number = things to fix. A dot means the class is clean. :classes in all.', { classes: plural(picker.length, 'class', 'classes') })
+                            ? t(
+                                  'Number = things to fix. A dot means the class is clean. :classes in all.',
+                                  {
+                                      classes: plural(
+                                          picker.length,
+                                          'class',
+                                          'classes',
+                                      ),
+                                  },
+                              )
                             : view === 'teacher'
-                              ? t('Periods placed out of the most each teacher can teach. :teacher in all.', { teacher: plural(picker.length, 'teacher') })
-                              : t('Slots used a week. :room in all.', { room: plural(picker.length, 'room') })}
+                              ? t(
+                                    'Periods placed out of the most each teacher can teach. :teacher in all.',
+                                    {
+                                        teacher: plural(
+                                            picker.length,
+                                            'teacher',
+                                        ),
+                                    },
+                                )
+                              : t('Slots used a week. :room in all.', {
+                                    room: plural(picker.length, 'room'),
+                                })}
                     </p>
                 </div>
 
@@ -274,15 +372,30 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                     ) : (
                         <>
                             <div className="flex flex-wrap items-baseline gap-x-[10px] gap-y-1">
-                                <h2 className="font-display text-[22px] leading-7 font-bold text-text">{t(current.title)}</h2>
-                                <p className="text-[13px] leading-4 text-text-muted">{current.detail}</p>
+                                <h2 className="font-display text-[22px] leading-7 font-bold text-text">
+                                    {t(current.title)}
+                                </h2>
+                                <p className="text-[13px] leading-4 text-text-muted">
+                                    {current.detail}
+                                </p>
                             </div>
 
                             {unplaced.length > 0 && (
                                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-solid border-warning bg-warning-tint px-3 py-2">
                                     <p className="text-[13px] leading-[18px] text-text">
-                                        {t('Not placed:')} {unplaced.map((item) => `${item.subject}, ${plural(item.count, 'lesson')}`).join(' · ')}.
-                                        {readOnly ? '' : t(' Pick one, then a free slot, or drag it onto the grid.')}
+                                        {t('Not placed:')}{' '}
+                                        {unplaced
+                                            .map(
+                                                (item) =>
+                                                    `${item.subject}, ${plural(item.count, 'lesson')}`,
+                                            )
+                                            .join(' · ')}
+                                        .
+                                        {readOnly
+                                            ? ''
+                                            : t(
+                                                  ' Pick one, then a free slot, or drag it onto the grid.',
+                                              )}
                                     </p>
                                     <div className="flex flex-wrap gap-[6px]">
                                         {unplaced.map((item) => (
@@ -291,13 +404,25 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                                 type="button"
                                                 draggable={!readOnly}
                                                 onDragStart={(event) => {
-                                                    event.dataTransfer.setData('text/plain', `lesson:${item.lesson_id}`);
+                                                    event.dataTransfer.setData(
+                                                        'text/plain',
+                                                        `lesson:${item.lesson_id}`,
+                                                    );
                                                     setDragging(true);
                                                 }}
-                                                onDragEnd={() => setDragging(false)}
-                                                onClick={() => select({ lesson: item.lesson_id })}
+                                                onDragEnd={() =>
+                                                    setDragging(false)
+                                                }
+                                                onClick={() =>
+                                                    select({
+                                                        lesson: item.lesson_id,
+                                                    })
+                                                }
                                                 className={`flex h-[26px] items-center rounded-sm border border-solid px-[10px] text-[12px] leading-4 font-semibold text-text ${
-                                                    active === `lesson:${item.lesson_id}` ? 'border-primary bg-primary-tint' : 'border-warning bg-white'
+                                                    active ===
+                                                    `lesson:${item.lesson_id}`
+                                                        ? 'border-primary bg-primary-tint'
+                                                        : 'border-warning bg-white'
                                                 }`}
                                             >
                                                 {item.subject}
@@ -313,12 +438,21 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                     className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-solid border-danger bg-danger-tint px-3 py-2"
                                 >
                                     <p className="text-[13px] leading-[18px] text-text">
-                                        {t('Clash: :title. :detail.', { title: clash.title, detail: clash.detail })}
+                                        {t('Clash: :title. :detail.', {
+                                            title: clash.title,
+                                            detail: clash.detail,
+                                        })}
                                     </p>
                                     {clash.slot_id && (
                                         <button
                                             type="button"
-                                            onClick={() => select({ slot: clash.slot_id ?? undefined })}
+                                            onClick={() =>
+                                                select({
+                                                    slot:
+                                                        clash.slot_id ??
+                                                        undefined,
+                                                })
+                                            }
                                             className="text-[13px] leading-4 font-semibold text-danger hover:underline"
                                         >
                                             {t('Fix it →')}
@@ -333,26 +467,36 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                 <div className="flex min-w-[520px] flex-col gap-1">
                                     <div className="flex gap-1 pl-11">
                                         {days.map((day) => (
-                                            <span key={day.index} className="flex-1 text-center text-[12px] leading-4 font-semibold text-text-muted">
+                                            <span
+                                                key={day.index}
+                                                className="flex-1 text-center text-[12px] leading-4 font-semibold text-text-muted"
+                                            >
                                                 {day.short}
                                             </span>
                                         ))}
                                     </div>
                                     {periods.map((period) =>
                                         period.is_break ? (
-                                            <div key={period.id} className="flex h-5 shrink-0 items-center pl-11">
+                                            <div
+                                                key={period.id}
+                                                className="flex h-5 shrink-0 items-center pl-11"
+                                            >
                                                 <span className="text-[11px] leading-[14px] font-semibold tracking-[0.06em] text-text-muted uppercase">
                                                     {t(period.label)}
                                                 </span>
                                             </div>
                                         ) : (
-                                            <div key={period.id} className="flex gap-1">
+                                            <div
+                                                key={period.id}
+                                                className="flex gap-1"
+                                            >
                                                 <span className="w-10 shrink-0 truncate font-mono text-[11px] leading-[48px] text-text-muted">
                                                     {t(period.label)}
                                                 </span>
                                                 {days.map((day) => {
                                                     const key = `${day.index}|${period.id}`;
-                                                    const here = cells[key] ?? [];
+                                                    const here =
+                                                        cells[key] ?? [];
 
                                                     if (here.length === 0) {
                                                         if (closed[key]) {
@@ -361,28 +505,62 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                                                     key={key}
                                                                     className="flex h-12 min-w-0 flex-1 items-center rounded-[6px] bg-surface px-[7px] text-[11px] leading-[14px] text-text-muted"
                                                                 >
-                                                                    {closed[key]}
+                                                                    {
+                                                                        closed[
+                                                                            key
+                                                                        ]
+                                                                    }
                                                                 </div>
                                                             );
                                                         }
 
-                                                        const open = offered.has(key);
+                                                        const open =
+                                                            offered.has(key);
 
                                                         return (
                                                             <button
                                                                 key={key}
                                                                 type="button"
-                                                                disabled={readOnly || (!active && !dragging)}
-                                                                onClick={() => active && drop(active, day.index, period.id)}
-                                                                onDragOver={(event) => !readOnly && event.preventDefault()}
-                                                                onDrop={(event) => !readOnly && onDrop(event, day.index, period.id)}
+                                                                disabled={
+                                                                    readOnly ||
+                                                                    (!active &&
+                                                                        !dragging)
+                                                                }
+                                                                onClick={() =>
+                                                                    active &&
+                                                                    drop(
+                                                                        active,
+                                                                        day.index,
+                                                                        period.id,
+                                                                    )
+                                                                }
+                                                                onDragOver={(
+                                                                    event,
+                                                                ) =>
+                                                                    !readOnly &&
+                                                                    event.preventDefault()
+                                                                }
+                                                                onDrop={(
+                                                                    event,
+                                                                ) =>
+                                                                    !readOnly &&
+                                                                    onDrop(
+                                                                        event,
+                                                                        day.index,
+                                                                        period.id,
+                                                                    )
+                                                                }
                                                                 className={`flex h-12 min-w-0 flex-1 items-center justify-center rounded-[6px] border border-dashed text-[11px] leading-[14px] ${
                                                                     open
                                                                         ? 'border-success bg-success-tint font-medium text-success'
                                                                         : 'border-border text-text-muted enabled:hover:bg-surface'
                                                                 }`}
                                                             >
-                                                                {open ? t('Move here') : t('Free')}
+                                                                {open
+                                                                    ? t(
+                                                                          'Move here',
+                                                                      )
+                                                                    : t('Free')}
                                                             </button>
                                                         );
                                                     }
@@ -393,53 +571,111 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                                                 key={key}
                                                                 className="flex h-12 min-w-0 flex-1 flex-col overflow-clip rounded-[6px] border-2 border-solid border-danger bg-danger-tint px-[5px] py-[2px]"
                                                             >
-                                                                <span className="text-[10px] leading-3 font-semibold text-danger">{t('Clash')}</span>
-                                                                {here.slice(0, 2).map((cell) => (
-                                                                    <button
-                                                                        key={cell.id}
-                                                                        type="button"
-                                                                        onClick={() => select({ slot: cell.id })}
-                                                                        className={`truncate text-left text-[11px] leading-[14px] text-danger hover:underline ${active === cell.id ? 'font-bold' : 'font-medium'}`}
-                                                                    >
-                                                                        {t(cell.title)} · {t(cell.sub)}
-                                                                    </button>
-                                                                ))}
+                                                                <span className="text-[10px] leading-3 font-semibold text-danger">
+                                                                    {t('Clash')}
+                                                                </span>
+                                                                {here
+                                                                    .slice(0, 2)
+                                                                    .map(
+                                                                        (
+                                                                            cell,
+                                                                        ) => (
+                                                                            <button
+                                                                                key={
+                                                                                    cell.id
+                                                                                }
+                                                                                type="button"
+                                                                                onClick={() =>
+                                                                                    select(
+                                                                                        {
+                                                                                            slot: cell.id,
+                                                                                        },
+                                                                                    )
+                                                                                }
+                                                                                className={`truncate text-left text-[11px] leading-[14px] text-danger hover:underline ${active === cell.id ? 'font-bold' : 'font-medium'}`}
+                                                                            >
+                                                                                {t(
+                                                                                    cell.title,
+                                                                                )}{' '}
+                                                                                ·{' '}
+                                                                                {t(
+                                                                                    cell.sub,
+                                                                                )}
+                                                                            </button>
+                                                                        ),
+                                                                    )}
                                                             </div>
                                                         );
                                                     }
 
                                                     const cell = here[0];
-                                                    const on = active === cell.id;
+                                                    const on =
+                                                        active === cell.id;
 
                                                     return (
                                                         <button
                                                             key={key}
                                                             type="button"
-                                                            draggable={!readOnly}
-                                                            onDragStart={(event) => {
-                                                                event.dataTransfer.setData('text/plain', cell.id);
-                                                                setDragging(true);
+                                                            draggable={
+                                                                !readOnly
+                                                            }
+                                                            onDragStart={(
+                                                                event,
+                                                            ) => {
+                                                                event.dataTransfer.setData(
+                                                                    'text/plain',
+                                                                    cell.id,
+                                                                );
+                                                                setDragging(
+                                                                    true,
+                                                                );
                                                             }}
-                                                            onDragEnd={() => setDragging(false)}
-                                                            onClick={() => select({ slot: cell.id })}
+                                                            onDragEnd={() =>
+                                                                setDragging(
+                                                                    false,
+                                                                )
+                                                            }
+                                                            onClick={() =>
+                                                                select({
+                                                                    slot: cell.id,
+                                                                })
+                                                            }
                                                             aria-pressed={on}
                                                             className={`relative flex h-12 min-w-0 flex-1 flex-col rounded-[6px] px-[7px] py-[5px] text-left ${
                                                                 cell.clash
                                                                     ? 'border-2 border-solid border-danger bg-danger-tint'
                                                                     : `border-l-[3px] border-solid ${
-                                                                          cell.tone === 'science' ? 'border-science bg-science-tint' : 'border-primary bg-primary-tint'
+                                                                          cell.tone ===
+                                                                          'science'
+                                                                              ? 'border-science bg-science-tint'
+                                                                              : 'border-primary bg-primary-tint'
                                                                       }`
                                                             } ${on ? 'outline outline-2 outline-offset-1 outline-text' : ''}`}
                                                         >
-                                                            <span className={`w-full truncate text-[12px] leading-[15px] font-semibold ${cell.clash ? 'text-danger' : 'text-text'}`}>
+                                                            <span
+                                                                className={`w-full truncate text-[12px] leading-[15px] font-semibold ${cell.clash ? 'text-danger' : 'text-text'}`}
+                                                            >
                                                                 {t(cell.title)}
                                                             </span>
-                                                            <span className={`w-full truncate text-[11px] leading-[14px] ${cell.clash ? 'text-danger' : 'text-text-muted'}`}>
-                                                                {cell.clash ? t('Clash · :sub', { sub: cell.sub }) : cell.sub}
+                                                            <span
+                                                                className={`w-full truncate text-[11px] leading-[14px] ${cell.clash ? 'text-danger' : 'text-text-muted'}`}
+                                                            >
+                                                                {cell.clash
+                                                                    ? t(
+                                                                          'Clash · :sub',
+                                                                          {
+                                                                              sub: cell.sub,
+                                                                          },
+                                                                      )
+                                                                    : cell.sub}
                                                             </span>
                                                             {cell.locked && (
                                                                 <span className="absolute top-[5px] right-[5px]">
-                                                                    <LockIcon size={10} />
+                                                                    <LockIcon
+                                                                        size={
+                                                                            10
+                                                                        }
+                                                                    />
                                                                 </span>
                                                             )}
                                                         </button>
@@ -452,11 +688,20 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                             </div>
                             <p className="text-[12px] leading-[17px] text-text-muted">
                                 {view === 'class'
-                                    ? t('Each box is the subject, the teacher and the room.')
+                                    ? t(
+                                          'Each box is the subject, the teacher and the room.',
+                                      )
                                     : view === 'teacher'
-                                      ? t('Each box is the class taught and the room. A grey box is a time this teacher does not work, taken from the staff record.')
-                                      : t('Each box is the lesson and the class using the room. Grey is a time the room is closed, set on the Rooms screen.')}
-                                {!readOnly && t(' Drag a lesson onto a free slot, or pick it and choose where it goes. A padlock marks a locked lesson.')}
+                                      ? t(
+                                            'Each box is the class taught and the room. A grey box is a time this teacher does not work, taken from the staff record.',
+                                        )
+                                      : t(
+                                            'Each box is the lesson and the class using the room. Grey is a time the room is closed, set on the Rooms screen.',
+                                        )}
+                                {!readOnly &&
+                                    t(
+                                        ' Drag a lesson onto a free slot, or pick it and choose where it goes. A padlock marks a locked lesson.',
+                                    )}
                             </p>
                         </>
                     )}
@@ -466,74 +711,145 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                     <p className={capsLabelClass}>{t('Selected lesson')}</p>
                     {!selected ? (
                         <p className="text-[13px] leading-[19px] text-text-muted">
-                            {t('Pick a lesson on the grid to see who teaches it, where, and')} {readOnly ? t('when') : t('where it can move')}.
+                            {t(
+                                'Pick a lesson on the grid to see who teaches it, where, and',
+                            )}{' '}
+                            {readOnly ? t('when') : t('where it can move')}.
                         </p>
                     ) : selected.type === 'lesson' ? (
                         <>
                             <div className="flex flex-col gap-1">
-                                <p className="font-display text-[18px] leading-6 font-bold text-text">{t(selected.title)}</p>
+                                <p className="font-display text-[18px] leading-6 font-bold text-text">
+                                    {t(selected.title)}
+                                </p>
                                 <p className="font-mono text-[12px] leading-4 text-text-muted uppercase">
-                                    {plural(selected.count, 'lesson')} {t('not placed')}{selected.teacher ? ` · ${selected.teacher}` : ''}
+                                    {plural(selected.count, 'lesson')}{' '}
+                                    {t('not placed')}
+                                    {selected.teacher
+                                        ? ` · ${selected.teacher}`
+                                        : ''}
                                 </p>
                             </div>
                             {selected.why && (
                                 <div className="flex flex-col gap-[6px] rounded-md bg-warning-tint px-3 py-[10px]">
-                                    <p className={`text-[13px] leading-4 font-semibold ${amberText}`}>{t('Why it is not placed')}</p>
-                                    <p className="text-[13px] leading-[18px] text-text">{selected.why}.</p>
+                                    <p
+                                        className={`text-[13px] leading-4 font-semibold ${amberText}`}
+                                    >
+                                        {t('Why it is not placed')}
+                                    </p>
+                                    <p className="text-[13px] leading-[18px] text-text">
+                                        {selected.why}.
+                                    </p>
                                 </div>
                             )}
                             <Moves
                                 title={t('Place it in a free slot')}
                                 moves={selected.moves}
-                                empty={t('No slot has the class, the teacher and a room all free. Move another lesson first, or change the teacher on the subject.')}
-                                onPick={(move) => drop(`lesson:${selected.id}`, move.weekday, move.period_id)}
+                                empty={t(
+                                    'No slot has the class, the teacher and a room all free. Move another lesson first, or change the teacher on the subject.',
+                                )}
+                                onPick={(move) =>
+                                    drop(
+                                        `lesson:${selected.id}`,
+                                        move.weekday,
+                                        move.period_id,
+                                    )
+                                }
                             />
                         </>
                     ) : (
                         <>
                             <div className="flex flex-col gap-1">
-                                <p className="font-display text-[18px] leading-6 font-bold text-text">{t(selected.title)}</p>
-                                <p className="font-mono text-[12px] leading-4 text-text-muted">{selected.when}</p>
+                                <p className="font-display text-[18px] leading-6 font-bold text-text">
+                                    {t(selected.title)}
+                                </p>
+                                <p className="font-mono text-[12px] leading-4 text-text-muted">
+                                    {selected.when}
+                                </p>
                             </div>
                             {selected.problems.map((problem) => (
-                                <div key={problem.text} className="flex flex-col gap-[6px] rounded-md bg-danger-tint px-3 py-[10px]">
-                                    <p className="text-[13px] leading-4 font-semibold text-danger">{t(problem.title)}</p>
-                                    <p className="text-[13px] leading-[18px] text-text">{t(problem.text)}</p>
+                                <div
+                                    key={problem.text}
+                                    className="flex flex-col gap-[6px] rounded-md bg-danger-tint px-3 py-[10px]"
+                                >
+                                    <p className="text-[13px] leading-4 font-semibold text-danger">
+                                        {t(problem.title)}
+                                    </p>
+                                    <p className="text-[13px] leading-[18px] text-text">
+                                        {t(problem.text)}
+                                    </p>
                                 </div>
                             ))}
                             <div className="flex flex-col border-t border-solid border-border">
                                 <label className="flex items-center justify-between gap-3 border-b border-solid border-border py-[6px]">
-                                    <span className="text-[13px] leading-4 text-text-muted">{t('Teacher')}</span>
+                                    <span className="text-[13px] leading-4 text-text-muted">
+                                        {t('Teacher')}
+                                    </span>
                                     {readOnly ? (
-                                        <span className="py-[6px] text-[13px] leading-4 text-text">{selected.teacher ?? t('None')}</span>
+                                        <span className="py-[6px] text-[13px] leading-4 text-text">
+                                            {selected.teacher ?? t('None')}
+                                        </span>
                                     ) : (
                                         <select
                                             value={selected.teacher_id ?? ''}
-                                            onChange={(e) => change(selected.id, { staff_id: e.target.value || null })}
+                                            onChange={(e) =>
+                                                change(selected.id, {
+                                                    staff_id:
+                                                        e.target.value || null,
+                                                })
+                                            }
                                             className="h-7 max-w-[170px] rounded-sm bg-transparent text-right text-[13px] leading-4 text-text outline-none focus:bg-surface"
                                         >
-                                            {selected.teachers.map((teacher) => (
-                                                <option key={teacher.id} value={teacher.id} disabled={!teacher.free && teacher.id !== selected.teacher_id}>
-                                                    {teacher.name}
-                                                    {!teacher.free && teacher.id !== selected.teacher_id ? t(' (busy)') : ''}
-                                                </option>
-                                            ))}
+                                            {selected.teachers.map(
+                                                (teacher) => (
+                                                    <option
+                                                        key={teacher.id}
+                                                        value={teacher.id}
+                                                        disabled={
+                                                            !teacher.free &&
+                                                            teacher.id !==
+                                                                selected.teacher_id
+                                                        }
+                                                    >
+                                                        {teacher.name}
+                                                        {!teacher.free &&
+                                                        teacher.id !==
+                                                            selected.teacher_id
+                                                            ? t(' (busy)')
+                                                            : ''}
+                                                    </option>
+                                                ),
+                                            )}
                                         </select>
                                     )}
                                 </label>
                                 <label className="flex items-center justify-between gap-3 border-b border-solid border-border py-[6px]">
-                                    <span className="text-[13px] leading-4 text-text-muted">{t('Room')}</span>
+                                    <span className="text-[13px] leading-4 text-text-muted">
+                                        {t('Room')}
+                                    </span>
                                     {readOnly ? (
-                                        <span className="py-[6px] text-[13px] leading-4 text-text">{selected.room ?? t('None')}</span>
+                                        <span className="py-[6px] text-[13px] leading-4 text-text">
+                                            {selected.room ?? t('None')}
+                                        </span>
                                     ) : (
                                         <select
                                             value={selected.room_id ?? ''}
-                                            onChange={(e) => change(selected.id, { room_id: e.target.value || null })}
+                                            onChange={(e) =>
+                                                change(selected.id, {
+                                                    room_id:
+                                                        e.target.value || null,
+                                                })
+                                            }
                                             className="h-7 max-w-[170px] rounded-sm bg-transparent text-right text-[13px] leading-4 text-text outline-none focus:bg-surface"
                                         >
-                                            <option value="">{t('No room')}</option>
+                                            <option value="">
+                                                {t('No room')}
+                                            </option>
                                             {selected.rooms.map((room) => (
-                                                <option key={room.id} value={room.id}>
+                                                <option
+                                                    key={room.id}
+                                                    value={room.id}
+                                                >
                                                     {room.code}
                                                 </option>
                                             ))}
@@ -546,21 +862,44 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
                                     <Moves
                                         title={t('Move to a free slot')}
                                         moves={selected.moves}
-                                        empty={t('No other slot has the class, the teacher and the room all free.')}
-                                        onPick={(move) => change(selected.id, { weekday: move.weekday, period_id: move.period_id })}
+                                        empty={t(
+                                            'No other slot has the class, the teacher and the room all free.',
+                                        )}
+                                        onPick={(move) =>
+                                            change(selected.id, {
+                                                weekday: move.weekday,
+                                                period_id: move.period_id,
+                                            })
+                                        }
                                     />
-                                    <TickBox checked={selected.locked} onChange={(next) => change(selected.id, { is_locked: next })}>
-                                        {t('Lock this lesson. Generate again keeps it.')}
+                                    <TickBox
+                                        checked={selected.locked}
+                                        onChange={(next) =>
+                                            change(selected.id, {
+                                                is_locked: next,
+                                            })
+                                        }
+                                    >
+                                        {t(
+                                            'Lock this lesson. Generate again keeps it.',
+                                        )}
                                     </TickBox>
                                     <button
                                         type="button"
-                                        onClick={() => router.delete(removeSlot.url(selected.id), visitOptions)}
+                                        onClick={() =>
+                                            router.delete(
+                                                removeSlot.url(selected.id),
+                                                visitOptions,
+                                            )
+                                        }
                                         className={`self-start ${linkClass}`}
                                     >
                                         {t('Take it off the timetable')}
                                     </button>
                                     <p className="text-[12px] leading-[17px] text-text-muted">
-                                        {t('A move is only offered where the class, the teacher and the room are all free.')}
+                                        {t(
+                                            'A move is only offered where the class, the teacher and the room are all free.',
+                                        )}
                                     </p>
                                 </>
                             )}
@@ -572,12 +911,26 @@ function Review({ phase, version, view, picker, current, days, periods, cells, c
     );
 }
 
-function Moves({ title, moves, empty, onPick }: { title: string; moves: Move[]; empty: string; onPick: (move: Move) => void }) {
+function Moves({
+    title,
+    moves,
+    empty,
+    onPick,
+}: {
+    title: string;
+    moves: Move[];
+    empty: string;
+    onPick: (move: Move) => void;
+}) {
     return (
         <div className="flex flex-col gap-[6px]">
-            <p className="text-[13px] leading-4 font-medium text-text">{title}</p>
+            <p className="text-[13px] leading-4 font-medium text-text">
+                {title}
+            </p>
             {moves.length === 0 ? (
-                <p className="text-[13px] leading-[18px] text-text-muted">{empty}</p>
+                <p className="text-[13px] leading-[18px] text-text-muted">
+                    {empty}
+                </p>
             ) : (
                 moves.map((move) => (
                     <button
@@ -586,8 +939,12 @@ function Moves({ title, moves, empty, onPick }: { title: string; moves: Move[]; 
                         onClick={() => onPick(move)}
                         className="flex h-9 shrink-0 items-center justify-between rounded-md border border-solid border-border px-[10px] hover:bg-surface"
                     >
-                        <span className="text-[13px] leading-4 text-text">{t(move.label)}</span>
-                        <span className="text-[12px] leading-4 text-success">{t('All free')}</span>
+                        <span className="text-[13px] leading-4 text-text">
+                            {t(move.label)}
+                        </span>
+                        <span className="text-[12px] leading-4 text-success">
+                            {t('All free')}
+                        </span>
                     </button>
                 ))
             )}

@@ -10,14 +10,18 @@ export default function ForgotPassword() {
             middle={{
                 variant: 'statement',
                 title: t('Locked out? It happens.'),
-                body: t('Self-service password reset arrives in a later change. For now, ask your school administrator to reset your password.'),
+                body: t(
+                    'Self-service password reset arrives in a later change. For now, ask your school administrator to reset your password.',
+                ),
             }}
         >
             <Head title={t('Reset your password')} />
             <div className="flex flex-col gap-6">
                 <Heading
                     title={t('Reset your password')}
-                    sub={t('Password reset is not available yet. Your administrator can set a new password for you.')}
+                    sub={t(
+                        'Password reset is not available yet. Your administrator can set a new password for you.',
+                    )}
                 />
                 <Link
                     href="/login"

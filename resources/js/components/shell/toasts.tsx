@@ -26,8 +26,20 @@ const TONES: Record<ToastData['type'], { mark: string; label: string }> = {
 
 function Mark({ type }: { type: ToastData['type'] }) {
     return (
-        <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${TONES[type].mark}`}>
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <span
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${TONES[type].mark}`}
+        >
+            <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+            >
                 {type === 'success' && <path d="M2.5 6.3l2.3 2.3 4.7-5" />}
                 {type === 'info' && <path d="M6 5.4v3.2M6 3.2v.2" />}
                 {type === 'error' && <path d="M6 2.8v3.6M6 8.8v.2" />}
@@ -57,7 +69,10 @@ export default function Toasts() {
             const id = nextId.current++;
 
             setToasts((current) => [...current.slice(-3), { ...toast, id }]);
-            window.setTimeout(() => dismiss(id), LIFETIME[toast.type] ?? LIFETIME.info);
+            window.setTimeout(
+                () => dismiss(id),
+                LIFETIME[toast.type] ?? LIFETIME.info,
+            );
         },
         [dismiss],
     );
@@ -70,17 +85,27 @@ export default function Toasts() {
 
     useEffect(() => {
         const offError = router.on('error', (event) => {
-            const messages = Object.values(event.detail.errors).flat().filter(Boolean);
+            const messages = Object.values(event.detail.errors)
+                .flat()
+                .filter(Boolean);
 
             if (messages.length > 0) {
                 push({
                     type: 'error',
-                    message: messages.length === 1 ? String(messages[0]) : `${messages[0]} ${t('And :count more to fix.', { count: messages.length - 1 })}`,
+                    message:
+                        messages.length === 1
+                            ? String(messages[0])
+                            : `${messages[0]} ${t('And :count more to fix.', { count: messages.length - 1 })}`,
                 });
             }
         });
         const offNetwork = router.on('networkError', () => {
-            push({ type: 'error', message: t('The server could not be reached. Check your connection and try again.') });
+            push({
+                type: 'error',
+                message: t(
+                    'The server could not be reached. Check your connection and try again.',
+                ),
+            });
         });
 
         return () => {
@@ -103,7 +128,9 @@ export default function Toasts() {
                 >
                     <Mark type={toast.type} />
                     <p className="min-w-0 flex-1 py-[3px] text-[13px] leading-[18px] text-text">
-                        <span className="sr-only">{t(TONES[toast.type].label)}: </span>
+                        <span className="sr-only">
+                            {t(TONES[toast.type].label)}:{' '}
+                        </span>
                         {toast.message}
                     </p>
                     <button
@@ -112,7 +139,16 @@ export default function Toasts() {
                         onClick={() => dismiss(toast.id)}
                         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-sm text-text-muted hover:bg-surface hover:text-text"
                     >
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
+                        <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 10 10"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.6"
+                            strokeLinecap="round"
+                            aria-hidden="true"
+                        >
                             <path d="M2 2l6 6M8 2l-6 6" />
                         </svg>
                     </button>

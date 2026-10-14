@@ -2,7 +2,11 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { publish } from '@/actions/App/Http/Controllers/TimetableController';
 import { show as review } from '@/actions/App/Http/Controllers/TimetableReviewController';
-import { ErrorText, capsLabelClass, fieldLabelClass } from '../../components/structure/ui';
+import {
+    ErrorText,
+    capsLabelClass,
+    fieldLabelClass,
+} from '../../components/structure/ui';
 import {
     TimetableHeader,
     type TimetablePhase,
@@ -16,56 +20,125 @@ import { numberLocale, t } from '../../lib/i18n';
 interface PublishProps {
     phase: TimetablePhase;
     checks: { placed: number; total: number; clashes: number };
-    warnings: { title: string; action: { label: string; href: string } | null }[];
-    diff: { from: number; added: number; added_subjects: string[]; moved: number; teachers: number; classes: number } | null;
+    warnings: {
+        title: string;
+        action: { label: string; href: string } | null;
+    }[];
+    diff: {
+        from: number;
+        added: number;
+        added_subjects: string[];
+        moved: number;
+        teachers: number;
+        classes: number;
+    } | null;
     defaultDate: string;
     termEnds: string;
 }
 
-function Row({ dot, label, children }: { dot?: string; label: ReactNode; children: ReactNode }) {
+function Row({
+    dot,
+    label,
+    children,
+}: {
+    dot?: string;
+    label: ReactNode;
+    children: ReactNode;
+}) {
     return (
         <div className="flex items-center gap-[10px] border-b border-solid border-border py-[10px]">
-            {dot && <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${dot}`} />}
-            <span className="min-w-0 flex-1 text-[14px] leading-[18px] text-text">{label}</span>
+            {dot && (
+                <span
+                    className={`h-[6px] w-[6px] shrink-0 rounded-full ${dot}`}
+                />
+            )}
+            <span className="min-w-0 flex-1 text-[14px] leading-[18px] text-text">
+                {label}
+            </span>
             {children}
         </div>
     );
 }
 
-function Publish({ phase, checks, warnings, diff, defaultDate, termEnds }: PublishProps) {
+function Publish({
+    phase,
+    checks,
+    warnings,
+    diff,
+    defaultDate,
+    termEnds,
+}: PublishProps) {
     const form = useForm({ effective_on: defaultDate });
     const errors = form.errors as Record<string, string | undefined>;
-    const figure = (value: number) => new Intl.NumberFormat(numberLocale()).format(value);
-    const ready = checks.placed === checks.total && checks.clashes === 0 && checks.total > 0;
+    const figure = (value: number) =>
+        new Intl.NumberFormat(numberLocale()).format(value);
+    const ready =
+        checks.placed === checks.total &&
+        checks.clashes === 0 &&
+        checks.total > 0;
     const mono = 'shrink-0 font-mono text-[13px] leading-4';
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex flex-col gap-5 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('Publish version :draft', { draft: phase.draft })} />
             <TimetableHeader
                 page="publish"
                 phase={phase}
                 trail={[{ label: t('Publish') }]}
                 title={t('Publish version :draft', { draft: phase.draft })}
-                meta={t('The school works from the new timetable only after this step.')}
+                meta={t(
+                    'The school works from the new timetable only after this step.',
+                )}
             />
 
             <div className="flex flex-1 flex-col gap-7 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-6">
                     <section className="flex flex-col">
-                        <p className={`border-b border-solid border-border pb-2 ${capsLabelClass}`}>{t('Checks')}</p>
-                        <Row dot={checks.placed === checks.total ? 'bg-success' : 'bg-danger'} label={t('Every lesson is placed')}>
+                        <p
+                            className={`border-b border-solid border-border pb-2 ${capsLabelClass}`}
+                        >
+                            {t('Checks')}
+                        </p>
+                        <Row
+                            dot={
+                                checks.placed === checks.total
+                                    ? 'bg-success'
+                                    : 'bg-danger'
+                            }
+                            label={t('Every lesson is placed')}
+                        >
                             <span className={`${mono} text-text-muted`}>
-                                {t(':placed of :total', { placed: figure(checks.placed), total: figure(checks.total) })}
+                                {t(':placed of :total', {
+                                    placed: figure(checks.placed),
+                                    total: figure(checks.total),
+                                })}
                             </span>
                         </Row>
-                        <Row dot={checks.clashes === 0 ? 'bg-success' : 'bg-danger'} label={t('No teacher or room is in two places at once')}>
-                            <span className={`${mono} text-text-muted`}>{plural(checks.clashes, 'clash', 'clashes')}</span>
+                        <Row
+                            dot={
+                                checks.clashes === 0
+                                    ? 'bg-success'
+                                    : 'bg-danger'
+                            }
+                            label={t(
+                                'No teacher or room is in two places at once',
+                            )}
+                        >
+                            <span className={`${mono} text-text-muted`}>
+                                {plural(checks.clashes, 'clash', 'clashes')}
+                            </span>
                         </Row>
                         {warnings.map((warning) => (
-                            <Row key={warning.title} dot="bg-warning" label={t(warning.title)}>
+                            <Row
+                                key={warning.title}
+                                dot="bg-warning"
+                                label={t(warning.title)}
+                            >
                                 {warning.action && (
-                                    <Link href={warning.action.href} className={`shrink-0 ${linkClass}`}>
+                                    <Link
+                                        href={warning.action.href}
+                                        className={`shrink-0 ${linkClass}`}
+                                    >
                                         {t(warning.action.label)} →
                                     </Link>
                                 )}
@@ -75,24 +148,51 @@ function Publish({ phase, checks, warnings, diff, defaultDate, termEnds }: Publi
 
                     {diff ? (
                         <section className="flex flex-col">
-                            <p className={`border-b border-solid border-border pb-2 ${capsLabelClass}`}>
-                                {t('What changes from version :from', { from: diff.from })}
+                            <p
+                                className={`border-b border-solid border-border pb-2 ${capsLabelClass}`}
+                            >
+                                {t('What changes from version :from', {
+                                    from: diff.from,
+                                })}
                             </p>
-                            <Row label={t('Lessons added:added_subjects', { added_subjects: diff.added_subjects.length > 0 ? `: ${diff.added_subjects.join(', ')}` : '' })}>
-                                <span className={`${mono} text-text`}>+{figure(diff.added)}</span>
-                            </Row>
-                            <Row label={t('Lessons moved to another day or period')}>
-                                <span className={`${mono} text-text`}>{figure(diff.moved)}</span>
-                            </Row>
-                            <Row label={t('Teachers whose week changes · classes whose week changes')}>
+                            <Row
+                                label={t('Lessons added:added_subjects', {
+                                    added_subjects:
+                                        diff.added_subjects.length > 0
+                                            ? `: ${diff.added_subjects.join(', ')}`
+                                            : '',
+                                })}
+                            >
                                 <span className={`${mono} text-text`}>
-                                    {figure(diff.teachers)} · {figure(diff.classes)}
+                                    +{figure(diff.added)}
+                                </span>
+                            </Row>
+                            <Row
+                                label={t(
+                                    'Lessons moved to another day or period',
+                                )}
+                            >
+                                <span className={`${mono} text-text`}>
+                                    {figure(diff.moved)}
+                                </span>
+                            </Row>
+                            <Row
+                                label={t(
+                                    'Teachers whose week changes · classes whose week changes',
+                                )}
+                            >
+                                <span className={`${mono} text-text`}>
+                                    {figure(diff.teachers)} ·{' '}
+                                    {figure(diff.classes)}
                                 </span>
                             </Row>
                         </section>
                     ) : (
                         <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                            {t('This is the first timetable for :term, so there is no earlier version to compare it with.', { term: phase.term })}
+                            {t(
+                                'This is the first timetable for :term, so there is no earlier version to compare it with.',
+                                { term: phase.term },
+                            )}
                         </p>
                     )}
                 </div>
@@ -105,20 +205,28 @@ function Publish({ phase, checks, warnings, diff, defaultDate, termEnds }: Publi
                         }}
                         className="flex flex-col gap-[14px] rounded-lg border border-solid border-border bg-surface p-4"
                     >
-                        <p className={capsLabelClass}>{t('When you publish')}</p>
-                        <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
+                        <p className={capsLabelClass}>
+                            {t('When you publish')}
+                        </p>
+                        <label
+                            className={`flex flex-col gap-[6px] ${fieldLabelClass}`}
+                        >
                             {t('Takes effect on')}
                             <input
                                 type="date"
                                 value={form.data.effective_on}
                                 max={termEnds}
-                                onChange={(e) => form.setData('effective_on', e.target.value)}
+                                onChange={(e) =>
+                                    form.setData('effective_on', e.target.value)
+                                }
                                 className="h-10 w-full rounded-md border border-solid border-border bg-white px-3 font-mono text-[14px] leading-[18px] text-text outline-none focus:border-primary"
                             />
                             <ErrorText message={errors.effective_on} />
                         </label>
                         <p className="text-[13px] leading-[18px] text-text-muted">
-                            {t('Nobody is told automatically. Share the new timetable with teachers and families yourself.')}
+                            {t(
+                                'Nobody is told automatically. Share the new timetable with teachers and families yourself.',
+                            )}
                         </p>
                         <ErrorText message={errors.publish} />
                         <div className="flex flex-col gap-2">
@@ -127,23 +235,39 @@ function Publish({ phase, checks, warnings, diff, defaultDate, termEnds }: Publi
                                 disabled={!ready || form.processing}
                                 className="flex h-10 items-center justify-center rounded-md bg-primary px-3 text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-40"
                             >
-                                {t('Publish version :draft', { draft: phase.draft })}
+                                {t('Publish version :draft', {
+                                    draft: phase.draft,
+                                })}
                             </button>
-                            <Link href={review.url()} className={quietActionClass}>
+                            <Link
+                                href={review.url()}
+                                className={quietActionClass}
+                            >
                                 {t('← Back to the timetable')}
                             </Link>
                         </div>
                         {!ready && (
                             <p className="text-[13px] leading-[18px] text-danger">
-                                {t('Finish the review first: place every lesson and clear every clash.')}
+                                {t(
+                                    'Finish the review first: place every lesson and clear every clash.',
+                                )}
                             </p>
                         )}
                     </form>
                     <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-white p-4">
-                        <p className="text-[13px] leading-4 font-semibold text-text">{t('After publishing')}</p>
+                        <p className="text-[13px] leading-4 font-semibold text-text">
+                            {t('After publishing')}
+                        </p>
                         <p className="text-[13px] leading-[19px] text-text-muted">
                             {t('Version')} {phase.draft} {t('is live')}
-                            {phase.live !== null ? t(' and version :live moves to history', { live: phase.live }) : ''}{t('. Later one-off changes go through Changes, not a new version.')}
+                            {phase.live !== null
+                                ? t(' and version :live moves to history', {
+                                      live: phase.live,
+                                  })
+                                : ''}
+                            {t(
+                                '. Later one-off changes go through Changes, not a new version.',
+                            )}
                         </p>
                     </div>
                 </aside>

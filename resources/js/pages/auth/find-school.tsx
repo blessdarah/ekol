@@ -16,8 +16,12 @@ export default function FindSchool() {
         <AuthLayout
             middle={{
                 variant: 'statement',
-                title: t('Marks, fees and attendance for every class, in one place.'),
-                body: t('Built for secondary schools. Sequences, series and installments included.'),
+                title: t(
+                    'Marks, fees and attendance for every class, in one place.',
+                ),
+                body: t(
+                    'Built for secondary schools. Sequences, series and installments included.',
+                ),
             }}
             topbar={
                 <TopBar
@@ -33,10 +37,16 @@ export default function FindSchool() {
                     <Eyebrow>{t('Sign in')}</Eyebrow>
                     <Heading
                         title={t('Find your school')}
-                        sub={t('Enter your school’s workspace address to continue.')}
+                        sub={t(
+                            'Enter your school’s workspace address to continue.',
+                        )}
                     />
                 </div>
-                <Form action="/login/find-school" method="post" onKeyDown={submitOnEnter}>
+                <Form
+                    action="/login/find-school"
+                    method="post"
+                    onKeyDown={submitOnEnter}
+                >
                     {({ errors, processing }) => (
                         <div className="flex flex-col gap-4">
                             <Field
@@ -63,7 +73,9 @@ export default function FindSchool() {
                         {t('Don’t know your address?')}
                     </p>
                     <p className="text-[13px] text-text-muted">
-                        {t('It is in the welcome email sent when your school registered.')}
+                        {t(
+                            'It is in the welcome email sent when your school registered.',
+                        )}
                     </p>
                 </div>
             </div>

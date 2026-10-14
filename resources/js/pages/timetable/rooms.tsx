@@ -57,9 +57,22 @@ const inputClass =
 
 const GROUPS = [
     { key: 'all', label: 'All', test: () => true },
-    { key: 'classroom', label: 'Classrooms', test: (kind: string) => kind === 'classroom' },
-    { key: 'special', label: 'Laboratories', test: (kind: string) => kind === 'laboratory' || kind === 'computer' },
-    { key: 'other', label: 'Halls and other', test: (kind: string) => !['classroom', 'laboratory', 'computer'].includes(kind) },
+    {
+        key: 'classroom',
+        label: 'Classrooms',
+        test: (kind: string) => kind === 'classroom',
+    },
+    {
+        key: 'special',
+        label: 'Laboratories',
+        test: (kind: string) => kind === 'laboratory' || kind === 'computer',
+    },
+    {
+        key: 'other',
+        label: 'Halls and other',
+        test: (kind: string) =>
+            !['classroom', 'laboratory', 'computer'].includes(kind),
+    },
 ];
 
 function RoomPanel({
@@ -75,12 +88,21 @@ function RoomPanel({
         kind: room?.kind ?? 'classroom',
         capacity: String(room?.capacity ?? 45),
         unavailable: room?.unavailable ?? ([] as Block[]),
-        subject_ids: subjects.filter((subject) => room && subject.room_kind === room.kind).map((subject) => subject.id),
+        subject_ids: subjects
+            .filter((subject) => room && subject.room_kind === room.kind)
+            .map((subject) => subject.id),
     });
     const { data, setData, processing } = form;
     const errors = form.errors as Record<string, string | undefined>;
-    const days = WEEKDAYS.map((name) => t(name)).map((label, index) => ({ label, index })).filter(({ index }) => (schoolDays & (1 << index)) !== 0);
-    const [draft, setDraft] = useState<{ open: boolean; weekday: number; period_id: string; reason: string }>({
+    const days = WEEKDAYS.map((name) => t(name))
+        .map((label, index) => ({ label, index }))
+        .filter(({ index }) => (schoolDays & (1 << index)) !== 0);
+    const [draft, setDraft] = useState<{
+        open: boolean;
+        weekday: number;
+        period_id: string;
+        reason: string;
+    }>({
         open: false,
         weekday: days[0]?.index ?? 0,
         period_id: periods[0]?.id ?? '',
@@ -88,7 +110,9 @@ function RoomPanel({
     });
     const kind = kinds.find((option) => option.value === data.kind);
     const share = room && slotsAWeek > 0 ? room.booked / slotsAWeek : 0;
-    const left = subjects.filter((subject) => !data.subject_ids.includes(subject.id));
+    const left = subjects.filter(
+        (subject) => !data.subject_ids.includes(subject.id),
+    );
 
     function submit() {
         form.transform((values) => {
@@ -113,12 +137,20 @@ function RoomPanel({
             return;
         }
 
-        const exists = data.unavailable.some((block) => block.weekday === draft.weekday && block.period_id === draft.period_id);
+        const exists = data.unavailable.some(
+            (block) =>
+                block.weekday === draft.weekday &&
+                block.period_id === draft.period_id,
+        );
 
         if (!exists) {
             setData('unavailable', [
                 ...data.unavailable,
-                { weekday: draft.weekday, period_id: draft.period_id, reason: draft.reason.trim() || null },
+                {
+                    weekday: draft.weekday,
+                    period_id: draft.period_id,
+                    reason: draft.reason.trim() || null,
+                },
             ]);
         }
 
@@ -134,9 +166,13 @@ function RoomPanel({
             className="flex flex-col gap-4"
         >
             <div className="flex items-center justify-between gap-3">
-                <h2 className="font-display text-[22px] leading-7 font-bold text-text">{room ? room.code : t('New room')}</h2>
+                <h2 className="font-display text-[22px] leading-7 font-bold text-text">
+                    {room ? room.code : t('New room')}
+                </h2>
                 {room && share >= 0.9 && (
-                    <span className={`flex h-[22px] items-center rounded-full bg-warning-tint px-2 text-[12px] leading-4 font-medium ${amberText}`}>
+                    <span
+                        className={`flex h-[22px] items-center rounded-full bg-warning-tint px-2 text-[12px] leading-4 font-medium ${amberText}`}
+                    >
                         {t('Nearly full')}
                     </span>
                 )}
@@ -144,14 +180,25 @@ function RoomPanel({
 
             <label className={`flex flex-col gap-[6px] ${fieldLabelClass}`}>
                 {t('Name')}
-                <input type="text" value={data.code} onChange={(e) => setData('code', e.target.value)} className={inputClass} />
+                <input
+                    type="text"
+                    value={data.code}
+                    onChange={(e) => setData('code', e.target.value)}
+                    className={inputClass}
+                />
                 <ErrorText message={errors.code} />
             </label>
 
             <div className="flex gap-[10px]">
-                <label className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}>
+                <label
+                    className={`flex min-w-0 flex-1 flex-col gap-[6px] ${fieldLabelClass}`}
+                >
                     {t('Type')}
-                    <select value={data.kind} onChange={(e) => setData('kind', e.target.value)} className={inputClass}>
+                    <select
+                        value={data.kind}
+                        onChange={(e) => setData('kind', e.target.value)}
+                        className={inputClass}
+                    >
                         {kinds.map((option) => (
                             <option key={option.value} value={option.value}>
                                 {t(option.label)}
@@ -159,7 +206,9 @@ function RoomPanel({
                         ))}
                     </select>
                 </label>
-                <label className={`flex w-[90px] shrink-0 flex-col gap-[6px] ${fieldLabelClass}`}>
+                <label
+                    className={`flex w-[90px] shrink-0 flex-col gap-[6px] ${fieldLabelClass}`}
+                >
                     {t('Seats')}
                     <input
                         type="number"
@@ -174,10 +223,14 @@ function RoomPanel({
 
             {room && kind?.special && (
                 <div className="flex flex-col gap-2">
-                    <p className={fieldLabelClass}>{t('Lessons that need this kind of room')}</p>
+                    <p className={fieldLabelClass}>
+                        {t('Lessons that need this kind of room')}
+                    </p>
                     <div className="flex flex-wrap gap-[6px]">
                         {subjects
-                            .filter((subject) => data.subject_ids.includes(subject.id))
+                            .filter((subject) =>
+                                data.subject_ids.includes(subject.id),
+                            )
                             .map((subject) => (
                                 <span
                                     key={subject.id}
@@ -186,8 +239,17 @@ function RoomPanel({
                                     {subject.name}
                                     <button
                                         type="button"
-                                        aria-label={t('Remove :subject', { subject: subject.name })}
-                                        onClick={() => setData('subject_ids', data.subject_ids.filter((id) => id !== subject.id))}
+                                        aria-label={t('Remove :subject', {
+                                            subject: subject.name,
+                                        })}
+                                        onClick={() =>
+                                            setData(
+                                                'subject_ids',
+                                                data.subject_ids.filter(
+                                                    (id) => id !== subject.id,
+                                                ),
+                                            )
+                                        }
                                         className="flex size-4 items-center justify-center rounded-sm hover:bg-white"
                                     >
                                         <RemoveIcon tone="#0E4D3A" />
@@ -195,27 +257,40 @@ function RoomPanel({
                                 </span>
                             ))}
                         {data.subject_ids.length === 0 && (
-                            <span className="text-[13px] leading-6 text-text-muted">{t('None yet')}</span>
+                            <span className="text-[13px] leading-6 text-text-muted">
+                                {t('None yet')}
+                            </span>
                         )}
                     </div>
                     {left.length > 0 && (
                         <select
                             aria-label={t('Add a subject')}
                             value=""
-                            onChange={(e) => e.target.value && setData('subject_ids', [...data.subject_ids, e.target.value])}
+                            onChange={(e) =>
+                                e.target.value &&
+                                setData('subject_ids', [
+                                    ...data.subject_ids,
+                                    e.target.value,
+                                ])
+                            }
                             className={`${inputClass} h-8 text-[13px]`}
                         >
                             <option value="">{t('Add a subject…')}</option>
                             {left.map((subject) => (
                                 <option key={subject.id} value={subject.id}>
                                     {subject.name}
-                                    {subject.room_kind ? t(' (moves from another kind)') : ''}
+                                    {subject.room_kind
+                                        ? t(' (moves from another kind)')
+                                        : ''}
                                 </option>
                             ))}
                         </select>
                     )}
                     <p className="text-[12px] leading-[17px] text-text-muted">
-                        {t('This applies to every :to_lower_case, not only this one.', { to_lower_case: kind.label.toLowerCase() })}
+                        {t(
+                            'This applies to every :to_lower_case, not only this one.',
+                            { to_lower_case: kind.label.toLowerCase() },
+                        )}
                     </p>
                 </div>
             )}
@@ -225,16 +300,30 @@ function RoomPanel({
                 {data.unavailable.length > 0 ? (
                     <ul className="flex flex-col gap-1 rounded-md bg-surface px-3 py-2">
                         {data.unavailable.map((block, position) => (
-                            <li key={`${block.weekday}-${block.period_id}`} className="flex items-center justify-between gap-3 py-1">
+                            <li
+                                key={`${block.weekday}-${block.period_id}`}
+                                className="flex items-center justify-between gap-3 py-1"
+                            >
                                 <span className="text-[13px] leading-4 text-text">
                                     {t(WEEKDAYS[block.weekday])}{' '}
-                                    {periods.find((period) => period.id === block.period_id)?.label ?? t('period')}
+                                    {periods.find(
+                                        (period) =>
+                                            period.id === block.period_id,
+                                    )?.label ?? t('period')}
                                     {block.reason ? ` · ${block.reason}` : ''}
                                 </span>
                                 <button
                                     type="button"
                                     aria-label={t('Remove this block')}
-                                    onClick={() => setData('unavailable', data.unavailable.filter((_, index) => index !== position))}
+                                    onClick={() =>
+                                        setData(
+                                            'unavailable',
+                                            data.unavailable.filter(
+                                                (_, index) =>
+                                                    index !== position,
+                                            ),
+                                        )
+                                    }
                                     className="flex size-5 items-center justify-center rounded-sm hover:bg-white"
                                 >
                                     <RemoveIcon tone="#56625C" />
@@ -243,7 +332,9 @@ function RoomPanel({
                         ))}
                     </ul>
                 ) : (
-                    <p className="text-[13px] leading-4 text-text-muted">{t('Open every period.')}</p>
+                    <p className="text-[13px] leading-4 text-text-muted">
+                        {t('Open every period.')}
+                    </p>
                 )}
                 {draft.open ? (
                     <div className="flex flex-col gap-2 rounded-md border border-solid border-border p-3">
@@ -251,7 +342,12 @@ function RoomPanel({
                             <select
                                 aria-label={t('Day')}
                                 value={draft.weekday}
-                                onChange={(e) => setDraft({ ...draft, weekday: Number(e.target.value) })}
+                                onChange={(e) =>
+                                    setDraft({
+                                        ...draft,
+                                        weekday: Number(e.target.value),
+                                    })
+                                }
                                 className={`${inputClass} h-8 text-[13px]`}
                             >
                                 {days.map((day) => (
@@ -263,7 +359,12 @@ function RoomPanel({
                             <select
                                 aria-label={t('Period')}
                                 value={draft.period_id}
-                                onChange={(e) => setDraft({ ...draft, period_id: e.target.value })}
+                                onChange={(e) =>
+                                    setDraft({
+                                        ...draft,
+                                        period_id: e.target.value,
+                                    })
+                                }
                                 className={`${inputClass} h-8 text-[13px]`}
                             >
                                 {periods.map((period) => (
@@ -276,17 +377,25 @@ function RoomPanel({
                         <input
                             type="text"
                             value={draft.reason}
-                            onChange={(e) => setDraft({ ...draft, reason: e.target.value })}
+                            onChange={(e) =>
+                                setDraft({ ...draft, reason: e.target.value })
+                            }
                             placeholder={t('Reason, such as cleaning')}
                             className={`${inputClass} h-8 text-[13px]`}
                         />
                         <div className="flex gap-3">
-                            <button type="button" onClick={addBlock} className={linkClass}>
+                            <button
+                                type="button"
+                                onClick={addBlock}
+                                className={linkClass}
+                            >
                                 {t('Add')}
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setDraft({ ...draft, open: false })}
+                                onClick={() =>
+                                    setDraft({ ...draft, open: false })
+                                }
                                 className="text-[13px] leading-4 text-text-muted hover:underline"
                             >
                                 {t('Cancel')}
@@ -295,8 +404,14 @@ function RoomPanel({
                     </div>
                 ) : (
                     periods.length > 0 && (
-                        <button type="button" onClick={() => setDraft({ ...draft, open: true })} className={`self-start ${linkClass}`}>
-                            {t('Block')} {data.unavailable.length > 0 ? t('another') : 'a'} {t('period')}
+                        <button
+                            type="button"
+                            onClick={() => setDraft({ ...draft, open: true })}
+                            className={`self-start ${linkClass}`}
+                        >
+                            {t('Block')}{' '}
+                            {data.unavailable.length > 0 ? t('another') : 'a'}{' '}
+                            {t('period')}
                         </button>
                     )
                 )}
@@ -304,14 +419,25 @@ function RoomPanel({
             </div>
 
             <div className="flex items-center gap-4">
-                <button type="submit" disabled={processing} className={`${primaryActionClass} h-9 flex-1`}>
+                <button
+                    type="submit"
+                    disabled={processing}
+                    className={`${primaryActionClass} h-9 flex-1`}
+                >
                     {room ? t('Save room') : t('Add room')}
                 </button>
                 {room && (
                     <button
                         type="button"
                         onClick={() => {
-                            if (window.confirm(t('Retire :code? Draft lessons in it keep their time and lose the room.', { code: room.code }))) {
+                            if (
+                                window.confirm(
+                                    t(
+                                        'Retire :code? Draft lessons in it keep their time and lose the room.',
+                                        { code: room.code },
+                                    ),
+                                )
+                            ) {
                                 router.delete(destroy.url(room.id));
                             }
                         }}
@@ -323,7 +449,9 @@ function RoomPanel({
             </div>
             <p className="text-[13px] leading-[19px] text-text-muted">
                 {room
-                    ? t('Retiring a room takes it off the list. Draft lessons that were in it show with no room in Review.')
+                    ? t(
+                          'Retiring a room takes it off the list. Draft lessons that were in it show with no room in Review.',
+                      )
                     : t('A new room can be booked the next time you generate.')}
             </p>
         </form>
@@ -334,24 +462,42 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
     const params = new URLSearchParams(usePage().url.split('?')[1] ?? '');
     const [group, setGroup] = useState('all');
     const adding = params.get('new') === '1';
-    const selected = adding ? null : (rooms.find((room) => room.id === params.get('room')) ?? rooms[0] ?? null);
-    const shown = rooms.filter((room) => GROUPS.find((option) => option.key === group)?.test(room.kind));
+    const selected = adding
+        ? null
+        : (rooms.find((room) => room.id === params.get('room')) ??
+          rooms[0] ??
+          null);
+    const shown = rooms.filter((room) =>
+        GROUPS.find((option) => option.key === group)?.test(room.kind),
+    );
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex flex-col gap-5 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('Rooms')} />
             <TimetableHeader
                 page="setup"
                 phase={phase}
-                trail={[{ label: t('Setup'), href: setup.url() }, { label: t('Rooms') }]}
+                trail={[
+                    { label: t('Setup'), href: setup.url() },
+                    { label: t('Rooms') },
+                ]}
                 title={t('Rooms')}
-                meta={t(':rooms :rooms_a. The timetable books lessons from this list.', { rooms: rooms.length, rooms_a: rooms.length === 1 ? 'room' : 'rooms' })}
+                meta={t(
+                    ':rooms :rooms_a. The timetable books lessons from this list.',
+                    {
+                        rooms: rooms.length,
+                        rooms_a: rooms.length === 1 ? 'room' : 'rooms',
+                    },
+                )}
                 action={
                     <>
                         <Link href={setup.url()} className={quietActionClass}>
                             {t('← Back to Setup')}
                         </Link>
-                        <Link href={index.url({ query: { new: '1' } })} className={primaryActionClass}>
+                        <Link
+                            href={index.url({ query: { new: '1' } })}
+                            className={primaryActionClass}
+                        >
                             <PlusIcon />
                             {t('Add a room')}
                         </Link>
@@ -363,7 +509,9 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
                 <div className="flex min-w-0 flex-1 flex-col gap-3">
                     <div className="flex flex-wrap gap-2">
                         {GROUPS.map((option) => {
-                            const total = rooms.filter((room) => option.test(room.kind)).length;
+                            const total = rooms.filter((room) =>
+                                option.test(room.kind),
+                            ).length;
                             const active = option.key === group;
 
                             return (
@@ -386,50 +534,90 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
 
                     {rooms.length === 0 ? (
                         <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                            {t('No rooms yet. Add the classrooms, laboratories and halls lessons are held in.')}
+                            {t(
+                                'No rooms yet. Add the classrooms, laboratories and halls lessons are held in.',
+                            )}
                         </p>
                     ) : (
                         <div className="overflow-x-auto rounded-lg border border-solid border-border">
                             <div className="flex min-w-[620px] flex-col">
-                                <div className={`flex h-8 items-center gap-4 border-b border-solid border-border bg-surface px-[14px] ${capsLabelClass}`}>
-                                    <span className="w-[86px] shrink-0">{t('Room')}</span>
-                                    <span className="w-[100px] shrink-0">{t('Type')}</span>
-                                    <span className="w-[46px] shrink-0 text-right">{t('Seats')}</span>
-                                    <span className="w-[90px] shrink-0">{t('Home class')}</span>
-                                    <span className="flex-1">{t('Booked a week')}</span>
+                                <div
+                                    className={`flex h-8 items-center gap-4 border-b border-solid border-border bg-surface px-[14px] ${capsLabelClass}`}
+                                >
+                                    <span className="w-[86px] shrink-0">
+                                        {t('Room')}
+                                    </span>
+                                    <span className="w-[100px] shrink-0">
+                                        {t('Type')}
+                                    </span>
+                                    <span className="w-[46px] shrink-0 text-right">
+                                        {t('Seats')}
+                                    </span>
+                                    <span className="w-[90px] shrink-0">
+                                        {t('Home class')}
+                                    </span>
+                                    <span className="flex-1">
+                                        {t('Booked a week')}
+                                    </span>
                                 </div>
                                 {shown.map((room, position) => {
                                     const active = selected?.id === room.id;
-                                    const share = shared.slotsAWeek > 0 ? room.booked / shared.slotsAWeek : 0;
+                                    const share =
+                                        shared.slotsAWeek > 0
+                                            ? room.booked / shared.slotsAWeek
+                                            : 0;
                                     const tight = share >= 0.9;
 
                                     return (
                                         <Link
                                             key={room.id}
-                                            href={index.url({ query: { room: room.id } })}
+                                            href={index.url({
+                                                query: { room: room.id },
+                                            })}
                                             preserveScroll
-                                            aria-current={active ? 'true' : undefined}
+                                            aria-current={
+                                                active ? 'true' : undefined
+                                            }
                                             className={`flex min-h-10 shrink-0 items-center gap-4 border-b border-solid border-border px-[14px] py-1 last:border-b-0 ${
-                                                active ? 'bg-primary-tint' : `hover:bg-surface ${position % 2 === 1 ? 'bg-row-alt' : ''}`
+                                                active
+                                                    ? 'bg-primary-tint'
+                                                    : `hover:bg-surface ${position % 2 === 1 ? 'bg-row-alt' : ''}`
                                             }`}
                                         >
-                                            <span className="w-[86px] shrink-0 text-[14px] leading-[18px] font-semibold text-text">{room.code}</span>
-                                            <span className="w-[100px] shrink-0 truncate text-[13px] leading-4 text-text">
-                                                {t(shared.kinds.find((kind) => kind.value === room.kind)?.label)}
+                                            <span className="w-[86px] shrink-0 text-[14px] leading-[18px] font-semibold text-text">
+                                                {room.code}
                                             </span>
-                                            <span className="w-[46px] shrink-0 text-right font-mono text-[13px] leading-4 text-text">{room.capacity}</span>
-                                            <span className={`w-[90px] shrink-0 truncate text-[13px] leading-4 ${room.home ? 'text-text' : 'text-text-muted'}`}>
+                                            <span className="w-[100px] shrink-0 truncate text-[13px] leading-4 text-text">
+                                                {t(
+                                                    shared.kinds.find(
+                                                        (kind) =>
+                                                            kind.value ===
+                                                            room.kind,
+                                                    )?.label,
+                                                )}
+                                            </span>
+                                            <span className="w-[46px] shrink-0 text-right font-mono text-[13px] leading-4 text-text">
+                                                {room.capacity}
+                                            </span>
+                                            <span
+                                                className={`w-[90px] shrink-0 truncate text-[13px] leading-4 ${room.home ? 'text-text' : 'text-text-muted'}`}
+                                            >
                                                 {room.home ?? t('None')}
                                             </span>
                                             <span className="flex min-w-0 flex-1 items-center gap-2">
                                                 <span className="flex h-1 flex-1 rounded-full bg-border">
                                                     <span
                                                         className={`h-1 rounded-full ${tight ? 'bg-warning' : 'bg-success'}`}
-                                                        style={{ width: `${Math.min(100, Math.round(share * 100))}%` }}
+                                                        style={{
+                                                            width: `${Math.min(100, Math.round(share * 100))}%`,
+                                                        }}
                                                     />
                                                 </span>
-                                                <span className={`w-[44px] shrink-0 text-right font-mono text-[12px] leading-4 ${tight ? amberText : 'text-text'}`}>
-                                                    {room.booked}/{shared.slotsAWeek}
+                                                <span
+                                                    className={`w-[44px] shrink-0 text-right font-mono text-[12px] leading-4 ${tight ? amberText : 'text-text'}`}
+                                                >
+                                                    {room.booked}/
+                                                    {shared.slotsAWeek}
                                                 </span>
                                             </span>
                                         </Link>
@@ -439,13 +627,26 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
                         </div>
                     )}
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        {t('Booked a week counts slots out of')} {shared.slotsAWeek} {t('that lessons use')}{phase.has_draft ? t(' in the draft') : phase.live !== null ? t(' in the live timetable') : ''}{t('. A room above 90% leaves little room to move lessons.')}
+                        {t('Booked a week counts slots out of')}{' '}
+                        {shared.slotsAWeek} {t('that lessons use')}
+                        {phase.has_draft
+                            ? t(' in the draft')
+                            : phase.live !== null
+                              ? t(' in the live timetable')
+                              : ''}
+                        {t(
+                            '. A room above 90% leaves little room to move lessons.',
+                        )}
                     </p>
                 </div>
 
                 <aside className="shrink-0 border-solid border-border lg:w-[340px] lg:border-l lg:pl-7">
                     {selected || adding || rooms.length === 0 ? (
-                        <RoomPanel key={selected?.id ?? 'new'} room={selected} {...shared} />
+                        <RoomPanel
+                            key={selected?.id ?? 'new'}
+                            room={selected}
+                            {...shared}
+                        />
                     ) : null}
                 </aside>
             </div>

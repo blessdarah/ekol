@@ -26,11 +26,17 @@ export interface EnrolmentProgress {
     has_fee_plan: boolean;
 }
 
-export type EnrolmentTab = 'overview' | 'applications' | 're-enrolment' | 'placement' | 'confirm';
+export type EnrolmentTab =
+    | 'overview'
+    | 'applications'
+    | 're-enrolment'
+    | 'placement'
+    | 'confirm';
 
 export const amberText = 'text-[#8A5A12]';
 
-export const linkClass = 'text-[13px] leading-4 font-medium text-primary hover:underline';
+export const linkClass =
+    'text-[13px] leading-4 font-medium text-primary hover:underline';
 
 export const nextStepClass =
     'flex h-[34px] items-center rounded-md border border-solid border-primary bg-white px-4 text-[13px] leading-4 font-semibold text-primary hover:bg-primary-tint';
@@ -45,18 +51,48 @@ export function listed(names: string[]): string {
         return names.join('');
     }
 
-    return t(':slice and :names', { slice: names.slice(0, -1).join(', '), names: names[names.length - 1] });
+    return t(':slice and :names', {
+        slice: names.slice(0, -1).join(', '),
+        names: names[names.length - 1],
+    });
 }
 
-export const STAGES: Record<string, { label: string; pill: string; dot?: string }> = {
-    to_review: { label: 'To review', pill: `bg-warning-tint ${amberText}`, dot: 'bg-warning' },
-    documents: { label: 'Needs documents', pill: `bg-warning-tint ${amberText}`, dot: 'bg-warning' },
-    admitted: { label: 'Admitted', pill: 'bg-success-tint text-success', dot: 'bg-success' },
-    waitlist: { label: 'Waitlist', pill: 'border border-solid border-border bg-surface text-text' },
-    declined: { label: 'Declined', pill: 'border border-solid border-border bg-surface text-text' },
+export const STAGES: Record<
+    string,
+    { label: string; pill: string; dot?: string }
+> = {
+    to_review: {
+        label: 'To review',
+        pill: `bg-warning-tint ${amberText}`,
+        dot: 'bg-warning',
+    },
+    documents: {
+        label: 'Needs documents',
+        pill: `bg-warning-tint ${amberText}`,
+        dot: 'bg-warning',
+    },
+    admitted: {
+        label: 'Admitted',
+        pill: 'bg-success-tint text-success',
+        dot: 'bg-success',
+    },
+    waitlist: {
+        label: 'Waitlist',
+        pill: 'border border-solid border-border bg-surface text-text',
+    },
+    declined: {
+        label: 'Declined',
+        pill: 'border border-solid border-border bg-surface text-text',
+    },
 };
 
-export function StagePill({ stage, small = false }: { stage: string; small?: boolean }) {
+export function StagePill({
+    stage,
+    small = false,
+}: {
+    stage: string;
+    small?: boolean;
+}) {
     const style = STAGES[stage] ?? STAGES.to_review;
 
     return (
@@ -65,13 +101,23 @@ export function StagePill({ stage, small = false }: { stage: string; small?: boo
                 small ? 'h-[22px] px-2' : 'h-6 px-[10px]'
             } ${style.pill}`}
         >
-            {style.dot && <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${style.dot}`} />}
+            {style.dot && (
+                <span
+                    className={`h-[6px] w-[6px] shrink-0 rounded-full ${style.dot}`}
+                />
+            )}
             {t(style.label)}
         </span>
     );
 }
 
-function TabBadge({ tone, children }: { tone: 'todo' | 'quiet' | 'done'; children: ReactNode }) {
+function TabBadge({
+    tone,
+    children,
+}: {
+    tone: 'todo' | 'quiet' | 'done';
+    children: ReactNode;
+}) {
     const tones = {
         todo: `bg-warning-tint ${amberText}`,
         quiet: 'bg-surface text-text-muted',
@@ -79,37 +125,77 @@ function TabBadge({ tone, children }: { tone: 'todo' | 'quiet' | 'done'; childre
     };
 
     return (
-        <span className={`flex h-[18px] items-center rounded-full px-[6px] font-mono text-[11px] leading-[14px] ${tones[tone]}`}>
+        <span
+            className={`flex h-[18px] items-center rounded-full px-[6px] font-mono text-[11px] leading-[14px] ${tones[tone]}`}
+        >
             {children}
         </span>
     );
 }
 
-export function EnrolmentTabs({ active, progress }: { active: EnrolmentTab; progress: EnrolmentProgress }) {
+export function EnrolmentTabs({
+    active,
+    progress,
+}: {
+    active: EnrolmentTab;
+    progress: EnrolmentProgress;
+}) {
     const done = progress.confirmed || progress.ready;
     const badge = (left: number, label: string = count(left)) =>
-        left > 0 ? <TabBadge tone="todo">{label}</TabBadge> : done ? <TabBadge tone="done">{t('done')}</TabBadge> : null;
+        left > 0 ? (
+            <TabBadge tone="todo">{label}</TabBadge>
+        ) : done ? (
+            <TabBadge tone="done">{t('done')}</TabBadge>
+        ) : null;
 
-    const tabs: { key: EnrolmentTab; label: string; href: string; badge?: ReactNode; locked?: boolean }[] = [
+    const tabs: {
+        key: EnrolmentTab;
+        label: string;
+        href: string;
+        badge?: ReactNode;
+        locked?: boolean;
+    }[] = [
         { key: 'overview', label: t('Overview'), href: index.url() },
-        { key: 'applications', label: t('Applications'), href: applications.url(), badge: badge(progress.to_review) },
-        { key: 're-enrolment', label: t('Re-enrolment'), href: reEnrolment.url(), badge: badge(progress.undecided) },
+        {
+            key: 'applications',
+            label: t('Applications'),
+            href: applications.url(),
+            badge: badge(progress.to_review),
+        },
+        {
+            key: 're-enrolment',
+            label: t('Re-enrolment'),
+            href: reEnrolment.url(),
+            badge: badge(progress.undecided),
+        },
         {
             key: 'placement',
             label: t('Class placement'),
             href: placement.url(),
             badge:
                 progress.unplaced > 0 ? (
-                    <TabBadge tone="quiet">{t(':unplaced left', { unplaced: count(progress.unplaced) })}</TabBadge>
+                    <TabBadge tone="quiet">
+                        {t(':unplaced left', {
+                            unplaced: count(progress.unplaced),
+                        })}
+                    </TabBadge>
                 ) : (
                     badge(0)
                 ),
         },
-        { key: 'confirm', label: t('Confirm'), href: confirm.url(), locked: !done },
+        {
+            key: 'confirm',
+            label: t('Confirm'),
+            href: confirm.url(),
+            locked: !done,
+        },
     ];
 
     return (
-        <nav aria-label={t('Enrolment steps')} className="flex flex-wrap gap-x-7 border-b border-solid border-border">
+        <nav
+            aria-label={t('Enrolment steps')}
+            className="flex flex-wrap gap-x-7 border-b border-solid border-border"
+        >
             {tabs.map((tab) => (
                 <Link
                     key={tab.key}
@@ -155,7 +241,13 @@ export function EnrolmentHeader({
                     <Breadcrumbs
                         trail={
                             trail.length > 0
-                                ? [{ label: t('Enrolment'), href: index.url() }, ...trail]
+                                ? [
+                                      {
+                                          label: t('Enrolment'),
+                                          href: index.url(),
+                                      },
+                                      ...trail,
+                                  ]
                                 : [{ label: t('Enrolment') }]
                         }
                     />
@@ -163,7 +255,13 @@ export function EnrolmentHeader({
                         {title}
                     </h1>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">
-                        {status ?? <span className="font-mono uppercase">{t('Enrolment · :year', { year: progress.year })}</span>}
+                        {status ?? (
+                            <span className="font-mono uppercase">
+                                {t('Enrolment · :year', {
+                                    year: progress.year,
+                                })}
+                            </span>
+                        )}
                         {meta && <span>· {meta}</span>}
                     </div>
                 </div>
@@ -192,7 +290,10 @@ export function FillBar({
     const share = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
 
     return (
-        <span className={`flex shrink-0 rounded-full ${over ? 'bg-danger' : track}`} style={{ height }}>
+        <span
+            className={`flex shrink-0 rounded-full ${over ? 'bg-danger' : track}`}
+            style={{ height }}
+        >
             {!over && (
                 <span
                     className={`rounded-full ${tone ?? 'bg-primary'}`}
@@ -203,26 +304,48 @@ export function FillBar({
     );
 }
 
-export function CheckLine({ done, children }: { done: boolean; children: ReactNode }) {
+export function CheckLine({
+    done,
+    children,
+}: {
+    done: boolean;
+    children: ReactNode;
+}) {
     return (
         <li className="flex items-center gap-2 text-[13px] leading-4 text-text">
-            <span className={`h-[6px] w-[6px] shrink-0 rounded-full ${done ? 'bg-success' : 'bg-warning'}`} />
+            <span
+                className={`h-[6px] w-[6px] shrink-0 rounded-full ${done ? 'bg-success' : 'bg-warning'}`}
+            />
             <span>{children}</span>
         </li>
     );
 }
 
 /** A labelled section of bordered rows, as on the review and confirm pages. */
-export function RowSection({ label, children }: { label: string; children: ReactNode }) {
+export function RowSection({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
     return (
         <section className="flex flex-col gap-2">
             <p className={capsLabelClass}>{label}</p>
-            <div className="flex flex-col border-b border-solid border-border">{children}</div>
+            <div className="flex flex-col border-b border-solid border-border">
+                {children}
+            </div>
         </section>
     );
 }
 
-export function NoYear({ currentLabel, setupHref }: { currentLabel: string | null; setupHref: string }) {
+export function NoYear({
+    currentLabel,
+    setupHref,
+}: {
+    currentLabel: string | null;
+    setupHref: string;
+}) {
     return (
         <div className="flex flex-col gap-3 rounded-md bg-surface p-5">
             <p className="text-[14px] leading-[18px] font-semibold text-text">
@@ -230,7 +353,10 @@ export function NoYear({ currentLabel, setupHref }: { currentLabel: string | nul
             </p>
             <p className="max-w-[640px] text-[13px] leading-[19px] text-text">
                 {t('Enrolment prepares the academic year after')}
-                {currentLabel ? ` ${currentLabel}` : t(' the current one')}{t(': new applications, who is promoted or repeats, and which class each student sits in. Add that year in School Setup and it opens here.')}
+                {currentLabel ? ` ${currentLabel}` : t(' the current one')}
+                {t(
+                    ': new applications, who is promoted or repeats, and which class each student sits in. Add that year in School Setup and it opens here.',
+                )}
             </p>
             <Link href={setupHref} className={linkClass}>
                 {t('Open School Setup →')}
