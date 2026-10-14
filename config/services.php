@@ -18,6 +18,12 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
+    'campay' => [
+        'username' => env('CAMPAY_USERNAME'),
+        'password' => env('CAMPAY_PASSWORD'),
+        'base_url' => env('CAMPAY_BASE_URI', 'https://demo.campay.net/api/'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

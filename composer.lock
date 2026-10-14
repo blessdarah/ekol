@@ -4,8 +4,62 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ce0445fe8071d6ed24aafd7b0698e181",
+    "content-hash": "e42b8d2dc47a30c4b5a6bc2264f29c29",
     "packages": [
+        {
+            "name": "blessdarah/php-campay",
+            "version": "v2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/blessdarah/php-campay.git",
+                "reference": "aa8dc6519217a9ffb3afd3c1dd3c07d86cd01259"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/blessdarah/php-campay/zipball/aa8dc6519217a9ffb3afd3c1dd3c07d86cd01259",
+                "reference": "aa8dc6519217a9ffb3afd3c1dd3c07d86cd01259",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "guzzlehttp/guzzle": "^8.2",
+                "php": "^8.4"
+            },
+            "require-dev": {
+                "pestphp/pest": "^5.3",
+                "phpstan/phpstan": "^2.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BlessDarah\\PhpCampay\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bless Darah",
+                    "email": "blessdarahuba@gmail.com",
+                    "role": "developer"
+                }
+            ],
+            "description": "PHP package wrapper for campay momo integration",
+            "keywords": [
+                "Cameroon",
+                "campay",
+                "mobile money",
+                "momo",
+                "payments"
+            ],
+            "support": {
+                "issues": "https://github.com/blessdarah/php-campay/issues",
+                "source": "https://github.com/blessdarah/php-campay/tree/v2.0.0"
+            },
+            "time": "2026-10-14T09:53:03+00:00"
+        },
         {
             "name": "brick/math",
             "version": "1.0.0",

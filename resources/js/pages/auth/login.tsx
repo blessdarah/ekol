@@ -15,17 +15,21 @@ import { useT } from '../../lib/i18n';
 function initialsOf(name: string): string {
     const parts = name.split(/\s+/).filter(Boolean);
 
-    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '··';
+    return (
+        ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '··'
+    );
 }
 
 export default function Login({
     school,
     address,
     switchUrl,
+    parentsUrl,
 }: {
     school: { name: string; slug: string };
     address: string;
     switchUrl: string;
+    parentsUrl: string;
 }) {
     const t = useT();
 
@@ -51,7 +55,9 @@ export default function Login({
                     <Eyebrow>{t('Sign in')}</Eyebrow>
                     <Heading
                         title={t('Welcome back')}
-                        sub={t('Sign in to manage :school.', { school: school.name })}
+                        sub={t('Sign in to manage :school.', {
+                            school: school.name,
+                        })}
                     />
                 </div>
                 <Form action="/login" method="post" onKeyDown={submitOnEnter}>
@@ -105,12 +111,32 @@ export default function Login({
                         </div>
                     )}
                 </Form>
+                <a
+                    href={parentsUrl}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-solid border-border bg-surface px-4 py-3 hover:border-primary"
+                >
+                    <span className="flex flex-col gap-[2px]">
+                        <span className="text-[14px] font-semibold text-text">
+                            {t('Parent services')}
+                        </span>
+                        <span className="text-[13px] text-text-muted">
+                            {t(
+                                'Pay fees by mobile money and follow attendance. No account needed.',
+                            )}
+                        </span>
+                    </span>
+                    <span aria-hidden className="text-[16px] text-text-muted">
+                        →
+                    </span>
+                </a>
                 <div className="flex flex-col gap-1 border-t border-border pt-4">
                     <p className="text-[14px] font-semibold text-text">
                         {t('Teacher or staff member?')}
                     </p>
                     <p className="text-[13px] text-text-muted">
-                        {t('Use the invite link your administrator sent you to set your password. After that you sign in here.')}
+                        {t(
+                            'Use the invite link your administrator sent you to set your password. After that you sign in here.',
+                        )}
                     </p>
                 </div>
             </div>

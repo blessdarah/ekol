@@ -15,6 +15,9 @@ use App\Http\Controllers\GradingController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MarkSheetController;
+use App\Http\Controllers\MobilePaymentController;
+use App\Http\Controllers\ParentController;
+use App\Http\Controllers\PayController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SeriesRegistrationController;
 use App\Http\Controllers\SetupController;
@@ -60,6 +63,8 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
     Route::get('/invitation/{token}', [StaffInvitationController::class, 'show'])->name('invitation.show');
     Route::post('/invitation/{token}', [StaffInvitationController::class, 'store'])
         ->middleware('throttle:10,1')->name('invitation.store');
+
+    Route::get('/pay', [ParentController::class, 'fromSchool'])->name('pay');
 
     Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
@@ -212,6 +217,8 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::post('/invoices/{invoice}/exemption', [FeeController::class, 'exempt'])->name('fees.exemption');
             Route::delete('/invoices/{invoice}/exemption', [FeeController::class, 'removeExemption'])->name('fees.exemption.remove');
             Route::get('/payments/{payment}/receipt', [FeeController::class, 'receipt'])->name('fees.receipt');
+            Route::get('/mobile-money', [MobilePaymentController::class, 'index'])->name('fees.mobile');
+            Route::post('/mobile-money/{payment}/check', [MobilePaymentController::class, 'check'])->name('fees.mobile.check');
         });
 
         Route::group(['prefix' => 'assessments'], function () {
@@ -245,6 +252,26 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
 
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     });
+});
+
+/*
+ * Parent services live on the main address: parents do not know their
+ * school's subdomain. They find the school, then prove the child is
+ * theirs with the matricule and the phone the school has.
+ */
+Route::group(['prefix' => 'parents', 'middleware' => SetLocale::class], function () {
+    Route::get('/', [ParentController::class, 'show'])->name('parents');
+    Route::get('/schools', [ParentController::class, 'schools'])->middleware('throttle:60,1')->name('parents.schools');
+    Route::post('/', [ParentController::class, 'find'])->middleware('throttle:10,1')->name('parents.find');
+    Route::get('/home', [ParentController::class, 'home'])->name('parents.home');
+    Route::get('/attendance', [ParentController::class, 'attendance'])->name('parents.attendance');
+    Route::post('/leave', [ParentController::class, 'leave'])->name('parents.leave');
+    Route::get('/pay', [PayController::class, 'amount'])->name('parents.pay');
+    Route::post('/pay', [PayController::class, 'chooseAmount'])->name('parents.pay.amount');
+    Route::get('/pay/phone', [PayController::class, 'phone'])->name('parents.pay.phone');
+    Route::post('/pay/phone', [PayController::class, 'store'])->middleware('throttle:6,1')->name('parents.pay.store');
+    Route::get('/pay/requests/{payment}', [PayController::class, 'status'])->name('parents.pay.status');
+    Route::post('/pay/requests/{payment}/retry', [PayController::class, 'retry'])->middleware('throttle:6,1')->name('parents.pay.retry');
 });
 
 Route::group(['prefix' => 'register', 'middleware' => SetLocale::class], function () {

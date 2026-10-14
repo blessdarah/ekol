@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use BlessDarah\PhpCampay\Campay;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(Campay::class, fn (): Campay => new Campay(
+            (string) config('services.campay.username'),
+            (string) config('services.campay.password'),
+            (string) config('services.campay.base_url'),
+        ));
     }
 
     /**
