@@ -17,13 +17,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cookie;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
-use Throwable;
 use Undjike\CamooNotificationChannel\CamooChannel;
 
 /**
@@ -298,8 +296,9 @@ class ParentController extends Controller
     }
 
     /**
-     * Text a new code to the guardian phone and keep its hash in the
-     * session. A number gets a few codes an hour at most.
+     * Queue a new code for the guardian phone and keep its hash in the
+     * session, so the page answers without waiting on the SMS gateway.
+     * A number gets a few codes an hour at most.
      */
     protected function sendCode(Request $request, School $school, string $studentId, string $phone, string $errorField = 'matricule'): void
     {
@@ -313,13 +312,8 @@ class ParentController extends Controller
 
         $code = (string) random_int(100000, 999999);
 
-        try {
-            Notification::route(CamooChannel::class, '+237'.$phone)->notify(new ParentVerificationCode($code, $school->name));
-        } catch (Throwable $exception) {
-            Log::warning('Parent verification SMS failed.', ['school' => $school->id, 'error' => $exception->getMessage()]);
-
-            throw ValidationException::withMessages([$errorField => __('We could not send the code by SMS. Try again in a few minutes.')]);
-        }
+        Notification::route(CamooChannel::class, '+237'.$phone)
+            ->notify((new ParentVerificationCode($code, $school->name, $school->id))->locale(app()->getLocale()));
 
         RateLimiter::hit($limit, 3600);
         $request->session()->put('parent_pending', [

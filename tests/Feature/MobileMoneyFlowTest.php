@@ -22,6 +22,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
@@ -174,7 +175,8 @@ function lastCode(): string
     Notification::assertSentOnDemand(ParentVerificationCode::class, function (ParentVerificationCode $notification, array $channels, AnonymousNotifiable $notifiable) use (&$code) {
         $code = $notification->code;
 
-        return $notifiable->routes[CamooChannel::class] === '+237677123456';
+        return $notification instanceof ShouldQueue
+            && $notifiable->routes[CamooChannel::class] === '+237677123456';
     });
 
     return (string) $code;

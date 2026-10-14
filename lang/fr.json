@@ -2602,7 +2602,6 @@
     "Wait a minute before asking for another code.": "Attendez une minute avant de demander un autre code.",
     "A new code is on its way.": "Un nouveau code est en route.",
     "Too many codes were sent to this number. Try again in :minutes minutes.": "Trop de codes ont été envoyés à ce numéro. Réessayez dans :minutes minutes.",
-    "We could not send the code by SMS. Try again in a few minutes.": "Nous n’avons pas pu envoyer le code par SMS. Réessayez dans quelques minutes.",
     "Enter the 6-digit code from the SMS.": "Saisissez le code à 6 chiffres reçu par SMS.",
     ":code is your Campus code for :school parent services. It expires in 10 minutes. Never share it.": ":code est votre code Campus pour l’espace parents de :school. Il expire dans 10 minutes. Ne le partagez jamais.",
     "We check the matricule against the phone number the school has for you, then text a code to that phone.": "Nous vérifions le matricule avec le numéro que l’école a pour vous, puis envoyons un code par SMS à ce numéro.",
