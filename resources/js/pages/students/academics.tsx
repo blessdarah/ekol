@@ -3,7 +3,9 @@ import { show } from '@/actions/App/Http/Controllers/StudentAcademicsController'
 import { edit } from '@/actions/App/Http/Controllers/StudentController';
 import { reports } from '@/actions/App/Http/Controllers/TermResultController';
 import { capsLabelClass, outlineButtonClass } from '../../components/structure/ui';
-import { StudentHeader, StudentTabs, shortDate } from '../../components/students/ui';
+import {
+    type StudentNeighbours,
+    StudentSteps, StudentHeader, StudentTabs, shortDate } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { ordinalOf, t } from '../../lib/i18n';
 
@@ -19,6 +21,7 @@ interface Column {
 }
 
 interface AcademicsProps {
+    neighbours?: StudentNeighbours;
     canOpenReports: boolean;
     student: {
         id: string;
@@ -61,7 +64,7 @@ function short(name: string): string {
     return name.replace('Sequence', 'Seq').replace(/^Term \d+ exam$/i, 'Exam');
 }
 
-function Academics({ canOpenReports, student, terms, term, columns, focus, subjects, coefficients, remark, termAverage, termComplete }: AcademicsProps) {
+function Academics({ neighbours, canOpenReports, student, terms, term, columns, focus, subjects, coefficients, remark, termAverage, termComplete }: AcademicsProps) {
     const readable = (column: Column) => ['marks_open', 'marks_closed', 'published'].includes(column.state);
     const open = columns.find((column) => column.state === 'marks_open');
     const coming = columns.find((column) => column.state === 'scheduled');
@@ -279,6 +282,7 @@ function Academics({ canOpenReports, student, terms, term, columns, focus, subje
                     </aside>
                 </div>
             )}
+            <StudentSteps active="academics" neighbours={neighbours} />
         </div>
     );
 }

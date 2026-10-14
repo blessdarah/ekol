@@ -2470,5 +2470,10 @@
     "← Newer": "← Plus récents",
     "← Overview": "← Vue d’ensemble",
     "← Previous": "← Précédent",
-    "−:exempted of :gross": "−:exempted sur :gross"
+    "−:exempted of :gross": "−:exempted sur :gross",
+    ":position of :total students": ":position sur :total élèves",
+    "First student": "Premier élève",
+    "Last student": "Dernier élève",
+    "Other students": "Autres élèves",
+    "Previous": "Précédent"
 }

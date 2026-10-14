@@ -106,6 +106,13 @@ export function StudentHeader({
     );
 }
 
+export interface StudentNeighbours {
+    previous: { id: string; name: string; class: string | null } | null;
+    next: { id: string; name: string; class: string | null } | null;
+    position: number;
+    total: number;
+}
+
 /** The tabs of one student record. */
 export function StudentTabs({
     studentId,
@@ -153,6 +160,63 @@ export function StudentTabs({
                         {t(tab.label)}
                     </span>
                 ),
+            )}
+        </nav>
+    );
+}
+
+/**
+ * The steps to the students before and after this one, in roster
+ * order, at the foot of a record. Each lands on the same tab.
+ */
+export function StudentSteps({
+    active,
+    overview = true,
+    neighbours,
+}: {
+    active: 'overview' | 'academics' | 'fees' | 'attendance';
+    overview?: boolean;
+    neighbours?: StudentNeighbours;
+}) {
+    const hrefs = {
+        overview: overview ? show.url : null,
+        academics: overview ? academicsTab.url : null,
+        fees: studentTab.url,
+        attendance: overview ? attendanceTab.url : null,
+    };
+    const hrefOf = (id: string) => (hrefs[active] ?? show.url)(id);
+    const stepClass =
+        'flex h-9 min-w-0 items-center gap-2 rounded-md border border-solid border-border bg-white px-3 text-[13px] leading-4 font-medium text-text hover:bg-surface';
+    const endClass = 'flex h-9 items-center gap-2 rounded-md border border-dashed border-border px-3 text-[13px] leading-4 text-text-muted';
+
+    if (!neighbours || neighbours.total < 2) {
+        return null;
+    }
+
+    return (
+        <nav aria-label={t('Other students')} className="flex items-center justify-between gap-3 border-t border-solid border-border pt-5">
+            {neighbours.previous ? (
+                <Link href={hrefOf(neighbours.previous.id)} rel="prev" className={stepClass} title={neighbours.previous.name}>
+                    <span aria-hidden="true">←</span>
+                    <span className="hidden text-text-muted sm:inline">{t('Previous')}</span>
+                    <span className="truncate">{neighbours.previous.name}</span>
+                    {neighbours.previous.class && <span className="hidden shrink-0 text-text-muted lg:inline">· {neighbours.previous.class}</span>}
+                </Link>
+            ) : (
+                <span className={endClass}>{t('First student')}</span>
+            )}
+            <span className="hidden shrink-0 font-mono text-[12px] leading-4 text-text-muted md:inline">
+                {t(':position of :total students', { position: neighbours.position, total: neighbours.total })}
+            </span>
+            {neighbours.next ? (
+                <Link href={hrefOf(neighbours.next.id)} rel="next" className={stepClass} title={neighbours.next.name}>
+                    <span className="truncate">{neighbours.next.name}</span>
+                    {neighbours.next.class && <span className="hidden shrink-0 text-text-muted lg:inline">· {neighbours.next.class}</span>}
+                    <span className="hidden text-text-muted sm:inline">{t('Next')}</span>
+                    <span aria-hidden="true">→</span>
+                </Link>
+            ) : (
+                <span className={endClass}>{t('Last student')}</span>
             )}
         </nav>
     );

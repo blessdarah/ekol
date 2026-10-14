@@ -3,13 +3,16 @@ import { useState } from 'react';
 import { excuse } from '@/actions/App/Http/Controllers/StudentAttendanceController';
 import { edit } from '@/actions/App/Http/Controllers/StudentController';
 import { ErrorText, capsLabelClass, outlineButtonClass } from '../../components/structure/ui';
-import { StudentHeader, StudentTabs, shortDate } from '../../components/students/ui';
+import {
+    type StudentNeighbours,
+    StudentSteps, StudentHeader, StudentTabs, shortDate } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
 type DayState = 'present' | 'late' | 'absent' | 'excused';
 
 interface AttendanceProps {
+    neighbours?: StudentNeighbours;
     canExcuse: boolean;
     termLabel: string | null;
     student: { id: string; name: string; matricule: string; class: string | null; level: string | null; admitted_year: string };
@@ -103,7 +106,7 @@ function Excuse({ studentId, recordId, onClose }: { studentId: string; recordId:
     );
 }
 
-function StudentAttendance({ canExcuse, termLabel, student, stats, term, schoolDays, days, events, unexcused, alertAt }: AttendanceProps) {
+function StudentAttendance({ neighbours, canExcuse, termLabel, student, stats, term, schoolDays, days, events, unexcused, alertAt }: AttendanceProps) {
     const [excusing, setExcusing] = useState<string | null>(null);
     const weeks = term ? weeksOf(term, schoolDays) : [];
     const shown = WEEKDAYS.filter((_, index) => (schoolDays & (1 << index)) !== 0);
@@ -246,6 +249,7 @@ function StudentAttendance({ canExcuse, termLabel, student, stats, term, schoolD
                     </div>
                 </aside>
             </div>
+            <StudentSteps active="attendance" neighbours={neighbours} />
         </div>
     );
 }

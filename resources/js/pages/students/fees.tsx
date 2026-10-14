@@ -11,7 +11,9 @@ import {
 import { edit } from '@/actions/App/Http/Controllers/StudentController';
 import { amberText, dayMonth, figure } from '../../components/fees/ui';
 import { ErrorText, capsLabelClass, outlineButtonClass } from '../../components/structure/ui';
-import { StudentHeader, StudentTabs } from '../../components/students/ui';
+import {
+    type StudentNeighbours,
+    StudentSteps, StudentHeader, StudentTabs } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
@@ -35,6 +37,7 @@ interface Exemption {
 }
 
 interface StudentFeesProps {
+    neighbours?: StudentNeighbours;
     currency: string;
     canManageFees: boolean;
     canManageStudents: boolean;
@@ -243,7 +246,7 @@ function ExemptionCard({
     );
 }
 
-function StudentFees({ currency, canManageFees, canManageStudents, student, invoices, invoice }: StudentFeesProps) {
+function StudentFees({ neighbours, currency, canManageFees, canManageStudents, student, invoices, invoice }: StudentFeesProps) {
     const dueNow = invoice ? invoice.overdue : 0;
 
     return (
@@ -501,6 +504,7 @@ function StudentFees({ currency, canManageFees, canManageStudents, student, invo
                     </aside>
                 </div>
             )}
+            <StudentSteps active="fees" overview={canManageStudents} neighbours={neighbours} />
         </div>
     );
 }

@@ -59,6 +59,7 @@ class StudentAttendanceController extends Controller
         $unexcused = $records->where('status', AttendanceStatus::Absent)->count();
 
         return Inertia::render('students/attendance', [
+            'neighbours' => StudentController::neighbours($school, $target),
             'canExcuse' => true,
             'termLabel' => $term?->label,
             'student' => [
