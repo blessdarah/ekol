@@ -67,7 +67,9 @@ function Progress({ step }: { step: number }) {
             {STEPS.map((label, position) => (
                 <li key={label} className="flex items-center gap-3">
                     {position > 0 && (
-                        <span className={`h-px w-12 shrink-0 ${position <= step ? 'bg-primary' : 'bg-border'}`} />
+                        <span
+                            className={`h-px w-12 shrink-0 ${position <= step ? 'bg-primary' : 'bg-border'}`}
+                        />
                     )}
                     <span className="flex items-center gap-2">
                         <span
@@ -81,20 +83,32 @@ function Progress({ step }: { step: number }) {
                         >
                             {position < step ? (
                                 <svg width="12" height="12" viewBox="0 0 12 12">
-                                    <path d="M2.6 6.2 4.9 8.5 9.4 3.9" fill="none" stroke="#0E4D3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path
+                                        d="M2.6 6.2 4.9 8.5 9.4 3.9"
+                                        fill="none"
+                                        stroke="#0E4D3A"
+                                        strokeWidth="1.8"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    />
                                 </svg>
                             ) : (
                                 position + 1
                             )}
                         </span>
-                        <span className={`text-[13px] leading-4 ${position <= step ? 'font-semibold text-text' : 'text-text-muted'}`}>
+                        <span
+                            className={`text-[13px] leading-4 ${position <= step ? 'font-semibold text-text' : 'text-text-muted'}`}
+                        >
                             {label}
                         </span>
                     </span>
                 </li>
             ))}
             <li className="ml-auto text-[13px] leading-4 text-text-muted">
-                {t('Step :step of :steps', { step: step + 1, steps: STEPS.length })}
+                {t('Step :step of :steps', {
+                    step: step + 1,
+                    steps: STEPS.length,
+                })}
             </li>
         </ol>
     );
@@ -103,8 +117,19 @@ function Progress({ step }: { step: number }) {
 function FileBar({ file, note }: { file: FileInfo; note: string }) {
     return (
         <div className="flex items-center gap-3 rounded-md bg-surface px-4 py-3">
-            <svg width="18" height="18" viewBox="0 0 24 24" className="shrink-0">
-                <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5" fill="none" stroke="#101915" strokeWidth="1.8" strokeLinejoin="round" />
+            <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                className="shrink-0"
+            >
+                <path
+                    d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5"
+                    fill="none"
+                    stroke="#101915"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                />
             </svg>
             <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate font-mono text-[13px] leading-[18px] text-text">
@@ -135,25 +160,36 @@ function UploadStep({ hasYear }: { hasYear: boolean }) {
 
     return (
         <div className="flex flex-col gap-8 lg:flex-row">
-            <form onSubmit={submit} className="flex min-w-0 flex-1 flex-col gap-4">
+            <form
+                onSubmit={submit}
+                className="flex min-w-0 flex-1 flex-col gap-4"
+            >
                 <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-dashed border-border bg-surface px-6 py-10 text-center hover:border-primary">
                     <span className="text-[14px] leading-[18px] font-semibold text-text">
-                        {form.data.file ? form.data.file.name : t('Choose a CSV file')}
+                        {form.data.file
+                            ? form.data.file.name
+                            : t('Choose a CSV file')}
                     </span>
                     <span className="text-[13px] leading-[19px] text-text-muted">
-                        {t('One row per student, with a header line. Up to 5,000 rows and 2 MB.')}
+                        {t(
+                            'One row per student, with a header line. Up to 5,000 rows and 2 MB.',
+                        )}
                     </span>
                     <input
                         type="file"
                         accept=".csv,text/csv"
                         className="sr-only"
-                        onChange={(e) => form.setData('file', e.target.files?.[0] ?? null)}
+                        onChange={(e) =>
+                            form.setData('file', e.target.files?.[0] ?? null)
+                        }
                     />
                 </label>
                 <ErrorText message={form.errors.file} />
                 {!hasYear && (
                     <p className="text-[13px] leading-[19px] text-warning">
-                        {t('Students are placed in classes of an academic year. Make a year active in School Setup before importing.')}
+                        {t(
+                            'Students are placed in classes of an academic year. Make a year active in School Setup before importing.',
+                        )}
                     </p>
                 )}
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -169,7 +205,9 @@ function UploadStep({ hasYear }: { hasYear: boolean }) {
                         </Link>
                         <button
                             type="submit"
-                            disabled={!form.data.file || form.processing || !hasYear}
+                            disabled={
+                                !form.data.file || form.processing || !hasYear
+                            }
                             className={solidButtonClass}
                         >
                             {t('Upload and match columns')}
@@ -184,7 +222,9 @@ function UploadStep({ hasYear }: { hasYear: boolean }) {
                     </p>
                     <ul className="flex flex-col gap-2 text-[13px] leading-[18px] text-text-muted">
                         <li>{t('Full name, surname first')}</li>
-                        <li>{t('Date of birth, as 2010-03-14 or 14/03/2010')}</li>
+                        <li>
+                            {t('Date of birth, as 2010-03-14 or 14/03/2010')}
+                        </li>
                         <li>{t('Gender: boy or girl')}</li>
                         <li>{t('Class, spelled as on the Levels page')}</li>
                         <li>{t('A guardian’s name and phone number')}</li>
@@ -195,7 +235,9 @@ function UploadStep({ hasYear }: { hasYear: boolean }) {
                         {t('Using Excel or Google Sheets?')}
                     </p>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        {t('Save or download the sheet as CSV first. Excel files cannot be read directly yet.')}
+                        {t(
+                            'Save or download the sheet as CSV first. Excel files cannot be read directly yet.',
+                        )}
                     </p>
                 </div>
             </aside>
@@ -216,7 +258,10 @@ function MatchStep({
 }) {
     const [chosen, setChosen] = useState<Record<string, string>>(() =>
         Object.fromEntries(
-            fields.map((field) => [field.key, guess[field.key]?.toString() ?? '']),
+            fields.map((field) => [
+                field.key,
+                guess[field.key]?.toString() ?? '',
+            ]),
         ),
     );
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -232,7 +277,9 @@ function MatchStep({
                 mapping: Object.fromEntries(
                     fields.map((field) => [
                         field.key,
-                        chosen[field.key] === '' ? null : Number(chosen[field.key]),
+                        chosen[field.key] === ''
+                            ? null
+                            : Number(chosen[field.key]),
                     ]),
                 ),
             },
@@ -245,11 +292,16 @@ function MatchStep({
 
     return (
         <form onSubmit={submit} className="flex flex-col gap-5">
-            <FileBar file={file} note={`${file.headers.length} columns found`} />
+            <FileBar
+                file={file}
+                note={`${file.headers.length} columns found`}
+            />
             <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
                 <div className="flex h-8 shrink-0 items-center gap-4 bg-surface px-4 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                     <span className="w-[200px] shrink-0">{t('We need')}</span>
-                    <span className="w-[260px] shrink-0">{t('Column in your file')}</span>
+                    <span className="w-[260px] shrink-0">
+                        {t('Column in your file')}
+                    </span>
                     <span className="flex-1">{t('First rows')}</span>
                 </div>
                 {fields.map((field) => {
@@ -266,24 +318,43 @@ function MatchStep({
                                     {t(field.label)}
                                 </span>
                                 {!field.required && (
-                                    <span className="text-[12px] leading-4 text-text-muted">{t('optional')}</span>
+                                    <span className="text-[12px] leading-4 text-text-muted">
+                                        {t('optional')}
+                                    </span>
                                 )}
                             </span>
                             <span className="flex w-[260px] shrink-0 flex-col gap-1">
                                 <select
-                                    aria-label={t('Column for :label', { label: field.label })}
+                                    aria-label={t('Column for :label', {
+                                        label: field.label,
+                                    })}
                                     value={column}
-                                    onChange={(e) => setChosen({ ...chosen, [field.key]: e.target.value })}
+                                    onChange={(e) =>
+                                        setChosen({
+                                            ...chosen,
+                                            [field.key]: e.target.value,
+                                        })
+                                    }
                                     className={`${fieldInputClass} h-9 text-[14px] ${
-                                        field.required && column === '' ? 'border-warning bg-warning-tint' : ''
+                                        field.required && column === ''
+                                            ? 'border-warning bg-warning-tint'
+                                            : ''
                                     }`}
                                 >
                                     <option value="">
-                                        {field.required ? t('Choose a column') : t('Not in this file')}
+                                        {field.required
+                                            ? t('Choose a column')
+                                            : t('Not in this file')}
                                     </option>
                                     {file.headers.map((header, position) => (
-                                        <option key={`${header}-${position}`} value={position}>
-                                            {header || t('Column :position', { position: position + 1 })}
+                                        <option
+                                            key={`${header}-${position}`}
+                                            value={position}
+                                        >
+                                            {header ||
+                                                t('Column :position', {
+                                                    position: position + 1,
+                                                })}
                                         </option>
                                     ))}
                                 </select>
@@ -304,13 +375,20 @@ function MatchStep({
             <ErrorText message={errors.mapping} />
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-[13px] leading-4 text-text-muted">
-                    {t(':matched of :fields matched. Nothing is imported until you have seen the check.', { matched, fields: fields.length })}
+                    {t(
+                        ':matched of :fields matched. Nothing is imported until you have seen the check.',
+                        { matched, fields: fields.length },
+                    )}
                 </p>
                 <div className="flex gap-2">
                     <Link href={index.url()} className={outlineButtonClass}>
                         {t('Cancel')}
                     </Link>
-                    <button type="submit" disabled={saving} className={solidButtonClass}>
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        className={solidButtonClass}
+                    >
                         {t('Check the rows')}
                     </button>
                 </div>
@@ -356,7 +434,9 @@ function CheckStep({
                             className={`flex flex-1 flex-col gap-1 py-[14px] ${position === 0 ? 'pr-4' : 'border-l border-solid border-border px-4'}`}
                         >
                             <dt className={capsLabelClass}>{label}</dt>
-                            <dd className={`font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] ${tone}`}>
+                            <dd
+                                className={`font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] ${tone}`}
+                            >
                                 {money(value)}
                             </dd>
                         </div>
@@ -370,7 +450,9 @@ function CheckStep({
                     <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
                         <div className="flex h-8 shrink-0 items-center gap-3 bg-surface px-3 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
                             <span className="w-11 shrink-0">{t('Row')}</span>
-                            <span className="w-[170px] shrink-0">{t('Student')}</span>
+                            <span className="w-[170px] shrink-0">
+                                {t('Student')}
+                            </span>
                             <span className="flex-1">{t('Problem')}</span>
                         </div>
                         {shown.map((problem, position) => (
@@ -394,7 +476,10 @@ function CheckStep({
                         ))}
                         <div className="flex h-9 shrink-0 items-center justify-between border-t border-solid border-border bg-surface px-3">
                             <span className="text-[13px] leading-4 text-text-muted">
-                                {t(':shown of :problems shown', { shown: shown.length, problems: report.problems.length })}
+                                {t(':shown of :problems shown', {
+                                    shown: shown.length,
+                                    problems: report.problems.length,
+                                })}
                             </span>
                             {report.problems.length > 6 && (
                                 <button
@@ -402,7 +487,11 @@ function CheckStep({
                                     onClick={() => setShowAll(!showAll)}
                                     className="text-[13px] leading-4 font-medium text-primary hover:underline"
                                 >
-                                    {showAll ? t('Show fewer') : t('Show all :problems', { problems: report.problems.length })}
+                                    {showAll
+                                        ? t('Show fewer')
+                                        : t('Show all :problems', {
+                                              problems: report.problems.length,
+                                          })}
                                 </button>
                             )}
                         </div>
@@ -410,7 +499,9 @@ function CheckStep({
                 )}
                 {report.problems.length > 0 && (
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        {t('Rows with problems are skipped. Download them, fix them in the spreadsheet and import that file afterwards.')}
+                        {t(
+                            'Rows with problems are skipped. Download them, fix them in the spreadsheet and import that file afterwards.',
+                        )}
                     </p>
                 )}
             </div>
@@ -419,25 +510,41 @@ function CheckStep({
                 <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-surface p-4">
                     <p className={capsLabelClass}>{t('When you import')}</p>
                     <p className="font-display text-[16px] leading-[22px] font-bold text-text">
-                        {t(':ready students are created now.', { ready: money(report.ready) })}
+                        {t(':ready students are created now.', {
+                            ready: money(report.ready),
+                        })}
                     </p>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        {t('Matricules run from :next_matricule. A guardian and the fee plan are created with each student. Rows with problems are skipped.', { next_matricule: nextMatricule })}
+                        {t(
+                            'Matricules run from :next_matricule. A guardian and the fee plan are created with each student. Rows with problems are skipped.',
+                            { next_matricule: nextMatricule },
+                        )}
                     </p>
                     <button
                         type="button"
                         disabled={report.ready === 0 || importing || !hasYear}
                         onClick={() => {
                             setImporting(true);
-                            router.post(run.url(), {}, { onFinish: () => setImporting(false) });
+                            router.post(
+                                run.url(),
+                                {},
+                                { onFinish: () => setImporting(false) },
+                            );
                         }}
                         className={`${solidButtonClass} w-full`}
                     >
-                        {t('Import :ready students', { ready: money(report.ready) })}
+                        {t('Import :ready students', {
+                            ready: money(report.ready),
+                        })}
                     </button>
                     {report.problems.length > 0 && (
-                        <a href={problems.url()} className={`${outlineButtonClass} w-full`}>
-                            {t('Download the :problems problem rows', { problems: report.problems.length })}
+                        <a
+                            href={problems.url()}
+                            className={`${outlineButtonClass} w-full`}
+                        >
+                            {t('Download the :problems problem rows', {
+                                problems: report.problems.length,
+                            })}
                         </a>
                     )}
                 </div>
@@ -447,7 +554,10 @@ function CheckStep({
                     </p>
                     <dl className="flex flex-col gap-2">
                         {mapping.map((pair) => (
-                            <div key={pair.field} className="flex items-baseline justify-between gap-3">
+                            <div
+                                key={pair.field}
+                                className="flex items-baseline justify-between gap-3"
+                            >
                                 <dt className="truncate text-[13px] leading-[18px] text-text-muted">
                                     {pair.column}
                                 </dt>
@@ -474,12 +584,14 @@ function ImportStudents(props: ImportProps) {
     const stepIndex = { upload: 0, match: 1, check: 2 }[props.step];
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-6">
+        <div className="flex flex-col gap-6 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('Import students')} />
             <StudentHeader
                 trail={[{ label: t('Import') }]}
                 title={t('Import students')}
-                tag={t('Enrolment:year_label', { year_label: props.yearLabel ? ` · ${props.yearLabel}` : '' })}
+                tag={t('Enrolment:year_label', {
+                    year_label: props.yearLabel ? ` · ${props.yearLabel}` : '',
+                })}
                 meta={t('bring in a whole intake from a spreadsheet')}
             />
             <Progress step={stepIndex} />

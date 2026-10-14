@@ -16,13 +16,28 @@ export const EMPLOYMENT_LABELS: Record<string, string> = {
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const WEEKDAY_NAMES = [
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-    'Friday', 'Saturday', 'Sunday',
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
 ];
 
 const MONTHS = [
-    'January', 'February', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December',
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
 ];
 
 export const sectionLabelClass =
@@ -73,21 +88,36 @@ export interface Pronouns {
 export function pronounsFor(gender: string | null | undefined): Pronouns {
     if (gender === 'male') {
         return {
-            subject: 'he', possessive: 'his', object: 'him',
-            has: 'has', does: 'does', sits: 'sits', sees: 'sees',
+            subject: 'he',
+            possessive: 'his',
+            object: 'him',
+            has: 'has',
+            does: 'does',
+            sits: 'sits',
+            sees: 'sees',
         };
     }
 
     if (gender === 'female') {
         return {
-            subject: 'she', possessive: 'her', object: 'her',
-            has: 'has', does: 'does', sits: 'sits', sees: 'sees',
+            subject: 'she',
+            possessive: 'her',
+            object: 'her',
+            has: 'has',
+            does: 'does',
+            sits: 'sits',
+            sees: 'sees',
         };
     }
 
     return {
-        subject: 'they', possessive: 'their', object: 'them',
-        has: 'have', does: 'do', sits: 'sit', sees: 'see',
+        subject: 'they',
+        possessive: 'their',
+        object: 'them',
+        has: 'have',
+        does: 'do',
+        sits: 'sit',
+        sees: 'see',
     };
 }
 
@@ -193,7 +223,10 @@ export function FlowSteps({
                 );
             })}
             <li className="ml-auto text-[12px] leading-4 font-medium text-text-muted">
-                {t('Step :active of :flow_steps', { active: active + 1, flow_steps: FLOW_STEPS.length })}
+                {t('Step :active of :flow_steps', {
+                    active: active + 1,
+                    flow_steps: FLOW_STEPS.length,
+                })}
             </li>
         </ol>
     );
@@ -272,7 +305,13 @@ export function SplitLayout({
     );
 }
 
-export function Note({ title, children }: { title: string; children: ReactNode }) {
+export function Note({
+    title,
+    children,
+}: {
+    title: string;
+    children: ReactNode;
+}) {
     return (
         <div className="flex flex-col gap-2 rounded-md bg-surface p-4">
             <p className="text-[13px] leading-[1.35] font-semibold text-text">

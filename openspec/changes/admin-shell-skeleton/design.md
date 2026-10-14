@@ -5,12 +5,14 @@ Paper Screen 35 ("Student Roster") carries the complete sidebar: 10 links includ
 ## Goals / Non-Goals
 
 **Goals:**
+
 - One persistent `AppLayout` used by all school pages; sidebar renders once per session conceptually.
 - Screen-35-faithful sidebar on existing tokens (248px container, 34px rows, primary active states, badge slot).
 - Ten stub destinations (9 sections + dashboard content stays stub) that later flows replace one by one.
 - Shell data always live, never hardcoded.
 
 **Non-Goals:**
+
 - No real section content (dashboard stats, tables, drawers all stay stub).
 - No school-switcher dropdown behavior (display + chevron only; switching schools is a later change).
 - No role-based link visibility (all links visible to all roles for now).

@@ -4,19 +4,31 @@ import { useLocale, useT } from '../../lib/i18n';
 
 /** Send the reader's choice of language and reload the page in it. */
 export function switchLocale(locale: string) {
-    router.post(update.url(), { locale }, { preserveState: true, preserveScroll: true });
+    router.post(
+        update.url(),
+        { locale },
+        { preserveState: true, preserveScroll: true },
+    );
 }
 
 /**
  * A pair of small buttons, one per language the app can be read in.
  */
-export default function LanguageSwitch({ className = '' }: { className?: string }) {
+export default function LanguageSwitch({
+    className = '',
+}: {
+    className?: string;
+}) {
     const t = useT();
     const current = useLocale();
     const locales = (usePage().props.locales ?? {}) as Record<string, string>;
 
     return (
-        <div role="group" aria-label={t('Language')} className={`flex items-center gap-1 ${className}`}>
+        <div
+            role="group"
+            aria-label={t('Language')}
+            className={`flex items-center gap-1 ${className}`}
+        >
             {Object.entries(locales).map(([code, name]) => (
                 <button
                     key={code}

@@ -21,12 +21,25 @@ export function currentLocale(): string {
     return current;
 }
 
-export function translate(locale: string, text: string, replace?: Replace): string {
+export function translate(
+    locale: string,
+    text: string,
+    replace?: Replace,
+): string {
     let line = DICTIONARIES[locale]?.[text] ?? text;
 
     // Longest names first, so ":count" never eats the start of ":count_b".
-    for (const key of Object.keys(replace ?? {}).sort((a, b) => b.length - a.length)) {
-        line = line.replaceAll(`:${key}`, String(replace?.[key] ?? ''));
+    for (const key of Object.keys(replace ?? {}).sort(
+        (a, b) => b.length - a.length,
+    )) {
+        const value = replace?.[key];
+
+        line = line.replaceAll(
+            `:${key}`,
+            typeof value === 'string' || typeof value === 'number'
+                ? String(value)
+                : '',
+        );
     }
 
     return line;
@@ -37,8 +50,13 @@ export function translate(locale: string, text: string, replace?: Replace): stri
  * `t('Sign in')`, or `t('Bill :count now', { count })`. Anything that
  * is not text (a missing label, an icon) comes back untouched.
  */
-export function t<T>(text: T, replace?: Replace): T extends string ? string : T {
-    return (typeof text === 'string' ? translate(current, text, replace) : text) as T extends string ? string : T;
+export function t<T>(
+    text: T,
+    replace?: Replace,
+): T extends string ? string : T {
+    return (
+        typeof text === 'string' ? translate(current, text, replace) : text
+    ) as T extends string ? string : T;
 }
 
 /** The locale to format numbers in: "60,000" in English, "60 000" in French. */
@@ -53,7 +71,10 @@ export function ordinalOf(position: number): string {
     }
 
     const tail = position % 100;
-    const suffix = tail >= 11 && tail <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][position % 10] ?? 'th');
+    const suffix =
+        tail >= 11 && tail <= 13
+            ? 'th'
+            : (['th', 'st', 'nd', 'rd'][position % 10] ?? 'th');
 
     return `${position}${suffix}`;
 }
@@ -71,5 +92,8 @@ export function useLocale(): string {
 export function useT(): Translate {
     const locale = useLocale();
 
-    return useCallback((text, replace) => translate(locale, text, replace), [locale]);
+    return useCallback(
+        (text, replace) => translate(locale, text, replace),
+        [locale],
+    );
 }

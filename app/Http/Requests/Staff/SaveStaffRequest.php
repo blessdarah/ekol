@@ -28,7 +28,12 @@ class SaveStaffRequest extends SchoolRequest
             'given_name' => ['required', 'string', 'max:100'],
             'family_name' => ['required', 'string', 'max:100'],
             'gender' => ['required', Rule::enum(Gender::class)],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($member)],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users')->where('school_id', $this->school()->id)->ignore($member),
+            ],
             'phone' => [
                 'required',
                 'string',

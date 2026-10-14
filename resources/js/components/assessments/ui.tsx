@@ -8,7 +8,10 @@ import {
 import { index as corrections } from '@/actions/App/Http/Controllers/CorrectionController';
 import { show as schedule } from '@/actions/App/Http/Controllers/ExamScheduleController';
 import { show as grading } from '@/actions/App/Http/Controllers/GradingController';
-import { reports, term } from '@/actions/App/Http/Controllers/TermResultController';
+import {
+    reports,
+    term,
+} from '@/actions/App/Http/Controllers/TermResultController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 import { ordinalOf, t } from '../../lib/i18n';
 
@@ -34,13 +37,27 @@ export interface PlanSummary {
     published_on: string | null;
 }
 
-export type PlanState = 'draft' | 'scheduled' | 'marks_open' | 'marks_closed' | 'published';
+export type PlanState =
+    | 'draft'
+    | 'scheduled'
+    | 'marks_open'
+    | 'marks_closed'
+    | 'published';
 
-export type TabKey = 'calendar' | 'schedule' | 'progress' | 'results' | 'term' | 'reports' | 'corrections' | 'grading';
+export type TabKey =
+    | 'calendar'
+    | 'schedule'
+    | 'progress'
+    | 'results'
+    | 'term'
+    | 'reports'
+    | 'corrections'
+    | 'grading';
 
 export const amberText = 'text-[#8A5A12]';
 
-export const linkClass = 'text-[13px] leading-4 font-medium text-primary hover:underline';
+export const linkClass =
+    'text-[13px] leading-4 font-medium text-primary hover:underline';
 
 export const primaryClass =
     'flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-[13px] leading-4 font-semibold text-white hover:bg-primary-hover disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40';
@@ -56,7 +73,20 @@ export const STATE_LABELS: Record<PlanState, string> = {
     published: 'Published',
 };
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+];
 
 /** "8 Oct". */
 export function day(iso: string | null): string {
@@ -75,7 +105,9 @@ export function range(from: string | null, to: string | null): string {
         return t('Not set');
     }
 
-    return from.slice(0, 7) === to.slice(0, 7) ? `${Number(from.slice(8))} – ${day(to)}` : `${day(from)} – ${day(to)}`;
+    return from.slice(0, 7) === to.slice(0, 7)
+        ? `${Number(from.slice(8))} – ${day(to)}`
+        : `${day(from)} – ${day(to)}`;
 }
 
 /** A mark or average to two places, or a dash. */
@@ -91,7 +123,9 @@ export function KindChip({ kind }: { kind: string }) {
     return (
         <span
             className={`flex h-5 shrink-0 items-center rounded-sm px-[6px] font-mono text-[11px] leading-[14px] font-medium tracking-[0.04em] uppercase ${
-                kind === 'exam' ? 'bg-arts-tint text-arts' : 'bg-science-tint text-science'
+                kind === 'exam'
+                    ? 'bg-arts-tint text-arts'
+                    : 'bg-science-tint text-science'
             }`}
         >
             {kind}
@@ -99,11 +133,19 @@ export function KindChip({ kind }: { kind: string }) {
     );
 }
 
-function Badge({ tone, children }: { tone: 'amber' | 'green'; children: ReactNode }) {
+function Badge({
+    tone,
+    children,
+}: {
+    tone: 'amber' | 'green';
+    children: ReactNode;
+}) {
     return (
         <span
             className={`flex h-[18px] items-center rounded-full px-[6px] font-mono text-[11px] leading-[14px] ${
-                tone === 'green' ? 'bg-success-tint text-success' : `bg-warning-tint ${amberText}`
+                tone === 'green'
+                    ? 'bg-success-tint text-success'
+                    : `bg-warning-tint ${amberText}`
             }`}
         >
             {children}
@@ -127,19 +169,35 @@ export function AssessmentHeader({
     meta?: ReactNode;
     action?: ReactNode;
 }) {
-    const items: { key: TabKey; label: string; href: string; badge?: ReactNode }[] = [
+    const items: {
+        key: TabKey;
+        label: string;
+        href: string;
+        badge?: ReactNode;
+    }[] = [
         { key: 'calendar', label: t('Calendar'), href: index.url() },
         {
             key: 'schedule',
             label: t('Exam schedule'),
             href: schedule.url(),
-            badge: tabs.clashes > 0 ? <Badge tone="amber">{tabs.clashes} {tabs.clashes === 1 ? t('clash') : t('clashes')}</Badge> : null,
+            badge:
+                tabs.clashes > 0 ? (
+                    <Badge tone="amber">
+                        {tabs.clashes}{' '}
+                        {tabs.clashes === 1 ? t('clash') : t('clashes')}
+                    </Badge>
+                ) : null,
         },
         {
             key: 'progress',
             label: t('Marks progress'),
             href: progress.url(),
-            badge: tabs.missing > 0 ? <Badge tone="amber">{t(':missing missing', { missing: tabs.missing })}</Badge> : null,
+            badge:
+                tabs.missing > 0 ? (
+                    <Badge tone="amber">
+                        {t(':missing missing', { missing: tabs.missing })}
+                    </Badge>
+                ) : null,
         },
         { key: 'results', label: t('Results'), href: results.url() },
         { key: 'term', label: t('Term & year'), href: term.url() },
@@ -148,7 +206,12 @@ export function AssessmentHeader({
             key: 'corrections',
             label: t('Corrections'),
             href: corrections.url(),
-            badge: tabs.pending > 0 ? <Badge tone="amber">{t(':pending pending', { pending: tabs.pending })}</Badge> : null,
+            badge:
+                tabs.pending > 0 ? (
+                    <Badge tone="amber">
+                        {t(':pending pending', { pending: tabs.pending })}
+                    </Badge>
+                ) : null,
         },
         { key: 'grading', label: t('Grading'), href: grading.url() },
     ];
@@ -160,18 +223,31 @@ export function AssessmentHeader({
                     <Breadcrumbs
                         trail={
                             trail.length > 0
-                                ? [{ label: t('Sequences & Exams'), href: index.url() }, ...trail]
+                                ? [
+                                      {
+                                          label: t('Sequences & Exams'),
+                                          href: index.url(),
+                                      },
+                                      ...trail,
+                                  ]
                                 : [{ label: t('Sequences & Exams') }]
                         }
                     />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {title}
                     </h1>
-                    {meta && <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">{meta}</div>}
+                    {meta && (
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">
+                            {meta}
+                        </div>
+                    )}
                 </div>
                 {action && <div className="flex flex-wrap gap-2">{action}</div>}
             </div>
-            <nav aria-label={t('Sequences and exams')} className="flex flex-wrap gap-x-[26px] border-b border-solid border-border">
+            <nav
+                aria-label={t('Sequences and exams')}
+                className="flex flex-wrap gap-x-[26px] border-b border-solid border-border"
+            >
                 {items.map((item) => (
                     <Link
                         key={item.key}
@@ -206,7 +282,9 @@ export function PlanPicker({
 }) {
     return (
         <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">{label}</span>
+            <span className="mr-1 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
+                {label}
+            </span>
             {plans.map((plan) => (
                 <Link
                     key={plan.id}
@@ -218,7 +296,9 @@ export function PlanPicker({
                             : 'border-border font-medium text-text hover:bg-surface'
                     }`}
                 >
-                    {plan.state === 'marks_open' && <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-success" />}
+                    {plan.state === 'marks_open' && (
+                        <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-success" />
+                    )}
                     {plan.name}
                 </Link>
             ))}
@@ -226,11 +306,21 @@ export function PlanPicker({
     );
 }
 
-export function Empty({ title, children }: { title: string; children: ReactNode }) {
+export function Empty({
+    title,
+    children,
+}: {
+    title: string;
+    children: ReactNode;
+}) {
     return (
         <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-5">
-            <p className="text-[14px] leading-[18px] font-semibold text-text">{title}</p>
-            <div className="max-w-[640px] text-[13px] leading-[19px] text-text">{children}</div>
+            <p className="text-[14px] leading-[18px] font-semibold text-text">
+                {title}
+            </p>
+            <div className="max-w-[640px] text-[13px] leading-[19px] text-text">
+                {children}
+            </div>
         </div>
     );
 }
@@ -241,7 +331,12 @@ export interface ReportCardData {
     matricule: string;
     class: string;
     title: string;
-    subjects: { subject: string; coefficient: number; score: number | null; absent: boolean }[];
+    subjects: {
+        subject: string;
+        coefficient: number;
+        score: number | null;
+        absent: boolean;
+    }[];
     average: number | null;
     position: number | null;
     of: number;
@@ -265,7 +360,9 @@ export function ReportCard({
                     {issuer.code.slice(0, 2).toUpperCase()}
                 </span>
                 <span className="flex min-w-0 flex-col">
-                    <span className="truncate font-display text-[15px] leading-5 font-bold text-text">{issuer.name}</span>
+                    <span className="truncate font-display text-[15px] leading-5 font-bold text-text">
+                        {issuer.name}
+                    </span>
                     <span className="font-mono text-[11px] leading-[14px] tracking-[0.04em] text-text-muted uppercase">
                         {t(card.title)}
                         {yearLabel ? ` · ${yearLabel}` : ''}
@@ -274,12 +371,20 @@ export function ReportCard({
             </header>
             <div className="flex items-start justify-between gap-3">
                 <span className="flex min-w-0 flex-col">
-                    <span className="text-[14px] leading-[18px] font-semibold text-text">{card.name}</span>
-                    <span className="font-mono text-[11px] leading-[14px] text-text-muted">{card.matricule}</span>
+                    <span className="text-[14px] leading-[18px] font-semibold text-text">
+                        {card.name}
+                    </span>
+                    <span className="font-mono text-[11px] leading-[14px] text-text-muted">
+                        {card.matricule}
+                    </span>
                 </span>
                 <span className="flex shrink-0 flex-col items-end">
-                    <span className="text-[13px] leading-[18px] text-text">{card.class}</span>
-                    <span className="text-[11px] leading-[14px] text-text-muted">{t(':of students', { of: card.of })}</span>
+                    <span className="text-[13px] leading-[18px] text-text">
+                        {card.class}
+                    </span>
+                    <span className="text-[11px] leading-[14px] text-text-muted">
+                        {t(':of students', { of: card.of })}
+                    </span>
                 </span>
             </div>
             <div className="flex flex-col">
@@ -289,9 +394,16 @@ export function ReportCard({
                     <span className="w-12 text-right">/ 20</span>
                 </div>
                 {card.subjects.map((subject) => (
-                    <div key={subject.subject} className="flex items-center gap-3 border-b border-solid border-border py-[6px]">
-                        <span className="min-w-0 flex-1 truncate text-[13px] leading-4 text-text">{subject.subject}</span>
-                        <span className="w-10 text-right font-mono text-[12px] leading-4 text-text">{subject.coefficient}</span>
+                    <div
+                        key={subject.subject}
+                        className="flex items-center gap-3 border-b border-solid border-border py-[6px]"
+                    >
+                        <span className="min-w-0 flex-1 truncate text-[13px] leading-4 text-text">
+                            {subject.subject}
+                        </span>
+                        <span className="w-10 text-right font-mono text-[12px] leading-4 text-text">
+                            {subject.coefficient}
+                        </span>
                         <span className="w-12 text-right font-mono text-[12px] leading-4 text-text">
                             {subject.absent ? t('ABS') : score(subject.score)}
                         </span>
@@ -299,16 +411,29 @@ export function ReportCard({
                 ))}
             </div>
             <div className="flex items-center justify-between gap-3 rounded-sm bg-surface px-[10px] py-2 text-[13px] leading-4 font-semibold text-text">
-                <span>{card.average !== null ? t('Average :average / 20', { average: score(card.average) }) : t('Average not final: a mark is missing')}</span>
+                <span>
+                    {card.average !== null
+                        ? t('Average :average / 20', {
+                              average: score(card.average),
+                          })
+                        : t('Average not final: a mark is missing')}
+                </span>
                 {card.position !== null && (
                     <span>
-                        {t('Position :position of :of', { position: ordinal(card.position), of: card.of })}
+                        {t('Position :position of :of', {
+                            position: ordinal(card.position),
+                            of: card.of,
+                        })}
                     </span>
                 )}
             </div>
             {(card.grade || card.remark) && (
                 <p className="text-[12px] leading-[18px] text-text-muted">
-                    {card.grade && <span className="font-medium text-text">{card.grade}. </span>}
+                    {card.grade && (
+                        <span className="font-medium text-text">
+                            {card.grade}.{' '}
+                        </span>
+                    )}
                     {card.remark}
                 </p>
             )}

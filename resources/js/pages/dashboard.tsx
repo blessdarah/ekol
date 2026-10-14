@@ -10,11 +10,13 @@ function Dashboard() {
                 <p className="text-xs font-semibold tracking-[0.06em] text-text-muted uppercase">
                     {t('Coming soon')}
                 </p>
-                <h1 className="font-display mt-2 text-[28px] leading-[1.2] font-bold text-text">
+                <h1 className="mt-2 font-display text-[28px] leading-[1.2] font-bold text-text">
                     {t('Dashboard')}
                 </h1>
                 <p className="mt-2 text-[14px] text-text-muted">
-                    {t('Arriving in the dashboard flow. Stats, overdue fees and attention items land here.')}
+                    {t(
+                        'Arriving in the dashboard flow. Stats, overdue fees and attention items land here.',
+                    )}
                 </p>
             </div>
         </>

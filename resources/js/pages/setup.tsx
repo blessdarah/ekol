@@ -96,8 +96,18 @@ const SaveContext = createContext<(state: SaveState) => void>(() => {});
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const MONTHS = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
 ];
 
 const DAY_MS = 86_400_000;
@@ -105,7 +115,8 @@ const DAY_MS = 86_400_000;
 const dateInputClass =
     'h-7 rounded-sm border border-solid border-border bg-white px-1 font-mono text-[12px] text-text outline-none focus:border-primary';
 
-const linkClass = 'text-[13px] leading-4 font-medium text-primary hover:underline';
+const linkClass =
+    'text-[13px] leading-4 font-medium text-primary hover:underline';
 
 function shortDate(iso: string | null, padded = true): string {
     if (!iso) {
@@ -280,7 +291,10 @@ function ProfileZone({ school }: { school: SchoolProp }) {
 
             if (shortest < LOGO_MIN_SIDE) {
                 setUploadError(
-                    t('Logo must be at least :logo_min_sidepx on its shortest side.', { logo_min_side: LOGO_MIN_SIDE }),
+                    t(
+                        'Logo must be at least :logo_min_sidepx on its shortest side.',
+                        { logo_min_side: LOGO_MIN_SIDE },
+                    ),
                 );
             } else if (image.naturalWidth === image.naturalHeight) {
                 uploadLogo(file);
@@ -315,7 +329,8 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                 onSuccess: () => report('saved'),
                 onError: (failed) => {
                     setUploadError(
-                        failed.logo ?? t('Upload failed. Use a square PNG or SVG.'),
+                        failed.logo ??
+                            t('Upload failed. Use a square PNG or SVG.'),
                     );
                     setPreview(null);
                     report('error');
@@ -380,7 +395,13 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                 {t('School language')}
                 <select
                     value={school.locale}
-                    onChange={(e) => router.patch(updateProfile.url(), { locale: e.target.value }, { preserveScroll: true, preserveState: true })}
+                    onChange={(e) =>
+                        router.patch(
+                            updateProfile.url(),
+                            { locale: e.target.value },
+                            { preserveScroll: true, preserveState: true },
+                        )
+                    }
                     className="h-9 rounded-md border border-solid border-border bg-white px-2 text-[13px] leading-4 font-normal text-text outline-none focus:border-primary"
                 >
                     {Object.entries(locales).map(([code, name]) => (
@@ -390,7 +411,9 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                     ))}
                 </select>
                 <span className="font-normal text-text-muted">
-                    {t('What people see until they choose their own language, and the language of sign-in for your school.')}
+                    {t(
+                        'What people see until they choose their own language, and the language of sign-in for your school.',
+                    )}
                 </span>
             </label>
             {cropping && (
@@ -480,7 +503,9 @@ function TermCard({
                         value={term.starts_on}
                         min={year.starts_on}
                         max={year.ends_on}
-                        onChange={(e) => setDates({ starts_on: e.target.value })}
+                        onChange={(e) =>
+                            setDates({ starts_on: e.target.value })
+                        }
                         className={dateInputClass}
                     />
                     <input
@@ -506,7 +531,9 @@ function TermCard({
                     disabled={locked}
                     title={
                         locked
-                            ? t('This term already has marks, so its dates are locked.')
+                            ? t(
+                                  'This term already has marks, so its dates are locked.',
+                              )
                             : t('Edit term')
                     }
                     onClick={() => setEditing(true)}
@@ -536,7 +563,11 @@ function YearZone({
         (props) => ({ terms: props.terms }),
     );
     const [mode, setMode] = useState<'create' | 'edit' | null>(null);
-    const [draft, setDraft] = useState({ label: '', starts_on: '', ends_on: '' });
+    const [draft, setDraft] = useState({
+        label: '',
+        starts_on: '',
+        ends_on: '',
+    });
     const [actionError, setActionError] = useState<string | null>(null);
 
     function setTerm(index: number, patch: Partial<TermProp>) {
@@ -644,7 +675,9 @@ function YearZone({
     return (
         <Zone
             title={t('Academic year & terms')}
-            desc={t('The active term decides where marks, attendance and fees are recorded.')}
+            desc={t(
+                'The active term decides where marks, attendance and fees are recorded.',
+            )}
         >
             <div className="flex flex-wrap items-center gap-[10px]">
                 {year && (
@@ -654,7 +687,9 @@ function YearZone({
                             value={year.id}
                             onChange={(e) =>
                                 router.get(
-                                    show.url({ query: { year: e.target.value } }),
+                                    show.url({
+                                        query: { year: e.target.value },
+                                    }),
                                 )
                             }
                             className="h-[34px] appearance-none rounded-md border border-solid border-border bg-white pr-8 pl-3 font-mono text-[14px] leading-[18px] text-text outline-none focus:border-primary"
@@ -824,7 +859,10 @@ function InstallmentsZone({
 
     // An unbalanced split is kept locally until it adds up again.
     function commit(next: TemplateProp[]) {
-        const sum = next.reduce((acc, row) => acc + Number(row.percent || 0), 0);
+        const sum = next.reduce(
+            (acc, row) => acc + Number(row.percent || 0),
+            0,
+        );
 
         if (next.length > 0 && Math.abs(sum - 100) < 0.01) {
             save({ templates: next });
@@ -834,7 +872,9 @@ function InstallmentsZone({
     }
 
     function setRow(index: number, patch: Partial<TemplateProp>) {
-        commit(rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+        commit(
+            rows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+        );
     }
 
     function addRow() {
@@ -857,7 +897,8 @@ function InstallmentsZone({
             ...kept.slice(0, -1),
             {
                 ...last,
-                percent: Number(last.percent || 0) + Number(removed.percent || 0),
+                percent:
+                    Number(last.percent || 0) + Number(removed.percent || 0),
             },
         ]);
     }
@@ -865,7 +906,9 @@ function InstallmentsZone({
     return (
         <Zone
             title={t('Fee installments')}
-            desc={t('Applies to every student. Partial payments fill the oldest installment first.')}
+            desc={t(
+                'Applies to every student. Partial payments fill the oldest installment first.',
+            )}
         >
             <div className="flex items-center gap-3">
                 <span className="text-[13px] leading-4 font-medium text-text">
@@ -896,7 +939,10 @@ function InstallmentsZone({
                 </div>
                 {rows.length > 0 && !balanced && (
                     <span className="text-[13px] leading-4 text-danger">
-                        {t('Splits add up to :total%. They must total 100% to save.', { total })}
+                        {t(
+                            'Splits add up to :total%. They must total 100% to save.',
+                            { total },
+                        )}
                     </span>
                 )}
             </div>
@@ -915,7 +961,10 @@ function InstallmentsZone({
                                     <input
                                         type="date"
                                         autoFocus
-                                        aria-label={t(':seq installment due date', { seq: ordinal(row.seq) })}
+                                        aria-label={t(
+                                            ':seq installment due date',
+                                            { seq: ordinal(row.seq) },
+                                        )}
                                         value={row.due_on ?? ''}
                                         min={year?.starts_on}
                                         max={year?.ends_on}
@@ -935,7 +984,12 @@ function InstallmentsZone({
                                         className="self-start text-[12px] leading-4 text-text-muted hover:underline"
                                     >
                                         {row.due_on
-                                            ? t('Due :due_on', { due_on: shortDate(row.due_on, false) })
+                                            ? t('Due :due_on', {
+                                                  due_on: shortDate(
+                                                      row.due_on,
+                                                      false,
+                                                  ),
+                                              })
                                             : t('Set due date')}
                                     </button>
                                 )}
@@ -944,7 +998,9 @@ function InstallmentsZone({
                                 <input
                                     type="text"
                                     inputMode="decimal"
-                                    aria-label={t(':seq installment percent', { seq: ordinal(row.seq) })}
+                                    aria-label={t(':seq installment percent', {
+                                        seq: ordinal(row.seq),
+                                    })}
                                     value={row.percent}
                                     onChange={(e) =>
                                         setRow(index, {
@@ -964,7 +1020,9 @@ function InstallmentsZone({
             )}
             <ZoneError
                 message={
-                    !year ? 'Create an academic year to set installments.' : error
+                    !year
+                        ? 'Create an academic year to set installments.'
+                        : error
                 }
             />
         </Zone>
@@ -1040,11 +1098,15 @@ function WindowsZone({ assessments }: { assessments: AssessmentProp[] }) {
     return (
         <Zone
             title={t('Sequences & exams')}
-            desc={t('Teachers can enter marks only while a window is open. Pass marks are set by each teacher.')}
+            desc={t(
+                'Teachers can enter marks only while a window is open. Pass marks are set by each teacher.',
+            )}
         >
             {data.rows.length === 0 ? (
                 <p className="text-[13px] leading-[19px] text-text-muted">
-                    {t('No sequences or exams yet. Their marks windows appear here once they are created.')}
+                    {t(
+                        'No sequences or exams yet. Their marks windows appear here once they are created.',
+                    )}
                 </p>
             ) : (
                 <div className="flex flex-col">
@@ -1066,7 +1128,9 @@ function WindowsZone({ assessments }: { assessments: AssessmentProp[] }) {
                                     <span className="flex shrink-0 items-center gap-1">
                                         <input
                                             type="date"
-                                            aria-label={t(':row window opens', { row: row.name })}
+                                            aria-label={t(':row window opens', {
+                                                row: row.name,
+                                            })}
                                             value={row.window_starts_on}
                                             onChange={(e) =>
                                                 setRow(index, {
@@ -1078,7 +1142,10 @@ function WindowsZone({ assessments }: { assessments: AssessmentProp[] }) {
                                         />
                                         <input
                                             type="date"
-                                            aria-label={t(':row window closes', { row: row.name })}
+                                            aria-label={t(
+                                                ':row window closes',
+                                                { row: row.name },
+                                            )}
                                             value={row.window_ends_on}
                                             min={row.window_starts_on}
                                             onChange={(e) =>
@@ -1191,7 +1258,9 @@ function SchooldayZone({
     return (
         <Zone
             title={t('School day')}
-            desc={t('The days and periods every timetable and exam schedule is built on. A change applies to the next timetable version you generate.')}
+            desc={t(
+                'The days and periods every timetable and exam schedule is built on. A change applies to the next timetable version you generate.',
+            )}
         >
             <div className="flex flex-wrap items-center gap-[14px]">
                 <span className="text-[13px] leading-4 font-medium text-text">
@@ -1266,16 +1335,22 @@ function SchooldayZone({
                             />
                             <input
                                 type="time"
-                                aria-label={t(':label starts', { label: row.label })}
+                                aria-label={t(':label starts', {
+                                    label: row.label,
+                                })}
                                 value={row.starts_at}
                                 onChange={(e) =>
-                                    setPeriod(row, { starts_at: e.target.value })
+                                    setPeriod(row, {
+                                        starts_at: e.target.value,
+                                    })
                                 }
                                 className={`${timeInputClass} ${tone}`}
                             />
                             <input
                                 type="time"
-                                aria-label={t(':label ends', { label: row.label })}
+                                aria-label={t(':label ends', {
+                                    label: row.label,
+                                })}
                                 value={row.ends_at}
                                 onChange={(e) =>
                                     setPeriod(row, { ends_at: e.target.value })
@@ -1283,7 +1358,9 @@ function SchooldayZone({
                                 className={`${timeInputClass} ${tone}`}
                             />
                             <span className="flex-1 font-mono text-[12px] leading-4 text-text-muted">
-                                {length > 0 ? t(':count min', { count: length }) : '—'}
+                                {length > 0
+                                    ? t(':count min', { count: length })
+                                    : '—'}
                             </span>
                             <button
                                 type="button"
@@ -1298,7 +1375,10 @@ function SchooldayZone({
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[13px] leading-[19px] text-text-muted">
-                    {t(':days lesson slots a week for each class. Used by the Timetable and the Exam schedule.', { days: lessons * days })}
+                    {t(
+                        ':days lesson slots a week for each class. Used by the Timetable and the Exam schedule.',
+                        { days: lessons * days },
+                    )}
                 </p>
                 <div className="flex gap-4">
                     <button

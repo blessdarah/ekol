@@ -12,9 +12,11 @@ Every future flow (Students, Fees, Timetable…) needs the same admin shell, and
 ## Capabilities
 
 ### New Capabilities
+
 - `admin-shell`: persistent admin layout, canonical sidebar, stub routes, live shell data, guards.
 
 ### Modified Capabilities
+
 - None (dashboard/setup stubs gain shell + stub body, but no spec has ever covered their content).
 
 ## Impact

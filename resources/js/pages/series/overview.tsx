@@ -39,26 +39,43 @@ interface OverviewProps {
     unstaffed?: { id: string; name: string; students: number }[];
 }
 
-const linkClass = 'text-[13px] leading-4 font-medium text-primary hover:underline';
+const linkClass =
+    'text-[13px] leading-4 font-medium text-primary hover:underline';
 
-function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, unstaffed = [] }: OverviewProps) {
+function Overview({
+    yearLabel,
+    hasTerm,
+    levels,
+    level,
+    series = [],
+    unassigned,
+    unstaffed = [],
+}: OverviewProps) {
     const query = level ? { query: { level: level.id } } : undefined;
     const notSetUp = series.filter((item) => item.core.length === 0);
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-5">
+        <div className="flex flex-col gap-5 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('Series Registration')} />
             <SeriesHeader
                 title={t('Series Registration')}
                 tag={yearLabel ?? undefined}
-                meta={t('put each student of a series level into a series, with their electives')}
+                meta={t(
+                    'put each student of a series level into a series, with their electives',
+                )}
                 action={
                     level && (
                         <div className="flex gap-2">
-                            <Link href={bulk.url(query)} className={outlineButtonClass}>
+                            <Link
+                                href={bulk.url(query)}
+                                className={outlineButtonClass}
+                            >
                                 {t('Register many at once')}
                             </Link>
-                            <Link href={one.url(query)} className={solidButtonClass}>
+                            <Link
+                                href={one.url(query)}
+                                className={solidButtonClass}
+                            >
                                 {t('Register one by one →')}
                             </Link>
                         </div>
@@ -68,14 +85,21 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
 
             {!hasTerm && (
                 <p className="rounded-md border border-solid border-warning bg-warning-tint p-4 text-[13px] leading-[19px] text-text">
-                    {t('Series are registered for a term, and no term is active. Make one active in School Setup first.')}
+                    {t(
+                        'Series are registered for a term, and no term is active. Make one active in School Setup first.',
+                    )}
                 </p>
             )}
 
             {!level ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                    {t('No level uses series yet. Turn “Uses series” on for a high school level, then set its series up under')}{' '}
-                    <Link href={seriesSetup.url()} className="font-medium text-primary hover:underline">
+                    {t(
+                        'No level uses series yet. Turn “Uses series” on for a high school level, then set its series up under',
+                    )}{' '}
+                    <Link
+                        href={seriesSetup.url()}
+                        className="font-medium text-primary hover:underline"
+                    >
                         {t('Series setup')}
                     </Link>
                     .
@@ -86,12 +110,20 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                         {levels.map((option) => {
                             const selected = option.id === level.id;
                             const missing = option.total - option.registered;
-                            const share = option.total > 0 ? Math.round((option.registered / option.total) * 100) : 0;
+                            const share =
+                                option.total > 0
+                                    ? Math.round(
+                                          (option.registered / option.total) *
+                                              100,
+                                      )
+                                    : 0;
 
                             return (
                                 <Link
                                     key={option.id}
-                                    href={index.url({ query: { level: option.id } })}
+                                    href={index.url({
+                                        query: { level: option.id },
+                                    })}
                                     aria-current={selected ? 'page' : undefined}
                                     className={`flex flex-col gap-2 rounded-lg border border-solid p-[14px] ${
                                         selected
@@ -107,17 +139,23 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                             {option.registered} / {option.total}
                                         </span>
                                     </span>
-                                    <span className={`flex h-[6px] shrink-0 rounded-full ${selected ? 'bg-white' : 'bg-border'}`}>
+                                    <span
+                                        className={`flex h-[6px] shrink-0 rounded-full ${selected ? 'bg-white' : 'bg-border'}`}
+                                    >
                                         <span
                                             className={`h-[6px] rounded-full ${missing > 0 ? 'bg-warning' : 'bg-success'}`}
                                             style={{ width: `${share}%` }}
                                         />
                                     </span>
-                                    <span className={`text-[12px] leading-4 ${missing > 0 ? 'text-[#8A5A12]' : option.total > 0 ? 'text-success' : 'text-text-muted'}`}>
+                                    <span
+                                        className={`text-[12px] leading-4 ${missing > 0 ? 'text-[#8A5A12]' : option.total > 0 ? 'text-success' : 'text-text-muted'}`}
+                                    >
                                         {option.total === 0
                                             ? t('No students yet')
                                             : missing > 0
-                                              ? t(':missing without a series', { missing })
+                                              ? t(':missing without a series', {
+                                                    missing,
+                                                })
                                               : t('Everyone registered')}
                                     </span>
                                 </Link>
@@ -129,52 +167,86 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                         <div className="flex min-w-0 flex-1 flex-col gap-[14px]">
                             <div className="flex items-baseline justify-between">
                                 <p className={capsLabelClass}>
-                                    {t(':level · who is in each series', { level: level.name })}
+                                    {t(':level · who is in each series', {
+                                        level: level.name,
+                                    })}
                                 </p>
-                                <Link href={seriesSetup.url(query)} className={linkClass}>
+                                <Link
+                                    href={seriesSetup.url(query)}
+                                    className={linkClass}
+                                >
                                     {t('Series setup →')}
                                 </Link>
                             </div>
                             {series.length === 0 ? (
                                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                                    {t(':level has no series yet. Add them under Series setup.', { level: level.name })}
+                                    {t(
+                                        ':level has no series yet. Add them under Series setup.',
+                                        { level: level.name },
+                                    )}
                                 </p>
                             ) : (
                                 <div className="flex flex-col gap-3 md:flex-row">
                                     {STREAMS.map((stream) => {
-                                        const group = series.filter((item) => item.stream === stream.value);
+                                        const group = series.filter(
+                                            (item) =>
+                                                item.stream === stream.value,
+                                        );
 
                                         if (group.length === 0) {
                                             return null;
                                         }
 
                                         return (
-                                            <div key={stream.value} className="flex min-w-0 flex-1 flex-col gap-[10px]">
-                                                <p className={`text-[12px] leading-4 font-semibold tracking-[0.06em] uppercase ${stream.text}`}>
+                                            <div
+                                                key={stream.value}
+                                                className="flex min-w-0 flex-1 flex-col gap-[10px]"
+                                            >
+                                                <p
+                                                    className={`text-[12px] leading-4 font-semibold tracking-[0.06em] uppercase ${stream.text}`}
+                                                >
                                                     {t(stream.label)}
                                                 </p>
                                                 <ul className="flex flex-col overflow-clip rounded-lg border border-solid border-border">
-                                                    {group.map((item, position) => (
-                                                        <li
-                                                            key={item.id}
-                                                            className={`flex h-[42px] shrink-0 items-center gap-[10px] border-b border-solid border-border px-[14px] last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
-                                                        >
-                                                            <StreamChip stream={item.stream}>{item.code}</StreamChip>
-                                                            {item.core.length > 0 ? (
-                                                                <span className="min-w-0 flex-1 truncate text-[13px] leading-4 text-text-muted">
-                                                                    {item.core.join(', ')}
+                                                    {group.map(
+                                                        (item, position) => (
+                                                            <li
+                                                                key={item.id}
+                                                                className={`flex h-[42px] shrink-0 items-center gap-[10px] border-b border-solid border-border px-[14px] last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                                            >
+                                                                <StreamChip
+                                                                    stream={
+                                                                        item.stream
+                                                                    }
+                                                                >
+                                                                    {item.code}
+                                                                </StreamChip>
+                                                                {item.core
+                                                                    .length >
+                                                                0 ? (
+                                                                    <span className="min-w-0 flex-1 truncate text-[13px] leading-4 text-text-muted">
+                                                                        {item.core.join(
+                                                                            ', ',
+                                                                        )}
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="flex flex-1 items-center gap-[6px] text-[13px] leading-4 text-[#8A5A12]">
+                                                                        <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
+                                                                        {t(
+                                                                            'Needs setup',
+                                                                        )}
+                                                                    </span>
+                                                                )}
+                                                                <span
+                                                                    className={`font-mono text-[14px] leading-[18px] ${item.students > 0 ? 'text-text' : 'text-text-muted'}`}
+                                                                >
+                                                                    {
+                                                                        item.students
+                                                                    }
                                                                 </span>
-                                                            ) : (
-                                                                <span className="flex flex-1 items-center gap-[6px] text-[13px] leading-4 text-[#8A5A12]">
-                                                                    <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                                                    {t('Needs setup')}
-                                                                </span>
-                                                            )}
-                                                            <span className={`font-mono text-[14px] leading-[18px] ${item.students > 0 ? 'text-text' : 'text-text-muted'}`}>
-                                                                {item.students}
-                                                            </span>
-                                                        </li>
-                                                    ))}
+                                                            </li>
+                                                        ),
+                                                    )}
                                                 </ul>
                                             </div>
                                         );
@@ -182,7 +254,9 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                 </div>
                             )}
                             <p className="text-[13px] leading-[19px] text-text-muted">
-                                {t('Core subjects come with the series and cannot be unticked. Each student then picks electives from the pool, within the series minimum and maximum.')}
+                                {t(
+                                    'Core subjects come with the series and cannot be unticked. Each student then picks electives from the pool, within the series minimum and maximum.',
+                                )}
                             </p>
                         </div>
 
@@ -190,24 +264,39 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                             <div className="flex flex-col gap-[10px] rounded-lg border border-solid border-border bg-surface p-4">
                                 <div className="flex items-baseline justify-between">
                                     <p className={capsLabelClass}>
-                                        {t('Without a series ·')} {unassigned?.total ?? 0}
+                                        {t('Without a series ·')}{' '}
+                                        {unassigned?.total ?? 0}
                                     </p>
                                     {(unassigned?.total ?? 0) > 0 && (
-                                        <Link href={one.url(query)} className={linkClass}>
+                                        <Link
+                                            href={one.url(query)}
+                                            className={linkClass}
+                                        >
                                             {t('Start →')}
                                         </Link>
                                     )}
                                 </div>
                                 {(unassigned?.total ?? 0) === 0 ? (
                                     <p className="text-[13px] leading-[19px] text-text-muted">
-                                        {t('Every :level student has a series.', { level: level.name })}
+                                        {t(
+                                            'Every :level student has a series.',
+                                            { level: level.name },
+                                        )}
                                     </p>
                                 ) : (
                                     <ul className="flex flex-col">
                                         {unassigned?.preview.map((student) => (
-                                            <li key={student.id} className="border-t border-solid border-border">
+                                            <li
+                                                key={student.id}
+                                                className="border-t border-solid border-border"
+                                            >
                                                 <Link
-                                                    href={one.url({ query: { level: level.id, student: student.id } })}
+                                                    href={one.url({
+                                                        query: {
+                                                            level: level.id,
+                                                            student: student.id,
+                                                        },
+                                                    })}
                                                     className="flex justify-between gap-3 py-[7px] hover:underline"
                                                 >
                                                     <span className="truncate text-[13px] leading-4 text-text">
@@ -221,11 +310,21 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                         ))}
                                         <li className="flex justify-between border-t border-solid border-border py-[7px]">
                                             <span className="text-[13px] leading-4 text-text-muted">
-                                                {unassigned && unassigned.total > unassigned.preview.length
-                                                    ? t('and :preview more', { preview: unassigned.total - unassigned.preview.length })
+                                                {unassigned &&
+                                                unassigned.total >
+                                                    unassigned.preview.length
+                                                    ? t('and :preview more', {
+                                                          preview:
+                                                              unassigned.total -
+                                                              unassigned.preview
+                                                                  .length,
+                                                      })
                                                     : ''}
                                             </span>
-                                            <Link href={bulk.url(query)} className={linkClass}>
+                                            <Link
+                                                href={bulk.url(query)}
+                                                className={linkClass}
+                                            >
                                                 {t('Register many at once')}
                                             </Link>
                                         </li>
@@ -239,11 +338,18 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                     className="flex flex-col gap-2 rounded-lg border border-solid border-warning bg-warning-tint p-4"
                                 >
                                     <p className="text-[14px] leading-[18px] font-semibold text-[#8A5A12]">
-                                        {t(':subject has no teacher', { subject: subject.name })}
+                                        {t(':subject has no teacher', {
+                                            subject: subject.name,
+                                        })}
                                     </p>
                                     <p className="text-[13px] leading-[19px] text-text">
                                         {subject.students} {level.name}{' '}
-                                        {subject.students === 1 ? t('student takes') : t('students take')} {t('it in a class with no teacher for it. Their marks cannot be entered until one is assigned.')}
+                                        {subject.students === 1
+                                            ? t('student takes')
+                                            : t('students take')}{' '}
+                                        {t(
+                                            'it in a class with no teacher for it. Their marks cannot be entered until one is assigned.',
+                                        )}
                                     </p>
                                     <Link
                                         href={editSubject.url(subject.id)}
@@ -260,12 +366,19 @@ function Overview({ yearLabel, hasTerm, levels, level, series = [], unassigned, 
                                     className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-white p-4"
                                 >
                                     <p className="text-[14px] leading-[18px] font-semibold text-text">
-                                        {t(':item is not set up', { item: item.name })}
+                                        {t(':item is not set up', {
+                                            item: item.name,
+                                        })}
                                     </p>
                                     <p className="text-[13px] leading-[19px] text-text-muted">
-                                        {t('It has no core subjects, so students cannot be registered in it yet.')}
+                                        {t(
+                                            'It has no core subjects, so students cannot be registered in it yet.',
+                                        )}
                                     </p>
-                                    <Link href={editSeries.url(item.id)} className={linkClass}>
+                                    <Link
+                                        href={editSeries.url(item.id)}
+                                        className={linkClass}
+                                    >
                                         {t('Open series setup →')}
                                     </Link>
                                 </div>

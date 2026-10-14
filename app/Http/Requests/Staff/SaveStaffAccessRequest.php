@@ -22,7 +22,12 @@ class SaveStaffAccessRequest extends SchoolRequest
 
         return [
             'role' => ['required', Rule::enum(UserRole::class)->only(UserRole::assignable())],
-            'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($member)],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users')->where('school_id', $this->school()->id)->ignore($member),
+            ],
             'phone' => [
                 'required',
                 'string',

@@ -12,11 +12,13 @@ The database foundation (schools, users, years, enrolments) exists but no human 
 ## Capabilities
 
 ### New Capabilities
+
 - `school-registration`: staged school + admin capture, verification codes, verified bootstrap transaction.
 - `subdomain-tenancy`: slug resolution middleware, session school scope, find-school vs own-address behavior.
 - `school-sign-in`: branded login with email-or-phone credentials, school-scoped sessions, first-visit setup routing.
 
 ### Modified Capabilities
+
 - `tenant-core`: schools gains slug; users phone becomes per-school unique.
 
 ## Impact

@@ -15,9 +15,11 @@ School Setup (Paper screen 08) is the first-visit landing for every founding adm
 ## Capabilities
 
 ### New Capabilities
+
 - `school-setup`: setup page zones, autosave endpoints, logo upload, installment templates + materialization, assessment windows, school-day config, edit guards.
 
 ### Modified Capabilities
+
 - `tenant-core`: schools gains logo path (nullable); terms gain edit-lock semantics when marks exist.
 - `finance-ledger`: invoices materialize installments from templates; payments apply oldest-first.
 

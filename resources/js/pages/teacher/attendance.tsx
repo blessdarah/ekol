@@ -1,6 +1,9 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-import { show, store } from '@/actions/App/Http/Controllers/AttendanceController';
+import {
+    show,
+    store,
+} from '@/actions/App/Http/Controllers/AttendanceController';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
@@ -42,11 +45,27 @@ interface Entry {
     note: string;
 }
 
-const monoCaps = 'font-mono text-[11px] leading-[14px] tracking-[0.08em] uppercase';
+const monoCaps =
+    'font-mono text-[11px] leading-[14px] tracking-[0.08em] uppercase';
 const MARKS: { key: Status; letter: string; on: string; avatar: string }[] = [
-    { key: 'present', letter: 'P', on: 'border-success bg-success text-white', avatar: 'bg-primary-tint text-primary' },
-    { key: 'absent', letter: 'A', on: 'border-danger bg-danger text-white', avatar: 'bg-danger-tint text-danger' },
-    { key: 'late', letter: 'L', on: 'border-warning bg-warning text-white', avatar: 'bg-warning-tint text-[#8A5A12]' },
+    {
+        key: 'present',
+        letter: 'P',
+        on: 'border-success bg-success text-white',
+        avatar: 'bg-primary-tint text-primary',
+    },
+    {
+        key: 'absent',
+        letter: 'A',
+        on: 'border-danger bg-danger text-white',
+        avatar: 'bg-danger-tint text-danger',
+    },
+    {
+        key: 'late',
+        letter: 'L',
+        on: 'border-warning bg-warning text-white',
+        avatar: 'bg-warning-tint text-[#8A5A12]',
+    },
 ];
 
 function initials(name: string): string {
@@ -57,11 +76,27 @@ function initials(name: string): string {
 
 function fromRoll(roll: RollRow[]): Record<string, Entry> {
     return Object.fromEntries(
-        roll.map((row) => [row.student_id, { status: row.status === 'excused' ? 'absent' : row.status, note: row.note ?? '' }]),
+        roll.map((row) => [
+            row.student_id,
+            {
+                status: row.status === 'excused' ? 'absent' : row.status,
+                note: row.note ?? '',
+            },
+        ]),
     );
 }
 
-function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: RollRow[]; date: string; dateLabel: string }) {
+function Register({
+    lesson,
+    roll,
+    date,
+    dateLabel,
+}: {
+    lesson: Lesson;
+    roll: RollRow[];
+    date: string;
+    dateLabel: string;
+}) {
     const errors = usePage().props.errors as Record<string, string | undefined>;
     const draftKey = `ekol.register.${lesson.id}.${date}`;
     const [entries, setEntries] = useState<Record<string, Entry>>(() => {
@@ -72,9 +107,18 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
         }
 
         try {
-            const draft = JSON.parse(window.localStorage.getItem(draftKey) ?? 'null') as Record<string, Entry> | null;
+            const draft = JSON.parse(
+                window.localStorage.getItem(draftKey) ?? 'null',
+            ) as Record<string, Entry> | null;
 
-            return draft ? { ...saved, ...Object.fromEntries(Object.entries(draft).filter(([id]) => id in saved)) } : saved;
+            return draft
+                ? {
+                      ...saved,
+                      ...Object.fromEntries(
+                          Object.entries(draft).filter(([id]) => id in saved),
+                      ),
+                  }
+                : saved;
         } catch {
             return saved;
         }
@@ -85,7 +129,8 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
     const [focus, setFocus] = useState(0);
     const rows = useRef<(HTMLDivElement | null)[]>([]);
 
-    const tally = (status: Status) => roll.filter((row) => entries[row.student_id]?.status === status).length;
+    const tally = (status: Status) =>
+        roll.filter((row) => entries[row.student_id]?.status === status).length;
     const marked = roll.filter((row) => entries[row.student_id]?.status).length;
     const locked = !lesson.started;
 
@@ -136,7 +181,9 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
 
     useEffect(() => {
         function onKeyDown(event: KeyboardEvent) {
-            const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+            const typing =
+                event.target instanceof HTMLInputElement ||
+                event.target instanceof HTMLTextAreaElement;
 
             if (event.key === 'Escape' && full) {
                 setFull(false);
@@ -144,16 +191,31 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
                 return;
             }
 
-            if (typing || locked || event.metaKey || event.ctrlKey || event.altKey) {
+            if (
+                typing ||
+                locked ||
+                event.metaKey ||
+                event.ctrlKey ||
+                event.altKey
+            ) {
                 return;
             }
 
             const row = roll[focus];
-            const mark = MARKS.find((option) => option.letter.toLowerCase() === event.key.toLowerCase());
+            const mark = MARKS.find(
+                (option) =>
+                    option.letter.toLowerCase() === event.key.toLowerCase(),
+            );
 
             if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
                 event.preventDefault();
-                const next = Math.max(0, Math.min(roll.length - 1, focus + (event.key === 'ArrowDown' ? 1 : -1)));
+                const next = Math.max(
+                    0,
+                    Math.min(
+                        roll.length - 1,
+                        focus + (event.key === 'ArrowDown' ? 1 : -1),
+                    ),
+                );
                 setFocus(next);
                 rows.current[next]?.scrollIntoView({ block: 'nearest' });
             } else if (mark && row) {
@@ -185,7 +247,12 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
                 {tally('late')} {t('late')}
             </span>
             <span className="border-l border-solid border-border pl-4 font-mono text-[12px] leading-4 font-normal text-text-muted">
-                {lesson.saved && !dirty ? t('Saved') : dirty ? t('Draft on this device') : t('Not saved')} · {marked} {t('of')} {roll.length} {t('marked')}
+                {lesson.saved && !dirty
+                    ? t('Saved')
+                    : dirty
+                      ? t('Draft on this device')
+                      : t('Not saved')}{' '}
+                · {marked} {t('of')} {roll.length} {t('marked')}
             </span>
         </div>
     );
@@ -193,11 +260,21 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
     const saveButton = (
         <button
             type="button"
-            disabled={saving || locked || marked < roll.length || roll.length === 0 || (lesson.saved && !dirty)}
+            disabled={
+                saving ||
+                locked ||
+                marked < roll.length ||
+                roll.length === 0 ||
+                (lesson.saved && !dirty)
+            }
             onClick={save}
             className="flex h-9 items-center rounded-md bg-primary px-4 text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-40"
         >
-            {saving ? t('Saving…') : lesson.saved ? t('Save changes') : t('Save register')}
+            {saving
+                ? t('Saving…')
+                : lesson.saved
+                  ? t('Save changes')
+                  : t('Save register')}
         </button>
     );
 
@@ -222,27 +299,53 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
                                   : 'border-border bg-white'
                         } ${position === focus && !locked ? 'outline outline-2 outline-offset-1 outline-primary' : ''}`}
                     >
-                        <span className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full text-[11px] leading-[14px] font-semibold ${tone?.avatar ?? 'bg-surface text-text-muted'}`}>
+                        <span
+                            className={`flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full text-[11px] leading-[14px] font-semibold ${tone?.avatar ?? 'bg-surface text-text-muted'}`}
+                        >
                             {initials(row.name)}
                         </span>
-                        <span className={`min-w-0 truncate text-[14px] leading-[18px] font-semibold text-text ${full ? 'w-[240px] shrink-0' : 'flex-1'}`}>
+                        <span
+                            className={`min-w-0 truncate text-[14px] leading-[18px] font-semibold text-text ${full ? 'w-[240px] shrink-0' : 'flex-1'}`}
+                        >
                             {row.name}
-                            {row.status === 'excused' && <span className="ml-2 text-[12px] font-normal text-text-muted">{t('excused by the office')}</span>}
+                            {row.status === 'excused' && (
+                                <span className="ml-2 text-[12px] font-normal text-text-muted">
+                                    {t('excused by the office')}
+                                </span>
+                            )}
                         </span>
-                        {(full || entry.status === 'absent' || entry.status === 'late') && (
+                        {(full ||
+                            entry.status === 'absent' ||
+                            entry.status === 'late') && (
                             <input
                                 type="text"
-                                aria-label={t('Note for :row', { row: row.name })}
+                                aria-label={t('Note for :row', {
+                                    row: row.name,
+                                })}
                                 value={entry.note}
                                 disabled={locked}
-                                onChange={(e) => set(row.student_id, { note: e.target.value })}
-                                placeholder={entry.status === 'late' ? t('When they arrived') : entry.status === 'absent' ? t('Anything known') : '—'}
+                                onChange={(e) =>
+                                    set(row.student_id, {
+                                        note: e.target.value,
+                                    })
+                                }
+                                placeholder={
+                                    entry.status === 'late'
+                                        ? t('When they arrived')
+                                        : entry.status === 'absent'
+                                          ? t('Anything known')
+                                          : '—'
+                                }
                                 className={`h-8 min-w-0 rounded-sm bg-transparent px-2 text-[13px] leading-4 text-text-muted outline-none placeholder:text-text-muted focus:bg-white focus:text-text focus:outline focus:outline-1 focus:outline-primary ${
                                     full ? 'flex-1' : 'w-[220px] shrink-0'
                                 }`}
                             />
                         )}
-                        <span role="radiogroup" aria-label={t('Mark :row', { row: row.name })} className="flex shrink-0 gap-2">
+                        <span
+                            role="radiogroup"
+                            aria-label={t('Mark :row', { row: row.name })}
+                            className="flex shrink-0 gap-2"
+                        >
                             {MARKS.map((mark) => (
                                 <button
                                     key={mark.key}
@@ -251,9 +354,15 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
                                     aria-checked={entry.status === mark.key}
                                     aria-label={mark.key}
                                     disabled={locked}
-                                    onClick={() => set(row.student_id, { status: mark.key })}
+                                    onClick={() =>
+                                        set(row.student_id, {
+                                            status: mark.key,
+                                        })
+                                    }
                                     className={`flex h-[30px] w-10 items-center justify-center rounded-md border border-solid text-[12px] leading-4 font-semibold disabled:opacity-50 ${
-                                        entry.status === mark.key ? mark.on : 'border-border bg-white text-text-muted enabled:hover:bg-surface'
+                                        entry.status === mark.key
+                                            ? mark.on
+                                            : 'border-border bg-white text-text-muted enabled:hover:bg-surface'
                                     }`}
                                 >
                                     {mark.letter}
@@ -268,15 +377,24 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
 
     const footer = (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface px-4 py-3">
-            <p className={`text-[12px] leading-4 ${errors.marks ? 'font-medium text-danger' : 'text-text-muted'}`}>
+            <p
+                className={`text-[12px] leading-4 ${errors.marks ? 'font-medium text-danger' : 'text-text-muted'}`}
+            >
                 {errors.marks ??
                     (locked
-                        ? t('This lesson has not started. Its register opens at :slice.', { slice: lesson.time.slice(0, 5) })
+                        ? t(
+                              'This lesson has not started. Its register opens at :slice.',
+                              { slice: lesson.time.slice(0, 5) },
+                          )
                         : marked < roll.length
-                          ? t(':marked still to mark', { marked: roll.length - marked })
+                          ? t(':marked still to mark', {
+                                marked: roll.length - marked,
+                            })
                           : t('Everyone is marked'))}
             </p>
-            <p className="font-mono text-[11px] leading-[14px] text-text-muted">{t('P, A, L mark · ↑ ↓ move')}</p>
+            <p className="font-mono text-[11px] leading-[14px] text-text-muted">
+                {t('P, A, L mark · ↑ ↓ move')}
+            </p>
         </div>
     );
 
@@ -286,11 +404,17 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
                 <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-primary-tint px-4 py-3">
                     <div className="flex flex-col gap-1">
                         <p className="font-mono text-[11px] leading-[14px] text-text-muted">
-                            {t('Fullscreen · :period · :date_label :time', { period: lesson.period, date_label: dateLabel, time: lesson.time })}
+                            {t('Fullscreen · :period · :date_label :time', {
+                                period: lesson.period,
+                                date_label: dateLabel,
+                                time: lesson.time,
+                            })}
                         </p>
                         <p className="font-display text-[14px] leading-[18px] font-semibold text-text">
                             {lesson.class} · {lesson.subject}
-                            {lesson.room ? t(' · Room :room', { room: lesson.room }) : ''}
+                            {lesson.room
+                                ? t(' · Room :room', { room: lesson.room })
+                                : ''}
                         </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
@@ -305,7 +429,9 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
                         {saveButton}
                     </div>
                 </div>
-                <div className={`flex items-center gap-3 px-4 ${monoCaps} text-text-muted`}>
+                <div
+                    className={`flex items-center gap-3 px-4 ${monoCaps} text-text-muted`}
+                >
                     <span className="w-[30px] shrink-0" />
                     <span className="w-[240px] shrink-0">{t('Student')}</span>
                     <span className="flex-1">{t('Note for this lesson')}</span>
@@ -321,10 +447,15 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
         <>
             <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-primary-tint px-4 py-3">
                 <div className="flex flex-col gap-1">
-                    <p className="font-mono text-[11px] leading-[14px] text-text-muted">{t('Register being marked')}</p>
+                    <p className="font-mono text-[11px] leading-[14px] text-text-muted">
+                        {t('Register being marked')}
+                    </p>
                     <p className="font-display text-[14px] leading-[18px] font-semibold text-text">
                         {lesson.period} · {lesson.class} · {lesson.subject}
-                        {lesson.room ? t(' · Room :room', { room: lesson.room }) : ''} · {dateLabel}
+                        {lesson.room
+                            ? t(' · Room :room', { room: lesson.room })
+                            : ''}{' '}
+                        · {dateLabel}
                     </p>
                 </div>
                 {counts}
@@ -333,13 +464,28 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
             <div className="flex flex-col gap-6 xl:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface px-4 py-3">
-                        <h2 className="font-display text-[15px] leading-5 font-semibold text-text">{t('Roll · :class', { class: lesson.class })}</h2>
+                        <h2 className="font-display text-[15px] leading-5 font-semibold text-text">
+                            {t('Roll · :class', { class: lesson.class })}
+                        </h2>
                         <div className="flex gap-2 print:hidden">
                             <button
                                 type="button"
                                 disabled={locked || roll.length === 0}
                                 onClick={() =>
-                                    remember(Object.fromEntries(roll.map((row) => [row.student_id, { ...entries[row.student_id], status: entries[row.student_id].status ?? 'present' }])))
+                                    remember(
+                                        Object.fromEntries(
+                                            roll.map((row) => [
+                                                row.student_id,
+                                                {
+                                                    ...entries[row.student_id],
+                                                    status:
+                                                        entries[row.student_id]
+                                                            .status ??
+                                                        'present',
+                                                },
+                                            ]),
+                                        ),
+                                    )
                                 }
                                 className="flex h-8 items-center rounded-md border border-solid border-border bg-white px-3 text-[13px] leading-4 font-medium text-text hover:bg-surface disabled:opacity-40"
                             >
@@ -356,7 +502,11 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
                         </div>
                     </div>
                     {roll.length === 0 ? (
-                        <p className="rounded-lg border border-solid border-border p-4 text-[13px] leading-[19px] text-text-muted">{t('No student is enrolled in :class.', { class: lesson.class })}</p>
+                        <p className="rounded-lg border border-solid border-border p-4 text-[13px] leading-[19px] text-text-muted">
+                            {t('No student is enrolled in :class.', {
+                                class: lesson.class,
+                            })}
+                        </p>
                     ) : (
                         list
                     )}
@@ -365,17 +515,41 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
 
                 <aside className="flex shrink-0 flex-col gap-4 xl:w-[300px]">
                     <div className="flex flex-col gap-2 rounded-lg border border-solid border-border bg-surface p-4">
-                        <p className="text-[13px] leading-[18px] font-semibold text-text">{t('How this register works')}</p>
+                        <p className="text-[13px] leading-[18px] font-semibold text-text">
+                            {t('How this register works')}
+                        </p>
                         <ul className="flex flex-col gap-2 text-[12px] leading-4 text-text-muted">
-                            <li>{t('· One register per lesson, so a class you teach twice today has two.')}</li>
-                            <li>{t('· An absence applies to this lesson only. It never marks the student absent for the day.')}</li>
-                            <li>{t('· The office sees it on the student’s record as soon as you save.')}</li>
-                            <li>{t('· You can change it until the end of today. After that the office handles corrections.')}</li>
+                            <li>
+                                {t(
+                                    '· One register per lesson, so a class you teach twice today has two.',
+                                )}
+                            </li>
+                            <li>
+                                {t(
+                                    '· An absence applies to this lesson only. It never marks the student absent for the day.',
+                                )}
+                            </li>
+                            <li>
+                                {t(
+                                    '· The office sees it on the student’s record as soon as you save.',
+                                )}
+                            </li>
+                            <li>
+                                {t(
+                                    '· You can change it until the end of today. After that the office handles corrections.',
+                                )}
+                            </li>
                         </ul>
                     </div>
                     <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-4">
-                        <p className="text-[13px] leading-4 font-semibold text-text">{t('Tired of scrolling?')}</p>
-                        <p className="text-[12px] leading-4 text-text-muted">{t('Fullscreen hides the sidebar and the lesson picker so the roll fills the screen.')}</p>
+                        <p className="text-[13px] leading-4 font-semibold text-text">
+                            {t('Tired of scrolling?')}
+                        </p>
+                        <p className="text-[12px] leading-4 text-text-muted">
+                            {t(
+                                'Fullscreen hides the sidebar and the lesson picker so the roll fills the screen.',
+                            )}
+                        </p>
                         <button
                             type="button"
                             onClick={() => setFull(true)}
@@ -390,7 +564,15 @@ function Register({ lesson, roll, date, dateLabel }: { lesson: Lesson; roll: Rol
     );
 }
 
-function Attendance({ dateLabel, date, weekLabel, hasTimetable, lessons, lesson, roll }: AttendanceProps) {
+function Attendance({
+    dateLabel,
+    date,
+    weekLabel,
+    hasTimetable,
+    lessons,
+    lesson,
+    roll,
+}: AttendanceProps) {
     const current = lessons.find((option) => option.id === lesson) ?? null;
 
     return (
@@ -402,10 +584,21 @@ function Attendance({ dateLabel, date, weekLabel, hasTimetable, lessons, lesson,
                     {weekLabel ? ` · ${weekLabel}` : ''}
                     {current ? ` · ${current.period} · ${current.time}` : ''}
                 </p>
-                <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">{t('Take attendance')}</h1>
+                <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
+                    {t('Take attendance')}
+                </h1>
                 <p className="text-[14px] leading-5 text-text-muted">
                     {current
-                        ? t(':class · :subject:room · one register per lesson, not per class', { class: current.class, subject: current.subject, room: current.room ? ` · Room ${current.room}` : '' })
+                        ? t(
+                              ':class · :subject:room · one register per lesson, not per class',
+                              {
+                                  class: current.class,
+                                  subject: current.subject,
+                                  room: current.room
+                                      ? ` · Room ${current.room}`
+                                      : '',
+                              },
+                          )
                         : t('One register per lesson, not per class')}
                 </p>
             </div>
@@ -413,40 +606,76 @@ function Attendance({ dateLabel, date, weekLabel, hasTimetable, lessons, lesson,
             {lessons.length === 0 || !current ? (
                 <div className="flex flex-col gap-2 rounded-lg bg-surface p-5">
                     <p className="text-[14px] leading-[18px] font-semibold text-text">
-                        {hasTimetable ? t('You have no lessons today') : t('No timetable is published yet')}
+                        {hasTimetable
+                            ? t('You have no lessons today')
+                            : t('No timetable is published yet')}
                     </p>
                     <p className="max-w-[600px] text-[13px] leading-[19px] text-text">
                         {hasTimetable
-                            ? t('A register appears here for each lesson on your timetable, on the day it is taught.')
-                            : t('Registers follow the published timetable. They appear here once the school publishes it.')}
+                            ? t(
+                                  'A register appears here for each lesson on your timetable, on the day it is taught.',
+                              )
+                            : t(
+                                  'Registers follow the published timetable. They appear here once the school publishes it.',
+                              )}
                     </p>
                 </div>
             ) : (
                 <>
                     <div className="flex flex-col gap-2">
                         <div className="flex flex-wrap items-baseline justify-between gap-2">
-                            <p className={`${monoCaps} text-text-muted`}>{t('Today’s lessons · :lessons', { lessons: lessons.length })}</p>
-                            <p className="text-[12px] leading-4 text-text-muted">{t('Switching lesson keeps each register separate')}</p>
+                            <p className={`${monoCaps} text-text-muted`}>
+                                {t('Today’s lessons · :lessons', {
+                                    lessons: lessons.length,
+                                })}
+                            </p>
+                            <p className="text-[12px] leading-4 text-text-muted">
+                                {t(
+                                    'Switching lesson keeps each register separate',
+                                )}
+                            </p>
                         </div>
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             {lessons.map((option) => {
                                 const active = option.id === current.id;
                                 const state = option.saved
-                                    ? { label: t('Marked'), dot: 'bg-success', text: 'text-success' }
+                                    ? {
+                                          label: t('Marked'),
+                                          dot: 'bg-success',
+                                          text: 'text-success',
+                                      }
                                     : active && option.started
-                                      ? { label: t('Marking'), dot: 'bg-warning', text: 'text-[#8A5A12]' }
+                                      ? {
+                                            label: t('Marking'),
+                                            dot: 'bg-warning',
+                                            text: 'text-[#8A5A12]',
+                                        }
                                       : option.started
-                                        ? { label: t('Not marked'), dot: 'bg-warning', text: 'text-[#8A5A12]' }
-                                        : { label: t('Not started'), dot: 'bg-border', text: 'text-text-muted' };
+                                        ? {
+                                              label: t('Not marked'),
+                                              dot: 'bg-warning',
+                                              text: 'text-[#8A5A12]',
+                                          }
+                                        : {
+                                              label: t('Not started'),
+                                              dot: 'bg-border',
+                                              text: 'text-text-muted',
+                                          };
 
                                 return (
                                     <Link
                                         key={option.id}
-                                        href={show.url({ query: { lesson: option.id } })}
+                                        href={show.url({
+                                            query: { lesson: option.id },
+                                        })}
                                         preserveScroll
-                                        aria-current={active ? 'true' : undefined}
+                                        aria-current={
+                                            active ? 'true' : undefined
+                                        }
                                         className={`flex flex-col gap-[6px] rounded-lg border-solid p-3 ${
-                                            active ? 'border-2 border-primary bg-[#F3F7F5]' : 'border border-border bg-white hover:bg-surface'
+                                            active
+                                                ? 'border-2 border-primary bg-[#F3F7F5]'
+                                                : 'border border-border bg-white hover:bg-surface'
                                         }`}
                                     >
                                         <span className="font-mono text-[11px] leading-[14px] text-text-muted">
@@ -457,11 +686,32 @@ function Attendance({ dateLabel, date, weekLabel, hasTimetable, lessons, lesson,
                                             {option.class} · {option.subject}
                                         </span>
                                         <span className="text-[12px] leading-4 text-text-muted">
-                                            {option.room ? t('Room :room', { room: option.room }) : t('No room')} ·{' '}
-                                            {option.saved ? t(':present of :students present', { present: option.present, students: option.students }) : t(':students students', { students: option.students })}
+                                            {option.room
+                                                ? t('Room :room', {
+                                                      room: option.room,
+                                                  })
+                                                : t('No room')}{' '}
+                                            ·{' '}
+                                            {option.saved
+                                                ? t(
+                                                      ':present of :students present',
+                                                      {
+                                                          present:
+                                                              option.present,
+                                                          students:
+                                                              option.students,
+                                                      },
+                                                  )
+                                                : t(':students students', {
+                                                      students: option.students,
+                                                  })}
                                         </span>
-                                        <span className={`flex items-center gap-[6px] text-[12px] leading-4 font-medium ${state.text}`}>
-                                            <span className={`h-[6px] w-[6px] rounded-full ${state.dot}`} />
+                                        <span
+                                            className={`flex items-center gap-[6px] text-[12px] leading-4 font-medium ${state.text}`}
+                                        >
+                                            <span
+                                                className={`h-[6px] w-[6px] rounded-full ${state.dot}`}
+                                            />
                                             {t(state.label)}
                                         </span>
                                     </Link>
@@ -470,7 +720,13 @@ function Attendance({ dateLabel, date, weekLabel, hasTimetable, lessons, lesson,
                         </div>
                     </div>
 
-                    <Register key={current.id} lesson={current} roll={roll} date={date} dateLabel={dateLabel} />
+                    <Register
+                        key={current.id}
+                        lesson={current}
+                        roll={roll}
+                        date={date}
+                        dateLabel={dateLabel}
+                    />
                 </>
             )}
         </div>

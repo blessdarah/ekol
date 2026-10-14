@@ -177,7 +177,7 @@ test('find-school redirects to the school login address', function () {
     ]);
 
     $this->post('/login/find-school', ['slug' => 'acme'])
-        ->assertRedirect('//acme.ekol.test/login');
+        ->assertRedirect('http://acme.ekol.test/login');
 
     $this->post('/login/find-school', ['slug' => 'ghost'])
         ->assertSessionHasErrors('slug');
@@ -562,4 +562,16 @@ test('every line of text on a page has a French entry', function () {
     }
 
     expect(array_values(array_unique($missing)))->toBe([]);
+});
+
+test('find-school sends an in-app request to the school address with a full page load', function () {
+    School::create([
+        'name' => 'Acme Academy', 'code' => 'ACME', 'slug' => 'acme',
+        'cycle' => SchoolCycle::Secondary, 'currency' => 'XAF', 'timezone' => 'Africa/Douala',
+    ]);
+
+    $this->withHeaders(['X-Inertia' => 'true'])
+        ->post('/login/find-school', ['slug' => 'acme'])
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location', 'http://acme.'.parse_url((string) config('app.url'), PHP_URL_HOST).'/login');
 });

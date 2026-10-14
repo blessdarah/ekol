@@ -104,12 +104,18 @@ function Register({
     ).toUpperCase();
 
     const checklist = [
-        { label: t('Full name'), done: !!data.given_name.trim() && !!data.family_name.trim() },
+        {
+            label: t('Full name'),
+            done: !!data.given_name.trim() && !!data.family_name.trim(),
+        },
         { label: t('Gender'), done: !!data.gender },
         { label: t('Address'), done: !!data.address.trim() },
         { label: t('Email'), done: !!data.email.trim() },
         { label: t('Phone'), done: !!data.phone.trim() },
-        { label: t('Highest qualification'), done: !!data.qualification.trim() },
+        {
+            label: t('Highest qualification'),
+            done: !!data.qualification.trim(),
+        },
         {
             label: t('Photo, or an avatar we generate'),
             done: !!preview || !!member?.photo_url || initials.length === 2,
@@ -143,9 +149,15 @@ function Register({
     return (
         <form
             onSubmit={submit}
-            className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7"
+            className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]"
         >
-            <Head title={member ? t('Edit a staff record') : t('Register a staff member')} />
+            <Head
+                title={
+                    member
+                        ? t('Edit a staff record')
+                        : t('Register a staff member')
+                }
+            />
             <PageHeader
                 crumb={member ? 'Edit' : 'Register'}
                 parents={
@@ -158,12 +170,21 @@ function Register({
                           ]
                         : []
                 }
-                title={member ? t('Edit a staff record') : t('Register a staff member')}
+                title={
+                    member
+                        ? t('Edit a staff record')
+                        : t('Register a staff member')
+                }
                 tag={`${member ? t('Record') : t('Registration')}${yearLabel ? ` · ${yearLabel}` : ''}`}
                 meta={
                     member
-                        ? t('corrections are normal, and every change is kept in the log')
-                        : t('seven fields are required before :subject can be saved', { subject: they.subject })
+                        ? t(
+                              'corrections are normal, and every change is kept in the log',
+                          )
+                        : t(
+                              'seven fields are required before :subject can be saved',
+                              { subject: they.subject },
+                          )
                 }
             />
             {!member && <FlowSteps active={0} />}
@@ -172,7 +193,9 @@ function Register({
                 aside={
                     <>
                         <div className="flex flex-col gap-3">
-                            <p className={sectionLabelClass}>{t('Seven required fields')}</p>
+                            <p className={sectionLabelClass}>
+                                {t('Seven required fields')}
+                            </p>
                             <ul className="flex flex-col gap-2">
                                 {checklist.map((item) => (
                                     <li
@@ -186,7 +209,9 @@ function Register({
                             </ul>
                         </div>
                         <Note title={t('We do not verify with anyone')}>
-                            {t('Nothing here is checked against a government database. The school records what it knows on the person, and corrects it later if it was wrong.')}
+                            {t(
+                                'Nothing here is checked against a government database. The school records what it knows on the person, and corrects it later if it was wrong.',
+                            )}
                         </Note>
                         <div className="mt-auto flex flex-col gap-2">
                             <button
@@ -194,13 +219,19 @@ function Register({
                                 disabled={processing}
                                 className={`${primaryButtonClass} w-full`}
                             >
-                                {member ? t('Save corrections') : t('Save and continue')}
+                                {member
+                                    ? t('Save corrections')
+                                    : t('Save and continue')}
                             </button>
                             <Link
-                                href={member ? show.url(member.id) : index.url()}
+                                href={
+                                    member ? show.url(member.id) : index.url()
+                                }
                                 className={`${quietLinkClass} justify-center`}
                             >
-                                {member ? t('Back to the record') : t('Back to roster')}
+                                {member
+                                    ? t('Back to the record')
+                                    : t('Back to roster')}
                             </Link>
                         </div>
                     </>
@@ -217,7 +248,9 @@ function Register({
                                 bordered
                             />
                             <label className="flex h-8 cursor-pointer items-center rounded-md border border-solid border-border px-3 text-[13px] font-medium text-primary hover:bg-surface">
-                                {preview || member?.photo_url ? t('Change the photo') : t('Add a photo')}
+                                {preview || member?.photo_url
+                                    ? t('Change the photo')
+                                    : t('Add a photo')}
                                 <input
                                     type="file"
                                     accept="image/png,image/jpeg,image/webp"
@@ -232,29 +265,46 @@ function Register({
                                 />
                             </label>
                             <p className="text-[12px] leading-[1.5] text-text-muted">
-                                {t('No photo? We generate an avatar from :possessive initials.', { possessive: they.possessive })}
+                                {t(
+                                    'No photo? We generate an avatar from :possessive initials.',
+                                    { possessive: they.possessive },
+                                )}
                             </p>
                             <FieldError message={photoError ?? errors.photo} />
                         </div>
                         <div className="flex min-w-0 flex-1 flex-col gap-3">
                             <div className="flex flex-col gap-3 sm:flex-row">
-                                <label className={`flex flex-1 flex-col gap-1 ${fieldLabelClass}`}>
+                                <label
+                                    className={`flex flex-1 flex-col gap-1 ${fieldLabelClass}`}
+                                >
                                     {t('Given name')}
                                     <input
                                         type="text"
                                         value={data.given_name}
-                                        onChange={(e) => setData('given_name', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'given_name',
+                                                e.target.value,
+                                            )
+                                        }
                                         autoComplete="off"
                                         className={textInputClass}
                                     />
                                     <FieldError message={errors.given_name} />
                                 </label>
-                                <label className={`flex flex-1 flex-col gap-1 ${fieldLabelClass}`}>
+                                <label
+                                    className={`flex flex-1 flex-col gap-1 ${fieldLabelClass}`}
+                                >
                                     {t('Family name')}
                                     <input
                                         type="text"
                                         value={data.family_name}
-                                        onChange={(e) => setData('family_name', e.target.value)}
+                                        onChange={(e) =>
+                                            setData(
+                                                'family_name',
+                                                e.target.value,
+                                            )
+                                        }
                                         autoComplete="off"
                                         className={textInputClass}
                                     />
@@ -266,7 +316,9 @@ function Register({
                                 aria-label={t('Gender')}
                                 className="flex flex-col gap-2"
                             >
-                                <span className={fieldLabelClass}>{t('Gender')}</span>
+                                <span className={fieldLabelClass}>
+                                    {t('Gender')}
+                                </span>
                                 <div className="flex gap-2">
                                     {[
                                         { value: 'female', label: t('Female') },
@@ -276,9 +328,15 @@ function Register({
                                             key={option.value}
                                             type="button"
                                             role="radio"
-                                            aria-checked={data.gender === option.value}
-                                            onClick={() => setData('gender', option.value)}
-                                            className={choiceClass(data.gender === option.value)}
+                                            aria-checked={
+                                                data.gender === option.value
+                                            }
+                                            onClick={() =>
+                                                setData('gender', option.value)
+                                            }
+                                            className={choiceClass(
+                                                data.gender === option.value,
+                                            )}
                                         >
                                             {t(option.label)}
                                         </button>
@@ -295,23 +353,31 @@ function Register({
                         {t('2 · How to reach :object', { object: they.object })}
                     </p>
                     <div className="flex flex-col gap-3 sm:flex-row">
-                        <label className={`flex flex-1 flex-col gap-1 ${fieldLabelClass}`}>
+                        <label
+                            className={`flex flex-1 flex-col gap-1 ${fieldLabelClass}`}
+                        >
                             {t('Email')}
                             <input
                                 type="email"
                                 value={data.email}
-                                onChange={(e) => setData('email', e.target.value)}
+                                onChange={(e) =>
+                                    setData('email', e.target.value)
+                                }
                                 autoComplete="off"
                                 className={textInputClass}
                             />
                             <FieldError message={errors.email} />
                         </label>
-                        <label className={`flex flex-col gap-1 sm:w-[220px] ${fieldLabelClass}`}>
+                        <label
+                            className={`flex flex-col gap-1 sm:w-[220px] ${fieldLabelClass}`}
+                        >
                             {t('Phone')}
                             <input
                                 type="tel"
                                 value={data.phone}
-                                onChange={(e) => setData('phone', e.target.value)}
+                                onChange={(e) =>
+                                    setData('phone', e.target.value)
+                                }
                                 autoComplete="off"
                                 className={textInputClass}
                             />
@@ -332,7 +398,9 @@ function Register({
                 </section>
 
                 <section className="flex flex-col gap-3">
-                    <p className={sectionLabelClass}>{t('3 · Qualification and work')}</p>
+                    <p className={sectionLabelClass}>
+                        {t('3 · Qualification and work')}
+                    </p>
                     <label className={`flex flex-col gap-1 ${fieldLabelClass}`}>
                         {t('Highest qualification')}
                         <input
@@ -340,7 +408,9 @@ function Register({
                             list="staff-qualifications"
                             placeholder={t('Master of Science · Physics')}
                             value={data.qualification}
-                            onChange={(e) => setData('qualification', e.target.value)}
+                            onChange={(e) =>
+                                setData('qualification', e.target.value)
+                            }
                             className={textInputClass}
                         />
                         <datalist id="staff-qualifications">
@@ -355,19 +425,33 @@ function Register({
                         aria-label={t('Employment type')}
                         className="flex flex-col gap-2"
                     >
-                        <span className={fieldLabelClass}>{t('Employment type')}</span>
+                        <span className={fieldLabelClass}>
+                            {t('Employment type')}
+                        </span>
                         <div className="flex flex-wrap gap-2">
                             {[
-                                { value: 'school_paid', label: t('School-paid') },
-                                { value: 'government', label: t('Government employee') },
+                                {
+                                    value: 'school_paid',
+                                    label: t('School-paid'),
+                                },
+                                {
+                                    value: 'government',
+                                    label: t('Government employee'),
+                                },
                             ].map((option) => (
                                 <button
                                     key={option.value}
                                     type="button"
                                     role="radio"
-                                    aria-checked={data.employment_type === option.value}
-                                    onClick={() => setData('employment_type', option.value)}
-                                    className={choiceClass(data.employment_type === option.value)}
+                                    aria-checked={
+                                        data.employment_type === option.value
+                                    }
+                                    onClick={() =>
+                                        setData('employment_type', option.value)
+                                    }
+                                    className={choiceClass(
+                                        data.employment_type === option.value,
+                                    )}
                                 >
                                     {t(option.label)}
                                 </button>

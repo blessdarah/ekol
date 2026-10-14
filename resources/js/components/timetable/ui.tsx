@@ -36,7 +36,8 @@ export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export const amberText = 'text-[#8A5A12]';
 
-export const linkClass = 'text-[13px] leading-4 font-medium text-primary hover:underline';
+export const linkClass =
+    'text-[13px] leading-4 font-medium text-primary hover:underline';
 
 export const primaryActionClass =
     'flex h-9 items-center justify-center gap-2 rounded-md bg-primary px-4 text-[13px] leading-4 font-semibold text-white hover:bg-primary-hover disabled:opacity-40 aria-disabled:pointer-events-none aria-disabled:opacity-40';
@@ -48,10 +49,28 @@ export function plural(count: number, one: string, many = `${one}s`): string {
     return `${new Intl.NumberFormat(numberLocale()).format(count)} ${count === 1 ? t(one) : t(many)}`;
 }
 
-export function CheckMark({ size = 12, tone = '#FFFFFF' }: { size?: number; tone?: string }) {
+export function CheckMark({
+    size = 12,
+    tone = '#FFFFFF',
+}: {
+    size?: number;
+    tone?: string;
+}) {
     return (
-        <svg width={size} height={size} viewBox="0 0 24 24" className="shrink-0">
-            <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke={tone} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+        <svg
+            width={size}
+            height={size}
+            viewBox="0 0 24 24"
+            className="shrink-0"
+        >
+            <path
+                d="M5 12.5l4.5 4.5L19 7.5"
+                fill="none"
+                stroke={tone}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
         </svg>
     );
 }
@@ -69,7 +88,9 @@ export function TickBox({
     children: ReactNode;
 }) {
     return (
-        <label className={`flex items-start gap-[10px] text-[13px] leading-[18px] text-text ${disabled ? 'opacity-60' : 'cursor-pointer'}`}>
+        <label
+            className={`flex items-start gap-[10px] text-[13px] leading-[18px] text-text ${disabled ? 'opacity-60' : 'cursor-pointer'}`}
+        >
             <input
                 type="checkbox"
                 checked={checked}
@@ -79,7 +100,9 @@ export function TickBox({
             />
             <span
                 className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-sm border border-solid peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-primary ${
-                    checked ? 'border-primary bg-primary-tint' : 'border-border bg-white'
+                    checked
+                        ? 'border-primary bg-primary-tint'
+                        : 'border-border bg-white'
                 }`}
             >
                 {checked && <CheckMark tone="#0E4D3A" />}
@@ -89,10 +112,27 @@ export function TickBox({
     );
 }
 
-function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase }) {
+function PhaseBar({
+    page,
+    phase,
+}: {
+    page: TimetablePage;
+    phase: TimetablePhase;
+}) {
     const allDone = !phase.has_draft && phase.live !== null;
-    const steps: { key: StepKey; label: string; href: string; done: boolean; badge?: ReactNode }[] = [
-        { key: 'setup', label: t('Setup'), href: setup.url(), done: phase.setup },
+    const steps: {
+        key: StepKey;
+        label: string;
+        href: string;
+        done: boolean;
+        badge?: ReactNode;
+    }[] = [
+        {
+            key: 'setup',
+            label: t('Setup'),
+            href: setup.url(),
+            done: phase.setup,
+        },
         {
             key: 'checks',
             label: t('Check inputs'),
@@ -105,7 +145,12 @@ function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase 
                     </span>
                 ) : null,
         },
-        { key: 'generate', label: t('Generate'), href: generator.url(), done: phase.generated },
+        {
+            key: 'generate',
+            label: t('Generate'),
+            href: generator.url(),
+            done: phase.generated,
+        },
         {
             key: 'review',
             label: t('Review'),
@@ -113,12 +158,19 @@ function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase 
             done: phase.reviewed,
             badge:
                 phase.to_fix !== null && phase.to_fix > 0 ? (
-                    <span className={`flex h-[18px] items-center rounded-full bg-warning-tint px-[6px] font-mono text-[11px] leading-[14px] ${amberText}`}>
+                    <span
+                        className={`flex h-[18px] items-center rounded-full bg-warning-tint px-[6px] font-mono text-[11px] leading-[14px] ${amberText}`}
+                    >
                         {t(':to_fix to fix', { to_fix: phase.to_fix })}
                     </span>
                 ) : null,
         },
-        { key: 'publish', label: t('Publish'), href: phase.has_draft ? publishing.url() : index.url(), done: false },
+        {
+            key: 'publish',
+            label: t('Publish'),
+            href: phase.has_draft ? publishing.url() : index.url(),
+            done: false,
+        },
     ];
 
     return (
@@ -141,12 +193,18 @@ function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase 
             {steps.map((step, position) => {
                 const done = step.done || allDone;
                 const active = page === step.key;
-                const waiting = !done && !active && phase.current === step.key && page === 'overview';
+                const waiting =
+                    !done &&
+                    !active &&
+                    phase.current === step.key &&
+                    page === 'overview';
 
                 return (
                     <Fragment key={step.key}>
                         {position > 0 && (
-                            <span className={`h-px w-6 shrink-0 ${steps[position - 1].done || allDone ? 'bg-success' : 'bg-border'}`} />
+                            <span
+                                className={`h-px w-6 shrink-0 ${steps[position - 1].done || allDone ? 'bg-success' : 'bg-border'}`}
+                            />
                         )}
                         <Link
                             href={step.href}
@@ -185,7 +243,9 @@ function PhaseBar({ page, phase }: { page: TimetablePage; phase: TimetablePhase 
                 );
             })}
             <span className="flex-1" />
-            <span className="text-[12px] leading-4 text-text-muted">{t('After publishing')}</span>
+            <span className="text-[12px] leading-4 text-text-muted">
+                {t('After publishing')}
+            </span>
             <Link
                 href={changes.url()}
                 aria-current={page === 'changes' ? 'page' : undefined}
@@ -224,14 +284,22 @@ export function TimetableHeader({
                     <Breadcrumbs
                         trail={
                             trail.length > 0
-                                ? [{ label: t('Timetable'), href: index.url() }, ...trail]
+                                ? [
+                                      {
+                                          label: t('Timetable'),
+                                          href: index.url(),
+                                      },
+                                      ...trail,
+                                  ]
                                 : [{ label: t('Timetable') }]
                         }
                     />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                         {title}
                     </h1>
-                    <p className="text-[13px] leading-4 text-text-muted">{meta}</p>
+                    <p className="text-[13px] leading-4 text-text-muted">
+                        {meta}
+                    </p>
                 </div>
                 {action && <div className="flex flex-wrap gap-2">{action}</div>}
             </div>
@@ -243,9 +311,13 @@ export function TimetableHeader({
 export function NoTerm({ setupHref }: { setupHref: string }) {
     return (
         <div className="flex flex-col gap-3 rounded-md bg-surface p-5">
-            <p className="text-[14px] leading-[18px] font-semibold text-text">{t('No term is active')}</p>
+            <p className="text-[14px] leading-[18px] font-semibold text-text">
+                {t('No term is active')}
+            </p>
             <p className="max-w-[640px] text-[13px] leading-[19px] text-text">
-                {t('A timetable is built for a term. Make a term active in School Setup and the timetable opens here.')}
+                {t(
+                    'A timetable is built for a term. Make a term active in School Setup and the timetable opens here.',
+                )}
             </p>
             <Link href={setupHref} className={linkClass}>
                 {t('Open School Setup →')}

@@ -41,7 +41,9 @@ function PrivacyNote() {
                 {t('Private by default')}
             </p>
             <p className="text-[14px] leading-[1.55] text-text">
-                {t('Every school gets its own workspace. Student, fee and marks records are never shared between schools.')}
+                {t(
+                    'Every school gets its own workspace. Student, fee and marks records are never shared between schools.',
+                )}
             </p>
         </div>
     );
@@ -64,7 +66,7 @@ export default function AuthLayout({
     const t = useT();
 
     return (
-        <div className="font-auth flex min-h-screen flex-col bg-bg text-text antialiased lg:flex-row">
+        <div className="flex min-h-screen flex-col bg-bg font-auth text-text antialiased lg:flex-row">
             <Toasts />
             <div className="flex items-center justify-between border-b border-border bg-surface px-5 py-4 lg:hidden">
                 <LogoMark />
@@ -74,10 +76,7 @@ export default function AuthLayout({
                 <div className="flex flex-col gap-12">
                     <LogoMark />
                     {middle.variant === 'stepper' && (
-                        <Stepper
-                            steps={middle.steps}
-                            active={middle.active}
-                        />
+                        <Stepper steps={middle.steps} active={middle.active} />
                     )}
                     {middle.variant === 'statement' && (
                         <div className="flex max-w-[320px] flex-col gap-2">
@@ -134,12 +133,22 @@ export function TopBar({
     return (
         <p className="text-text-muted">
             {text}{' '}
-            <Link
-                href={href}
-                className="font-semibold text-text hover:underline"
-            >
-                {linkText}
-            </Link>
+            {/^(https?:)?\/\//.test(href) ? (
+                // Another address, such as a school's own: a full page load.
+                <a
+                    href={href}
+                    className="font-semibold text-text hover:underline"
+                >
+                    {linkText}
+                </a>
+            ) : (
+                <Link
+                    href={href}
+                    className="font-semibold text-text hover:underline"
+                >
+                    {linkText}
+                </Link>
+            )}
         </p>
     );
 }

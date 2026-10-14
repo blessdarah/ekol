@@ -7,6 +7,7 @@ Explored with user: Postgres yes, Laravel users + role yes (Option A merge), UUI
 ## Goals / Non-Goals
 
 **Goals:**
+
 - One Postgres schema implementing all 27 ERD tables with ERD columns, UQs, checks, and relationships.
 - Single `users` auth (Option A) with `role` enum covering `principal, academic_lead, teacher, form_master, admin, accountant`.
 - UUIDv7 PKs via `HasUuids` (framework default `Str::uuid7()`), native `uuid` columns.
@@ -15,6 +16,7 @@ Explored with user: Postgres yes, Laravel users + role yes (Option A merge), UUI
 - FK-safe migration waves 1–6 + second-pass circular FK.
 
 **Non-Goals:**
+
 - No guardian table (guardian stays text on student) — parked.
 - No term-to-term promotion/carryover — parked.
 - No payment gateway/provider columns — cash-office `cash,bank_transfer,mobile_money,cheque` only — parked.

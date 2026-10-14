@@ -15,9 +15,11 @@ The Paper ERD now models the academic year as its own table (boards ERD 02/03/Fi
 ## Capabilities
 
 ### New Capabilities
+
 - None (new tables fold into existing domains as ADDED requirements in the delta specs below).
 
 ### Modified Capabilities
+
 - `tenant-core`: academic_year table added; term gains year FK + UQ and bare labels; student loses class_id.
 - `academic-structure`: school_class gains year FK + widened UQ; new enrolment table with lifecycle statuses.
 - `finance-ledger`: fee_plan year text becomes year FK with updated UQ.

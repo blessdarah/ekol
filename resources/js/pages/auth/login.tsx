@@ -15,7 +15,9 @@ import { useT } from '../../lib/i18n';
 function initialsOf(name: string): string {
     const parts = name.split(/\s+/).filter(Boolean);
 
-    return ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '··';
+    return (
+        ((parts[0]?.[0] ?? '') + (parts[1]?.[0] ?? '')).toUpperCase() || '··'
+    );
 }
 
 export default function Login({
@@ -51,7 +53,9 @@ export default function Login({
                     <Eyebrow>{t('Sign in')}</Eyebrow>
                     <Heading
                         title={t('Welcome back')}
-                        sub={t('Sign in to manage :school.', { school: school.name })}
+                        sub={t('Sign in to manage :school.', {
+                            school: school.name,
+                        })}
                     />
                 </div>
                 <Form action="/login" method="post" onKeyDown={submitOnEnter}>
@@ -110,7 +114,9 @@ export default function Login({
                         {t('Teacher or staff member?')}
                     </p>
                     <p className="text-[13px] text-text-muted">
-                        {t('Use the invite link your administrator sent you to set your password. After that you sign in here.')}
+                        {t(
+                            'Use the invite link your administrator sent you to set your password. After that you sign in here.',
+                        )}
                     </p>
                 </div>
             </div>

@@ -1,9 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import {
-    edit,
-    index,
-} from '@/actions/App/Http/Controllers/SubjectController';
+import { edit, index } from '@/actions/App/Http/Controllers/SubjectController';
 import { Note, longDate } from '../../components/staff/ui';
 import {
     StructureHeader,
@@ -57,15 +54,19 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
     const staffed = subject.classes > 0 && subject.unstaffed === 0;
     const coefficient = subject.coefficient ?? '—';
     const levels =
-        subject.level_names.length > 0 ? subject.level_names.join(', ') : t('No level yet');
+        subject.level_names.length > 0
+            ? subject.level_names.join(', ')
+            : t('No level yet');
 
     return (
-        <div className="flex lg:min-h-[calc(100vh-56px)] flex-col gap-7">
+        <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={subject.name} />
             <StructureHeader
                 trail={[subjectsCrumb, { label: subject.name }]}
                 title={t('One subject record')}
-                tag={t('Record:year_label', { year_label: yearLabel ? ` · ${yearLabel}` : '' })}
+                tag={t('Record:year_label', {
+                    year_label: yearLabel ? ` · ${yearLabel}` : '',
+                })}
                 meta={[
                     subject.code,
                     subject.department,
@@ -88,7 +89,11 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
                                 {subject.name}
                             </p>
                             <p className="text-[13px] leading-[1.35] text-text-muted">
-                                {[subject.department, subject.kind, `coefficient ${coefficient}`].join(' · ')}
+                                {[
+                                    subject.department,
+                                    subject.kind,
+                                    `coefficient ${coefficient}`,
+                                ].join(' · ')}
                             </p>
                         </div>
                         <span className="ml-auto flex h-7 shrink-0 items-center gap-2 rounded-md border border-solid border-border px-3 text-[13px] font-medium text-text">
@@ -99,7 +104,13 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
                                 ? t('No classes yet')
                                 : staffed
                                   ? t('All classes staffed')
-                                  : t(':unstaffed :need a teacher', { unstaffed: subject.unstaffed, need: subject.unstaffed === 1 ? 'class needs' : 'classes need' })}
+                                  : t(':unstaffed :need a teacher', {
+                                        unstaffed: subject.unstaffed,
+                                        need:
+                                            subject.unstaffed === 1
+                                                ? 'class needs'
+                                                : 'classes need',
+                                    })}
                         </span>
                     </div>
 
@@ -107,32 +118,55 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
                         <p className={capsLabelClass}>{t('Subject profile')}</p>
                         <dl className="flex flex-col">
                             <Row label={t('Subject code')}>
-                                <span className="font-mono">{subject.code}</span>
+                                <span className="font-mono">
+                                    {subject.code}
+                                </span>
                             </Row>
-                            <Row label={t('Department')}>{subject.department}</Row>
+                            <Row label={t('Department')}>
+                                {subject.department}
+                            </Row>
                             <Row label={t('Coefficient')}>
-                                {t(':coefficient · the same for sequences and exams', { coefficient })}
+                                {t(
+                                    ':coefficient · the same for sequences and exams',
+                                    { coefficient },
+                                )}
                             </Row>
                             <Row label={t('Levels covered')}>
                                 {levels} · {subject.classes}{' '}
-                                {subject.classes === 1 ? t('class') : t('classes')}
+                                {subject.classes === 1
+                                    ? t('class')
+                                    : t('classes')}
                             </Row>
-                            {subject.note && <Row label={t('Internal note')}>{subject.note}</Row>}
+                            {subject.note && (
+                                <Row label={t('Internal note')}>
+                                    {subject.note}
+                                </Row>
+                            )}
                         </dl>
                     </section>
 
                     <section className="flex flex-col gap-2">
-                        <p className={capsLabelClass}>{t('Classes & teachers')}</p>
+                        <p className={capsLabelClass}>
+                            {t('Classes & teachers')}
+                        </p>
                         {subject.rows.length === 0 ? (
                             <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
-                                {t('This subject is a draft with no classes. Edit it to choose the classes that take it.')}
+                                {t(
+                                    'This subject is a draft with no classes. Edit it to choose the classes that take it.',
+                                )}
                             </p>
                         ) : (
                             <div className="flex flex-col">
                                 <div className="flex items-center gap-4 border-y border-solid border-border py-2 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
-                                    <span className="w-[184px] shrink-0">{t('Class')}</span>
-                                    <span className="flex-1">{t('Teacher')}</span>
-                                    <span className="w-[120px] shrink-0">{t('Weekly periods')}</span>
+                                    <span className="w-[184px] shrink-0">
+                                        {t('Class')}
+                                    </span>
+                                    <span className="flex-1">
+                                        {t('Teacher')}
+                                    </span>
+                                    <span className="w-[120px] shrink-0">
+                                        {t('Weekly periods')}
+                                    </span>
                                 </div>
                                 {subject.rows.map((row) => (
                                     <div
@@ -160,12 +194,21 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
                                 <div className="flex items-center justify-between border-b border-solid border-border py-3">
                                     <span className="text-[13px] leading-4 text-text-muted">
                                         {subject.not_offered.length > 0
-                                            ? t('Not offered in :not_offered', { not_offered: subject.not_offered.join(', ') })
-                                            : t('Offered in every class of these levels')}
+                                            ? t('Not offered in :not_offered', {
+                                                  not_offered:
+                                                      subject.not_offered.join(
+                                                          ', ',
+                                                      ),
+                                              })
+                                            : t(
+                                                  'Offered in every class of these levels',
+                                              )}
                                     </span>
                                     <span className="flex items-baseline gap-[6px]">
                                         <span className="font-mono text-[13px] leading-4 text-text">
-                                            {t(':periods periods', { periods: subject.periods })}
+                                            {t(':periods periods', {
+                                                periods: subject.periods,
+                                            })}
                                         </span>
                                         <span className="text-[13px] leading-4 text-text-muted">
                                             {t('per week in total')}
@@ -179,24 +222,40 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
 
                 <aside className="flex shrink-0 flex-col gap-6 border-solid border-border lg:w-[328px] lg:border-l lg:pl-8">
                     <div className="flex flex-col gap-3">
-                        <p className={capsLabelClass}>{t('Reporting impact')}</p>
+                        <p className={capsLabelClass}>
+                            {t('Reporting impact')}
+                        </p>
                         <div className="flex items-start gap-2 text-[13px] leading-[1.5] text-text">
                             <span className="mt-[7px] h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                            {subject.name} {t('counts')} {coefficient} {t('toward the class average in every class it is taught in, for both sequences and exams.')}
+                            {subject.name} {t('counts')} {coefficient}{' '}
+                            {t(
+                                'toward the class average in every class it is taught in, for both sequences and exams.',
+                            )}
                         </div>
                         <p className="text-[13px] leading-[1.5] text-text-muted">
-                            {t('Changing the coefficient changes every average and position from the next entry onwards.')}
+                            {t(
+                                'Changing the coefficient changes every average and position from the next entry onwards.',
+                            )}
                         </p>
                     </div>
                     <Note title={t('Coefficients change over time')}>
-                        {t('Nothing in this record was checked with a government body. It exists only inside the school: its coefficient, its teachers, and the classes it is taught to.')}
+                        {t(
+                            'Nothing in this record was checked with a government body. It exists only inside the school: its coefficient, its teachers, and the classes it is taught to.',
+                        )}
                     </Note>
                     <div className="mt-auto flex flex-col gap-2">
                         <p className="text-[12px] leading-[1.5] text-text-muted">
                             {lastEdit
-                                ? t('Last edited:by on :on. ', { by: lastEdit.by ? ` by the ${lastEdit.by}` : '', on: longDate(lastEdit.on, false) })
+                                ? t('Last edited:by on :on. ', {
+                                      by: lastEdit.by
+                                          ? ` by the ${lastEdit.by}`
+                                          : '',
+                                      on: longDate(lastEdit.on, false),
+                                  })
                                 : ''}
-                            {t('Every change is kept so a term’s averages can always be explained.')}
+                            {t(
+                                'Every change is kept so a term’s averages can always be explained.',
+                            )}
                         </p>
                         <div className="flex flex-wrap gap-2">
                             <Link

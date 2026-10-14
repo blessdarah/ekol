@@ -1,5 +1,5 @@
 import { useT } from '../../lib/i18n';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 import AuthLayout from '../../layouts/auth-layout';
 import { Heading } from '../../components/auth/field';
@@ -12,7 +12,10 @@ const STEPS = [
 
 const UP_NEXT = [
     { n: '01', text: 'Sign in with your email and password' },
-    { n: '02', text: 'Add your logo, terms and fee installments in School Setup' },
+    {
+        n: '02',
+        text: 'Add your logo, terms and fee installments in School Setup',
+    },
     { n: '03', text: 'Invite your teachers' },
 ];
 
@@ -40,9 +43,7 @@ export default function WorkspaceReady({
     }
 
     return (
-        <AuthLayout
-            middle={{ variant: 'stepper', steps: STEPS, active: 2 }}
-        >
+        <AuthLayout middle={{ variant: 'stepper', steps: STEPS, active: 2 }}>
             <Head title={t(':school is ready', { school: school.name })} />
             <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-2">
@@ -52,7 +53,9 @@ export default function WorkspaceReady({
                     </span>
                     <Heading
                         title={t(':school is ready', { school: school.name })}
-                        sub={t('Your workspace is live. Staff will sign in at the address below.')}
+                        sub={t(
+                            'Your workspace is live. Staff will sign in at the address below.',
+                        )}
                     />
                 </div>
                 <div className="flex flex-col rounded-lg border border-solid border-border">
@@ -104,7 +107,7 @@ export default function WorkspaceReady({
                     ))}
                 </div>
                 <div className="flex items-center gap-4">
-                    <Link
+                    <a
                         href={loginUrl}
                         className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-[14px] font-medium text-white hover:bg-primary-hover"
                     >
@@ -125,7 +128,7 @@ export default function WorkspaceReady({
                                 strokeLinejoin="round"
                             />
                         </svg>
-                    </Link>
+                    </a>
                     <span className="text-[13px] text-text-muted">
                         {t('We also emailed you these details.')}
                     </span>
