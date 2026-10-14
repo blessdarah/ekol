@@ -32,7 +32,14 @@ export function translate(
     for (const key of Object.keys(replace ?? {}).sort(
         (a, b) => b.length - a.length,
     )) {
-        line = line.replaceAll(`:${key}`, String(replace?.[key] ?? ''));
+        const value = replace?.[key];
+
+        line = line.replaceAll(
+            `:${key}`,
+            typeof value === 'string' || typeof value === 'number'
+                ? String(value)
+                : '',
+        );
     }
 
     return line;

@@ -44,7 +44,7 @@ export default function RegisterSchool({
         const clean = value.toLowerCase();
         setSlug(clean);
         if (clean.length >= 3) {
-            get(`/register/slug-check?slug=${encodeURIComponent(clean)}`);
+            void get(`/register/slug-check?slug=${encodeURIComponent(clean)}`);
         }
     }
 
