@@ -100,7 +100,7 @@ export default function ParentStart({
                 </h2>
                 <p className="text-[14px] text-text-muted">
                     {t(
-                        'We check the matricule against the phone number the school has for you.',
+                        'We check the matricule against the phone number the school has for you, then text a code to that phone.',
                     )}
                 </p>
             </div>

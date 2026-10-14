@@ -4,24 +4,34 @@ namespace App\Http\Controllers;
 
 use App\Enums\EnrolmentStatus;
 use App\Http\Requests\Pay\FindChildRequest;
+use App\Http\Requests\Pay\VerifyParentCodeRequest;
 use App\Models\Enrolment;
 use App\Models\FeeItem;
 use App\Models\Invoice;
 use App\Models\MobilePayment;
 use App\Models\School;
 use App\Models\Student;
+use App\Notifications\ParentVerificationCode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
+use Undjike\CamooNotificationChannel\CamooChannel;
 
 /**
  * Parent services, on the main address so a parent never needs the
  * school's own: find the school, prove the child is theirs with the
- * matricule and the phone the school has, then pay fees or follow
- * attendance. The child chosen is kept in the session.
+ * matricule, the phone the school has and a code sent to that phone,
+ * then pay fees or follow attendance. The child chosen is kept in the
+ * session, and the device is remembered for the child for a while.
  */
 class ParentController extends Controller
 {
@@ -29,6 +39,21 @@ class ParentController extends Controller
      * The services a parent can open, in the order they are listed.
      */
     public const array SERVICES = ['pay', 'attendance', 'announcements'];
+
+    protected const int CODE_MINUTES = 10;
+
+    protected const int CODE_ATTEMPTS = 5;
+
+    protected const int RESEND_AFTER_SECONDS = 60;
+
+    protected const int CODES_PER_HOUR = 5;
+
+    protected const int TRUST_DAYS = 30;
+
+    /**
+     * Remembers, on this device, the children whose code was typed.
+     */
+    protected const string TRUST_COOKIE = 'parent_trust';
 
     public function show(Request $request): Response|RedirectResponse
     {
@@ -104,10 +129,88 @@ class ParentController extends Controller
             ]);
         }
 
-        $request->session()->regenerate();
-        $request->session()->put('parent', ['school_id' => $school->id, 'student_id' => $student->id, 'phone' => $phone]);
+        if (in_array(static::trustKey($student->id, $phone), static::trusted($request), true)) {
+            return $this->enter($request, $school->id, $student->id, $phone);
+        }
 
-        return redirect()->route('parents.home');
+        $this->sendCode($request, $school, $student->id, $phone);
+
+        return redirect()->route('parents.verify');
+    }
+
+    /**
+     * The page to type the code sent by SMS.
+     */
+    public function verification(Request $request): Response|RedirectResponse
+    {
+        $pending = static::pending($request);
+        $school = $pending ? School::whereKey($pending['school_id'])->first() : null;
+
+        if (! $pending || ! $school) {
+            return redirect()->route('parents');
+        }
+
+        return Inertia::render('parents/verify', [
+            'issuer' => static::issuer($school),
+            'phone' => static::maskedPhone($pending['phone']),
+            'expiresAt' => Carbon::createFromTimestamp($pending['expires_at'])->toIso8601String(),
+            'resendAt' => Carbon::createFromTimestamp($pending['sent_at'] + static::RESEND_AFTER_SECONDS)->toIso8601String(),
+        ]);
+    }
+
+    /**
+     * Check the code. The right one opens parent services and remembers
+     * this phone for the child, so the next visit needs no code.
+     */
+    public function verify(VerifyParentCodeRequest $request): RedirectResponse
+    {
+        $pending = static::pending($request);
+
+        if (! $pending) {
+            return redirect()->route('parents');
+        }
+
+        if ($pending['expires_at'] < now()->getTimestamp()) {
+            throw ValidationException::withMessages(['code' => __('This code has expired. Request a new one.')]);
+        }
+
+        if ($pending['attempts'] >= static::CODE_ATTEMPTS) {
+            throw ValidationException::withMessages(['code' => __('Too many attempts. Request a new code.')]);
+        }
+
+        if (! hash_equals($pending['code_hash'], hash('sha256', (string) $request->validated('code')))) {
+            $request->session()->put('parent_pending.attempts', $pending['attempts'] + 1);
+
+            throw ValidationException::withMessages(['code' => __('That code is not right. Check the SMS and try again.')]);
+        }
+
+        $request->session()->forget('parent_pending');
+        $trusted = array_slice(array_values(array_unique([static::trustKey($pending['student_id'], $pending['phone']), ...static::trusted($request)])), 0, 10);
+        Cookie::queue(static::TRUST_COOKIE, (string) json_encode($trusted), static::TRUST_DAYS * 24 * 60);
+
+        return $this->enter($request, $pending['school_id'], $pending['student_id'], $pending['phone']);
+    }
+
+    /**
+     * Send a fresh code, a minute after the last one at the earliest.
+     */
+    public function resend(Request $request): RedirectResponse
+    {
+        $pending = static::pending($request);
+        $school = $pending ? School::whereKey($pending['school_id'])->first() : null;
+
+        if (! $pending || ! $school) {
+            return redirect()->route('parents');
+        }
+
+        if (now()->getTimestamp() < $pending['sent_at'] + static::RESEND_AFTER_SECONDS) {
+            throw ValidationException::withMessages(['code' => __('Wait a minute before asking for another code.')]);
+        }
+
+        $this->sendCode($request, $school, $pending['student_id'], $pending['phone'], 'code');
+        $this->notify('A new code is on its way.');
+
+        return redirect()->route('parents.verify');
     }
 
     /**
@@ -184,6 +287,90 @@ class ParentController extends Controller
         $request->session()->forget('parent');
 
         return redirect()->route('parents');
+    }
+
+    protected function enter(Request $request, string $schoolId, string $studentId, string $phone): RedirectResponse
+    {
+        $request->session()->regenerate();
+        $request->session()->put('parent', ['school_id' => $schoolId, 'student_id' => $studentId, 'phone' => $phone]);
+
+        return redirect()->route('parents.home');
+    }
+
+    /**
+     * Text a new code to the guardian phone and keep its hash in the
+     * session. A number gets a few codes an hour at most.
+     */
+    protected function sendCode(Request $request, School $school, string $studentId, string $phone, string $errorField = 'matricule'): void
+    {
+        $limit = 'parent-code:'.$phone;
+
+        if (RateLimiter::tooManyAttempts($limit, static::CODES_PER_HOUR)) {
+            throw ValidationException::withMessages([$errorField => __('Too many codes were sent to this number. Try again in :minutes minutes.', [
+                'minutes' => max(1, (int) ceil(RateLimiter::availableIn($limit) / 60)),
+            ])]);
+        }
+
+        $code = (string) random_int(100000, 999999);
+
+        try {
+            Notification::route(CamooChannel::class, '+237'.$phone)->notify(new ParentVerificationCode($code, $school->name));
+        } catch (Throwable $exception) {
+            Log::warning('Parent verification SMS failed.', ['school' => $school->id, 'error' => $exception->getMessage()]);
+
+            throw ValidationException::withMessages([$errorField => __('We could not send the code by SMS. Try again in a few minutes.')]);
+        }
+
+        RateLimiter::hit($limit, 3600);
+        $request->session()->put('parent_pending', [
+            'school_id' => $school->id,
+            'student_id' => $studentId,
+            'phone' => $phone,
+            'code_hash' => hash('sha256', $code),
+            'expires_at' => now()->addMinutes(static::CODE_MINUTES)->getTimestamp(),
+            'attempts' => 0,
+            'sent_at' => now()->getTimestamp(),
+        ]);
+    }
+
+    /**
+     * The code waiting to be typed, if any.
+     *
+     * @return array{school_id: string, student_id: string, phone: string, code_hash: string, expires_at: int, attempts: int, sent_at: int}|null
+     */
+    protected static function pending(Request $request): ?array
+    {
+        $pending = $request->session()->get('parent_pending');
+
+        return is_array($pending) && isset($pending['school_id'], $pending['student_id'], $pending['phone'], $pending['code_hash'], $pending['expires_at'], $pending['attempts'], $pending['sent_at'])
+            ? $pending
+            : null;
+    }
+
+    /**
+     * The children this device has already proved, as hashed keys.
+     *
+     * @return list<string>
+     */
+    protected static function trusted(Request $request): array
+    {
+        $cookie = $request->cookie(static::TRUST_COOKIE);
+        $keys = is_string($cookie) ? json_decode($cookie, true) : [];
+
+        return is_array($keys) ? array_values(array_filter($keys, 'is_string')) : [];
+    }
+
+    protected static function trustKey(string $studentId, string $phone): string
+    {
+        return hash('sha256', $studentId.'|'.$phone);
+    }
+
+    /**
+     * "6•• ••• •56": enough for the parent to recognise their number.
+     */
+    protected static function maskedPhone(string $phone): string
+    {
+        return substr($phone, 0, 1).'•• ••• •'.substr($phone, -2);
     }
 
     /**

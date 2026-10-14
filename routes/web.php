@@ -257,12 +257,15 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
 /*
  * Parent services live on the main address: parents do not know their
  * school's subdomain. They find the school, then prove the child is
- * theirs with the matricule and the phone the school has.
+ * theirs with the matricule, the phone the school has and an SMS code.
  */
 Route::group(['prefix' => 'parents', 'middleware' => SetLocale::class], function () {
     Route::get('/', [ParentController::class, 'show'])->name('parents');
     Route::get('/schools', [ParentController::class, 'schools'])->middleware('throttle:60,1')->name('parents.schools');
     Route::post('/', [ParentController::class, 'find'])->middleware('throttle:10,1')->name('parents.find');
+    Route::get('/verify', [ParentController::class, 'verification'])->name('parents.verify');
+    Route::post('/verify', [ParentController::class, 'verify'])->middleware('throttle:10,1')->name('parents.verify.store');
+    Route::post('/verify/resend', [ParentController::class, 'resend'])->middleware('throttle:3,1')->name('parents.verify.resend');
     Route::get('/home', [ParentController::class, 'home'])->name('parents.home');
     Route::get('/attendance', [ParentController::class, 'attendance'])->name('parents.attendance');
     Route::post('/leave', [ParentController::class, 'leave'])->name('parents.leave');

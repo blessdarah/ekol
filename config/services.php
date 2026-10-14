@@ -18,6 +18,12 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
+    'camoo' => [
+        'key' => env('CAMOO_API_KEY'),
+        'secret' => env('CAMOO_SECRET_KEY'),
+        'sender' => env('CAMOO_SENDER', 'Campus'),
+    ],
+
     'campay' => [
         'username' => env('CAMPAY_USERNAME'),
         'password' => env('CAMPAY_PASSWORD'),

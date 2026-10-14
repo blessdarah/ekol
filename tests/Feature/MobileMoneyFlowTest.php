@@ -16,14 +16,18 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Term;
 use App\Models\User;
+use App\Notifications\ParentVerificationCode;
 use BlessDarah\PhpCampay\Campay;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Promise\Create;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Psr\Http\Message\RequestInterface;
+use Undjike\CamooNotificationChannel\CamooChannel;
 
 /**
  * A school on 1 October 2025 billing 60 000 FCFA in installments of
@@ -34,6 +38,7 @@ use Psr\Http\Message\RequestInterface;
 function momoWorld(): array
 {
     test()->travelTo('2025-10-01 09:00:00');
+    Notification::fake();
 
     $school = School::create([
         'name' => 'Academy momo', 'code' => 'GBHS', 'slug' => 'momo',
@@ -146,13 +151,33 @@ function startPaying(int $amount, string $phone = '677123456'): void
 }
 
 /**
- * Prove to parent services that the child is ours.
+ * Prove to parent services that the child is ours: the details, then
+ * the code texted to the guardian phone.
  */
 function findChild(): void
 {
     test()->post('http://ekol.test/parents', ['school' => 'momo', 'matricule' => 'gbhs-25-0001', 'phone' => '6 77 12 34 56'])
         ->assertSessionHasNoErrors()
+        ->assertRedirect(route('parents.verify'));
+    test()->post('http://ekol.test/parents/verify', ['code' => lastCode()])
+        ->assertSessionHasNoErrors()
         ->assertRedirect(route('parents.home'));
+}
+
+/**
+ * The code in the latest SMS sent to the guardian phone.
+ */
+function lastCode(): string
+{
+    $code = null;
+
+    Notification::assertSentOnDemand(ParentVerificationCode::class, function (ParentVerificationCode $notification, array $channels, AnonymousNotifiable $notifiable) use (&$code) {
+        $code = $notification->code;
+
+        return $notifiable->routes[CamooChannel::class] === '+237677123456';
+    });
+
+    return (string) $code;
 }
 
 test('parents start on the main address and find the school by name or town', function () {
@@ -188,7 +213,9 @@ test('a parent finds their child by matricule and the phone the school has', fun
     $this->get('http://ekol.test/parents/pay')->assertRedirect(route('parents'));
 
     $this->post('http://ekol.test/parents', ['school' => 'momo', 'matricule' => 'gbhs-25-0001', 'phone' => '+237 677 123 456'])
-        ->assertRedirect(route('parents.home'));
+        ->assertRedirect(route('parents.verify'));
+    $this->get('http://ekol.test/parents/home')->assertRedirect(route('parents'));
+    $this->post('http://ekol.test/parents/verify', ['code' => lastCode()])->assertRedirect(route('parents.home'));
 
     $this->get('http://ekol.test/parents/home')
         ->assertOk()
@@ -214,6 +241,54 @@ test('a parent finds their child by matricule and the phone the school has', fun
 
     $this->post('http://ekol.test/parents/leave')->assertRedirect(route('parents'));
     $this->get('http://ekol.test/parents/home')->assertRedirect(route('parents'));
+});
+
+test('a wrong, late or overused code keeps parent services closed', function () {
+    momoWorld();
+
+    $this->post('http://ekol.test/parents', ['school' => 'momo', 'matricule' => 'GBHS-25-0001', 'phone' => '677123456']);
+    $code = lastCode();
+
+    $this->get('http://ekol.test/parents/verify')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->component('parents/verify')->where('phone', '6•• ••• •56'));
+
+    $this->post('http://ekol.test/parents/verify', ['code' => $code === '111111' ? '222222' : '111111'])->assertSessionHasErrors('code');
+    $this->get('http://ekol.test/parents/home')->assertRedirect(route('parents'));
+
+    $this->post('http://ekol.test/parents/verify/resend')->assertSessionHasErrors('code');
+    $this->travel(11)->minutes();
+    $this->post('http://ekol.test/parents/verify', ['code' => $code])->assertSessionHasErrors('code');
+
+    $this->post('http://ekol.test/parents/verify/resend')->assertRedirect(route('parents.verify'));
+    $fresh = lastCode();
+    foreach (range(1, 5) as $attempt) {
+        $this->post('http://ekol.test/parents/verify', ['code' => $fresh === '111111' ? '222222' : '111111']);
+    }
+    $this->post('http://ekol.test/parents/verify', ['code' => $fresh])->assertSessionHasErrors('code');
+    $this->get('http://ekol.test/parents/home')->assertRedirect(route('parents'));
+});
+
+test('a phone that typed the code is remembered for the child and codes are capped', function () {
+    momoWorld();
+    $student = Student::sole();
+
+    $this->post('http://ekol.test/parents', ['school' => 'momo', 'matricule' => 'GBHS-25-0001', 'phone' => '677123456']);
+    $this->post('http://ekol.test/parents/verify', ['code' => lastCode()])->assertCookie('parent_trust');
+
+    $this->post('http://ekol.test/parents/leave');
+    foreach (range(1, 4) as $attempt) {
+        $this->post('http://ekol.test/parents', ['school' => 'momo', 'matricule' => 'GBHS-25-0001', 'phone' => '677123456'])
+            ->assertRedirect(route('parents.verify'));
+    }
+    $this->post('http://ekol.test/parents', ['school' => 'momo', 'matricule' => 'GBHS-25-0001', 'phone' => '677123456'])
+        ->assertSessionHasErrors('matricule');
+    Notification::assertSentOnDemandTimes(ParentVerificationCode::class, 5);
+
+    $this->withCookie('parent_trust', json_encode([hash('sha256', $student->id.'|677123456')]))
+        ->post('http://ekol.test/parents', ['school' => 'momo', 'matricule' => 'GBHS-25-0001', 'phone' => '677123456'])
+        ->assertRedirect(route('parents.home'));
+    Notification::assertSentOnDemandTimes(ParentVerificationCode::class, 5);
 });
 
 test('a parent opens the attendance of the current term', function () {
