@@ -43,6 +43,7 @@ class LoginController extends Controller
                 'school' => $school->only(['name', 'slug']),
                 'address' => "{$school->slug}.".$this->parentDomain(),
                 'switchUrl' => '//'.$this->parentDomain().'/login',
+                'parentsUrl' => '//'.$this->parentDomain().'/parents?school='.rawurlencode($school->slug),
             ]);
         }
 

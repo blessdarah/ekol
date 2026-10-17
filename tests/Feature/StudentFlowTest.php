@@ -387,3 +387,56 @@ test('a spreadsheet is matched, checked and only its clean rows are imported', f
         ->and(Student::where('full_name', 'Kum Sandrine Lum')->value('gender')->value)->toBe('female')
         ->and(Enrolment::where('school_class_id', $form4a->id)->count())->toBe(3);
 });
+
+test('a student record offers the students before and after it on the roster', function () {
+    $world = studentWorld();
+    $class = $world['classes'][0];
+    $students = [];
+
+    foreach (['Bih Glory', 'Achu Brandon', 'Che Emmanuel'] as $index => $name) {
+        $students[$name] = $student = Student::create([
+            'school_id' => $world['school']->id, 'admission_no' => 'NB-25-000'.($index + 1),
+            'full_name' => $name, 'gender' => 'male', 'date_of_birth' => '2013-01-01',
+            'guardian_name' => 'Mr. Guardian', 'guardian_phone' => '+23767000010'.$index, 'admitted_on' => '2025-09-01',
+        ]);
+        Enrolment::create([
+            'student_id' => $student->id, 'academic_year_id' => $world['year']->id,
+            'school_class_id' => $class->id, 'status' => EnrolmentStatus::Enrolled,
+        ]);
+    }
+
+    $host = "http://{$world['school']->slug}.ekol.test";
+
+    $this->actingAs($world['admin'])
+        ->get("{$host}/students/{$students['Bih Glory']->id}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('neighbours.previous.name', 'Achu Brandon')
+            ->where('neighbours.next.name', 'Che Emmanuel')
+            ->where('neighbours.position', 2)
+            ->where('neighbours.total', 3)
+            ->where('neighbours.next.class', $class->name));
+
+    $other = Student::create([
+        'school_id' => $world['school']->id, 'admission_no' => 'NB-25-0009',
+        'full_name' => 'Abang Rose', 'gender' => 'female', 'date_of_birth' => '2013-01-01',
+        'guardian_name' => 'Mr. Guardian', 'guardian_phone' => '+237670000109', 'admitted_on' => '2025-09-01',
+    ]);
+    Enrolment::create([
+        'student_id' => $other->id, 'academic_year_id' => $world['year']->id,
+        'school_class_id' => $world['classes'][1]->id, 'status' => EnrolmentStatus::Enrolled,
+    ]);
+
+    $this->actingAs($world['admin'])
+        ->get("{$host}/students/{$students['Che Emmanuel']->id}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('neighbours.next.name', 'Abang Rose')
+            ->where('neighbours.next.class', $world['classes'][1]->name)
+            ->where('neighbours.total', 4));
+
+    $this->actingAs($world['admin'])
+        ->get("{$host}/students/{$students['Achu Brandon']->id}/academics")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('neighbours.previous', null)
+            ->where('neighbours.next.name', 'Bih Glory'));
+});

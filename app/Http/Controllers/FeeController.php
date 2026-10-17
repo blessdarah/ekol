@@ -494,6 +494,7 @@ class FeeController extends Controller
         $main = $target->guardians->firstWhere('is_main', true);
 
         return Inertia::render('students/fees', [
+            'neighbours' => StudentController::neighbours($school, $target),
             'currency' => $school->currency,
             'canManageFees' => $role->managesFees(),
             'canManageStudents' => $role->managesStudents(),

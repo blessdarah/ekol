@@ -78,6 +78,15 @@ export default function FindSchool() {
                         )}
                     </p>
                 </div>
+                <p className="text-[13px] text-text-muted">
+                    {t('A parent?')}{' '}
+                    <a
+                        href="/parents"
+                        className="font-semibold text-text hover:underline"
+                    >
+                        {t('Go to parent services')}
+                    </a>
+                </p>
             </div>
         </AuthLayout>
     );

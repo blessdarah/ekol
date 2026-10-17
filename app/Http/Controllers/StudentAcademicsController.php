@@ -92,6 +92,7 @@ class StudentAcademicsController extends Controller
         $allPublished = $plans->isNotEmpty() && $plans->every(fn (AssessmentPlan $plan) => $plan->state === AssessmentState::Published);
 
         return Inertia::render('students/academics', [
+            'neighbours' => StudentController::neighbours($school, $target),
             'canOpenReports' => (bool) $request->user()?->role->managesAssessments(),
             'student' => [
                 'id' => $target->id,

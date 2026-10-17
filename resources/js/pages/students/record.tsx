@@ -12,6 +12,8 @@ import {
     outlineButtonClass,
 } from '../../components/structure/ui';
 import {
+    type StudentNeighbours,
+    StudentSteps,
     FeePill,
     GENDER_LABELS,
     RELATION_LABELS,
@@ -24,6 +26,7 @@ import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
 interface RecordProps {
+    neighbours?: StudentNeighbours;
     yearLabel: string | null;
     currency: string;
     canSeePrivate: boolean;
@@ -80,6 +83,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function StudentRecord({
+    neighbours,
     yearLabel,
     currency,
     canSeePrivate,
@@ -359,6 +363,7 @@ function StudentRecord({
                     </div>
                 </aside>
             </div>
+            <StudentSteps active="overview" neighbours={neighbours} />
         </div>
     );
 }

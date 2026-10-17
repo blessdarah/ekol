@@ -15,7 +15,12 @@ import {
     capsLabelClass,
     outlineButtonClass,
 } from '../../components/structure/ui';
-import { StudentHeader, StudentTabs } from '../../components/students/ui';
+import {
+    type StudentNeighbours,
+    StudentSteps,
+    StudentHeader,
+    StudentTabs,
+} from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
@@ -39,6 +44,7 @@ interface Exemption {
 }
 
 interface StudentFeesProps {
+    neighbours?: StudentNeighbours;
     currency: string;
     canManageFees: boolean;
     canManageStudents: boolean;
@@ -372,6 +378,7 @@ function ExemptionCard({
 }
 
 function StudentFees({
+    neighbours,
     currency,
     canManageFees,
     canManageStudents,
@@ -835,6 +842,11 @@ function StudentFees({
                     </aside>
                 </div>
             )}
+            <StudentSteps
+                active="fees"
+                overview={canManageStudents}
+                neighbours={neighbours}
+            />
         </div>
     );
 }

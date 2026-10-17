@@ -8,6 +8,8 @@ import {
     outlineButtonClass,
 } from '../../components/structure/ui';
 import {
+    type StudentNeighbours,
+    StudentSteps,
     StudentHeader,
     StudentTabs,
     shortDate,
@@ -18,6 +20,7 @@ import { t } from '../../lib/i18n';
 type DayState = 'present' | 'late' | 'absent' | 'excused';
 
 interface AttendanceProps {
+    neighbours?: StudentNeighbours;
     canExcuse: boolean;
     termLabel: string | null;
     student: {
@@ -174,6 +177,7 @@ function Excuse({
 }
 
 function StudentAttendance({
+    neighbours,
     canExcuse,
     termLabel,
     student,
@@ -451,6 +455,7 @@ function StudentAttendance({
                     </div>
                 </aside>
             </div>
+            <StudentSteps active="attendance" neighbours={neighbours} />
         </div>
     );
 }

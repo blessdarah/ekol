@@ -7,6 +7,8 @@ import {
     outlineButtonClass,
 } from '../../components/structure/ui';
 import {
+    type StudentNeighbours,
+    StudentSteps,
     StudentHeader,
     StudentTabs,
     shortDate,
@@ -26,6 +28,7 @@ interface Column {
 }
 
 interface AcademicsProps {
+    neighbours?: StudentNeighbours;
     canOpenReports: boolean;
     student: {
         id: string;
@@ -74,6 +77,7 @@ function short(name: string): string {
 }
 
 function Academics({
+    neighbours,
     canOpenReports,
     student,
     terms,
@@ -503,6 +507,7 @@ function Academics({
                     </aside>
                 </div>
             )}
+            <StudentSteps active="academics" neighbours={neighbours} />
         </div>
     );
 }

@@ -55,6 +55,42 @@ class StudentController extends Controller
         return Term::where('school_id', $school->id)->where('is_current', true)->first();
     }
 
+    /**
+     * The students either side of this one, in the order the roster
+     * lists them: by class, then by name. Stepping past the last
+     * student of a class moves on to the next class.
+     *
+     * @return array{previous: array{id: string, name: string, class: string|null}|null, next: array{id: string, name: string, class: string|null}|null, position: int, total: int}
+     */
+    public static function neighbours(School $school, Student $student): array
+    {
+        $list = static::rosterQuery($school, StructureController::currentYear($school))
+            ->orderByRaw('school_classes.name IS NULL')
+            ->orderBy('school_classes.name')
+            ->orderBy('students.full_name')
+            ->orderBy('students.id')
+            ->get(['students.id', 'students.full_name', 'school_classes.name as class_name'])
+            ->values();
+        $at = $list->search(fn (Student $other) => $other->id === $student->id);
+        $at = $at === false ? 0 : (int) $at;
+        $step = function (?Student $other): ?array {
+            if (! $other) {
+                return null;
+            }
+
+            $class = $other->getAttribute('class_name');
+
+            return ['id' => $other->id, 'name' => $other->full_name, 'class' => is_string($class) ? $class : null];
+        };
+
+        return [
+            'previous' => $step($list->get($at - 1)),
+            'next' => $step($list->get($at + 1)),
+            'position' => $at + 1,
+            'total' => $list->count(),
+        ];
+    }
+
     public function index(Request $request): Response
     {
         $school = static::schoolFor($request);
@@ -75,7 +111,7 @@ class StudentController extends Controller
         $newThisTerm = fn (Builder $query) => $query
             ->whereDate('students.admitted_on', '>=', $term ? $term->starts_on : today()->addDay());
 
-        $base = fn () => $this->rosterQuery($school, $year);
+        $base = fn () => static::rosterQuery($school, $year);
 
         $students = $base()
             ->select('students.*', 'school_classes.name as class_name', 'school_classes.level_id as class_level_id')
@@ -241,6 +277,7 @@ class StudentController extends Controller
         $fees = $this->fees($target->invoices);
 
         return Inertia::render('students/record', [
+            'neighbours' => static::neighbours($school, $target),
             'yearLabel' => $year?->label,
             'currency' => $school->currency,
             'canSeePrivate' => $private,
@@ -325,7 +362,7 @@ class StudentController extends Controller
      *
      * @return Builder<Student>
      */
-    protected function rosterQuery(School $school, ?AcademicYear $year): Builder
+    protected static function rosterQuery(School $school, ?AcademicYear $year): Builder
     {
         return Student::query()
             ->where('students.school_id', $school->id)

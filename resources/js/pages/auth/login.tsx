@@ -24,10 +24,12 @@ export default function Login({
     school,
     address,
     switchUrl,
+    parentsUrl,
 }: {
     school: { name: string; slug: string };
     address: string;
     switchUrl: string;
+    parentsUrl: string;
 }) {
     const t = useT();
 
@@ -109,6 +111,24 @@ export default function Login({
                         </div>
                     )}
                 </Form>
+                <a
+                    href={parentsUrl}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-solid border-border bg-surface px-4 py-3 hover:border-primary"
+                >
+                    <span className="flex flex-col gap-[2px]">
+                        <span className="text-[14px] font-semibold text-text">
+                            {t('Parent services')}
+                        </span>
+                        <span className="text-[13px] text-text-muted">
+                            {t(
+                                'Pay fees by mobile money and follow attendance. No account needed.',
+                            )}
+                        </span>
+                    </span>
+                    <span aria-hidden className="text-[16px] text-text-muted">
+                        →
+                    </span>
+                </a>
                 <div className="flex flex-col gap-1 border-t border-border pt-4">
                     <p className="text-[14px] font-semibold text-text">
                         {t('Teacher or staff member?')}

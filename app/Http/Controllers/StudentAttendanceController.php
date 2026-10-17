@@ -9,6 +9,7 @@ use App\Models\AuditEvent;
 use App\Models\Enrolment;
 use App\Models\School;
 use App\Models\Student;
+use App\Models\Term;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -36,29 +37,10 @@ class StudentAttendanceController extends Controller
         $enrolment = $year
             ? Enrolment::where('student_id', $target->id)->where('academic_year_id', $year->id)->with('schoolClass.level')->first()
             : null;
-        $records = $term
-            ? Attendance::where('student_id', $target->id)
-                ->whereDate('date', '>=', $term->starts_on)
-                ->whereDate('date', '<=', $term->ends_on)
-                ->with(['timetableSlot.subject:id,name', 'timetableSlot.period:id,label,starts_at', 'marker:id,full_name'])
-                ->get()
-            : collect();
-
-        $days = $records
-            ->groupBy(fn (Attendance $record) => $record->date->toDateString())
-            ->map(function ($day) {
-                $away = $day->whereIn('status', [AttendanceStatus::Absent, AttendanceStatus::Excused])->count();
-
-                return match (true) {
-                    $away === $day->count() => $day->contains('status', AttendanceStatus::Absent) ? 'absent' : 'excused',
-                    $away > 0 || $day->contains('status', AttendanceStatus::Late) => 'late',
-                    default => 'present',
-                };
-            });
-        $counted = $days->count();
-        $unexcused = $records->where('status', AttendanceStatus::Absent)->count();
+        $summary = static::summary($target, $term);
 
         return Inertia::render('students/attendance', [
+            'neighbours' => StudentController::neighbours($school, $target),
             'canExcuse' => true,
             'termLabel' => $term?->label,
             'student' => [
@@ -69,29 +51,12 @@ class StudentAttendanceController extends Controller
                 'level' => $enrolment?->schoolClass?->level?->name,
                 'admitted_year' => $target->admitted_on->format('Y'),
             ],
-            'stats' => [
-                'present' => $days->filter(fn (string $state) => $state === 'present')->count(),
-                'late' => $days->filter(fn (string $state) => $state === 'late')->count(),
-                'absent' => $days->filter(fn (string $state) => in_array($state, ['absent', 'excused'], true))->count(),
-                'days' => $counted,
-                'rate' => $counted > 0 ? (int) round($days->filter(fn (string $state) => in_array($state, ['present', 'late'], true))->count() / $counted * 100) : null,
-            ],
+            'stats' => $summary['stats'],
             'term' => $term ? ['starts_on' => $term->starts_on->toDateString(), 'ends_on' => $term->ends_on->toDateString()] : null,
             'schoolDays' => $school->school_days,
-            'days' => $days->isEmpty() ? new \stdClass : $days,
-            'events' => $records
-                ->where('status', '!=', AttendanceStatus::Present)
-                ->sortByDesc(fn (Attendance $record) => $record->date->toDateString().$record->timetableSlot?->period?->starts_at)
-                ->values()
-                ->map(fn (Attendance $record) => [
-                    'id' => $record->id,
-                    'on' => $record->date->toDateString(),
-                    'status' => $record->status->value,
-                    'lesson' => collect([$record->timetableSlot?->period?->label, $record->timetableSlot?->subject?->name])->filter()->join(' · '),
-                    'note' => $record->note,
-                    'by' => $record->marker?->full_name,
-                ]),
-            'unexcused' => $unexcused,
+            'days' => $summary['days'] === [] ? new \stdClass : $summary['days'],
+            'events' => $summary['events'],
+            'unexcused' => $summary['unexcused'],
             'alertAt' => static::ALERT_AT,
         ]);
     }
@@ -125,6 +90,61 @@ class StudentAttendanceController extends Controller
         $this->notify('Absence excused.');
 
         return back();
+    }
+
+    /**
+     * A student's term, day by day: each school day with a register is
+     * present, late (late or away for some lessons), absent or excused.
+     *
+     * @return array{days: array<string, string>, stats: array{present: int, late: int, absent: int, days: int, rate: int|null}, events: array<int, array{id: string, on: string, status: string, lesson: string, note: string|null, by: string|null}>, unexcused: int}
+     */
+    public static function summary(Student $student, ?Term $term): array
+    {
+        $records = $term
+            ? Attendance::where('student_id', $student->id)
+                ->whereDate('date', '>=', $term->starts_on)
+                ->whereDate('date', '<=', $term->ends_on)
+                ->with(['timetableSlot.subject:id,name', 'timetableSlot.period:id,label,starts_at', 'marker:id,full_name'])
+                ->get()
+            : collect();
+
+        $days = $records
+            ->groupBy(fn (Attendance $record) => $record->date->toDateString())
+            ->map(function ($day) {
+                $away = $day->whereIn('status', [AttendanceStatus::Absent, AttendanceStatus::Excused])->count();
+
+                return match (true) {
+                    $away === $day->count() => $day->contains('status', AttendanceStatus::Absent) ? 'absent' : 'excused',
+                    $away > 0 || $day->contains('status', AttendanceStatus::Late) => 'late',
+                    default => 'present',
+                };
+            });
+        $counted = $days->count();
+
+        return [
+            'days' => $days->all(),
+            'stats' => [
+                'present' => $days->filter(fn (string $state) => $state === 'present')->count(),
+                'late' => $days->filter(fn (string $state) => $state === 'late')->count(),
+                'absent' => $days->filter(fn (string $state) => in_array($state, ['absent', 'excused'], true))->count(),
+                'days' => $counted,
+                'rate' => $counted > 0 ? (int) round($days->filter(fn (string $state) => in_array($state, ['present', 'late'], true))->count() / $counted * 100) : null,
+            ],
+            'events' => $records
+                ->where('status', '!=', AttendanceStatus::Present)
+                ->sortByDesc(fn (Attendance $record) => $record->date->toDateString().$record->timetableSlot?->period?->starts_at)
+                ->values()
+                ->map(fn (Attendance $record) => [
+                    'id' => $record->id,
+                    'on' => $record->date->toDateString(),
+                    'status' => $record->status->value,
+                    'lesson' => collect([$record->timetableSlot?->period?->label, $record->timetableSlot?->subject?->name])->filter()->join(' · '),
+                    'note' => $record->note,
+                    'by' => $record->marker?->full_name,
+                ])
+                ->all(),
+            'unexcused' => $records->where('status', AttendanceStatus::Absent)->count(),
+        ];
     }
 
     protected function student(School $school, string $id): Student

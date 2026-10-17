@@ -323,6 +323,12 @@ export default function Landing({ roles, sizes, dialCode }: LandingProps) {
                         ))}
                     </div>
                     <Link
+                        href="/parents"
+                        className="hidden px-[10px] text-[14px] leading-[18px] text-[#EAF2EC] hover:underline sm:block"
+                    >
+                        {t('Parents')}
+                    </Link>
+                    <Link
                         href="/login"
                         className="hidden px-[10px] text-[14px] leading-[18px] text-[#EAF2EC] hover:underline sm:block"
                     >
@@ -593,6 +599,9 @@ export default function Landing({ roles, sizes, dialCode }: LandingProps) {
                     <a href="#pricing" className="hover:text-[#8FA89A]">
                         {t('Pricing')}
                     </a>
+                    <Link href="/parents" className="hover:text-[#8FA89A]">
+                        {t('Parent services')}
+                    </Link>
                     <Link href="/login" className="hover:text-[#8FA89A]">
                         {t('Sign in')}
                     </Link>

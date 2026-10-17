@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { index, structure } from '@/actions/App/Http/Controllers/FeeController';
+import { index as mobileMoney } from '@/actions/App/Http/Controllers/MobilePaymentController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 import { numberLocale, t } from '../../lib/i18n';
 
@@ -73,7 +74,7 @@ export function FeesHeader({
     meta,
     action,
 }: {
-    active: 'students' | 'structure';
+    active: 'students' | 'structure' | 'mobile';
     /** Steps after Fees; the last one is the page you are on. */
     trail?: Crumb[];
     title: string;
@@ -84,6 +85,7 @@ export function FeesHeader({
     const tabs = [
         { key: 'students', label: t('Students'), href: index.url() },
         { key: 'structure', label: t('Fee structure'), href: structure.url() },
+        { key: 'mobile', label: t('Mobile money'), href: mobileMoney.url() },
     ];
 
     return (
