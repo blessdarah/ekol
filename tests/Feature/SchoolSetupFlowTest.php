@@ -217,6 +217,100 @@ test('locked terms reject hand-crafted date edits', function () {
     expect($term->fresh()->starts_on->toDateString())->toBe('2025-09-01');
 });
 
+/**
+ * The times of the school's periods, in the order they run.
+ *
+ * @return list<string>
+ */
+function periodTimes(School $school): array
+{
+    return Period::where('school_id', $school->id)->orderBy('starts_at')->get()
+        ->map(fn (Period $period) => $period->label.' '.substr($period->starts_at, 0, 5).'-'.substr($period->ends_at, 0, 5))
+        ->all();
+}
+
+test('period times are worked out from the day start and the default length', function () {
+    $school = setupSchool();
+    $admin = setupAdmin($school);
+
+    $this->actingAs($admin)
+        ->patch('http://setupa.ekol.test/setup/schoolday', [
+            'day_starts_at' => '07:30',
+            'period_minutes' => 55,
+            'periods' => [
+                ['label' => 'P1', 'custom_minutes' => null],
+                ['label' => 'P2', 'custom_minutes' => null],
+                ['label' => 'BREAK', 'is_break' => true, 'custom_minutes' => 20],
+                ['label' => 'P3', 'custom_minutes' => 40],
+            ],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(periodTimes($school))->toBe(['P1 07:30-08:25', 'P2 08:25-09:20', 'BREAK 09:20-09:40', 'P3 09:40-10:20']);
+
+    $this->actingAs($admin)
+        ->patch('http://setupa.ekol.test/setup/schoolday', ['day_starts_at' => '08:00', 'period_minutes' => 45])
+        ->assertSessionHasNoErrors();
+
+    expect(periodTimes($school))->toBe(['P1 08:00-08:45', 'P2 08:45-09:30', 'BREAK 09:30-09:50', 'P3 09:50-10:30'])
+        ->and($school->fresh()->period_minutes)->toBe(45);
+
+    $this->actingAs($admin)
+        ->get('http://setupa.ekol.test/setup')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('school.day_starts_at', '08:00')
+            ->where('school.period_minutes', 45)
+            ->where('periods.0.custom_minutes', null)
+            ->where('periods.3.custom_minutes', 40));
+});
+
+test('the order the periods are sent in is the order they run', function () {
+    $school = setupSchool();
+    $admin = setupAdmin($school);
+    $this->actingAs($admin)->patch('http://setupa.ekol.test/setup/schoolday', [
+        'periods' => [
+            ['label' => 'P1', 'custom_minutes' => null],
+            ['label' => 'P2', 'custom_minutes' => null],
+            ['label' => 'BREAK', 'is_break' => true, 'custom_minutes' => 20],
+        ],
+    ]);
+    $ids = Period::where('school_id', $school->id)->orderBy('starts_at')->pluck('id', 'label');
+
+    $this->actingAs($admin)
+        ->patch('http://setupa.ekol.test/setup/schoolday', [
+            'periods' => [
+                ['id' => $ids['P1'], 'label' => 'P1', 'custom_minutes' => null],
+                ['id' => $ids['BREAK'], 'label' => 'BREAK', 'is_break' => true, 'custom_minutes' => 20],
+                ['id' => $ids['P2'], 'label' => 'P2', 'custom_minutes' => null],
+            ],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(periodTimes($school))->toBe(['P1 07:30-08:25', 'BREAK 08:25-08:45', 'P2 08:45-09:40']);
+});
+
+test('a school day cannot run past midnight and a break needs a length', function () {
+    $school = setupSchool();
+    $admin = setupAdmin($school);
+
+    $this->actingAs($admin)
+        ->patch('http://setupa.ekol.test/setup/schoolday', [
+            'day_starts_at' => '22:00',
+            'periods' => [
+                ['label' => 'P1', 'custom_minutes' => 90],
+                ['label' => 'P2', 'custom_minutes' => 90],
+            ],
+        ])
+        ->assertSessionHasErrors('periods');
+    expect(Period::count())->toBe(0);
+
+    $this->actingAs($admin)
+        ->patch('http://setupa.ekol.test/setup/schoolday', [
+            'periods' => [['label' => 'BREAK', 'is_break' => true, 'custom_minutes' => null]],
+        ])
+        ->assertSessionHasErrors('periods.0.custom_minutes');
+});
+
 test('schoolday refuses to delete a period on the timetable', function () {
     $school = setupSchool();
     $admin = setupAdmin($school);
@@ -249,8 +343,7 @@ test('schoolday refuses to delete a period on the timetable', function () {
         ->patch('http://setupa.ekol.test/setup/schoolday', [
             'school_days' => 63,
             'periods' => [[
-                'id' => $period->id, 'label' => 'P1',
-                'starts_at' => '07:30', 'ends_at' => '08:25',
+                'id' => $period->id, 'label' => 'P1', 'custom_minutes' => null,
                 '_delete' => true,
             ]],
         ])

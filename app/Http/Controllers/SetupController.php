@@ -19,6 +19,7 @@ use App\Models\School;
 use App\Models\Term;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -75,6 +76,8 @@ class SetupController extends Controller
                     'cycle', 'subsystem', 'currency', 'timezone', 'school_days', 'locale',
                 ]),
                 'logo_url' => $school->logo_path ? "/storage/{$school->logo_path}" : null,
+                'day_starts_at' => substr((string) $school->day_starts_at, 0, 5),
+                'period_minutes' => $school->period_minutes,
             ],
             'years' => AcademicYear::where('school_id', $school->id)
                 ->orderByDesc('starts_on')
@@ -102,6 +105,7 @@ class SetupController extends Controller
                 'starts_at' => substr($period->starts_at, 0, 5),
                 'ends_at' => substr($period->ends_at, 0, 5),
                 'is_break' => $period->is_break,
+                'custom_minutes' => $period->custom_minutes,
             ]),
             'assessments' => $this->assessmentWindows($school, $terms->pluck('id')->all()),
         ]);
@@ -377,6 +381,11 @@ class SetupController extends Controller
         return back();
     }
 
+    /**
+     * Save the school day. Periods come in the order they run; each
+     * starts when the one before it ends, beginning when the day starts,
+     * and lasts the default length unless it has its own.
+     */
     public function updateSchoolday(UpdateSchooldayRequest $request): RedirectResponse
     {
         $school = $this->school($request);
@@ -384,61 +393,85 @@ class SetupController extends Controller
         $data = $request->validated();
 
         DB::transaction(function () use ($school, $data) {
-            if (array_key_exists('school_days', $data)) {
-                $school->update(['school_days' => $data['school_days']]);
+            $school->update(array_intersect_key($data, array_flip(['school_days', 'day_starts_at', 'period_minutes'])));
+
+            if (! array_key_exists('periods', $data)) {
+                $this->retime($school);
+
+                return;
             }
 
             // Soft-deleted rows keep their ordinal, so new ones go past the end.
             $nextOrdinal = (int) Period::withTrashed()->where('school_id', $school->id)->max('ordinal');
+            $kept = [];
 
-            foreach ($data['periods'] ?? [] as $row) {
-                if (! empty($row['id'])) {
-                    $period = Period::where('school_id', $school->id)
-                        ->where('id', $row['id'])
-                        ->firstOrFail();
-                    if (! empty($row['_delete'])) {
-                        if ($period->timetableSlots()->exists()) {
-                            throw ValidationException::withMessages([
-                                'periods' => __('Period :label is on the timetable and cannot be deleted.', ['label' => $period->label]),
-                            ]);
-                        }
-                        $period->delete();
-
-                        continue;
-                    }
-
-                    $period->update([
-                        'label' => $row['label'],
-                        'starts_at' => $row['starts_at'],
-                        'ends_at' => $row['ends_at'],
-                        'is_break' => (bool) ($row['is_break'] ?? false),
-                    ]);
-
-                    continue;
-                }
+            foreach ($data['periods'] as $row) {
+                $period = empty($row['id'])
+                    ? null
+                    : Period::where('school_id', $school->id)->where('id', $row['id'])->firstOrFail();
 
                 if (! empty($row['_delete'])) {
+                    if ($period?->timetableSlots()->exists()) {
+                        throw ValidationException::withMessages([
+                            'periods' => __('Period :label is on the timetable and cannot be deleted.', ['label' => $period->label]),
+                        ]);
+                    }
+                    $period?->delete();
+
                     continue;
                 }
 
-                Period::create([
-                    'school_id' => $school->id,
+                $isBreak = (bool) ($row['is_break'] ?? false);
+                $fields = [
                     'label' => $row['label'],
-                    'ordinal' => ++$nextOrdinal,
-                    'starts_at' => $row['starts_at'],
-                    'ends_at' => $row['ends_at'],
-                    'is_break' => (bool) ($row['is_break'] ?? false),
-                ]);
+                    'is_break' => $isBreak,
+                    'custom_minutes' => isset($row['custom_minutes']) ? (int) $row['custom_minutes'] : null,
+                ];
+
+                $kept[] = $period
+                    ? tap($period)->fill($fields)
+                    : new Period([...$fields, 'school_id' => $school->id, 'ordinal' => ++$nextOrdinal]);
             }
+
+            $this->retime($school, $kept);
         });
 
         $this->audit($request, 'period', $school->id, 'schoolday_saved', [
             'school_days' => $data['school_days'] ?? null,
+            'day_starts_at' => $data['day_starts_at'] ?? null,
+            'period_minutes' => $data['period_minutes'] ?? null,
         ]);
 
         $this->notify('School day saved.');
 
         return back();
+    }
+
+    /**
+     * Give each period its times, one after another from the start of
+     * the day, and save them. Without a list the school's periods are
+     * taken in the order they run now.
+     *
+     * @param  list<Period>|null  $periods
+     */
+    protected function retime(School $school, ?array $periods = null): void
+    {
+        $periods ??= Period::where('school_id', $school->id)->orderBy('starts_at')->orderBy('ordinal')->get()->all();
+        $cursor = Carbon::createFromFormat('H:i', substr((string) $school->day_starts_at, 0, 5));
+        $endOfDay = $cursor->copy()->setTime(23, 59);
+
+        foreach ($periods as $period) {
+            $starts = $cursor->copy();
+            $cursor->addMinutes($period->minutesWith($school->period_minutes));
+
+            if ($cursor->gt($endOfDay)) {
+                throw ValidationException::withMessages([
+                    'periods' => __('The day would run past midnight. Start earlier, or make periods shorter.'),
+                ]);
+            }
+
+            $period->fill(['starts_at' => $starts->format('H:i'), 'ends_at' => $cursor->format('H:i')])->save();
+        }
     }
 
     public function updateTerms(UpdateTermsRequest $request): RedirectResponse

@@ -34,6 +34,8 @@ interface SchoolProp {
     logo_url: string | null;
     school_days: number;
     locale: string;
+    day_starts_at: string;
+    period_minutes: number;
 }
 
 interface YearProp {
@@ -64,9 +66,11 @@ interface TemplateProp {
 interface PeriodProp {
     id?: string;
     label: string;
-    starts_at: string;
-    ends_at: string;
+    starts_at?: string;
+    ends_at?: string;
     is_break?: boolean;
+    /** Its own length; without one a lesson takes the default length. */
+    custom_minutes: number | null;
     _delete?: boolean;
 }
 
@@ -1194,8 +1198,132 @@ function WindowsZone({ assessments }: { assessments: AssessmentProp[] }) {
     );
 }
 
-const timeInputClass =
-    'w-[90px] shrink-0 rounded-sm bg-transparent font-mono text-[13px] leading-4 outline-none hover:bg-primary-tint focus:bg-primary-tint [&::-webkit-calendar-picker-indicator]:hidden';
+/** The length a break gets when it is added. */
+const BREAK_MINUTES = 20;
+
+const stepButtonClass =
+    'flex h-8 w-[34px] items-center justify-center text-[16px] leading-5 text-text enabled:hover:bg-surface disabled:text-text-muted disabled:opacity-40';
+
+function Stepper({
+    value,
+    label,
+    fewer,
+    more,
+    onFewer,
+    onMore,
+    canFewer,
+    canMore,
+}: {
+    value: string;
+    label: string;
+    fewer: string;
+    more: string;
+    onFewer: () => void;
+    onMore: () => void;
+    canFewer: boolean;
+    canMore: boolean;
+}) {
+    return (
+        <div
+            role="group"
+            aria-label={label}
+            className="flex h-[34px] items-center rounded-md border border-solid border-border bg-white"
+        >
+            <button
+                type="button"
+                aria-label={fewer}
+                disabled={!canFewer}
+                onClick={onFewer}
+                className={`${stepButtonClass} border-r border-solid border-border`}
+            >
+                −
+            </button>
+            <span className="min-w-[44px] px-2 text-center font-mono text-[14px] leading-[18px] text-text">
+                {value}
+            </span>
+            <button
+                type="button"
+                aria-label={more}
+                disabled={!canMore}
+                onClick={onMore}
+                className={`${stepButtonClass} border-l border-solid border-border`}
+            >
+                +
+            </button>
+        </div>
+    );
+}
+
+/**
+ * A length in minutes, typed freely and sent once it is a sensible
+ * number, so a half-typed value never reaches the server.
+ */
+function MinutesInput({
+    value,
+    label,
+    onCommit,
+}: {
+    value: number;
+    label: string;
+    onCommit: (minutes: number) => void;
+}) {
+    const [draft, setDraft] = useState(String(value));
+
+    useEffect(() => setDraft(String(value)), [value]);
+
+    function commit() {
+        const minutes = Number(draft);
+
+        if (Number.isInteger(minutes) && minutes >= 5 && minutes <= 240) {
+            if (minutes !== value) {
+                onCommit(minutes);
+            }
+        } else {
+            setDraft(String(value));
+        }
+    }
+
+    return (
+        <span className="flex items-center gap-1 font-mono text-[12px] leading-4 text-text-muted">
+            <input
+                type="text"
+                inputMode="numeric"
+                aria-label={label}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value.replace(/\D/g, ''))}
+                onBlur={commit}
+                onKeyDown={(e) => e.key === 'Enter' && commit()}
+                className="w-[34px] rounded-sm bg-transparent text-right outline-none hover:bg-primary-tint focus:bg-primary-tint"
+            />
+            {t('min')}
+        </span>
+    );
+}
+
+interface SchooldayData {
+    school_days: number;
+    day_starts_at: string;
+    period_minutes: number;
+    periods: PeriodProp[];
+}
+
+/**
+ * Each period's times, one after another from the start of the day,
+ * the way the server works them out when it saves.
+ */
+function timed(data: SchooldayData) {
+    let cursor = data.day_starts_at;
+
+    return data.periods
+        .filter((row) => !row._delete)
+        .map((row) => {
+            const minutes = row.custom_minutes ?? data.period_minutes;
+            const starts = cursor;
+            cursor = addMinutes(cursor, minutes);
+
+            return { row, starts, ends: cursor, minutes };
+        });
+}
 
 function SchooldayZone({
     school,
@@ -1204,16 +1332,25 @@ function SchooldayZone({
     school: SchoolProp;
     periods: PeriodProp[];
 }) {
+    const fromProps = (props: SetupProps): SchooldayData => ({
+        school_days: props.school.school_days,
+        day_starts_at: props.school.day_starts_at,
+        period_minutes: props.school.period_minutes,
+        periods: props.periods,
+    });
     const { data, save, error } = useAutosave(
         updateSchoolday.url(),
-        { school_days: school.school_days, periods },
-        (props) => ({
-            school_days: props.school.school_days,
-            periods: props.periods,
+        fromProps({ school, periods } as SetupProps),
+        fromProps,
+        (next) => ({
+            ...next,
+            periods: next.periods.map(
+                ({ starts_at: _starts, ends_at: _ends, ...row }) => row,
+            ),
         }),
     );
-    const visible = data.periods.filter((row) => !row._delete);
-    const lessons = visible.filter((row) => !row.is_break).length;
+    const rows = timed(data);
+    const lessons = rows.filter(({ row }) => !row.is_break);
     const days = WEEKDAYS.filter(
         (_, index) => (data.school_days & (1 << index)) !== 0,
     ).length;
@@ -1238,21 +1375,42 @@ function SchooldayZone({
         });
     }
 
-    function addPeriod(isBreak: boolean) {
-        const startsAt = visible[visible.length - 1]?.ends_at ?? '07:30';
+    function movePeriod(target: PeriodProp, step: -1 | 1) {
+        const order = data.periods.filter((row) => !row._delete);
+        const from = order.indexOf(target);
+        const to = from + step;
 
+        if (to < 0 || to >= order.length) {
+            return;
+        }
+
+        [order[from], order[to]] = [order[to], order[from]];
+        save({
+            ...data,
+            periods: [...order, ...data.periods.filter((row) => row._delete)],
+        });
+    }
+
+    function addPeriod(isBreak: boolean) {
         save({
             ...data,
             periods: [
                 ...data.periods,
                 {
-                    label: isBreak ? 'BREAK' : `P${lessons + 1}`,
-                    starts_at: startsAt,
-                    ends_at: addMinutes(startsAt, isBreak ? 20 : 55),
+                    label: isBreak ? 'BREAK' : `P${lessons.length + 1}`,
                     is_break: isBreak,
+                    custom_minutes: isBreak ? BREAK_MINUTES : null,
                 },
             ],
         });
+    }
+
+    function removeLastLesson() {
+        const last = lessons[lessons.length - 1];
+
+        if (last) {
+            removePeriod(last.row);
+        }
     }
 
     return (
@@ -1266,7 +1424,7 @@ function SchooldayZone({
                 <span className="text-[13px] leading-4 font-medium text-text">
                     {t('School days')}
                 </span>
-                <div className="flex gap-[6px]">
+                <div className="flex flex-wrap gap-[6px]">
                     {WEEKDAYS.map((name) => t(name)).map((day, index) => {
                         const bit = 1 << index;
                         const on = (data.school_days & bit) !== 0;
@@ -1294,90 +1452,208 @@ function SchooldayZone({
                     })}
                 </div>
             </div>
-            <div className="flex flex-col overflow-clip rounded-lg border border-solid border-border">
-                <div className="flex h-8 shrink-0 items-center gap-[14px] border-b border-solid border-border bg-surface px-[14px] text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
-                    <span className="w-[70px] shrink-0">{t('Period')}</span>
-                    <span className="w-[90px] shrink-0">{t('Starts')}</span>
-                    <span className="w-[90px] shrink-0">{t('Ends')}</span>
-                    <span className="flex-1">{t('Length')}</span>
+            <div className="flex flex-col gap-4 rounded-lg border border-solid border-border bg-surface p-4 xl:flex-row xl:items-center">
+                <div className="flex flex-wrap items-end gap-6">
+                    <label className="flex flex-col gap-[6px] text-[13px] leading-4 font-medium text-text">
+                        {t('Day starts at')}
+                        <input
+                            type="time"
+                            value={data.day_starts_at}
+                            onChange={(e) =>
+                                e.target.value &&
+                                save({ ...data, day_starts_at: e.target.value })
+                            }
+                            className="h-[34px] w-[96px] rounded-md border border-solid border-border bg-white px-3 font-mono text-[14px] text-text outline-none focus:border-primary [&::-webkit-calendar-picker-indicator]:hidden"
+                        />
+                    </label>
+                    <div className="flex flex-col gap-[6px] text-[13px] leading-4 font-medium text-text">
+                        {t('Default period length')}
+                        <Stepper
+                            value={t(':count min', {
+                                count: data.period_minutes,
+                            })}
+                            label={t('Default period length')}
+                            fewer={t('Shorter periods')}
+                            more={t('Longer periods')}
+                            canFewer={data.period_minutes > 10}
+                            canMore={data.period_minutes < 180}
+                            onFewer={() =>
+                                save({
+                                    ...data,
+                                    period_minutes: Math.max(
+                                        10,
+                                        data.period_minutes - 5,
+                                    ),
+                                })
+                            }
+                            onMore={() =>
+                                save({
+                                    ...data,
+                                    period_minutes: Math.min(
+                                        180,
+                                        data.period_minutes + 5,
+                                    ),
+                                })
+                            }
+                        />
+                    </div>
+                    <div className="flex flex-col gap-[6px] text-[13px] leading-4 font-medium text-text">
+                        {t('Periods a day')}
+                        <Stepper
+                            value={String(lessons.length)}
+                            label={t('Periods a day')}
+                            fewer={t('Fewer periods')}
+                            more={t('More periods')}
+                            canFewer={lessons.length > 0}
+                            canMore={lessons.length < 14}
+                            onFewer={removeLastLesson}
+                            onMore={() => addPeriod(false)}
+                        />
+                    </div>
                 </div>
-                {visible.length === 0 && (
-                    <p className="px-[14px] py-3 text-[13px] leading-[19px] text-text-muted">
-                        {t('No periods yet. Add the first one below.')}
-                    </p>
-                )}
-                {visible.map((row, index) => {
-                    const length =
-                        toMinutes(row.ends_at) - toMinutes(row.starts_at);
-                    const tone = row.is_break ? 'text-text-muted' : 'text-text';
-
-                    return (
-                        <div
-                            key={row.id ?? `new-${index}`}
-                            className={`group flex shrink-0 items-center gap-[14px] border-b border-solid border-border px-[14px] last:border-b-0 ${
-                                row.is_break
-                                    ? 'h-8 bg-surface'
-                                    : `h-[38px] ${index % 2 === 1 ? 'bg-row-alt' : ''}`
-                            }`}
-                        >
-                            <input
-                                type="text"
-                                aria-label={t('Period name')}
-                                value={row.label}
-                                onChange={(e) =>
-                                    setPeriod(row, { label: e.target.value })
-                                }
-                                className={`w-[70px] shrink-0 rounded-sm bg-transparent outline-none hover:bg-primary-tint focus:bg-primary-tint ${
-                                    row.is_break
-                                        ? 'text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase'
-                                        : 'text-[14px] leading-[18px] font-medium text-text'
-                                }`}
-                            />
-                            <input
-                                type="time"
-                                aria-label={t(':label starts', {
-                                    label: row.label,
-                                })}
-                                value={row.starts_at}
-                                onChange={(e) =>
-                                    setPeriod(row, {
-                                        starts_at: e.target.value,
-                                    })
-                                }
-                                className={`${timeInputClass} ${tone}`}
-                            />
-                            <input
-                                type="time"
-                                aria-label={t(':label ends', {
-                                    label: row.label,
-                                })}
-                                value={row.ends_at}
-                                onChange={(e) =>
-                                    setPeriod(row, { ends_at: e.target.value })
-                                }
-                                className={`${timeInputClass} ${tone}`}
-                            />
-                            <span className="flex-1 font-mono text-[12px] leading-4 text-text-muted">
-                                {length > 0
-                                    ? t(':count min', { count: length })
-                                    : '—'}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => removePeriod(row)}
-                                className="text-[12px] leading-4 font-medium text-danger opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:underline focus:opacity-100"
-                            >
-                                {t('Remove')}
-                            </button>
-                        </div>
-                    );
-                })}
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[13px] leading-[19px] text-text-muted">
+                <p className="text-[12px] leading-[17px] text-text-muted xl:max-w-[400px]">
                     {t(
-                        ':days lesson slots a week for each class. Used by the Timetable and the Exam schedule.',
-                        { days: lessons * days },
+                        'Every period starts at this length and the times below are worked out for you. To make one period longer or shorter, change its length in the table.',
+                    )}
+                </p>
+            </div>
+            <div className="overflow-x-auto rounded-lg border border-solid border-border">
+                <div className="flex min-w-[560px] flex-col">
+                    <div className="flex h-8 shrink-0 items-center gap-[14px] border-b border-solid border-border bg-surface px-[14px] text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
+                        <span className="w-[70px] shrink-0">{t('Period')}</span>
+                        <span className="w-[70px] shrink-0">{t('Starts')}</span>
+                        <span className="w-[70px] shrink-0">{t('Ends')}</span>
+                        <span className="flex-1">{t('Length')}</span>
+                    </div>
+                    {rows.length === 0 && (
+                        <p className="px-[14px] py-3 text-[13px] leading-[19px] text-text-muted">
+                            {t('No periods yet. Add the first one below.')}
+                        </p>
+                    )}
+                    {rows.map(({ row, starts, ends, minutes }, index) => {
+                        const custom =
+                            !row.is_break && row.custom_minutes !== null;
+                        const tone = row.is_break
+                            ? 'text-text-muted'
+                            : 'text-text';
+
+                        return (
+                            <div
+                                key={row.id ?? `new-${index}`}
+                                className={`group flex shrink-0 items-center gap-[14px] border-b border-solid border-border px-[14px] last:border-b-0 ${
+                                    row.is_break
+                                        ? 'h-8 bg-surface'
+                                        : `h-[38px] ${index % 2 === 1 ? 'bg-row-alt' : ''}`
+                                }`}
+                            >
+                                <input
+                                    type="text"
+                                    aria-label={t('Period name')}
+                                    value={row.label}
+                                    onChange={(e) =>
+                                        setPeriod(row, {
+                                            label: e.target.value,
+                                        })
+                                    }
+                                    className={`w-[70px] shrink-0 rounded-sm bg-transparent outline-none hover:bg-primary-tint focus:bg-primary-tint ${
+                                        row.is_break
+                                            ? 'text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase'
+                                            : 'text-[14px] leading-[18px] font-medium text-text'
+                                    }`}
+                                />
+                                <span
+                                    className={`w-[70px] shrink-0 font-mono text-[13px] leading-4 ${tone}`}
+                                >
+                                    {starts}
+                                </span>
+                                <span
+                                    className={`w-[70px] shrink-0 font-mono text-[13px] leading-4 ${tone}`}
+                                >
+                                    {ends}
+                                </span>
+                                <span className="flex flex-1 items-center gap-2">
+                                    <MinutesInput
+                                        value={minutes}
+                                        label={t(':label length in minutes', {
+                                            label: row.label,
+                                        })}
+                                        onCommit={(next) =>
+                                            setPeriod(row, {
+                                                custom_minutes:
+                                                    row.is_break ||
+                                                    next !== data.period_minutes
+                                                        ? next
+                                                        : null,
+                                            })
+                                        }
+                                    />
+                                    {custom && (
+                                        <span className="flex h-5 items-center rounded-full bg-warning-tint px-2 text-[11px] leading-4 font-medium text-[#8A5A12]">
+                                            {t('Custom')}
+                                        </span>
+                                    )}
+                                </span>
+                                <span className="flex shrink-0 items-center gap-3">
+                                    <span className="flex gap-1 opacity-0 group-focus-within:opacity-100 group-hover:opacity-100">
+                                        <button
+                                            type="button"
+                                            aria-label={t(
+                                                'Move :label earlier',
+                                                {
+                                                    label: row.label,
+                                                },
+                                            )}
+                                            disabled={index === 0}
+                                            onClick={() => movePeriod(row, -1)}
+                                            className="px-1 text-[13px] text-text-muted hover:text-text disabled:opacity-30"
+                                        >
+                                            ↑
+                                        </button>
+                                        <button
+                                            type="button"
+                                            aria-label={t('Move :label later', {
+                                                label: row.label,
+                                            })}
+                                            disabled={index === rows.length - 1}
+                                            onClick={() => movePeriod(row, 1)}
+                                            className="px-1 text-[13px] text-text-muted hover:text-text disabled:opacity-30"
+                                        >
+                                            ↓
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => removePeriod(row)}
+                                            className="text-[12px] leading-4 font-medium text-danger hover:underline"
+                                        >
+                                            {t('Remove')}
+                                        </button>
+                                    </span>
+                                    {custom && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setPeriod(row, {
+                                                    custom_minutes: null,
+                                                })
+                                            }
+                                            className="text-[13px] leading-4 font-medium text-text hover:underline"
+                                        >
+                                            {t('Reset to :count min', {
+                                                count: data.period_minutes,
+                                            })}
+                                        </button>
+                                    )}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+            <div className="flex flex-wrap items-start justify-between gap-2">
+                <p className="max-w-[640px] text-[13px] leading-[19px] text-text-muted">
+                    {t(
+                        ':count lesson slots a week for each class. Changing the default length resets every period that isn’t marked Custom.',
+                        { count: lessons.length * days },
                     )}
                 </p>
                 <div className="flex gap-4">
