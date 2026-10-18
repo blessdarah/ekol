@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $starts_at
  * @property string $ends_at
  * @property bool $is_break
+ * @property int|null $custom_minutes
  */
 class Period extends Model
 {
@@ -30,6 +31,7 @@ class Period extends Model
         'starts_at',
         'ends_at',
         'is_break',
+        'custom_minutes',
     ];
 
     /**
@@ -39,7 +41,17 @@ class Period extends Model
     {
         return [
             'is_break' => 'boolean',
+            'custom_minutes' => 'integer',
         ];
+    }
+
+    /**
+     * How long the period lasts: its own length when it has one, else
+     * the school's default lesson length.
+     */
+    public function minutesWith(int $defaultMinutes): int
+    {
+        return $this->custom_minutes ?? $defaultMinutes;
     }
 
     /**

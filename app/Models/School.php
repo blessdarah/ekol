@@ -24,6 +24,8 @@ use Illuminate\Validation\ValidationException;
  * @property string $timezone
  * @property string|null $logo_path
  * @property int $school_days
+ * @property string $day_starts_at
+ * @property int $period_minutes
  * @property string $pass_mark
  */
 class School extends Model
@@ -83,6 +85,8 @@ class School extends Model
         'timezone',
         'logo_path',
         'school_days',
+        'day_starts_at',
+        'period_minutes',
         'pass_mark',
         'locale',
     ];
@@ -94,6 +98,7 @@ class School extends Model
     {
         return [
             'cycle' => SchoolCycle::class,
+            'period_minutes' => 'integer',
         ];
     }
 
