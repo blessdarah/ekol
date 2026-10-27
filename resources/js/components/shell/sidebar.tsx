@@ -1,5 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { logout } from '@/actions/App/Http/Controllers/Auth/LoginController';
+import { logout as platformLogout } from '@/actions/App/Http/Controllers/PlatformAuthController';
 import { useT } from '../../lib/i18n';
 import LanguageSwitch from './language-switch';
 import { Icons, NAV_SECTIONS, TEACHER_NAV_SECTIONS } from './nav';
@@ -44,7 +45,7 @@ export default function Sidebar({
     /** Whether the menu is slid in, on screens too narrow to keep it in view. */
     open?: boolean;
 }) {
-    const { url } = usePage();
+    const { url, props } = usePage();
     const t = useT();
     const sections =
         user?.portal === 'teacher' ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
@@ -150,7 +151,11 @@ export default function Sidebar({
                     </span>
                 </span>
                 <Link
-                    href={logout.url()}
+                    href={
+                        props.platformVisit
+                            ? platformLogout.url()
+                            : logout.url()
+                    }
                     method="post"
                     as="button"
                     aria-label={t('Sign out')}

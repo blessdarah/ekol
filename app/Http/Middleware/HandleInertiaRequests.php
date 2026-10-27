@@ -43,6 +43,14 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'platformVisit' => fn () => app()->bound('currentPlatformVisit') ? [
+                'school' => app('currentSchool')->name,
+                'started' => app('currentPlatformVisit')->started_at->toIso8601String(),
+                'expires' => app('currentPlatformVisit')->expires_at->toIso8601String(),
+            ] : null,
+            'demoSchool' => fn () => ($school = $this->currentSchool($request))?->is_demo ? [
+                'expires' => $school->demo_expires_at?->toDateString(),
+            ] : null,
             'auth' => [
                 'user' => $request->user(),
             ],
@@ -118,7 +126,7 @@ class HandleInertiaRequests extends Middleware
 
         return [
             'full_name' => $user->full_name,
-            'roleLabel' => Str::headline($user->role->value),
+            'roleLabel' => $user->is_platform_admin ? 'Campus super-admin' : Str::headline($user->role->value),
             'portal' => $user->role->teaches() ? 'teacher' : 'admin',
         ];
     }

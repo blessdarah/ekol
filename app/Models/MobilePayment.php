@@ -112,6 +112,7 @@ class MobilePayment extends Model
      */
     public static function start(Invoice $invoice, Student $student, int $amount, string $phone, Campay $campay): self
     {
+        abort_if(School::whereKey($student->school_id)->where('is_demo', true)->exists(), 403, 'Mobile money is off in demo schools.');
         $digits = static::localDigits($phone);
         $request = static::create([
             'school_id' => $student->school_id,

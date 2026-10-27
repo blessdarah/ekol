@@ -14,6 +14,8 @@ class StoreDemoRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'contact_name' => ['nullable', 'string', 'max:150'],
+            'email' => ['nullable', 'email', 'max:255'],
             'school_name' => ['required', 'string', 'max:150'],
             'role' => ['required', Rule::in(DemoRequest::ROLES)],
             'students' => ['required', Rule::in(DemoRequest::SIZES)],

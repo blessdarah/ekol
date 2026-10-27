@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\StaffInvitationController;
 use App\Http\Controllers\CorrectionController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DemoSchoolController;
 use App\Http\Controllers\EnrolmentController;
 use App\Http\Controllers\ExamScheduleController;
 use App\Http\Controllers\FeeController;
@@ -18,6 +19,9 @@ use App\Http\Controllers\MarkSheetController;
 use App\Http\Controllers\MobilePaymentController;
 use App\Http\Controllers\ParentController;
 use App\Http\Controllers\PayController;
+use App\Http\Controllers\PlatformAuthController;
+use App\Http\Controllers\PlatformController;
+use App\Http\Controllers\SchemeController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SeriesRegistrationController;
 use App\Http\Controllers\SetupController;
@@ -28,6 +32,8 @@ use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\SyllabusController;
+use App\Http\Controllers\TeacherSchemeController;
 use App\Http\Controllers\TeacherTimetableController;
 use App\Http\Controllers\TermResultController;
 use App\Http\Controllers\TimetableChangeController;
@@ -37,6 +43,28 @@ use App\Http\Controllers\TimetableRoomController;
 use App\Http\Middleware\ResolveSchool;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
+
+Route::prefix('platform')->name('platform.')->group(function () {
+    Route::get('/login', [PlatformAuthController::class, 'show'])->name('login');
+    Route::post('/login', [PlatformAuthController::class, 'store'])->middleware('throttle:5,1')->name('login.store');
+    Route::post('/verify', [PlatformAuthController::class, 'verify'])->middleware('throttle:5,1')->name('verify');
+    Route::post('/logout', [PlatformAuthController::class, 'logout'])->name('logout');
+    Route::get('/', [PlatformController::class, 'schools'])->name('schools');
+    Route::post('/schools/{school}/visit', [PlatformController::class, 'visit'])->name('visit');
+    Route::post('/leave', [PlatformController::class, 'leave'])->name('leave');
+    Route::get('/visits', [PlatformController::class, 'visits'])->name('visits');
+    Route::get('/sign-ups', [PlatformController::class, 'signups'])->name('signups');
+    Route::get('/demos', [PlatformController::class, 'demos'])->name('demos');
+    Route::post('/demos/{demo}', [PlatformController::class, 'updateDemo'])->name('demos.update');
+    Route::post('/demos/{demo}/email', [PlatformController::class, 'emailDemo'])->middleware('throttle:3,1')->name('demos.email');
+});
+
+Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
+    Route::get('/demo-school/{demo}', [DemoSchoolController::class, 'show'])->middleware('signed:relative')->name('demo-school.show');
+    Route::post('/demo-school/{demo}/open', [DemoSchoolController::class, 'open'])->middleware('signed:relative')->name('demo-school.open');
+    Route::post('/demo-start', [DemoSchoolController::class, 'start'])->middleware('auth')->name('demo-school.start');
+    Route::get('/demo-register/{demo}', [DemoSchoolController::class, 'register'])->middleware('signed:relative')->name('demo-school.register');
+});
 
 Route::get('/', [LandingController::class, 'show'])->middleware([ResolveSchool::class, SetLocale::class])->name('home');
 Route::post('/demo', [LandingController::class, 'storeDemo'])->middleware([SetLocale::class, 'throttle:6,1'])->name('demo.store');
@@ -71,6 +99,15 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
         Route::get('/my-timetable', [TeacherTimetableController::class, 'show'])->name('my-timetable');
         Route::get('/attendance', [AttendanceController::class, 'show'])->name('attendance');
         Route::post('/attendance/{slot}', [AttendanceController::class, 'store'])->name('attendance.store');
+
+        Route::group(['prefix' => 'my-scheme'], function () {
+            Route::get('/', [TeacherSchemeController::class, 'show'])->name('my-scheme');
+            Route::post('/{scheme}/items', [TeacherSchemeController::class, 'add'])->name('my-scheme.items.store');
+            Route::patch('/{scheme}/items/{item}', [TeacherSchemeController::class, 'place'])->name('my-scheme.items.place');
+            Route::delete('/{scheme}/items/{item}', [TeacherSchemeController::class, 'remove'])->name('my-scheme.items.destroy');
+            Route::patch('/{scheme}/items/{item}/taught', [TeacherSchemeController::class, 'tick'])->name('my-scheme.items.tick');
+            Route::post('/{scheme}/submit', [TeacherSchemeController::class, 'submit'])->name('my-scheme.submit');
+        });
 
         $teacherStubs = [
             '/teaching-log' => ['Teaching Log', 'teaching log flow'],
@@ -124,6 +161,22 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::post('/series', [SeriesController::class, 'store'])->name('classes.series.store');
             Route::get('/series/{series}', [SeriesController::class, 'edit'])->name('classes.series.edit');
             Route::patch('/series/{series}', [SeriesController::class, 'update'])->name('classes.series.update');
+            Route::group(['prefix' => 'schemes'], function () {
+                Route::get('/', [SchemeController::class, 'index'])->name('schemes');
+                Route::get('/syllabus', [SyllabusController::class, 'show'])->name('schemes.syllabus');
+                Route::post('/syllabus/topics', [SyllabusController::class, 'store'])->name('schemes.syllabus.store');
+                Route::patch('/syllabus/topics/{topic}', [SyllabusController::class, 'update'])->name('schemes.syllabus.update');
+                Route::delete('/syllabus/topics/{topic}', [SyllabusController::class, 'destroy'])->name('schemes.syllabus.destroy');
+                Route::patch('/syllabus/topics/{topic}/move', [SyllabusController::class, 'move'])->name('schemes.syllabus.move');
+                Route::get('/open', [SchemeController::class, 'opening'])->name('schemes.open');
+                Route::post('/open', [SchemeController::class, 'open'])->name('schemes.open.store');
+                Route::get('/close', [SchemeController::class, 'closing'])->name('schemes.close');
+                Route::post('/close', [SchemeController::class, 'close'])->name('schemes.close.store');
+                Route::get('/close/report', [SchemeController::class, 'report'])->name('schemes.report');
+                Route::get('/{scheme}', [SchemeController::class, 'show'])->name('schemes.show');
+                Route::post('/{scheme}/review', [SchemeController::class, 'review'])->name('schemes.review');
+                Route::post('/{scheme}/notes', [SchemeController::class, 'note'])->name('schemes.note');
+            });
             Route::get('/subjects', [SubjectController::class, 'index'])->name('classes.subjects');
             Route::get('/subjects/new', [SubjectController::class, 'create'])->name('classes.subjects.create');
             Route::post('/subjects', [SubjectController::class, 'store'])->name('classes.subjects.store');

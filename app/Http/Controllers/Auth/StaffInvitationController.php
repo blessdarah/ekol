@@ -72,6 +72,7 @@ class StaffInvitationController extends Controller
         ])->save();
 
         Auth::login($member);
+        $member->forceFill(['last_signed_in_at' => now()])->save();
         $request->session()->regenerate();
         $request->session()->put('school_id', $school->id);
 

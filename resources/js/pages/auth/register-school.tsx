@@ -26,12 +26,14 @@ export default function RegisterSchool({
     subsystemOptions,
     regions,
     locales,
+    prefill = {},
 }: {
     parentDomain: string;
     ownershipOptions: string[];
     subsystemOptions: string[];
     regions: string[];
     locales: Record<string, string>;
+    prefill?: { name?: string };
 }) {
     const t = useT();
     const locale = useLocale();
@@ -118,6 +120,7 @@ export default function RegisterSchool({
                                 <input
                                     type="text"
                                     name="name"
+                                    defaultValue={prefill.name ?? ''}
                                     placeholder={t(
                                         'Government Bilingual High School, Bamenda',
                                     )}

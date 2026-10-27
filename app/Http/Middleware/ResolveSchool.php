@@ -31,7 +31,13 @@ class ResolveSchool
             abort(404);
         }
 
+        abort_if($school->is_demo && (! $school->demo_expires_at || $school->demo_expires_at->isPast()), 410, 'This demo has closed.');
+        abort_if($school->suspended_at !== null, 403, 'This school is suspended.');
+
         app()->instance('currentSchool', $school);
+        if ($school->is_demo) {
+            abort_if($request->is('staff/*/access', 'staff/*/reminder', 'parents*', 'pay*', 'fees/mobile-money*'), 403, 'Messages and mobile money are off in demo schools.');
+        }
         session(['school_id' => $school->id]);
 
         $user = $request->user();
