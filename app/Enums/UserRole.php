@@ -101,6 +101,24 @@ enum UserRole: string
     }
 
     /**
+     * Whether the role may write the syllabus, open and close schemes
+     * of work, and approve any scheme.
+     */
+    public function managesSchemes(): bool
+    {
+        return in_array($this, [self::Admin, self::Principal, self::AcademicLead], true);
+    }
+
+    /**
+     * Whether the role follows the school's schemes of work: those who
+     * manage them, and heads of department, who approve their own.
+     */
+    public function followsSchemes(): bool
+    {
+        return $this->managesSchemes() || $this === self::HeadOfDepartment;
+    }
+
+    /**
      * Whether the role may set fees and record payments.
      */
     public function managesFees(): bool

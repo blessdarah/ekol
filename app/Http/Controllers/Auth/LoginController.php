@@ -85,6 +85,7 @@ class LoginController extends Controller
         RateLimiter::clear($key);
 
         Auth::login($user, (bool) ($data['remember'] ?? false));
+        $user->forceFill(['last_signed_in_at' => now()])->save();
         $request->session()->regenerate();
         $request->session()->put('school_id', $school->id);
 

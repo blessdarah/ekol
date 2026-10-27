@@ -9,6 +9,7 @@ use App\Http\Requests\Auth\StoreSchoolStepRequest;
 use App\Http\Requests\Auth\UpdatePendingEmailRequest;
 use App\Http\Requests\Auth\VerifyCodeRequest;
 use App\Mail\WorkspaceReadyMail;
+use App\Models\DemoRequest;
 use App\Models\PendingRegistration;
 use App\Models\School;
 use App\Models\User;
@@ -34,6 +35,7 @@ class RegistrationController extends Controller
             'ownershipOptions' => School::OWNERSHIP_OPTIONS,
             'subsystemOptions' => School::SUBSYSTEM_OPTIONS,
             'regions' => School::REGIONS,
+            'prefill' => session('registration.prefill', []),
         ]);
     }
 
@@ -67,6 +69,7 @@ class RegistrationController extends Controller
 
         return Inertia::render('auth/register-admin', [
             'schoolName' => $school['name'],
+            'prefill' => $request->session()->get('registration.prefill', []),
         ]);
     }
 
@@ -120,9 +123,14 @@ class RegistrationController extends Controller
 
         $user = $pending->bootstrap();
 
+        if ($demoId = $request->session()->pull('demo_registration')) {
+            DemoRequest::whereKey($demoId)->update(['status' => 'school', 'converted_school_id' => $user->school_id]);
+        }
+
         $this->sendReadyEmail($user->school, $user);
 
         auth()->login($user);
+        $user->forceFill(['last_signed_in_at' => now()])->save();
         $request->session()->regenerate();
         $request->session()->forget('registration');
 

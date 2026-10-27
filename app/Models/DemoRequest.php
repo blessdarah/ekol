@@ -16,6 +16,13 @@ use Illuminate\Support\Carbon;
  * @property string $students
  * @property string $whatsapp
  * @property string $locale
+ * @property string|null $contact_name
+ * @property string|null $email
+ * @property string $status
+ * @property string|null $demo_school_id
+ * @property string|null $demo_user_id
+ * @property string|null $converted_school_id
+ * @property Carbon|null $extended_at
  * @property Carbon|null $handled_at
  */
 class DemoRequest extends Model
@@ -38,6 +45,13 @@ class DemoRequest extends Model
     public const string DIAL_CODE = '+237';
 
     protected $fillable = [
+        'contact_name',
+        'email',
+        'status',
+        'demo_school_id',
+        'demo_user_id',
+        'extended_at',
+        'converted_school_id',
         'school_name',
         'role',
         'students',
@@ -52,6 +66,7 @@ class DemoRequest extends Model
     protected function casts(): array
     {
         return [
+            'extended_at' => 'datetime',
             'handled_at' => 'datetime',
         ];
     }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -27,6 +28,9 @@ use Illuminate\Validation\ValidationException;
  * @property string $day_starts_at
  * @property int $period_minutes
  * @property string $pass_mark
+ * @property bool $is_demo
+ * @property Carbon|null $demo_expires_at
+ * @property Carbon|null $suspended_at
  */
 class School extends Model
 {
@@ -97,6 +101,9 @@ class School extends Model
     protected function casts(): array
     {
         return [
+            'is_demo' => 'boolean',
+            'demo_expires_at' => 'datetime',
+            'suspended_at' => 'datetime',
             'cycle' => SchoolCycle::class,
             'period_minutes' => 'integer',
         ];

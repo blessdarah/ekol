@@ -27,7 +27,13 @@ const ROLES = [
     'accountant',
 ];
 
-export default function RegisterAdmin({ schoolName }: { schoolName: string }) {
+export default function RegisterAdmin({
+    schoolName,
+    prefill = {},
+}: {
+    schoolName: string;
+    prefill?: { full_name?: string; phone?: string; email?: string };
+}) {
     const [role, setRole] = useState('admin');
     const t = useT();
 
@@ -70,6 +76,7 @@ export default function RegisterAdmin({ schoolName }: { schoolName: string }) {
                                     <input
                                         type="text"
                                         name="full_name"
+                                        defaultValue={prefill.full_name ?? ''}
                                         className={inputClass}
                                     />
                                 </Field>
@@ -106,6 +113,7 @@ export default function RegisterAdmin({ schoolName }: { schoolName: string }) {
                                     <input
                                         type="email"
                                         name="email"
+                                        defaultValue={prefill.email ?? ''}
                                         className={inputClass}
                                     />
                                 </Field>
@@ -113,6 +121,7 @@ export default function RegisterAdmin({ schoolName }: { schoolName: string }) {
                                     <input
                                         type="tel"
                                         name="phone"
+                                        defaultValue={prefill.phone ?? ''}
                                         className={inputClass}
                                     />
                                 </Field>

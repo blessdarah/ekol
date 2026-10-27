@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 import { index as seriesIndex } from '@/actions/App/Http/Controllers/SeriesController';
 import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
+import { index as schemesIndex } from '@/actions/App/Http/Controllers/SchemeController';
 import { index as subjectsIndex } from '@/actions/App/Http/Controllers/SubjectController';
 import { t } from '../../lib/i18n';
 
@@ -158,12 +159,17 @@ export function StructureHeader({
 export function StructureTabs({
     active,
 }: {
-    active: 'subjects' | 'levels' | 'series';
+    active: 'subjects' | 'levels' | 'series' | 'schemes';
 }) {
     const tabs = [
         { key: 'subjects', label: t('Subjects'), href: subjectsIndex.url() },
         { key: 'levels', label: t('Levels'), href: levelsIndex.url() },
         { key: 'series', label: t('Series setup'), href: seriesIndex.url() },
+        {
+            key: 'schemes',
+            label: t('Schemes of work'),
+            href: schemesIndex.url(),
+        },
     ];
 
     return (

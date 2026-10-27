@@ -1,6 +1,7 @@
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState, type ReactNode } from 'react';
 import { storeDemo } from '@/actions/App/Http/Controllers/LandingController';
+import { showSchoolStep } from '@/actions/App/Http/Controllers/Auth/RegistrationController';
 import { switchLocale } from '../components/shell/language-switch';
 import Toasts from '../components/shell/toasts';
 import { t, useLocale } from '../lib/i18n';
@@ -135,18 +136,92 @@ function Tick({ children }: { children: ReactNode }) {
 
 function DemoForm({ roles, sizes, dialCode }: LandingProps) {
     const form = useForm({
+        contact_name: '',
+        email: '',
         school_name: '',
         role: roles[0] ?? '',
         students: sizes[1] ?? sizes[0] ?? '',
         whatsapp: '',
     });
     const errors = form.errors;
+    const { demoBooking } = usePage<{
+        demoBooking: {
+            contact_name: string | null;
+            school_name: string;
+            whatsapp: string;
+        } | null;
+    }>().props;
+    const [editing, setEditing] = useState(false);
+
+    if (demoBooking && !editing) {
+        return (
+            <section
+                id="demo"
+                className="flex w-full shrink-0 scroll-mt-24 flex-col gap-5 rounded-[18px] border border-solid border-[#22382E] bg-[#12221B] p-6 sm:p-8 lg:w-[460px]"
+            >
+                <h2 className="text-[22px] font-bold text-[#EAF2EC]">
+                    {t('Thank you')}
+                    {demoBooking.contact_name
+                        ? `, ${demoBooking.contact_name.split(' ')[0]}`
+                        : ''}
+                </h2>
+                <p className="text-[14px] leading-5 text-[#8FA89A]">
+                    {t('Your demo request for :school is in.', {
+                        school: demoBooking.school_name,
+                    })}
+                </p>
+                <ol className="flex flex-col gap-5 text-[14px] leading-5">
+                    <li>
+                        {t('Request received')}
+                        <p className="text-[#8FA89A]">{demoBooking.whatsapp}</p>
+                    </li>
+                    <li>
+                        {t(
+                            'We message you on WhatsApp within one working day to arrange a 20-minute call.',
+                        )}
+                    </li>
+                    <li>
+                        {t(
+                            'After the call, you get your own demo school to try for 14 days.',
+                        )}
+                    </li>
+                </ol>
+                <button
+                    type="button"
+                    onClick={() => {
+                        form.setData({
+                            ...form.data,
+                            contact_name: demoBooking.contact_name ?? '',
+                            school_name: demoBooking.school_name,
+                            whatsapp: demoBooking.whatsapp.replace(
+                                /^\+237/,
+                                '',
+                            ),
+                        });
+                        setEditing(true);
+                    }}
+                    className="text-left text-[13px] text-[#8FA89A] underline"
+                >
+                    {t('Wrong number? Change it')}
+                </button>
+                <Link
+                    href={showSchoolStep()}
+                    className="text-[13px] text-[#8FA89A] underline"
+                >
+                    {t('Start your free term')}
+                </Link>
+            </section>
+        );
+    }
 
     function submit(event: { preventDefault(): void }) {
         event.preventDefault();
         form.post(storeDemo.url(), {
             preserveScroll: true,
-            onSuccess: () => form.reset('school_name', 'whatsapp'),
+            onSuccess: () => {
+                form.reset();
+                setEditing(false);
+            },
         });
     }
 
@@ -162,6 +237,23 @@ function DemoForm({ roles, sizes, dialCode }: LandingProps) {
             <p className="-mt-2 text-[14px] leading-[18px] text-[#8FA89A]">
                 {t('We call you on WhatsApp at a time that suits you.')}
             </p>
+            <label className="flex flex-col gap-[6px]">
+                <span className={fieldLabel}>{t('Your name')}</span>
+                <input
+                    required
+                    value={form.data.contact_name}
+                    onChange={(e) =>
+                        form.setData('contact_name', e.target.value)
+                    }
+                    autoComplete="name"
+                    className={fieldBox}
+                />
+                {errors.contact_name && (
+                    <span role="alert" className="text-[13px] text-[#F2A99F]">
+                        {errors.contact_name}
+                    </span>
+                )}
+            </label>
             <label className="flex flex-col gap-[6px]">
                 <span className={fieldLabel}>{t('School name')}</span>
                 <input
@@ -234,6 +326,22 @@ function DemoForm({ roles, sizes, dialCode }: LandingProps) {
                 {errors.whatsapp && (
                     <span className="text-[13px] leading-4 text-[#F2A99F]">
                         {errors.whatsapp}
+                    </span>
+                )}
+            </label>
+            <label className="flex flex-col gap-[6px]">
+                <span className={fieldLabel}>{t('Email (optional)')}</span>
+                <input
+                    type="email"
+                    value={form.data.email}
+                    onChange={(e) => form.setData('email', e.target.value)}
+                    autoComplete="email"
+                    placeholder={t('For a copy of your demo link')}
+                    className={fieldBox}
+                />
+                {errors.email && (
+                    <span role="alert" className="text-[13px] text-[#F2A99F]">
+                        {errors.email}
                     </span>
                 )}
             </label>

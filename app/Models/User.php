@@ -21,6 +21,8 @@ use Illuminate\Support\Carbon;
  * Single auth table absorbing ERD `staff` (Option A merge).
  *
  * @property string $id
+ * @property bool $is_platform_admin
+ * @property Carbon|null $last_signed_in_at
  * @property string|null $school_id
  * @property string $staff_code
  * @property string $full_name
@@ -69,6 +71,8 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'is_platform_admin' => 'boolean',
+            'last_signed_in_at' => 'datetime',
             'role' => UserRole::class,
             'is_form_master' => 'boolean',
             'invited_at' => 'datetime',

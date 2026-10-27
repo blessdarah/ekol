@@ -52,6 +52,7 @@ export const Icons = {
         <Icon d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9" />
     ),
     notes: <Icon d="M6 3h9l5 5v13H6zM14 3v6h6M9 13h7M9 17h5" />,
+    scheme: <Icon d="M4 6h16M4 12h16M4 18h10" />,
     bank: <Icon d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM21 21l-4.3-4.3" />,
     chevron: <Icon d="M6 9l6 6 6-6" />,
 };
@@ -122,6 +123,7 @@ export const TEACHER_NAV_SECTIONS: NavSection[] = [
     {
         label: 'Preparation',
         links: [
+            { href: '/my-scheme', label: 'Scheme of Work', icon: 'scheme' },
             { href: '/lesson-notes', label: 'Lesson Notes', icon: 'notes' },
             { href: '/question-bank', label: 'Question Bank', icon: 'bank' },
         ],
