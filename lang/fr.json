@@ -2958,5 +2958,8 @@
     "The sign-in code could not be sent. Try again.": "Le code de connexion n’a pas pu être envoyé. Réessayez.",
     "Your visit to :school is still open.": "Votre visite de :school est toujours ouverte.",
     "Resume visit": "Reprendre la visite",
-    "End visit": "Terminer la visite"
+    "End visit": "Terminer la visite",
+    "Demo school prepared. Its private sign-in link is ready.": "Établissement de démonstration préparé. Son lien de connexion privé est prêt.",
+    "Preparing demo school…": "Préparation de la démonstration…",
+    "Demo preparation failed. Please try again.": "La préparation de la démonstration a échoué. Veuillez réessayer."
 }

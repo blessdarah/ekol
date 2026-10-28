@@ -62,7 +62,7 @@ export default function Demos({
     ];
     function action(demo: Demo, value: string, label: string, primary = false) {
         return (
-            <Form {...updateDemo.form(demo.id)}>
+            <Form key={`${demo.id}-${value}`} {...updateDemo.form(demo.id)}>
                 {({ processing }) => (
                     <>
                         <input type="hidden" name="action" value={value} />
@@ -70,7 +70,11 @@ export default function Demos({
                             disabled={processing}
                             className={`${primary ? solidButtonClass : outlineButtonClass} w-full disabled:opacity-50`}
                         >
-                            {t(label)}
+                            {t(
+                                processing && value === 'create'
+                                    ? 'Preparing demo school…'
+                                    : label,
+                            )}
                         </button>
                     </>
                 )}

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class PlatformController extends Controller
 {
@@ -140,6 +141,21 @@ class PlatformController extends Controller
     public function updateDemo(Request $request, DemoRequest $demo): RedirectResponse
     {
         $data = $request->validate(['action' => ['required', 'in:contact,close,create,extend']]);
+        if ($data['action'] === 'create') {
+            try {
+                app(DemoSchoolBuilder::class)->create($demo);
+            } catch (HttpExceptionInterface $exception) {
+                throw $exception;
+            } catch (\Throwable $exception) {
+                report($exception);
+                $this->notify('Demo preparation failed. Please try again.', 'error');
+
+                return back();
+            }
+            $this->notify('Demo school prepared. Its private sign-in link is ready.');
+
+            return back();
+        }
         DB::transaction(function () use ($demo, $data) {
             $demo = DemoRequest::whereKey($demo->id)->lockForUpdate()->firstOrFail();
             if ($data['action'] === 'contact') {
@@ -151,9 +167,6 @@ class PlatformController extends Controller
                 if ($demo->demo_school_id) {
                     School::whereKey($demo->demo_school_id)->update(['demo_expires_at' => now()]);
                 }
-            } elseif ($data['action'] === 'create') {
-                abort_unless(in_array($demo->status, ['new', 'contacted'], true) && ! $demo->demo_school_id, 409);
-                app(DemoSchoolBuilder::class)->create($demo);
             } else {
                 abort_if($demo->extended_at || ! $demo->demo_school_id || $demo->status === 'school', 409);
                 $school = School::findOrFail($demo->demo_school_id);

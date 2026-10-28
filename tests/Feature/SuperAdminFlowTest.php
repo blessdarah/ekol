@@ -199,8 +199,8 @@ test('demo stages create an isolated sample school once and issue a signed link'
         ->and($school->demo_expires_at->toDateString())->toBe(now()->addDays(14)->toDateString())
         ->and(Student::where('school_id', $school->id)->count())->toBe(12)
         ->and(Invoice::count())->toBe(12);
-    expect(Mark::count())->toBe(8);
-    $this->post($base, ['action' => 'create'])->assertConflict();
+    expect(Mark::count())->toBe(60);
+    $this->post($base, ['action' => 'create'])->assertRedirect()->assertSessionHasNoErrors();
     expect(School::count())->toBe(1);
     $this->get('http://admin.ekol.test/platform/demos?status=trying&demo='.$demo->id)->assertOk()
         ->assertInertia(fn (Assert $page) => $page->component('platform/demos')->where('selected.status', 'trying')->where('counts.trying', 1)->where('selected.school.slug', $school->slug));
