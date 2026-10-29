@@ -101,7 +101,6 @@ class MarkSheetController extends Controller
             ->values();
 
         return Inertia::render('assessments/sheet', [
-            'canManage' => (bool) $request->user()?->role->managesAssessments(),
             'passMark' => (float) $school->pass_mark,
             'sheet' => [
                 'id' => $target->id,
@@ -120,6 +119,7 @@ class MarkSheetController extends Controller
                 'opens_on' => $option->assessment?->plan?->window_starts_on?->toDateString(),
             ]),
             'previous' => $previous?->assessment?->plan?->name,
+            'next' => $this->whatNext($request, $target, $plan),
             'rows' => $students->map(function ($student) use ($marks, $previous, $pending) {
                 $mark = $marks->get($student->id);
                 $before = $previous?->marks->firstWhere('student_id', $student->id);
@@ -223,6 +223,48 @@ class MarkSheetController extends Controller
         $this->notify('Marks saved.');
 
         return back();
+    }
+
+    /**
+     * Where to go once this sheet is in. Someone who runs assessments and
+     * came from Marks progress (or is not this sheet's teacher) follows
+     * the class: its other sheets for the assessment. A teacher follows
+     * their own sheets for the assessment.
+     *
+     * @return array{mode: string, plan_id: string, total: int, submitted: int, missing: array<int, string>, sheet: array{id: string, subject: string|null, class: string|null}|null}
+     */
+    protected function whatNext(Request $request, AssessmentSubject $target, AssessmentPlan $plan): array
+    {
+        $user = $request->user();
+        $followsClass = $user->role->managesAssessments()
+            && ($request->query('from') === 'progress' || $target->examiner_id !== $user->id);
+        $sheets = AssessmentSubject::query()
+            ->when(
+                $followsClass,
+                fn ($query) => $query->where('assessment_id', $target->assessment_id),
+                fn ($query) => $query->where('examiner_id', $user->id)
+                    ->whereHas('assessment', fn ($inner) => $inner->where('assessment_plan_id', $plan->id)),
+            )
+            ->with(['assessment.schoolClass:id,name', 'subject:id,name'])
+            ->get()
+            ->sortBy(fn (AssessmentSubject $sheet) => $followsClass ? $sheet->subject?->name : $sheet->assessment?->schoolClass?->name)
+            ->values();
+        $open = $sheets->whereNull('submitted_at');
+        $label = fn (AssessmentSubject $sheet) => (string) ($followsClass ? $sheet->subject?->name : $sheet->assessment?->schoolClass?->name);
+        $following = $open->first(fn (AssessmentSubject $sheet) => $sheet->id !== $target->id);
+
+        return [
+            'mode' => $followsClass ? 'class' : 'mine',
+            'plan_id' => $plan->id,
+            'total' => $sheets->count(),
+            'submitted' => $sheets->count() - $open->count(),
+            'missing' => $open->reject(fn (AssessmentSubject $sheet) => $sheet->id === $target->id)->map($label)->values()->all(),
+            'sheet' => $following ? [
+                'id' => $following->id,
+                'subject' => $following->subject?->name,
+                'class' => $following->assessment?->schoolClass?->name,
+            ] : null,
+        ];
     }
 
     /**

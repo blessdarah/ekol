@@ -4,6 +4,7 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\StaffInvitationController;
 use App\Http\Controllers\CorrectionController;
@@ -21,6 +22,7 @@ use App\Http\Controllers\ParentController;
 use App\Http\Controllers\PayController;
 use App\Http\Controllers\PlatformAuthController;
 use App\Http\Controllers\PlatformController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SchemeController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SeriesRegistrationController;
@@ -87,7 +89,12 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
     Route::post('/login', [LoginController::class, 'store'])->name('login.store');
     Route::post('/login/find-school', [LoginController::class, 'findSchool'])->name('login.find');
-    Route::inertia('/forgot-password', 'auth/forgot-password')->name('password.request');
+    Route::get('/forgot-password', [PasswordResetController::class, 'show'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'send'])->middleware('throttle:6,1')->name('password.email');
+    Route::get('/forgot-password/code', [PasswordResetController::class, 'code'])->name('password.code');
+    Route::post('/forgot-password/code', [PasswordResetController::class, 'checkCode'])->middleware('throttle:10,1')->name('password.code.check');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+    Route::post('/reset-password/{token}', [PasswordResetController::class, 'update'])->middleware('throttle:6,1')->name('password.update');
     Route::get('/invitation/{token}', [StaffInvitationController::class, 'show'])->name('invitation.show');
     Route::post('/invitation/{token}', [StaffInvitationController::class, 'store'])
         ->middleware('throttle:10,1')->name('invitation.store');
@@ -96,6 +103,9 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
 
     Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+        Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->middleware('throttle:6,1')->name('profile.password');
         Route::get('/my-timetable', [TeacherTimetableController::class, 'show'])->name('my-timetable');
         Route::get('/attendance', [AttendanceController::class, 'show'])->name('attendance');
         Route::post('/attendance/{slot}', [AttendanceController::class, 'store'])->name('attendance.store');

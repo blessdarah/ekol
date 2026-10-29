@@ -13,6 +13,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * @property string $id
  * @property string $name
+ * @property string|null $motto
  * @property string $locale
  * @property string $code
  * @property string $slug
@@ -78,6 +79,7 @@ class School extends Model
 
     protected $fillable = [
         'name',
+        'motto',
         'code',
         'slug',
         'ownership',

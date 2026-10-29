@@ -15,7 +15,6 @@ import {
     quietClass,
     score,
 } from '../../components/assessments/ui';
-import Breadcrumbs from '../../components/shell/breadcrumbs';
 import {
     ErrorText,
     LockIcon,
@@ -36,7 +35,6 @@ interface Row {
 }
 
 interface SheetProps {
-    canManage: boolean;
     passMark: number;
     sheet: {
         id: string;
@@ -55,7 +53,21 @@ interface SheetProps {
         opens_on: string | null;
     }[];
     previous: string | null;
+    next: NextStep;
     rows: Row[];
+}
+
+/**
+ * Where to go once the sheet is in: the class's other sheets for the
+ * assessment (from Marks progress), or the teacher's own.
+ */
+interface NextStep {
+    mode: 'class' | 'mine';
+    plan_id: string;
+    total: number;
+    submitted: number;
+    missing: string[];
+    sheet: { id: string; subject: string | null; class: string | null } | null;
 }
 
 interface Entry {
@@ -144,14 +156,118 @@ function Correction({
     );
 }
 
+/**
+ * Shown once the sheet is submitted: how far the class (or the teacher)
+ * has got, a way back, and the next sheet still to fill.
+ */
+function NextBar({
+    next,
+    subject,
+    className_,
+    plan,
+    backHref,
+    sheetHref,
+}: {
+    next: NextStep;
+    subject: string | null;
+    className_: string | null;
+    plan: string;
+    backHref: string;
+    sheetHref: (id: string) => string;
+}) {
+    const fromProgress = next.mode === 'class';
+    const done = next.sheet === null;
+
+    return (
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-success-tint px-5 py-4">
+            <div className="flex min-w-0 items-center gap-[14px]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-success">
+                    <svg width="15" height="15" viewBox="0 0 24 24">
+                        <path
+                            d="M5 12.5l4.5 4.5L19 7.5"
+                            fill="none"
+                            stroke="#FFFFFF"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                </span>
+                <span className="flex min-w-0 flex-col gap-[2px]">
+                    <span className="text-[15px] leading-5 font-semibold text-text">
+                        {fromProgress
+                            ? t(':subject is in for :class', {
+                                  subject: subject ?? '',
+                                  class: className_ ?? '',
+                              })
+                            : t(':subject · :class is submitted', {
+                                  subject: subject ?? '',
+                                  class: className_ ?? '',
+                              })}
+                    </span>
+                    <span className="text-[13px] leading-[18px] text-text-muted">
+                        {done
+                            ? fromProgress
+                                ? t('Every sheet for :class is in.', {
+                                      class: className_ ?? '',
+                                  })
+                                : t('All your :plan sheets are in.', { plan })
+                            : fromProgress
+                              ? t(
+                                    ':submitted of :total sheets submitted · still missing: :missing',
+                                    {
+                                        submitted: next.submitted,
+                                        total: next.total,
+                                        missing: next.missing.join(', '),
+                                    },
+                                )
+                              : t(
+                                    ':submitted of your :total sheets for :plan are in · still to do: :missing',
+                                    {
+                                        submitted: next.submitted,
+                                        total: next.total,
+                                        plan,
+                                        missing: next.missing.join(', '),
+                                    },
+                                )}
+                    </span>
+                </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-[10px]">
+                <Link href={backHref} className={quietClass}>
+                    {fromProgress
+                        ? t('Back to Marks progress')
+                        : t('Back to My marks')}
+                </Link>
+                {next.sheet && (
+                    <Link
+                        href={sheetHref(next.sheet.id)}
+                        className={primaryClass}
+                    >
+                        {fromProgress
+                            ? t('Next missing: :subject · :class →', {
+                                  subject: next.sheet.subject ?? '',
+                                  class: next.sheet.class ?? '',
+                              })
+                            : t('Next: :subject · :class →', {
+                                  subject: next.sheet.subject ?? '',
+                                  class: next.sheet.class ?? '',
+                              })}
+                    </Link>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function Sheet({
-    canManage,
     passMark,
     sheet,
     plan,
     open,
     siblings,
     previous,
+    next,
     rows,
 }: SheetProps) {
     const errors = usePage().props.errors as Record<string, string | undefined>;
@@ -231,6 +347,13 @@ function Sheet({
         );
     }
 
+    const fromProgress = next.mode === 'class';
+    const backHref = fromProgress
+        ? progress.url({ query: { plan: next.plan_id } })
+        : sheetsIndex.url();
+    const sheetHref = (id: string) =>
+        show.url(id, fromProgress ? { query: { from: 'progress' } } : {});
+
     const firstError = Object.entries(errors).find(([key]) =>
         key.startsWith('marks'),
     )?.[1];
@@ -240,22 +363,18 @@ function Sheet({
             <Head title={`${sheet.subject} · ${sheet.class}`} />
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex min-w-0 flex-col gap-[6px]">
-                    <Breadcrumbs
-                        trail={[
-                            canManage
-                                ? {
-                                      label: t('Marks progress'),
-                                      href: progress.url({
-                                          query: { plan: plan.id },
-                                      }),
-                                  }
-                                : {
-                                      label: t('Marks'),
-                                      href: sheetsIndex.url(),
-                                  },
-                            { label: sheet.class ?? 'Class' },
-                        ]}
-                    />
+                    <Link
+                        href={backHref}
+                        className="flex items-center gap-[6px] self-start text-[14px] leading-[18px] font-semibold text-primary hover:underline"
+                    >
+                        <span aria-hidden>←</span>
+                        {next.mode === 'class'
+                            ? t('Marks progress · :plan · :class', {
+                                  plan: plan.name,
+                                  class: sheet.class ?? '',
+                              })
+                            : t('My marks · :plan', { plan: plan.name })}
+                    </Link>
                     <div className="flex flex-wrap items-center gap-3">
                         <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                             {sheet.subject}
@@ -341,7 +460,7 @@ function Sheet({
                     return (
                         <Link
                             key={option.id}
-                            href={show.url(option.id)}
+                            href={sheetHref(option.id)}
                             aria-current={active ? 'page' : undefined}
                             className={`-mb-px flex items-center gap-[6px] border-b-2 border-solid pb-[10px] text-[14px] leading-[18px] ${
                                 active
@@ -669,6 +788,17 @@ function Sheet({
                         })}
                     </div>
                 </div>
+            )}
+
+            {sheet.submitted_on && !dirty && (
+                <NextBar
+                    next={next}
+                    subject={sheet.subject}
+                    className_={sheet.class}
+                    plan={plan.name}
+                    backHref={backHref}
+                    sheetHref={sheetHref}
+                />
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-3">

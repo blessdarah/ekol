@@ -24,6 +24,7 @@ class UpdateProfileRequest extends SchoolRequest
 
         return [
             'name' => ['sometimes', 'string', 'max:255'],
+            'motto' => ['sometimes', 'nullable', 'string', 'max:120'],
             'code' => ['sometimes', 'string', 'max:255'],
             'ownership' => ['sometimes', Rule::in(School::OWNERSHIP_OPTIONS)],
             'region' => ['sometimes', 'nullable', Rule::in(School::REGIONS)],

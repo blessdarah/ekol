@@ -29,6 +29,7 @@ import { ordinalOf, t } from '../lib/i18n';
 interface SchoolProp {
     id: string;
     name: string;
+    motto: string | null;
     code: string;
     slug: string;
     logo_url: string | null;
@@ -266,8 +267,11 @@ function ProfileZone({ school }: { school: SchoolProp }) {
     const report = useContext(SaveContext);
     const { data, save, error } = useAutosave(
         updateProfile.url(),
-        { name: school.name },
-        (props) => ({ name: props.school.name }),
+        { name: school.name, motto: school.motto ?? '' },
+        (props) => ({
+            name: props.school.name,
+            motto: props.school.motto ?? '',
+        }),
     );
     const [preview, setPreview] = useState<string | null>(null);
     const [uploadError, setUploadError] = useState<string | null>(null);
@@ -366,8 +370,21 @@ function ProfileZone({ school }: { school: SchoolProp }) {
                         type="text"
                         aria-label={t('School name')}
                         value={data.name}
-                        onChange={(e) => save({ name: e.target.value })}
+                        onChange={(e) =>
+                            save({ ...data, name: e.target.value })
+                        }
                         className="w-full border-b border-solid border-transparent bg-transparent text-[16px] leading-5 font-semibold text-text outline-none hover:border-border focus:border-primary"
+                    />
+                    <input
+                        type="text"
+                        aria-label={t('School motto')}
+                        placeholder={t('School motto, printed under the name')}
+                        maxLength={120}
+                        value={data.motto}
+                        onChange={(e) =>
+                            save({ ...data, motto: e.target.value })
+                        }
+                        className="w-full border-b border-solid border-transparent bg-transparent text-[13px] leading-4 text-text italic outline-none placeholder:text-text-muted placeholder:not-italic hover:border-border focus:border-primary"
                     />
                     <div className="flex flex-wrap items-center gap-2">
                         <label
