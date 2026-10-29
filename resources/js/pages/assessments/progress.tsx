@@ -425,6 +425,11 @@ function Progress({
                                                         <Link
                                                             href={sheetPage.url(
                                                                 sheet.sheet_id,
+                                                                {
+                                                                    query: {
+                                                                        from: 'progress',
+                                                                    },
+                                                                },
                                                             )}
                                                             className="text-text hover:underline"
                                                         >

@@ -2,6 +2,7 @@
 
 use App\Enums\AcademicYearStatus;
 use App\Enums\AssessmentState;
+use App\Enums\EnrolmentDecision;
 use App\Enums\EnrolmentStatus;
 use App\Enums\SchoolCycle;
 use App\Enums\UserRole;
@@ -231,6 +232,43 @@ test('a teacher fills and submits only her own sheet, within the limits', functi
         ->assertInertia(fn (Assert $page) => $page->component('assessments/sheets')->has('sheets', 1)->where('sheets.0.entered', 2));
 });
 
+test('a submitted sheet points to the next one: the class from Marks progress, a teacher\'s own otherwise', function () {
+    $world = examWorld();
+    $plan = schedulePlan($world);
+    $maths = sheetFor($plan, $world['subjects']['Mathematics']);
+    $english = sheetFor($plan, $world['subjects']['English']);
+    enterMarks($world, $plan, 'Mathematics', [12, 14, 9]);
+
+    $this->actingAs($world['admin'])
+        ->get("http://exama.ekol.test/assessments/sheets/{$maths->id}?from=progress")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('next.mode', 'class')
+            ->where('next.plan_id', $plan->id)
+            ->where('next.total', 2)
+            ->where('next.submitted', 1)
+            ->where('next.missing', ['English'])
+            ->where('next.sheet.id', $english->id)
+            ->where('next.sheet.subject', 'English'));
+
+    $this->actingAs($world['teachers']['Mathematics'])
+        ->get("http://exama.ekol.test/assessments/sheets/{$maths->id}?from=progress")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('next.mode', 'mine')
+            ->where('next.total', 1)
+            ->where('next.submitted', 1)
+            ->where('next.sheet', null));
+
+    $english->update(['examiner_id' => $world['teachers']['Mathematics']->id]);
+
+    $this->actingAs($world['teachers']['Mathematics'])
+        ->get("http://exama.ekol.test/assessments/sheets/{$maths->id}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('next.mode', 'mine')
+            ->where('next.total', 2)
+            ->where('next.missing', ['Form 1 A'])
+            ->where('next.sheet.id', $english->id));
+});
+
 test('progress follows the sheets, and closing marks entry stops teachers', function () {
     $world = examWorld();
     $plan = schedulePlan($world);
@@ -350,6 +388,82 @@ test('the term average is the mean of its published assessments and feeds report
             ->has('cards', 3)
             ->where('cards.0.average', 14)
             ->where('cards.0.subjects.0.score', 14));
+});
+
+test('a term card shows each assessment, weighted marks, subject places and the class spread', function () {
+    $world = examWorld();
+    $world['school']->update(['motto' => 'Knowledge and service']);
+    $world['class']->update(['form_master_id' => $world['teachers']['English']->id]);
+    User::factory()->create(['school_id' => $world['school']->id, 'role' => UserRole::Principal, 'full_name' => 'Eposi Fonkem']);
+
+    foreach ([['Sequence 1', '2025-09-15', [16, 10, 8]], ['Sequence 2', '2025-09-22', [12, 12, 10]]] as [$name, $from, $scores]) {
+        $plan = schedulePlan($world, ['name' => $name, 'held_from' => $from, 'held_until' => $from, 'window_starts_on' => $from]);
+        enterMarks($world, $plan, 'Mathematics', $scores);
+        enterMarks($world, $plan, 'English', $scores);
+        $this->actingAs($world['admin'])->post("http://exama.ekol.test/assessments/{$plan->id}/close");
+        $this->actingAs($world['admin'])->post("http://exama.ekol.test/assessments/{$plan->id}/publish");
+    }
+
+    $this->actingAs($world['admin'])
+        ->get("http://exama.ekol.test/assessments/reports/print?term={$world['term']->id}&class={$world['class']->id}")
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('assessments/report-print')
+            ->where('issuer.motto', 'Knowledge and service')
+            ->has('cards.0.columns', 2)
+            ->where('cards.0.subjects.0.subject', 'English')
+            ->where('cards.0.subjects.0.scores', [16, 12])
+            ->where('cards.0.subjects.0.points', 28)
+            ->where('cards.0.subjects.0.rank', 1)
+            ->where('cards.0.total_coefficient', 6)
+            ->where('cards.0.total_points', 84)
+            ->where('cards.0.spread.highest', 14)
+            ->where('cards.0.spread.lowest', 9)
+            ->where('cards.0.glance.kind', 'year')
+            ->where('cards.0.glance.total.average', 14)
+            ->where('cards.0.class_master', $world['teachers']['English']->full_name)
+            ->where('cards.0.principal', 'Eposi Fonkem'));
+});
+
+test('the year\'s last cards wait for every decision, then print it on each card', function () {
+    $world = examWorld();
+    $next = Level::create([
+        'school_id' => $world['school']->id, 'name' => 'Form 2', 'code' => 'F2', 'ordinal' => 2,
+        'cycle' => SchoolCycle::Secondary, 'subsystem' => 'anglophone', 'uses_series' => false,
+    ]);
+    AcademicYear::create([
+        'school_id' => $world['school']->id, 'label' => '2026/27',
+        'starts_on' => '2026-09-01', 'ends_on' => '2027-07-31', 'status' => AcademicYearStatus::Planned,
+    ]);
+    $plan = schedulePlan($world);
+    enterMarks($world, $plan, 'Mathematics', [16, 10, 8]);
+    enterMarks($world, $plan, 'English', [16, 10, 8]);
+    $this->actingAs($world['admin'])->post("http://exama.ekol.test/assessments/{$plan->id}/close");
+    $this->actingAs($world['admin'])->post("http://exama.ekol.test/assessments/{$plan->id}/publish");
+
+    $decide = fn (int $student, EnrolmentDecision $decision) => Enrolment::where('student_id', $world['students'][$student]->id)
+        ->update(['decision' => $decision]);
+    $decide(0, EnrolmentDecision::Promote);
+    $decide(1, EnrolmentDecision::Repeat);
+    $print = "http://exama.ekol.test/assessments/reports/print?term={$world['term']->id}&class={$world['class']->id}";
+
+    $this->actingAs($world['admin'])
+        ->get("http://exama.ekol.test/assessments/reports?term={$world['term']->id}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('closesYear', true)
+            ->where('classes.0.undecided', 1));
+
+    $this->actingAs($world['admin'])->get($print)
+        ->assertRedirect(route('assessments.reports', ['term' => $world['term']->id, 'class' => $world['class']->id]));
+
+    $decide(2, EnrolmentDecision::Leaving);
+
+    $this->actingAs($world['admin'])->get($print)
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('cards.0.outcome', ['kind' => 'promoted', 'level' => $next->name])
+            ->where('cards.1.outcome', ['kind' => 'repeats', 'level' => 'Form 1'])
+            ->where('cards.2.outcome', ['kind' => 'leaving', 'level' => null]));
 });
 
 test('a published mark changes only through an approved correction', function () {

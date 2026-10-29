@@ -72,7 +72,7 @@ class SetupController extends Controller
         return Inertia::render('setup', [
             'school' => [
                 ...$school->only([
-                    'id', 'name', 'code', 'slug', 'ownership', 'region', 'town',
+                    'id', 'name', 'motto', 'code', 'slug', 'ownership', 'region', 'town',
                     'cycle', 'subsystem', 'currency', 'timezone', 'school_days', 'locale',
                 ]),
                 'logo_url' => $school->logo_path ? "/storage/{$school->logo_path}" : null,
@@ -194,7 +194,7 @@ class SetupController extends Controller
         }
 
         $dirty = array_intersect_key($data, array_flip([
-            'name', 'code', 'ownership', 'region', 'town',
+            'name', 'motto', 'code', 'ownership', 'region', 'town',
             'subsystem', 'currency', 'timezone', 'logo_path', 'locale',
         ]));
 

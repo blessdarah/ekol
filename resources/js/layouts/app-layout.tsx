@@ -77,7 +77,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     return (
         <div className="min-h-screen bg-white text-text antialiased">
             {props.platformVisit && (
-                <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 bg-warning-tint px-6 py-3 font-auth text-[13px] text-warning">
+                <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 bg-warning-tint px-6 py-3 font-auth text-[13px] text-warning print:hidden">
                     <div>
                         <strong>
                             {t('You are in :school as Campus super-admin', {
@@ -104,7 +104,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 </div>
             )}
             {props.demoSchool && (
-                <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 bg-science-tint px-6 py-3 font-auth text-[13px] text-science">
+                <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 bg-science-tint px-6 py-3 font-auth text-[13px] text-science print:hidden">
                     <div>
                         <strong>
                             {t('Demo school · everything here is sample data')}
@@ -173,8 +173,8 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                     feeBadge={props.feeBadge ?? null}
                     open={menuOpen}
                 />
-                <main className="flex min-w-0 flex-1 justify-center px-4 py-5 font-auth sm:px-6 lg:px-10 lg:py-7">
-                    <div className="w-full max-w-[1112px] min-w-0">
+                <main className="flex min-w-0 flex-1 justify-center px-4 py-5 font-auth sm:px-6 lg:px-10 lg:py-7 print:block print:p-0">
+                    <div className="w-full max-w-[1112px] min-w-0 print:max-w-none">
                         {children}
                     </div>
                 </main>

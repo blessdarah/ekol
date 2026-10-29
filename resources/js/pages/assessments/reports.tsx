@@ -1,14 +1,18 @@
 import { Head, Link } from '@inertiajs/react';
+import { reEnrolment } from '@/actions/App/Http/Controllers/EnrolmentController';
 import {
     print as printCards,
     reports,
 } from '@/actions/App/Http/Controllers/TermResultController';
 import {
+    ReportCardPreview,
+    type ReportCardData,
+    type ReportIssuer,
+} from '../../components/assessments/report-card';
+import {
     AssessmentHeader,
     type AssessmentTabs,
     Empty,
-    ReportCard,
-    type ReportCardData,
     day,
     linkClass,
     ordinal,
@@ -21,8 +25,9 @@ import { t } from '../../lib/i18n';
 
 interface ReportsProps {
     tabs: AssessmentTabs;
-    issuer: { name: string; code: string };
+    issuer: ReportIssuer;
     yearLabel: string | null;
+    closesYear: boolean;
     options: { kind: string; id: string; label: string }[];
     scope: {
         kind: string;
@@ -30,7 +35,12 @@ interface ReportsProps {
         label: string;
         published_on: string | null;
     } | null;
-    classes: { id: string; name: string; pupils: number }[];
+    classes: {
+        id: string;
+        name: string;
+        pupils: number;
+        undecided: number;
+    }[];
     class: { id: string; name: string } | null;
     students: {
         id: string;
@@ -45,6 +55,7 @@ function Reports({
     tabs,
     issuer,
     yearLabel,
+    closesYear,
     options,
     scope,
     classes,
@@ -95,7 +106,9 @@ function Reports({
                     </span>
                 }
                 action={
-                    current && (
+                    current &&
+                    !classes.find((row) => row.id === current.id)
+                        ?.undecided && (
                         <Link
                             href={printCards.url(query({ class: current.id }))}
                             className={primaryClass}
@@ -148,7 +161,7 @@ function Reports({
                                 <span className="w-[110px] shrink-0">
                                     {t('Report cards')}
                                 </span>
-                                <span className="w-[70px] shrink-0" />
+                                <span className="w-[150px] shrink-0" />
                             </div>
                             {classes.map((row, position) => {
                                 const active = row.id === current?.id;
@@ -177,18 +190,40 @@ function Reports({
                                             {row.pupils}
                                         </span>
                                         <span className="flex w-[110px] shrink-0">
-                                            <span className="flex h-[22px] items-center rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
-                                                {t('Ready')}
-                                            </span>
-                                        </span>
-                                        <Link
-                                            href={printCards.url(
-                                                query({ class: row.id }),
+                                            {row.undecided > 0 ? (
+                                                <span className="flex h-[22px] items-center rounded-full bg-warning-tint px-2 text-[12px] leading-4 font-medium text-warning">
+                                                    {t('Waiting')}
+                                                </span>
+                                            ) : (
+                                                <span className="flex h-[22px] items-center rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
+                                                    {t('Ready')}
+                                                </span>
                                             )}
-                                            className={`w-[70px] shrink-0 text-right ${linkClass}`}
-                                        >
-                                            {t('Print')}
-                                        </Link>
+                                        </span>
+                                        {row.undecided > 0 ? (
+                                            <Link
+                                                href={reEnrolment.url({
+                                                    query: { class: row.id },
+                                                })}
+                                                className={`w-[150px] shrink-0 text-right ${linkClass}`}
+                                            >
+                                                {t(
+                                                    ':count undecided · Promotion →',
+                                                    {
+                                                        count: row.undecided,
+                                                    },
+                                                )}
+                                            </Link>
+                                        ) : (
+                                            <Link
+                                                href={printCards.url(
+                                                    query({ class: row.id }),
+                                                )}
+                                                className={`w-[150px] shrink-0 text-right ${linkClass}`}
+                                            >
+                                                {t('Print')}
+                                            </Link>
+                                        )}
                                     </div>
                                 );
                             })}
@@ -239,15 +274,23 @@ function Reports({
                             'Cards are made from the published marks each time they are opened, so an approved correction shows at once. Print a class to paper or save it as a PDF. Nothing is sent to parents from here.',
                         )}
                     </p>
+                    {closesYear && (
+                        <p className="text-[13px] leading-[19px] text-text-muted">
+                            {t(
+                                'These cards close the year: they add the annual average and position, and each student’s decision from Promotion. A class waits until every student has a decision.',
+                            )}
+                        </p>
+                    )}
                 </div>
 
-                <aside className="flex shrink-0 flex-col gap-3 lg:w-[360px]">
+                <aside className="flex shrink-0 flex-col gap-3 lg:w-[380px]">
                     <p className={capsLabelClass}>
                         {t('Preview')}
                         {preview ? ` · ${preview.name}` : ''}
                     </p>
                     {preview ? (
-                        <ReportCard
+                        <ReportCardPreview
+                            width={380}
                             card={preview}
                             issuer={issuer}
                             yearLabel={yearLabel}

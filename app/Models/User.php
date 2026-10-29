@@ -43,6 +43,11 @@ use Illuminate\Support\Carbon;
  * @property string|null $qualification
  * @property EmploymentType|null $employment_type
  * @property string|null $photo_path
+ * @property Carbon|null $password_changed_at
+ * @property string|null $password_reset_token_hash
+ * @property string|null $password_reset_code_hash
+ * @property int $password_reset_attempts
+ * @property Carbon|null $password_reset_expires_at
  * @property Carbon|null $joined_on
  * @property int|null $teaching_days
  * @property int|null $max_periods_week
@@ -57,7 +62,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $deleted_at
  */
 #[Fillable(['school_id', 'staff_code', 'full_name', 'initials', 'email', 'role', 'phone', 'is_form_master', 'invited_at', 'setup_completed_at', 'password', 'given_name', 'family_name', 'gender', 'address', 'qualification', 'employment_type', 'photo_path', 'joined_on', 'teaching_days', 'max_periods_week', 'max_periods_day', 'unavailable_times', 'invitation_token_hash', 'invitation_channel', 'invitation_expires_at', 'locale'])]
-#[Hidden(['password', 'remember_token', 'invitation_token_hash'])]
+#[Hidden(['password', 'remember_token', 'invitation_token_hash', 'password_reset_token_hash', 'password_reset_code_hash'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -72,6 +77,9 @@ class User extends Authenticatable
     {
         return [
             'is_platform_admin' => 'boolean',
+            'password_changed_at' => 'datetime',
+            'password_reset_expires_at' => 'datetime',
+            'password_reset_attempts' => 'integer',
             'last_signed_in_at' => 'datetime',
             'role' => UserRole::class,
             'is_form_master' => 'boolean',

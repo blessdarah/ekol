@@ -311,10 +311,9 @@ test('auth screens render the paper shell pages with design props', function () 
         ->assertInertia(fn (Assert $page) => $page
             ->component('auth/find-school'));
 
+    // A reset belongs to one school, so outside a school it starts by finding it.
     $this->get('/forgot-password')
-        ->assertOk()
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('auth/forgot-password'));
+        ->assertRedirect(route('login'));
 });
 
 test('staging rejects missing authorisation', function () {

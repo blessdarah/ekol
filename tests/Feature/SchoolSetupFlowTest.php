@@ -67,11 +67,13 @@ test('profile autosaves and rejects crafted slug writes', function () {
     $this->actingAs($admin)
         ->patch('http://setupa.ekol.test/setup/profile', [
             'name' => 'Renamed Academy',
+            'motto' => 'Knowledge, Discipline and Service',
             'town' => 'Bamenda',
         ])
         ->assertRedirect();
 
-    expect($school->fresh()->name)->toBe('Renamed Academy');
+    expect($school->fresh()->name)->toBe('Renamed Academy')
+        ->and($school->fresh()->motto)->toBe('Knowledge, Discipline and Service');
 
     $this->actingAs($admin)
         ->patch('http://setupa.ekol.test/setup/profile', [
