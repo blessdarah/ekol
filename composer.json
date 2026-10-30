@@ -10,9 +10,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "bacon/bacon-qr-code": "^3.0",
         "blessdarah/php-campay": "^2.0",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel/framework": "^13.17",
+        "laravel/pulse": "^1.8",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
         "resend/resend-php": "*",

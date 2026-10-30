@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\BuildsFeeReceipt;
 use App\Http\Requests\Pay\ChooseAmountRequest;
 use App\Http\Requests\Pay\RequestMobilePaymentRequest;
 use App\Models\Invoice;
 use App\Models\MobilePayment;
+use App\Models\Payment;
 use App\Models\Student;
 use BlessDarah\PhpCampay\Campay;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +24,8 @@ use Inertia\Response;
  */
 class PayController extends Controller
 {
+    use BuildsFeeReceipt;
+
     /**
      * How often, at most, a parent's status page asks Campay again.
      */
@@ -175,12 +179,28 @@ class PayController extends Controller
                 'seconds_left' => max(0, MobilePayment::APPROVAL_SECONDS - (int) $target->created_at->diffInSeconds(now())),
                 'paid_at' => $target->settled_at?->toIso8601String(),
                 'receipt' => $target->payment?->receipt_no,
+                'receipt_id' => $target->payment?->id,
                 'went_to' => $target->payment && $invoice ? $invoice->split($target->payment) : [],
             ],
             'student' => ParentController::studentCard($student),
             'balance' => $ledger ? (int) round($ledger['balance']) : 0,
             'next' => $next ? ['label' => $next['label'], 'due_on' => $next['due_on']] : null,
         ]);
+    }
+
+    public function receipt(Request $request, string $payment): Response|RedirectResponse
+    {
+        [$school, $student] = ParentController::child($request);
+
+        if (! $school || ! $student) {
+            return redirect()->route('parents');
+        }
+
+        $target = Payment::whereKey($payment)
+            ->whereHas('invoice', fn ($query) => $query->where('student_id', $student->id))
+            ->firstOrFail();
+
+        return Inertia::render('pay/receipt', $this->feeReceipt($school, $target));
     }
 
     /**

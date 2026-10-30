@@ -261,7 +261,7 @@ test('the roster counts, filters and searches the school own staff only', functi
             ->has('staff.rows', 3));
 
     $this->actingAs($admin)
-        ->get('http://rostera.ekol.test/staff?filter=no_account')
+        ->get('http://rostera.ekol.test/staff?portal=none')
         ->assertInertia(fn (Assert $page) => $page
             ->has('staff.rows', 1)
             ->where('staff.rows.0.name', 'Gabriel Ngonda')
@@ -272,6 +272,23 @@ test('the roster counts, filters and searches the school own staff only', functi
         ->assertInertia(fn (Assert $page) => $page
             ->has('staff.rows', 1)
             ->where('staff.rows.0.name', 'Marie Fotso'));
+
+    $this->actingAs($admin)
+        ->get('http://rostera.ekol.test/staff?employment=government,school_paid&sort=-name')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.employment', ['government', 'school_paid'])
+            ->has('staff.rows', 2)
+            ->where('staff.rows.0.name', 'Gabriel Ngonda'));
+
+    $csv = $this->actingAs($admin)
+        ->get('http://rostera.ekol.test/staff/export?employment=school_paid&columns=name,employment')
+        ->assertDownload()
+        ->streamedContent();
+
+    expect($csv)->toContain('Marie Fotso')
+        ->and($csv)->not->toContain('Gabriel Ngonda')
+        ->and($csv)->not->toContain('Hidden Person')
+        ->and(AuditEvent::where('entity', 'export')->where('school_id', $school->id)->count())->toBe(1);
 });
 
 test('corrections and teaching hours are saved and logged', function () {

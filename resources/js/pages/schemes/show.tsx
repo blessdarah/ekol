@@ -104,21 +104,22 @@ function ShowScheme({
     }
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-7">
             <Head title={`${scheme.subject} · ${scheme.class}`} />
-            <StructureTabs active="schemes" />
             <SchemesHeader
                 trail={[{ label: `${scheme.subject} · ${scheme.class}` }]}
                 title={`${scheme.subject} · ${scheme.class}`}
-                tag={<StatusPill status={scheme.status} />}
-                sub={[
+                badge={<StatusPill status={scheme.status} />}
+                tag={t('Schemes:term_label', {
+                    term_label: steps.term ? ` · ${t(steps.term.label)}` : '',
+                })}
+                meta={[
                     scheme.teacher ?? t('No teacher yet'),
                     scheme.submitted_at
                         ? t('submitted :date', {
                               date: dayMonth(scheme.submitted_at, false),
                           })
                         : null,
-                    steps.term ? t(steps.term.label) : null,
                     t(':count sub-topics over :weeks weeks', {
                         count: items.length,
                         weeks: weeks.length,
@@ -132,6 +133,7 @@ function ShowScheme({
                     </Link>
                 }
             />
+            <StructureTabs active="schemes" />
             <StepBar steps={steps} active="review" />
 
             <div className="flex flex-col gap-6 xl:flex-row">

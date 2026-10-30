@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { index as applicationsIndex } from '@/actions/App/Http/Controllers/ApplicationController';
 import {
+    confirm as confirmPage,
     copyClasses,
     placement as placementPage,
     reEnrolment,
@@ -155,11 +156,11 @@ function Overview({
     if (!enrolment || !applications || !continuing) {
         return (
             <div className="flex flex-col gap-5">
-                <Head title={t('Enrolment')} />
+                <Head title={t('New school year')} />
                 <div className="flex flex-col gap-[6px]">
-                    <Breadcrumbs trail={[{ label: t('Enrolment') }]} />
+                    <Breadcrumbs trail={[{ label: t('New school year') }]} />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                        {t('Enrolment')}
+                        {t('New school year')}
                     </h1>
                 </div>
                 <NoYear currentLabel={currentLabel} setupHref={setup.url()} />
@@ -172,11 +173,10 @@ function Overview({
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title={t('Enrolment :year', { year: enrolment.year })} />
+            <Head title={t('Prepare :year', { year: enrolment.year })} />
             <EnrolmentHeader
-                active="overview"
                 progress={enrolment}
-                title={t('Enrolment :year', { year: enrolment.year })}
+                title={t('Prepare :year', { year: enrolment.year })}
                 status={
                     enrolment.confirmed ? (
                         <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-surface px-2 text-[12px] leading-4 font-medium text-text">
@@ -281,7 +281,7 @@ function Overview({
                                 ? t('Decide :undecided →', {
                                       undecided: count(continuing.undecided),
                                   })
-                                : t('Open re-enrolment →')}
+                                : t('Open promotion →')}
                         </Link>
                     </div>
                     <BigNumber
@@ -498,6 +498,45 @@ function Overview({
                         'Expected counts promoted students, repeaters and admitted applicants. Students who are not decided yet are not counted.',
                     )}
                 </p>
+            </section>
+
+            <section className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-dashed border-border px-5 py-4">
+                <div className="flex min-w-0 items-center gap-4">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-solid border-border font-mono text-[12px] leading-4 text-text-muted">
+                        4
+                    </span>
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <p className="text-[15px] leading-5 font-semibold text-text">
+                            {t('Confirm the new year')}
+                        </p>
+                        <p className="text-[13px] leading-[18px] text-text-muted">
+                            {enrolment.confirmed
+                                ? t(':year is confirmed.', {
+                                      year: enrolment.year,
+                                  })
+                                : enrolment.ready
+                                  ? t(
+                                        'Every admitted and promoted student has a class. Confirm makes them Enrolled.',
+                                    )
+                                  : t(
+                                        'Opens when every admitted and promoted student has a class · :unplaced still to place',
+                                        { unplaced: count(enrolment.unplaced) },
+                                    )}
+                        </p>
+                    </div>
+                </div>
+                <Link
+                    href={confirmPage.url()}
+                    className={
+                        enrolment.ready && !enrolment.confirmed
+                            ? solidButtonClass
+                            : 'flex h-9 items-center rounded-md border border-solid border-border bg-surface px-4 text-[13px] leading-4 font-semibold text-text-muted hover:text-text'
+                    }
+                >
+                    {enrolment.confirmed
+                        ? t('Open confirmation')
+                        : t('Confirm :year', { year: enrolment.year })}
+                </Link>
             </section>
         </div>
     );

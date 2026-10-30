@@ -151,10 +151,9 @@ function Review({
         <div className="flex flex-col gap-5">
             <Head title={application.name} />
             <EnrolmentHeader
-                active="applications"
                 progress={enrolment}
                 trail={[
-                    { label: t('Applications'), href: index.url() },
+                    { label: t('Admissions'), href: index.url() },
                     { label: application.name },
                 ]}
                 title={application.name}

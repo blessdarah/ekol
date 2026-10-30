@@ -1,9 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     access,
     create,
     edit,
+    exportMethod,
     index,
     remind,
     show,
@@ -15,6 +16,22 @@ import {
     PageHeader,
     StatusDot,
 } from '../../components/staff/ui';
+import {
+    BulkBar,
+    Checkbox,
+    DownloadIcon,
+    ExportDialog,
+    type FilterField,
+    FilterChips,
+    type QuickPick,
+    TableFooter,
+    TableToolbar,
+    bulkButtonClass,
+    count,
+    toQuery,
+    useSelection,
+    useTableQuery,
+} from '../../components/table/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
@@ -34,10 +51,12 @@ interface StaffRow {
 }
 
 interface Filters {
-    filter: string;
     q: string;
-    role: string;
+    employment: string[];
+    portal: string[];
+    role: string[];
     gender: string;
+    sort: string;
 }
 
 interface RosterProps {
@@ -55,21 +74,14 @@ interface RosterProps {
         page: number;
         lastPage: number;
         total: number;
+        perPage: number;
+        from: number | null;
+        to: number | null;
     };
 }
 
-const TABS = [
-    { value: 'all', label: 'All staff' },
-    { value: 'government', label: 'Government employees' },
-    { value: 'school_paid', label: 'School-paid' },
-    { value: 'no_account', label: 'No account yet', dot: true },
-];
-
 const headCellClass =
     'shrink-0 text-[12px] leading-[1.35] font-semibold tracking-[0.06em] text-text-muted';
-
-const selectClass =
-    'h-9 rounded-md border border-solid border-border bg-white px-3 text-[13px] text-text outline-none focus:border-primary';
 
 function RowMenu({
     row,
@@ -152,47 +164,77 @@ function RowMenu({
 }
 
 function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
-    const [search, setSearch] = useState(filters.q);
-    const [showFilters, setShowFilters] = useState(
-        filters.role !== '' || filters.gender !== '',
-    );
+    const { sort, ...values } = filters;
+    const table = useTableQuery((query) => index.url({ query }), values, {
+        sort,
+        per_page: staff.perPage,
+    });
+    const selection = useSelection(staff.rows.map((row) => row.id));
+    const [exporting, setExporting] = useState(false);
     const [openMenu, setOpenMenu] = useState<string | null>(null);
-    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const extraFilters = [filters.role, filters.gender].filter(Boolean).length;
 
-    function visit(patch: Partial<Filters> & { page?: number }) {
-        const next = { ...filters, ...patch };
-        const query: Record<string, string | number> = {};
+    const fields: FilterField[] = [
+        {
+            kind: 'chips',
+            key: 'employment',
+            label: t('Employment'),
+            options: [
+                { value: 'government', label: t('Government employee') },
+                { value: 'school_paid', label: t('School-paid') },
+            ],
+        },
+        {
+            kind: 'chips',
+            key: 'role',
+            label: t('Portal role'),
+            options: roles.map((role) => ({
+                value: role.value,
+                label: t(role.label),
+            })),
+        },
+        {
+            kind: 'chips',
+            key: 'portal',
+            label: t('Portal'),
+            options: [
+                { value: 'on', label: t('Portal on') },
+                { value: 'none', label: t('No account yet') },
+            ],
+        },
+        {
+            kind: 'segments',
+            key: 'gender',
+            label: t('Gender'),
+            anyLabel: t('Any'),
+            options: [
+                { value: 'female', label: t('Female') },
+                { value: 'male', label: t('Male') },
+            ],
+        },
+    ];
 
-        if (next.filter !== 'all') {
-            query.filter = next.filter;
-        }
-        if (next.q) {
-            query.q = next.q;
-        }
-        if (next.role) {
-            query.role = next.role;
-        }
-        if (next.gender) {
-            query.gender = next.gender;
-        }
-        if (patch.page && patch.page > 1) {
-            query.page = patch.page;
-        }
+    const quickPicks: QuickPick[] = [
+        {
+            label: t('Government employees'),
+            count: counts.government,
+            values: { employment: ['government'] },
+        },
+        {
+            label: t('School-paid'),
+            count: counts.school_paid,
+            values: { employment: ['school_paid'] },
+        },
+        {
+            label: t('No account yet'),
+            count: counts.no_account,
+            dot: 'bg-warning',
+            values: { portal: ['none'] },
+        },
+    ];
 
-        router.get(
-            index.url({ query }),
-            {},
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    }
-
-    function onSearch(value: string) {
-        setSearch(value);
-        if (timer.current) {
-            clearTimeout(timer.current);
-        }
-        timer.current = setTimeout(() => visit({ q: value.trim() }), 300);
+    function filter(patch: Record<string, string | string[]>) {
+        table.set(patch);
+        selection.clear();
     }
 
     useEffect(() => {
@@ -202,12 +244,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
 
         document.addEventListener('click', close);
 
-        return () => {
-            document.removeEventListener('click', close);
-            if (timer.current) {
-                clearTimeout(timer.current);
-            }
-        };
+        return () => document.removeEventListener('click', close);
     }, []);
 
     return (
@@ -228,73 +265,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                         no_account: counts.no_account,
                     },
                 )}
-            />
-
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-                <div className="flex flex-wrap gap-2">
-                    {TABS.map((tab) => {
-                        const selected = filters.filter === tab.value;
-
-                        return (
-                            <button
-                                key={tab.value}
-                                type="button"
-                                aria-pressed={selected}
-                                onClick={() => visit({ filter: tab.value })}
-                                className={`flex h-8 items-center gap-2 rounded-md border border-solid px-3 text-[13px] ${
-                                    selected
-                                        ? 'border-primary bg-primary-tint font-semibold text-primary'
-                                        : 'border-border bg-white font-medium text-text hover:bg-surface'
-                                }`}
-                            >
-                                {tab.dot && <StatusDot tone="warning" />}
-                                {t(tab.label)}
-                            </button>
-                        );
-                    })}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <label className="flex h-9 w-[260px] items-center gap-2 rounded-md border border-solid border-border bg-white px-3 focus-within:border-primary">
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            className="shrink-0"
-                        >
-                            <circle
-                                cx="11"
-                                cy="11"
-                                r="7"
-                                fill="none"
-                                stroke="#56625C"
-                                strokeWidth="2"
-                            />
-                            <path
-                                d="M16.5 16.5L21 21"
-                                fill="none"
-                                stroke="#56625C"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                            />
-                        </svg>
-                        <input
-                            type="search"
-                            aria-label={t('Search staff')}
-                            placeholder={t('A name, a subject or a town')}
-                            value={search}
-                            onChange={(e) => onSearch(e.target.value)}
-                            className="min-w-0 flex-1 bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
-                        />
-                    </label>
-                    <button
-                        type="button"
-                        aria-expanded={showFilters}
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="flex h-9 items-center justify-center rounded-md border border-solid border-border px-4 text-[14px] font-medium text-primary hover:bg-surface"
-                    >
-                        {t('Filter')}
-                        {extraFilters > 0 ? ` · ${extraFilters}` : ''}
-                    </button>
+                action={
                     <Link
                         href={create.url()}
                         className="flex h-9 shrink-0 items-center gap-2 rounded-md bg-primary px-4 text-[13px] leading-4 font-semibold text-white hover:bg-primary-hover"
@@ -310,60 +281,90 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                         </svg>
                         {t('Add a staff member')}
                     </Link>
-                </div>
-            </div>
+                }
+            />
 
-            {showFilters && (
-                <div className="-mt-3 flex flex-wrap items-center gap-2">
-                    <select
-                        aria-label={t('Portal role')}
-                        value={filters.role}
-                        onChange={(e) => visit({ role: e.target.value })}
-                        className={selectClass}
+            <div className="flex flex-col gap-3">
+                {selection.ids.length > 0 || selection.allMatching ? (
+                    <BulkBar
+                        selected={selection.ids.length}
+                        total={staff.total}
+                        allMatching={selection.allMatching}
+                        onSelectAll={selection.selectAllMatching}
+                        onClear={selection.clear}
                     >
-                        <option value="">{t('Any portal role')}</option>
-                        {roles.map((role) => (
-                            <option key={role.value} value={role.value}>
-                                {t(role.label)}
-                            </option>
-                        ))}
-                    </select>
-                    <select
-                        aria-label={t('Gender')}
-                        value={filters.gender}
-                        onChange={(e) => visit({ gender: e.target.value })}
-                        className={selectClass}
-                    >
-                        <option value="">{t('Any gender')}</option>
-                        <option value="female">{t('Female')}</option>
-                        <option value="male">{t('Male')}</option>
-                    </select>
-                    {extraFilters > 0 && (
                         <button
                             type="button"
-                            onClick={() => visit({ role: '', gender: '' })}
-                            className="px-2 text-[13px] font-medium text-primary hover:underline"
+                            onClick={() => setExporting(true)}
+                            className={bulkButtonClass}
                         >
-                            {t('Clear')}
+                            <DownloadIcon colour="#FFFFFF" />
+                            {t('Export :count', {
+                                count: count(
+                                    selection.allMatching
+                                        ? staff.total
+                                        : selection.ids.length,
+                                ),
+                            })}
                         </button>
-                    )}
-                </div>
-            )}
+                    </BulkBar>
+                ) : (
+                    <TableToolbar
+                        searchLabel={t('Search staff')}
+                        searchPlaceholder={t('A name, a subject or a town')}
+                        search={table.search}
+                        onSearch={(value) => {
+                            table.onSearch(value);
+                            selection.clear();
+                        }}
+                        filterTitle={t('Filter staff')}
+                        fields={fields}
+                        quickPicks={quickPicks}
+                        values={values}
+                        onFilter={filter}
+                        sorts={[
+                            { value: 'name', label: t('Family name') },
+                            { value: 'role', label: t('Portal role') },
+                            { value: '-joined', label: t('Newest first') },
+                        ]}
+                        sort={sort}
+                        onSort={table.sort}
+                        countLabel={t(':total staff', {
+                            total: count(staff.total),
+                        })}
+                        total={staff.total}
+                        onExport={() => setExporting(true)}
+                    />
+                )}
+                <FilterChips
+                    fields={fields}
+                    values={values}
+                    onFilter={filter}
+                />
+            </div>
 
             <div className="flex flex-1 flex-col gap-4">
-                <div className="overflow-x-auto lg:overflow-visible">
-                    <div className="flex min-w-[980px] flex-col rounded-lg border border-solid border-border bg-white">
-                        <div className="flex items-center gap-4 rounded-t-lg border-b border-solid border-border bg-surface px-4 py-2">
+                <div className="overflow-x-auto xl:overflow-visible">
+                    <div className="flex min-w-[920px] flex-col rounded-lg border border-solid border-border bg-white">
+                        <div className="flex items-center gap-3 rounded-t-lg border-b border-solid border-border bg-surface px-4 py-2">
+                            <span className="flex w-4 shrink-0">
+                                <Checkbox
+                                    label={t('Select this page')}
+                                    checked={selection.pageState === 'all'}
+                                    mixed={selection.pageState === 'some'}
+                                    onChange={selection.togglePage}
+                                />
+                            </span>
                             <span className={`${headCellClass} min-w-0 flex-1`}>
                                 {t('Staff member')}
                             </span>
                             <span className={`${headCellClass} w-[88px]`}>
                                 {t('Gender')}
                             </span>
-                            <span className={`${headCellClass} w-[176px]`}>
+                            <span className={`${headCellClass} w-[150px]`}>
                                 {t('Employment')}
                             </span>
-                            <span className={`${headCellClass} w-[218px]`}>
+                            <span className={`${headCellClass} w-[200px]`}>
                                 {t('Contact')}
                             </span>
                             <span className={`${headCellClass} w-[140px]`}>
@@ -382,12 +383,25 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                             <div
                                 key={row.id}
                                 onClick={() => router.visit(show.url(row.id))}
-                                className={`flex cursor-pointer items-center gap-4 border-b border-solid border-border px-4 py-3 last:rounded-b-lg last:border-b-0 hover:bg-surface ${
-                                    position % 2 === 1
-                                        ? 'bg-row-alt'
-                                        : 'bg-white'
+                                className={`flex cursor-pointer items-center gap-3 border-b border-solid border-border px-4 py-3 last:rounded-b-lg last:border-b-0 hover:bg-surface ${
+                                    selection.has(row.id)
+                                        ? 'bg-primary-tint/60'
+                                        : position % 2 === 1
+                                          ? 'bg-row-alt'
+                                          : 'bg-white'
                                 }`}
                             >
+                                <span className="flex w-4 shrink-0">
+                                    <Checkbox
+                                        label={t('Select :row', {
+                                            row: row.name,
+                                        })}
+                                        checked={selection.has(row.id)}
+                                        onChange={() =>
+                                            selection.toggle(row.id)
+                                        }
+                                    />
+                                </span>
                                 <div className="flex min-w-0 flex-1 items-center gap-3">
                                     <Avatar
                                         initials={row.initials}
@@ -419,12 +433,12 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                                         ? GENDER_LABELS[row.gender]
                                         : '—'}
                                 </span>
-                                <span className="w-[176px] shrink-0 text-[14px] text-text">
+                                <span className="w-[150px] shrink-0 text-[14px] text-text">
                                     {row.employment_type
                                         ? EMPLOYMENT_LABELS[row.employment_type]
                                         : '—'}
                                 </span>
-                                <span className="flex w-[218px] shrink-0 flex-col">
+                                <span className="flex w-[200px] shrink-0 flex-col">
                                     <span className="truncate text-[14px] leading-[1.35] text-text">
                                         {row.email}
                                     </span>
@@ -458,41 +472,59 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                     </div>
                 </div>
 
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-4">
-                    <p className="text-[13px] text-text-muted">
-                        {t(':rows of :total shown · sorted by family name', {
-                            rows: staff.rows.length,
-                            total: staff.total,
-                        })}
-                    </p>
-                    <div className="flex items-center gap-2">
-                        {staff.lastPage > 1 &&
-                            Array.from(
-                                { length: staff.lastPage },
-                                (_, i) => i + 1,
-                            ).map((page) => (
-                                <button
-                                    key={page}
-                                    type="button"
-                                    aria-current={
-                                        page === staff.page ? 'page' : undefined
-                                    }
-                                    onClick={() => visit({ page })}
-                                    className={`flex h-7 items-center rounded-md px-3 text-[13px] text-primary ${
-                                        page === staff.page
-                                            ? 'border border-solid border-primary bg-primary-tint font-semibold'
-                                            : 'hover:bg-surface'
-                                    }`}
-                                >
-                                    {page}
-                                </button>
-                            ))}
-                        <span className="text-[13px] text-text-muted">
-                            {t(':total staff', { total: counts.total })}
-                        </span>
-                    </div>
+                <div className="mt-auto">
+                    <TableFooter
+                        paged={staff}
+                        onPage={table.page}
+                        onPerPage={table.perPage}
+                    />
                 </div>
             </div>
+
+            {exporting && (
+                <ExportDialog
+                    title={t('Export staff')}
+                    subtitle={t(':year · as filtered on screen', {
+                        year: yearLabel ?? t('Staff'),
+                    })}
+                    noun={t('staff')}
+                    matching={staff.total}
+                    selected={selection.allMatching ? 'all' : selection.ids}
+                    everyone={counts.total}
+                    columns={[
+                        { key: 'name', label: t('Name'), on: true },
+                        {
+                            key: 'staff_code',
+                            label: t('Staff code'),
+                            on: false,
+                        },
+                        { key: 'role', label: t('Portal role'), on: true },
+                        { key: 'subjects', label: t('Subjects'), on: true },
+                        { key: 'gender', label: t('Gender'), on: true },
+                        { key: 'employment', label: t('Employment'), on: true },
+                        { key: 'email', label: t('Email'), on: true },
+                        { key: 'phone', label: t('Phone'), on: true },
+                        { key: 'portal', label: t('Portal'), on: true },
+                        { key: 'joined_on', label: t('Joined'), on: false },
+                    ]}
+                    href={({ scope, format, columns }) =>
+                        exportMethod.url({
+                            query: toQuery(scope === 'everyone' ? {} : values, {
+                                sort,
+                                format:
+                                    format === 'print' ? 'print' : undefined,
+                                columns: columns.join(','),
+                                ids:
+                                    scope === 'selected' &&
+                                    !selection.allMatching
+                                        ? selection.ids.join(',')
+                                        : undefined,
+                            }),
+                        })
+                    }
+                    onClose={() => setExporting(false)}
+                />
+            )}
         </div>
     );
 }

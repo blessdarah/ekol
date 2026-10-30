@@ -21,7 +21,14 @@ export const Icons = {
     students: (
         <Icon d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM21 19v-1a4 4 0 0 0-3-3.87M15 3.13a4 4 0 0 1 0 7.75" />
     ),
-    enrolment: <Icon d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />,
+    newYear: (
+        <Icon d="M15 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M8.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM19 8v6M16 11h6" />
+    ),
+    admissions: (
+        <Icon d="M14 19v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M8 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM16 13l2 2 4-4" />
+    ),
+    promotion: <Icon d="M4 20l6-6 4 4 6-8M14 10h6v6" />,
+    placement: <Icon d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z" />,
     classes: (
         <Icon d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5z" />
     ),
@@ -75,7 +82,6 @@ export const NAV_SECTIONS: NavSection[] = [
         links: [
             { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
             { href: '/students', label: 'Students', icon: 'students' },
-            { href: '/enrolment', label: 'Enrolment', icon: 'enrolment' },
             {
                 href: '/classes',
                 label: 'Classes & Subjects',
@@ -92,6 +98,27 @@ export const NAV_SECTIONS: NavSection[] = [
                 icon: 'assessments',
             },
             { href: '/timetable', label: 'Timetable', icon: 'timetable' },
+        ],
+    },
+    {
+        label: 'New school year',
+        links: [
+            { href: '/enrolment', label: 'Overview', icon: 'newYear' },
+            {
+                href: '/enrolment/applications',
+                label: 'Admissions',
+                icon: 'admissions',
+            },
+            {
+                href: '/enrolment/re-enrolment',
+                label: 'Promotion',
+                icon: 'promotion',
+            },
+            {
+                href: '/enrolment/placement',
+                label: 'Class placement',
+                icon: 'placement',
+            },
         ],
     },
     {

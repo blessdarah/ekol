@@ -111,12 +111,11 @@ function Confirm({ enrolment, confirmedOn, who }: ConfirmProps) {
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title={t('Confirm enrolment')} />
+            <Head title={t('Confirm the new year')} />
             <EnrolmentHeader
-                active="confirm"
                 progress={enrolment}
                 trail={[{ label: t('Confirm') }]}
-                title={t('Confirm enrolment')}
+                title={t('Confirm the new year')}
                 meta={t('the last step: everyone placed becomes Enrolled')}
             />
 

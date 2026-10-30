@@ -145,6 +145,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
         Route::group(['prefix' => 'staff'], function () {
             Route::get('/', [StaffController::class, 'index'])->name('staff');
             Route::get('/register', [StaffController::class, 'create'])->name('staff.create');
+            Route::get('/export', [StaffController::class, 'export'])->name('staff.export');
             Route::post('', [StaffController::class, 'store'])->name('staff.store');
             Route::get('/{staff}', [StaffController::class, 'show'])->name('staff.show');
             Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('staff.edit');
@@ -173,6 +174,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::patch('/series/{series}', [SeriesController::class, 'update'])->name('classes.series.update');
             Route::group(['prefix' => 'schemes'], function () {
                 Route::get('/', [SchemeController::class, 'index'])->name('schemes');
+                Route::get('/export', [SchemeController::class, 'export'])->name('schemes.export');
                 Route::get('/syllabus', [SyllabusController::class, 'show'])->name('schemes.syllabus');
                 Route::post('/syllabus/topics', [SyllabusController::class, 'store'])->name('schemes.syllabus.store');
                 Route::patch('/syllabus/topics/{topic}', [SyllabusController::class, 'update'])->name('schemes.syllabus.update');
@@ -188,6 +190,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
                 Route::post('/{scheme}/notes', [SchemeController::class, 'note'])->name('schemes.note');
             });
             Route::get('/subjects', [SubjectController::class, 'index'])->name('classes.subjects');
+            Route::get('/subjects/export', [SubjectController::class, 'export'])->name('classes.subjects.export');
             Route::get('/subjects/new', [SubjectController::class, 'create'])->name('classes.subjects.create');
             Route::post('/subjects', [SubjectController::class, 'store'])->name('classes.subjects.store');
             Route::get('/subjects/templates', [SubjectController::class, 'templates'])->name('classes.subjects.templates');
@@ -199,6 +202,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
 
         Route::group(['prefix' => 'students'], function () {
             Route::get('/', [StudentController::class, 'index'])->name('students');
+            Route::get('/export', [StudentController::class, 'export'])->name('students.export');
             Route::get('/new', [StudentController::class, 'create'])->name('students.create');
             Route::post('', [StudentController::class, 'store'])->name('students.store');
             Route::get('/sibling-check', [StudentController::class, 'siblingCheck'])->name('students.sibling-check');
@@ -234,6 +238,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::post('/classes', [EnrolmentController::class, 'copyClasses'])->name('enrolment.classes.copy');
             Route::post('/levels/{level}/classes', [EnrolmentController::class, 'storeClass'])->name('enrolment.classes.store');
             Route::get('/applications', [ApplicationController::class, 'index'])->name('enrolment.applications');
+            Route::get('/applications/export', [ApplicationController::class, 'export'])->name('enrolment.applications.export');
             Route::get('/applications/new', [ApplicationController::class, 'create'])->name('enrolment.applications.create');
             Route::post('/applications', [ApplicationController::class, 'store'])->name('enrolment.applications.store');
             Route::get('/applications/{application}', [ApplicationController::class, 'show'])->name('enrolment.applications.show');
@@ -272,6 +277,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
 
         Route::group(['prefix' => 'fees'], function () {
             Route::get('/', [FeeController::class, 'index'])->name('fees');
+            Route::get('/export', [FeeController::class, 'export'])->name('fees.export');
             Route::get('/structure', [FeeController::class, 'structure'])->name('fees.structure');
             Route::patch('/structure', [FeeController::class, 'updateStructure'])->name('fees.structure.update');
             Route::post('/structure/bill', [FeeController::class, 'bill'])->name('fees.structure.bill');
@@ -322,6 +328,8 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
  * school's subdomain. They find the school, then prove the child is
  * theirs with the matricule, the phone the school has and an SMS code.
  */
+Route::get('/receipts/{payment}/verify', [FeeController::class, 'verifyReceipt'])->middleware(['signed', 'throttle:60,1', SetLocale::class])->name('receipts.verify');
+
 Route::group(['prefix' => 'parents', 'middleware' => SetLocale::class], function () {
     Route::get('/', [ParentController::class, 'show'])->name('parents');
     Route::get('/schools', [ParentController::class, 'schools'])->middleware('throttle:60,1')->name('parents.schools');
@@ -332,6 +340,7 @@ Route::group(['prefix' => 'parents', 'middleware' => SetLocale::class], function
     Route::get('/home', [ParentController::class, 'home'])->name('parents.home');
     Route::get('/attendance', [ParentController::class, 'attendance'])->name('parents.attendance');
     Route::post('/leave', [ParentController::class, 'leave'])->name('parents.leave');
+    Route::get('/receipts/{payment}', [PayController::class, 'receipt'])->name('parents.receipt');
     Route::get('/pay', [PayController::class, 'amount'])->name('parents.pay');
     Route::post('/pay', [PayController::class, 'chooseAmount'])->name('parents.pay.amount');
     Route::get('/pay/phone', [PayController::class, 'phone'])->name('parents.pay.phone');

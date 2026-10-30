@@ -38,6 +38,11 @@ class PlatformContext
         if (! $admin || ! $admin->is_platform_admin || $admin->school_id !== null) {
             return redirect()->route('platform.login');
         }
+        // The Pulse dashboard refreshes its cards through Livewire, outside
+        // /platform; those requests belong to the admin site, not a visit.
+        if ($request->is('livewire-*/*', 'livewire/*')) {
+            return $next($request);
+        }
         $visit = SchoolVisit::whereKey($request->session()->get('platform_visit'))
             ->where('user_id', $admin->id)->whereNull('ended_at')->first();
         if (! $visit || $visit->expires_at->isPast()) {

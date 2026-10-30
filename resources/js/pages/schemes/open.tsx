@@ -76,16 +76,19 @@ function OpenSchemes({
         creates.without_teacher.length > 0 || creates.empty_syllabus.length > 0;
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-7">
             <Head title={t('Open schemes')} />
-            <StructureTabs active="schemes" />
             <SchemesHeader
                 trail={[{ label: t('Open schemes') }]}
+                tag={t('Schemes:term_label', {
+                    term_label: steps.term ? ` · ${t(steps.term.label)}` : '',
+                })}
                 title={t('Open schemes for :term', { term: t(term.label) })}
                 sub={t(
                     'Creates one scheme for each subject and class, given to the teacher who teaches it there.',
                 )}
             />
+            <StructureTabs active="schemes" />
             <StepBar steps={steps} active="open" />
 
             <Form

@@ -4,6 +4,7 @@ import { home } from '@/actions/App/Http/Controllers/ParentController';
 import {
     amount as payPage,
     retry,
+    receipt as receiptPage,
 } from '@/actions/App/Http/Controllers/PayController';
 import {
     ChildSummary,
@@ -30,6 +31,7 @@ interface StatusProps {
         seconds_left: number;
         paid_at: string | null;
         receipt: string | null;
+        receipt_id: string | null;
         went_to: { name: string; amount: number }[];
     };
     student: ChildCard | null;
@@ -170,6 +172,14 @@ export default function PaymentStatus({
                             'The school has your payment. Keep the receipt number in case you need it.',
                         )}
                     </p>
+                    {payment.receipt_id && (
+                        <Link
+                            href={receiptPage.url(payment.receipt_id)}
+                            className={payButtonClass}
+                        >
+                            {t('View receipt / PDF')}
+                        </Link>
+                    )}
                     {balance > 0 && (
                         <Link
                             href={payPage.url()}

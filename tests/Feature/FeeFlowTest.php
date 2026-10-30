@@ -18,6 +18,7 @@ use App\Models\SchoolClass;
 use App\Models\Student;
 use App\Models\Term;
 use App\Models\User;
+use Illuminate\Support\Facades\URL;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -224,10 +225,26 @@ test('the fees list totals the year and flags who is overdue or not billed', fun
     expect(Invoice::where('student_id', $world['students'][0]->id)->firstOrFail()->status)->toBe(InvoiceStatus::Overdue);
 
     $this->actingAs($world['admin'])
-        ->get('http://feesa.ekol.test/fees?show=unbilled&q=che')
+        ->get('http://feesa.ekol.test/fees?state=unbilled&q=che')
         ->assertInertia(fn (Assert $page) => $page
             ->where('students.total', 1)
             ->where('students.rows.0.name', 'Che Emmanuel'));
+
+    $this->actingAs($world['admin'])
+        ->get('http://feesa.ekol.test/fees?state=overdue,paid&sort=name')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.state', ['overdue', 'paid'])
+            ->where('students.total', 2)
+            ->where('students.rows.0.name', 'Achu Brandon'));
+
+    $csv = $this->actingAs($world['admin'])
+        ->get('http://feesa.ekol.test/fees/export?state=overdue&columns=name,balance,state')
+        ->assertDownload()
+        ->streamedContent();
+
+    expect($csv)->toContain('Achu Brandon')
+        ->and($csv)->toContain('Status: Overdue')
+        ->and($csv)->not->toContain('Che Emmanuel');
 });
 
 test('a payment fills the oldest installment, gets a receipt and updates the ledger', function () {
@@ -279,6 +296,7 @@ test('a payment fills the oldest installment, gets a receipt and updates the led
             ->where('school.code', 'GBHS')
             ->where('issuer.name', 'Academy feesa')
             ->where('receipt.number', 'RC-25-0001')
+            ->where('receipt.kind', 'counter')
             ->where('receipt.amount', 40000)
             ->where('receipt.balance', 20000)
             ->where('student.class', 'Form 1 A'));
@@ -568,4 +586,75 @@ test('an item with an amount for some levels only is billed to those levels alon
         ->and((float) $exam->amount_due)->toBe(67500.0)
         ->and($exam->lines()->orderBy('position')->pluck('name')->all())->toBe(['School fees', 'Mock exams'])
         ->and((float) $exam->installments()->orderBy('seq')->value('amount'))->toBe(37500.0);
+});
+
+test('reprinting an earlier receipt excludes later payments and keeps its original academic year class', function () {
+    $world = feeWorld();
+    setFees($world, [$world['levels'][1]->id => 60000]);
+    billEveryone($world);
+    $invoice = Invoice::where('student_id', $world['students'][0]->id)->firstOrFail();
+    $first = $invoice->recordPayment('40000.00', 'cash', $world['admin'], receivedAt: now());
+    $this->travel(1)->days();
+    $invoice->recordPayment('20000.00', 'cash', $world['admin'], receivedAt: now());
+    $world['year']->update(['status' => AcademicYearStatus::Closed]);
+    AcademicYear::create([
+        'school_id' => $world['school']->id, 'label' => '2026/27', 'starts_on' => '2026-09-01',
+        'ends_on' => '2027-07-31', 'status' => AcademicYearStatus::Current,
+    ]);
+
+    $this->actingAs($world['admin'])->get("http://feesa.ekol.test/fees/payments/{$first->id}/receipt")
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('fees/receipt')
+        ->where('receipt.balance', 20000)
+        ->where('receipt.paid', 40000)
+        ->where('receipt.can_pay', false)
+        ->where('receipt.state', 'partial')
+        ->where('receipt.year', '2025/26')
+        ->where('student.class', 'Form 1 A')
+        ->where('receipt.next.amount', 8000)
+        ->where('receipt.next.due_on', '2025-11-15')
+        ->has('receipt.history', 1)
+        ->where('receipt.words', 'Forty thousand CFA francs')
+        ->where('receipt.qr', fn (string $value) => str_starts_with($value, 'data:image/svg+xml;base64,')));
+});
+
+test('a cleared invoice has a paid in full receipt and no next installment', function () {
+    $world = feeWorld();
+    setFees($world, [$world['levels'][1]->id => 60000]);
+    billEveryone($world);
+    $invoice = Invoice::where('student_id', $world['students'][0]->id)->firstOrFail();
+    $payment = $invoice->recordPayment('60000.00', 'cash', $world['admin']);
+
+    $this->actingAs($world['admin'])->get("http://feesa.ekol.test/fees/payments/{$payment->id}/receipt")
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('receipt.state', 'paid')->where('receipt.balance', 0)->where('receipt.next', null));
+});
+
+test('a signed receipt verification confirms the payment without disclosing the student', function () {
+    $world = feeWorld();
+    setFees($world, [$world['levels'][1]->id => 60000]);
+    billEveryone($world);
+    $invoice = Invoice::where('student_id', $world['students'][0]->id)->firstOrFail();
+    $payment = $invoice->recordPayment('40000.00', 'cash', $world['admin']);
+    $url = URL::signedRoute('receipts.verify', ['payment' => $payment->id]);
+
+    $this->get($url)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('fees/receipt-verify')->where('issuer', 'Academy feesa')
+        ->where('receipt.number', 'RC-25-0001')->where('receipt.amount', 40000)
+        ->missing('student')->missing('receipt.balance')->missing('receipt.paid_from'));
+    $this->get(route('receipts.verify', $payment->id))->assertForbidden();
+    $this->get($url.'&amount=1')->assertForbidden();
+});
+
+test('receipts are unavailable to staff of a different school and teachers', function () {
+    $world = feeWorld();
+    setFees($world, [$world['levels'][1]->id => 60000]);
+    billEveryone($world);
+    $invoice = Invoice::where('student_id', $world['students'][0]->id)->firstOrFail();
+    $payment = $invoice->recordPayment('40000.00', 'cash', $world['admin']);
+    $other = feeWorld('feesb');
+
+    $this->actingAs($other['admin'])->get("http://feesb.ekol.test/fees/payments/{$payment->id}/receipt")->assertNotFound();
+    $teacher = User::factory()->create(['school_id' => $world['school']->id, 'role' => UserRole::Teacher]);
+    $this->actingAs($teacher)->get("http://feesa.ekol.test/fees/payments/{$payment->id}/receipt")->assertForbidden();
 });

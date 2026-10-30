@@ -128,7 +128,6 @@ function Placement({
         <div className="flex flex-col gap-5">
             <Head title={t('Class placement')} />
             <EnrolmentHeader
-                active="placement"
                 progress={enrolment}
                 trail={[{ label: t('Class placement') }]}
                 title={t('Class placement')}
@@ -171,14 +170,14 @@ function Placement({
                         href={reEnrolment.url()}
                         className="font-medium text-primary hover:underline"
                     >
-                        {t('Re-enrolment')}
+                        {t('Promotion')}
                     </Link>
                     {t(', or admitted under')}{' '}
                     <Link
                         href={applications.url()}
                         className="font-medium text-primary hover:underline"
                     >
-                        {t('Applications')}
+                        {t('Admissions')}
                     </Link>
                     .
                 </p>
@@ -582,7 +581,7 @@ function Placement({
                                                     href={reEnrolment.url()}
                                                     className={linkClass}
                                                 >
-                                                    {t('Re-enrolment')}
+                                                    {t('Promotion')}
                                                 </Link>
                                             </>
                                         )}
@@ -607,7 +606,7 @@ function Placement({
                                                     })}
                                                     className={linkClass}
                                                 >
-                                                    {t('Applications')}
+                                                    {t('Admissions')}
                                                 </Link>
                                             </>
                                         )}

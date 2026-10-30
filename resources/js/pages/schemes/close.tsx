@@ -85,16 +85,19 @@ function CloseTerm({
     ];
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-7">
             <Head title={t('Close :term', { term })} />
-            <StructureTabs active="schemes" />
             <SchemesHeader
                 trail={[{ label: t('Close the term') }]}
+                tag={t('Schemes:term_label', {
+                    term_label: steps.term ? ` · ${t(steps.term.label)}` : '',
+                })}
                 title={t('Close :term', { term })}
                 sub={t(
                     'How much of each plan was taught. Sub-topics not taught move to the start of the next term’s schemes.',
                 )}
             />
+            <StructureTabs active="schemes" />
             <StepBar steps={steps} active="close" />
 
             <div className="flex flex-wrap border-y border-solid border-border">

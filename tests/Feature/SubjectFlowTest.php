@@ -178,7 +178,7 @@ test('the roster counts, filters by needs teacher and searches by teacher', func
             ->where('subjects.rows.1.periods', 5));
 
     $this->actingAs($world['admin'])
-        ->get('http://subjecta.ekol.test/classes/subjects?needs=1')
+        ->get('http://subjecta.ekol.test/classes/subjects?staffing=needs')
         ->assertInertia(fn (Assert $page) => $page
             ->has('subjects.rows', 1)
             ->where('subjects.rows.0.name', 'Civic Education'));
@@ -188,6 +188,21 @@ test('the roster counts, filters by needs teacher and searches by teacher', func
         ->assertInertia(fn (Assert $page) => $page
             ->has('subjects.rows', 1)
             ->where('subjects.rows.0.name', 'Mathematics'));
+
+    $this->actingAs($world['admin'])
+        ->get('http://subjecta.ekol.test/classes/subjects?staffing=staffed&sort=-name')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.staffing', 'staffed')
+            ->has('subjects.rows', 1)
+            ->where('subjects.rows.0.name', 'Mathematics'));
+
+    $csv = $this->actingAs($world['admin'])
+        ->get('http://subjecta.ekol.test/classes/subjects/export?staffing=needs&columns=name,code')
+        ->assertDownload()
+        ->streamedContent();
+
+    expect($csv)->toContain('Civic Education')
+        ->and($csv)->not->toContain('Mathematics');
 });
 
 test('a template creates the chosen subjects and skips ones already registered', function () {
@@ -267,7 +282,7 @@ test('a series subject a class of its level does not take counts as needing a te
     $maths = Subject::firstOrFail();
 
     $this->actingAs($world['admin'])
-        ->get('http://subjecta.ekol.test/classes/subjects?needs=1')
+        ->get('http://subjecta.ekol.test/classes/subjects?staffing=needs')
         ->assertInertia(fn (Assert $page) => $page->where('counts.needs_teacher', 0)->has('subjects.rows', 0));
 
     $series = Series::create([
@@ -277,7 +292,7 @@ test('a series subject a class of its level does not take counts as needing a te
     $series->subjects()->sync([$maths->id => ['kind' => 'core']]);
 
     $this->actingAs($world['admin'])
-        ->get('http://subjecta.ekol.test/classes/subjects?needs=1')
+        ->get('http://subjecta.ekol.test/classes/subjects?staffing=needs')
         ->assertInertia(fn (Assert $page) => $page
             ->where('counts.needs_teacher', 1)
             ->has('subjects.rows', 1)
@@ -292,7 +307,7 @@ test('a series subject a class of its level does not take counts as needing a te
         ->assertSessionHasNoErrors();
 
     $this->actingAs($world['admin'])
-        ->get('http://subjecta.ekol.test/classes/subjects?needs=1')
+        ->get('http://subjecta.ekol.test/classes/subjects?staffing=needs')
         ->assertInertia(fn (Assert $page) => $page->where('counts.needs_teacher', 0)->has('subjects.rows', 0));
 
     expect($form1b->id)->not->toBe($form2a->id);

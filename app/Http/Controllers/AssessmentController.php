@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\AssessmentKind;
 use App\Enums\AssessmentState;
+use App\Enums\EnrolmentStatus;
 use App\Http\Requests\Assessments\ExtendMarksWindowRequest;
 use App\Http\Requests\Assessments\SaveAssessmentPlanRequest;
 use App\Models\AcademicYear;
@@ -11,6 +12,7 @@ use App\Models\AssessmentPlan;
 use App\Models\AssessmentSubject;
 use App\Models\AuditEvent;
 use App\Models\ClassSubject;
+use App\Models\Enrolment;
 use App\Models\Level;
 use App\Models\MarkCorrection;
 use App\Models\School;
@@ -249,6 +251,21 @@ class AssessmentController extends Controller
 
         $sheets = $plan ? $plan->sheets() : new Collection;
         $unsubmitted = $sheets->whereNull('submitted_at');
+        $sizes = Enrolment::whereIn('school_class_id', $sheets->map(fn (AssessmentSubject $sheet) => $sheet->assessment?->school_class_id)->filter()->unique())
+            ->where('status', '!=', EnrolmentStatus::Left)
+            ->selectRaw('school_class_id, COUNT(*) as total')
+            ->groupBy('school_class_id')
+            ->pluck('total', 'school_class_id');
+        $missing = fn (AssessmentSubject $sheet) => [
+            'sheet_id' => $sheet->id,
+            'subject_id' => $sheet->subject_id,
+            'subject' => $sheet->subject?->name,
+            'class' => $sheet->assessment?->schoolClass?->name,
+            'teacher' => $sheet->examiner?->full_name,
+            'initials' => $sheet->examiner?->initials,
+            'entered' => (int) $sheet->getAttribute('entered_count'),
+            'students' => (int) ($sizes[$sheet->assessment?->school_class_id] ?? 0),
+        ];
 
         return Inertia::render('assessments/progress', [
             'tabs' => static::tabs($school, $year),
@@ -264,7 +281,7 @@ class AssessmentController extends Controller
             ],
             'classes' => $sheets
                 ->groupBy(fn (AssessmentSubject $sheet) => (string) $sheet->assessment?->school_class_id)
-                ->map(function (Collection $mine) {
+                ->map(function (Collection $mine) use ($missing) {
                     $class = $mine->first()?->assessment?->schoolClass;
 
                     return [
@@ -273,16 +290,29 @@ class AssessmentController extends Controller
                         'form_master' => $class?->formMaster?->full_name,
                         'submitted' => $mine->whereNotNull('submitted_at')->count(),
                         'total' => $mine->count(),
-                        'missing' => $mine->whereNull('submitted_at')->map(fn (AssessmentSubject $sheet) => [
-                            'sheet_id' => $sheet->id,
-                            'subject_id' => $sheet->subject_id,
-                            'subject' => $sheet->subject?->name,
-                            'teacher' => $sheet->examiner?->full_name,
-                            'entered' => (int) $sheet->getAttribute('entered_count'),
-                        ])->sortBy('subject')->values(),
+                        'missing' => $mine->whereNull('submitted_at')->map($missing)->sortBy('subject')->values(),
                     ];
                 })
                 ->sortBy('name')
+                ->values(),
+            'teachers' => $unsubmitted
+                ->groupBy(fn (AssessmentSubject $sheet) => (string) $sheet->examiner_id)
+                ->map(function (Collection $mine, string $examiner) use ($missing) {
+                    $teacher = $mine->first()?->examiner;
+
+                    return [
+                        'id' => $examiner === '' ? null : $examiner,
+                        'name' => $teacher?->full_name,
+                        'initials' => $teacher?->initials,
+                        'phone' => $teacher?->phone,
+                        'missing' => $mine->map($missing)->sortBy([['class', 'asc'], ['subject', 'asc']])->values(),
+                    ];
+                })
+                ->sortBy([
+                    fn (array $a, array $b) => ($a['id'] === null) <=> ($b['id'] === null),
+                    fn (array $a, array $b) => count($b['missing']) <=> count($a['missing']),
+                    fn (array $a, array $b) => strcmp((string) $a['name'], (string) $b['name']),
+                ])
                 ->values(),
         ]);
     }

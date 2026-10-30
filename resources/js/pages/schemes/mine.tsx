@@ -130,7 +130,7 @@ function MyScheme({ term, opening, schemes, scheme, toApprove }: MineProps) {
                 {toApprove > 0 && (
                     <Link
                         href={schemesIndex.url({
-                            query: { show: 'to_approve' },
+                            query: { state: 'to_approve' },
                         })}
                         className={`${solidButtonClass} self-start`}
                     >
@@ -292,7 +292,7 @@ function MyScheme({ term, opening, schemes, scheme, toApprove }: MineProps) {
 
             {toApprove > 0 && (
                 <Link
-                    href={schemesIndex.url({ query: { show: 'to_approve' } })}
+                    href={schemesIndex.url({ query: { state: 'to_approve' } })}
                     className="flex items-center justify-between rounded-lg border border-solid border-science bg-science-tint px-4 py-3 text-[14px] text-text hover:underline"
                 >
                     {t(

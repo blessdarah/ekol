@@ -1,8 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     create,
     edit,
+    exportMethod,
     index,
     show,
 } from '@/actions/App/Http/Controllers/StudentController';
@@ -14,6 +15,23 @@ import {
     solidButtonClass,
 } from '../../components/structure/ui';
 import { FeePill, StudentHeader, money } from '../../components/students/ui';
+import {
+    BulkBar,
+    Checkbox,
+    DownloadIcon,
+    ExportDialog,
+    type FilterField,
+    FilterChips,
+    type FilterValues,
+    type QuickPick,
+    TableFooter,
+    TableToolbar,
+    bulkButtonClass,
+    count,
+    toQuery,
+    useSelection,
+    useTableQuery,
+} from '../../components/table/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
@@ -32,10 +50,15 @@ interface StudentRow {
 }
 
 interface Filters {
-    tab: string;
     q: string;
+    fees: string[];
+    series: string[];
     level: string;
-    class: string;
+    class: string[];
+    gender: string;
+    from: string;
+    to: string;
+    sort: string;
 }
 
 interface RosterProps {
@@ -48,115 +71,154 @@ interface RosterProps {
         no_series: number;
         new: number;
     };
+    termStartsOn: string | null;
     filters: Filters;
     levels: { id: string; name: string }[];
     classes: { id: string; name: string; level_id: string }[];
+    series: { id: string; code: string; stream: string }[];
     students: {
         rows: StudentRow[];
         page: number;
         lastPage: number;
         total: number;
+        perPage: number;
+        from: number | null;
+        to: number | null;
     };
 }
 
 const headClass =
     'shrink-0 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase';
 
-const selectClass =
-    'h-9 rounded-md border border-solid border-border bg-white px-3 text-[13px] text-text outline-none focus:border-primary';
-
-/** First three pages, then the last, as the design shows. */
-function pageList(last: number, current: number): (number | 'gap')[] {
-    const pages = new Set<number>([
-        1,
-        2,
-        3,
-        current - 1,
-        current,
-        current + 1,
-        last,
-    ]);
-    const sorted = [...pages]
-        .filter((page) => page >= 1 && page <= last)
-        .sort((a, b) => a - b);
-    const list: (number | 'gap')[] = [];
-
-    sorted.forEach((page, position) => {
-        if (position > 0 && page - sorted[position - 1] > 1) {
-            list.push('gap');
-        }
-        list.push(page);
-    });
-
-    return list;
-}
-
 function StudentRoster({
     yearLabel,
     currency,
     counts,
+    termStartsOn,
     filters,
     levels,
     classes,
+    series,
     students,
 }: RosterProps) {
-    const [search, setSearch] = useState(filters.q);
-    const [showFilters, setShowFilters] = useState(
-        filters.level !== '' || filters.class !== '',
+    const { sort, ...values } = filters;
+    const table = useTableQuery((query) => index.url({ query }), values, {
+        sort,
+        per_page: students.perPage,
+    });
+    const selection = useSelection(students.rows.map((row) => row.id));
+    const [exporting, setExporting] = useState<'toolbar' | 'selected' | null>(
+        null,
     );
     const [openMenu, setOpenMenu] = useState<string | null>(null);
-    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const tabs = [
-        { value: 'all', label: t('All students') },
-        {
-            value: 'overdue',
-            label: t('Overdue fees · :overdue', { overdue: counts.overdue }),
-            dot: 'bg-danger',
-        },
-        {
-            value: 'no_series',
-            label: t('No series · :no_series', { no_series: counts.no_series }),
-            dot: 'bg-warning',
-        },
-        { value: 'new', label: t('New this term · :new', { new: counts.new }) },
-    ];
-    const shownClasses = filters.level
-        ? classes.filter((option) => option.level_id === filters.level)
+    const shownClasses = values.level
+        ? classes.filter((option) => option.level_id === values.level)
         : classes;
 
-    function visit(patch: Partial<Filters> & { page?: number }) {
-        const next = { ...filters, ...patch };
-        const query: Record<string, string | number> = {};
+    const fields: FilterField[] = [
+        {
+            kind: 'chips',
+            key: 'fees',
+            label: t('Fees'),
+            options: [
+                { value: 'paid', label: t('Paid') },
+                { value: 'partial', label: t('Partial') },
+                { value: 'due', label: t('Due') },
+                { value: 'overdue', label: t('Overdue') },
+                { value: 'none', label: t('No invoice') },
+            ],
+        },
+        {
+            kind: 'select',
+            key: 'level',
+            label: t('Level'),
+            anyLabel: t('Any level'),
+            options: levels.map((level) => ({
+                value: level.id,
+                label: level.name,
+            })),
+        },
+        {
+            kind: 'chips',
+            key: 'class',
+            label: t('Class'),
+            options: shownClasses.map((option) => ({
+                value: option.id,
+                label: option.name,
+            })),
+        },
+        ...(series.length > 0
+            ? [
+                  {
+                      kind: 'chips' as const,
+                      key: 'series',
+                      label: t('Series'),
+                      options: [
+                          ...series.map((option) => ({
+                              value: option.code,
+                              label: option.code,
+                          })),
+                          { value: 'none', label: t('No series') },
+                      ],
+                  },
+              ]
+            : []),
+        {
+            kind: 'segments',
+            key: 'gender',
+            label: t('Gender'),
+            anyLabel: t('Any'),
+            options: [
+                { value: 'female', label: t('Girls') },
+                { value: 'male', label: t('Boys') },
+            ],
+        },
+        { kind: 'dates', from: 'from', to: 'to', label: t('Admitted') },
+    ];
 
-        if (next.tab !== 'all') {
-            query.tab = next.tab;
-        }
-        if (next.q) {
-            query.q = next.q;
-        }
-        if (next.level) {
-            query.level = next.level;
-        }
-        if (next.class) {
-            query.class = next.class;
-        }
-        if (patch.page && patch.page > 1) {
-            query.page = patch.page;
-        }
+    const quickPicks: QuickPick[] = [
+        {
+            label: t('Overdue fees'),
+            count: counts.overdue,
+            dot: 'bg-danger',
+            values: { fees: ['overdue'] },
+        },
+        ...(series.length > 0
+            ? [
+                  {
+                      label: t('No series'),
+                      count: counts.no_series,
+                      dot: 'bg-warning',
+                      values: { series: ['none'] },
+                  },
+              ]
+            : []),
+        ...(termStartsOn
+            ? [
+                  {
+                      label: t('New this term'),
+                      count: counts.new,
+                      values: { from: termStartsOn, to: '' },
+                  },
+              ]
+            : []),
+    ];
 
-        router.get(
-            index.url({ query }),
-            {},
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    }
-
-    function onSearch(value: string) {
-        setSearch(value);
-        if (timer.current) {
-            clearTimeout(timer.current);
+    /** A level change drops classes that are not in it. */
+    function filter(patch: FilterValues) {
+        if (typeof patch.level === 'string' && patch.level !== values.level) {
+            const kept = values.class.filter((id) =>
+                classes.some(
+                    (option) =>
+                        option.id === id &&
+                        (!patch.level || option.level_id === patch.level),
+                ),
+            );
+            table.set({ ...patch, class: kept });
+        } else {
+            table.set(patch);
         }
-        timer.current = setTimeout(() => visit({ q: value.trim() }), 300);
+        selection.clear();
     }
 
     useEffect(() => {
@@ -166,12 +228,7 @@ function StudentRoster({
 
         document.addEventListener('click', close);
 
-        return () => {
-            document.removeEventListener('click', close);
-            if (timer.current) {
-                clearTimeout(timer.current);
-            }
-        };
+        return () => document.removeEventListener('click', close);
     }, []);
 
     return (
@@ -218,119 +275,6 @@ function StudentRoster({
                 }
             />
 
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-                <div className="flex flex-wrap gap-2">
-                    {tabs.map((tab) => {
-                        const selected = filters.tab === tab.value;
-
-                        return (
-                            <button
-                                key={tab.value}
-                                type="button"
-                                aria-pressed={selected}
-                                onClick={() => visit({ tab: tab.value })}
-                                className={`flex h-8 items-center gap-[6px] rounded-full border border-solid px-[14px] text-[13px] leading-4 ${
-                                    selected
-                                        ? 'border-primary bg-primary-tint font-semibold text-primary'
-                                        : 'border-border font-medium text-text hover:bg-surface'
-                                }`}
-                            >
-                                {tab.dot && (
-                                    <span
-                                        className={`h-[6px] w-[6px] shrink-0 rounded-full ${tab.dot}`}
-                                    />
-                                )}
-                                {t(tab.label)}
-                            </button>
-                        );
-                    })}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <label className="flex h-9 w-[260px] items-center gap-2 rounded-md border border-solid border-border px-3 focus-within:border-primary">
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            className="shrink-0"
-                        >
-                            <circle
-                                cx="11"
-                                cy="11"
-                                r="7"
-                                fill="none"
-                                stroke="#56625C"
-                                strokeWidth="2"
-                            />
-                            <path
-                                d="M16 16l5 5"
-                                fill="none"
-                                stroke="#56625C"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                            />
-                        </svg>
-                        <input
-                            type="search"
-                            aria-label={t('Search students')}
-                            placeholder={t('Name, matricule or phone')}
-                            value={search}
-                            onChange={(e) => onSearch(e.target.value)}
-                            className="min-w-0 flex-1 bg-transparent text-[14px] text-text outline-none placeholder:text-text-muted"
-                        />
-                    </label>
-                    <button
-                        type="button"
-                        aria-expanded={showFilters}
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={outlineButtonClass}
-                    >
-                        {t('Level and class')}
-                    </button>
-                </div>
-            </div>
-
-            {showFilters && (
-                <div className="-mt-3 flex flex-wrap items-center gap-2">
-                    <select
-                        aria-label={t('Level')}
-                        value={filters.level}
-                        onChange={(e) =>
-                            visit({ level: e.target.value, class: '' })
-                        }
-                        className={selectClass}
-                    >
-                        <option value="">{t('Any level')}</option>
-                        {levels.map((level) => (
-                            <option key={level.id} value={level.id}>
-                                {level.name}
-                            </option>
-                        ))}
-                    </select>
-                    <select
-                        aria-label={t('Class')}
-                        value={filters.class}
-                        onChange={(e) => visit({ class: e.target.value })}
-                        className={selectClass}
-                    >
-                        <option value="">{t('Any class')}</option>
-                        {shownClasses.map((option) => (
-                            <option key={option.id} value={option.id}>
-                                {option.name}
-                            </option>
-                        ))}
-                    </select>
-                    {(filters.level || filters.class) && (
-                        <button
-                            type="button"
-                            onClick={() => visit({ level: '', class: '' })}
-                            className="px-2 text-[13px] font-medium text-primary hover:underline"
-                        >
-                            {t('Clear')}
-                        </button>
-                    )}
-                </div>
-            )}
-
             {counts.total === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">
                     <p className="text-[13px] leading-[19px] text-text">
@@ -347,32 +291,110 @@ function StudentRoster({
                 </div>
             ) : (
                 <>
-                    <div className="overflow-x-auto lg:overflow-visible">
-                        <div className="flex min-w-[1040px] flex-col rounded-lg border border-solid border-border">
-                            <div className="flex h-9 shrink-0 items-center gap-4 rounded-t-lg border-b border-solid border-border bg-surface px-4">
+                    <div className="flex flex-col gap-3">
+                        {selection.ids.length > 0 || selection.allMatching ? (
+                            <BulkBar
+                                selected={selection.ids.length}
+                                total={students.total}
+                                allMatching={selection.allMatching}
+                                onSelectAll={selection.selectAllMatching}
+                                onClear={selection.clear}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => setExporting('selected')}
+                                    className={bulkButtonClass}
+                                >
+                                    <DownloadIcon colour="#FFFFFF" />
+                                    {t('Export :count', {
+                                        count: count(
+                                            selection.allMatching
+                                                ? students.total
+                                                : selection.ids.length,
+                                        ),
+                                    })}
+                                </button>
+                            </BulkBar>
+                        ) : (
+                            <TableToolbar
+                                searchLabel={t('Search students')}
+                                searchPlaceholder={t(
+                                    'Name, matricule or phone',
+                                )}
+                                search={table.search}
+                                onSearch={(value) => {
+                                    table.onSearch(value);
+                                    selection.clear();
+                                }}
+                                filterTitle={t('Filter students')}
+                                fields={fields}
+                                quickPicks={quickPicks}
+                                values={values}
+                                onFilter={filter}
+                                sorts={[
+                                    { value: 'class', label: t('Class') },
+                                    { value: 'name', label: t('Name') },
+                                    {
+                                        value: 'matricule',
+                                        label: t('Matricule'),
+                                    },
+                                    {
+                                        value: '-admitted',
+                                        label: t('Newest first'),
+                                    },
+                                ]}
+                                sort={sort}
+                                onSort={table.sort}
+                                countLabel={t(':count students', {
+                                    count: count(students.total),
+                                })}
+                                total={students.total}
+                                onExport={() => setExporting('toolbar')}
+                            />
+                        )}
+                        <FilterChips
+                            fields={fields}
+                            values={values}
+                            onFilter={filter}
+                        />
+                    </div>
+
+                    <div className="overflow-x-auto xl:overflow-visible">
+                        <div className="flex min-w-[912px] flex-col rounded-lg border border-solid border-border">
+                            <div className="flex h-9 shrink-0 items-center gap-3 rounded-t-lg border-b border-solid border-border bg-surface px-4">
+                                <span className="flex w-4 shrink-0">
+                                    <Checkbox
+                                        label={t('Select this page')}
+                                        checked={selection.pageState === 'all'}
+                                        mixed={selection.pageState === 'some'}
+                                        onChange={selection.togglePage}
+                                    />
+                                </span>
                                 <span
-                                    className={`${headClass} min-w-[250px] flex-1`}
+                                    className={`${headClass} min-w-[200px] flex-[3]`}
                                 >
                                     {t('Student')}
                                 </span>
-                                <span className={`${headClass} w-[130px]`}>
+                                <span className={`${headClass} w-[100px]`}>
                                     {t('Class')}
                                 </span>
-                                <span className={`${headClass} w-20`}>
+                                <span className={`${headClass} w-16`}>
                                     {t('Series')}
                                 </span>
-                                <span className={`${headClass} w-[230px]`}>
+                                <span
+                                    className={`${headClass} min-w-[160px] flex-[2]`}
+                                >
                                     {t('Guardian')}
                                 </span>
-                                <span className={`${headClass} w-[120px]`}>
+                                <span className={`${headClass} w-[112px]`}>
                                     {t('Fees')}
                                 </span>
                                 <span
-                                    className={`${headClass} w-[130px] text-right`}
+                                    className={`${headClass} w-[110px] text-right`}
                                 >
                                     {t('Balance')}
                                 </span>
-                                <span className="w-10 shrink-0" />
+                                <span className="w-8 shrink-0" />
                             </div>
                             {students.rows.length === 0 && (
                                 <p className="px-4 py-8 text-center text-[13px] text-text-muted">
@@ -387,9 +409,24 @@ function StudentRoster({
                                     onClick={() =>
                                         router.visit(show.url(row.id))
                                     }
-                                    className="flex h-14 shrink-0 cursor-pointer items-center gap-4 border-b border-solid border-border px-4 last:rounded-b-lg last:border-b-0 hover:bg-surface"
+                                    className={`flex h-14 shrink-0 cursor-pointer items-center gap-3 border-b border-solid border-border px-4 last:rounded-b-lg last:border-b-0 ${
+                                        selection.has(row.id)
+                                            ? 'bg-primary-tint/60'
+                                            : 'hover:bg-surface'
+                                    }`}
                                 >
-                                    <span className="flex min-w-[250px] flex-1 items-center gap-[10px]">
+                                    <span className="flex w-4 shrink-0">
+                                        <Checkbox
+                                            label={t('Select :row', {
+                                                row: row.name,
+                                            })}
+                                            checked={selection.has(row.id)}
+                                            onChange={() =>
+                                                selection.toggle(row.id)
+                                            }
+                                        />
+                                    </span>
+                                    <span className="flex min-w-[200px] flex-[3] items-center gap-[10px]">
                                         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-tint text-[11px] leading-[14px] font-semibold text-primary">
                                             {row.initials}
                                         </span>
@@ -408,10 +445,10 @@ function StudentRoster({
                                             </span>
                                         </span>
                                     </span>
-                                    <span className="w-[130px] shrink-0 truncate text-[14px] leading-[18px] text-text">
+                                    <span className="w-[100px] shrink-0 truncate text-[14px] leading-[18px] text-text">
                                         {row.class ?? '—'}
                                     </span>
-                                    <span className="flex w-20 shrink-0 items-center">
+                                    <span className="flex w-16 shrink-0 items-center">
                                         {row.series ? (
                                             <StreamChip
                                                 stream={row.series.stream}
@@ -429,7 +466,7 @@ function StudentRoster({
                                             </span>
                                         )}
                                     </span>
-                                    <span className="flex w-[230px] shrink-0 flex-col">
+                                    <span className="flex min-w-[160px] flex-[2] flex-col">
                                         <span className="truncate text-[13px] leading-[18px] text-text">
                                             {row.guardian}
                                         </span>
@@ -437,15 +474,15 @@ function StudentRoster({
                                             {row.phone}
                                         </span>
                                     </span>
-                                    <span className="flex w-[120px] shrink-0">
+                                    <span className="flex w-[112px] shrink-0">
                                         <FeePill status={row.fees} />
                                     </span>
-                                    <span className="w-[130px] shrink-0 text-right font-mono text-[14px] leading-[18px] text-text">
+                                    <span className="w-[110px] shrink-0 text-right font-mono text-[14px] leading-[18px] text-text">
                                         {row.balance > 0
                                             ? money(row.balance, currency)
                                             : '–'}
                                     </span>
-                                    <span className="relative flex w-10 shrink-0 justify-center">
+                                    <span className="relative flex w-8 shrink-0 justify-center">
                                         <button
                                             type="button"
                                             aria-label={t('Actions for :row', {
@@ -523,48 +560,57 @@ function StudentRoster({
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between gap-4">
-                        <p className="text-[13px] text-text-muted">
-                            {t(':rows of :total shown · sorted by class', {
-                                rows: students.rows.length,
-                                total: money(students.total),
-                            })}
-                        </p>
-                        {students.lastPage > 1 && (
-                            <div className="flex items-center gap-1">
-                                {pageList(students.lastPage, students.page).map(
-                                    (page, position) =>
-                                        page === 'gap' ? (
-                                            <span
-                                                key={`gap-${position}`}
-                                                className="px-1 text-[13px] text-text-muted"
-                                            >
-                                                …
-                                            </span>
-                                        ) : (
-                                            <button
-                                                key={page}
-                                                type="button"
-                                                aria-current={
-                                                    page === students.page
-                                                        ? 'page'
-                                                        : undefined
-                                                }
-                                                onClick={() => visit({ page })}
-                                                className={`flex h-7 items-center rounded-md px-3 text-[13px] ${
-                                                    page === students.page
-                                                        ? 'border border-solid border-primary bg-primary-tint font-semibold text-primary'
-                                                        : 'text-text hover:bg-surface'
-                                                }`}
-                                            >
-                                                {page}
-                                            </button>
-                                        ),
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    <TableFooter
+                        paged={students}
+                        onPage={table.page}
+                        onPerPage={table.perPage}
+                    />
                 </>
+            )}
+
+            {exporting && (
+                <ExportDialog
+                    title={t('Export students')}
+                    subtitle={t(':year · as filtered on screen', {
+                        year: yearLabel ?? t('Students'),
+                    })}
+                    noun={t('students')}
+                    matching={students.total}
+                    selected={selection.allMatching ? 'all' : selection.ids}
+                    everyone={counts.total}
+                    columns={[
+                        { key: 'name', label: t('Name'), on: true },
+                        { key: 'matricule', label: t('Matricule'), on: true },
+                        { key: 'class', label: t('Class'), on: true },
+                        { key: 'series', label: t('Series'), on: true },
+                        { key: 'gender', label: t('Gender'), on: false },
+                        {
+                            key: 'date_of_birth',
+                            label: t('Date of birth'),
+                            on: false,
+                        },
+                        { key: 'guardian', label: t('Guardian'), on: true },
+                        { key: 'phone', label: t('Guardian phone'), on: true },
+                        { key: 'fees', label: t('Fees'), on: true },
+                        { key: 'balance', label: t('Balance'), on: true },
+                    ]}
+                    href={({ scope, format, columns }) =>
+                        exportMethod.url({
+                            query: toQuery(scope === 'everyone' ? {} : values, {
+                                sort,
+                                format:
+                                    format === 'print' ? 'print' : undefined,
+                                columns: columns.join(','),
+                                ids:
+                                    scope === 'selected' &&
+                                    !selection.allMatching
+                                        ? selection.ids.join(',')
+                                        : undefined,
+                            }),
+                        })
+                    }
+                    onClose={() => setExporting(null)}
+                />
             )}
         </div>
     );
