@@ -37,7 +37,7 @@ function mailedToken(): string
 {
     $token = '';
 
-    Mail::assertSent(PasswordResetMail::class, function (PasswordResetMail $mail) use (&$token) {
+    Mail::assertQueued(PasswordResetMail::class, function (PasswordResetMail $mail) use (&$token) {
         $token = basename(parse_url($mail->url, PHP_URL_PATH) ?: '');
 
         return true;
@@ -49,7 +49,7 @@ function mailedToken(): string
 test('an email gets a link for this school only, and says nothing about unknown addresses', function () {
     Mail::fake();
     $alpha = resetSchool('alpha');
-    $user = resetUser($alpha);
+    $user = resetUser($alpha, ['locale' => 'fr']);
     $other = resetUser(resetSchool('beta'), ['phone' => '+237 699 00 00 00']);
 
     $this->get('http://alpha.ekol.test/forgot-password')
@@ -60,14 +60,14 @@ test('an email gets a link for this school only, and says nothing about unknown 
         ->assertRedirect()
         ->assertSessionHas('password_reset_sent', 'eposi@example.com');
 
-    Mail::assertSent(PasswordResetMail::class, fn (PasswordResetMail $mail) => $mail->hasTo('eposi@example.com') && $mail->school->is($alpha));
+    Mail::assertQueued(PasswordResetMail::class, fn (PasswordResetMail $mail) => $mail->hasTo('eposi@example.com') && $mail->school->is($alpha) && $mail->locale === 'fr');
     expect($user->fresh()->password_reset_token_hash)->not->toBeNull()
         ->and($other->fresh()->password_reset_token_hash)->toBeNull();
 
     Mail::fake();
     $this->post('http://alpha.ekol.test/forgot-password', ['identifier' => 'nobody@example.com'])
         ->assertSessionHas('password_reset_sent', 'nobody@example.com');
-    Mail::assertNothingSent();
+    Mail::assertNothingOutgoing();
 });
 
 test('the link sets a new password once, signs the person in and then expires', function () {
@@ -152,5 +152,5 @@ test('one account gets at most three resets an hour', function () {
         $this->post('http://alpha.ekol.test/forgot-password', ['identifier' => 'eposi@example.com']);
     }
 
-    Mail::assertSentTimes(PasswordResetMail::class, 3);
+    Mail::assertQueued(PasswordResetMail::class, 3);
 });

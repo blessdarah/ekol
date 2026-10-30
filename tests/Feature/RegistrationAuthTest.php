@@ -410,8 +410,8 @@ test('remember-me signs in and bootstrap sends the ready email', function () {
     $this->post('/register/verify', ['code' => $plain])
         ->assertRedirect(route('register.ready'));
 
-    Mail::assertSent(VerificationCodeMail::class);
-    Mail::assertSent(WorkspaceReadyMail::class, fn ($mail) => $mail->administrator->email === 'ada@example.com');
+    Mail::assertQueued(VerificationCodeMail::class);
+    Mail::assertQueued(WorkspaceReadyMail::class, fn ($mail) => $mail->administrator->email === 'ada@example.com');
 
     $this->post('http://acme.ekol.test/login', [
         'identifier' => 'ada@example.com',
@@ -573,4 +573,18 @@ test('find-school sends an in-app request to the school address with a full page
         ->post('/login/find-school', ['slug' => 'acme'])
         ->assertStatus(409)
         ->assertHeader('X-Inertia-Location', 'http://acme.'.parse_url((string) config('app.url'), PHP_URL_HOST).'/login');
+});
+
+test('queued sign-up emails remember the language chosen in the browser', function () {
+    $this->withSession(['locale' => 'fr'])->post('/register/school', schoolPayload())
+        ->assertRedirect(route('register.admin'));
+    $this->post('/register/admin', adminPayload())->assertRedirect(route('register.verify'));
+
+    Mail::assertQueued(VerificationCodeMail::class, fn (VerificationCodeMail $mail) => $mail->locale === 'fr');
+    PendingRegistration::firstOrFail()->update([
+        'code_hash' => hash('sha256', '123456'), 'expires_at' => now()->addMinutes(10),
+    ]);
+    $this->post('/register/verify', ['code' => '123456'])->assertRedirect(route('register.ready'));
+
+    Mail::assertQueued(WorkspaceReadyMail::class, fn (WorkspaceReadyMail $mail) => $mail->locale === 'fr');
 });
