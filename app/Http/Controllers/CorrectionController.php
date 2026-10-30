@@ -26,7 +26,8 @@ class CorrectionController extends Controller
 {
     public function index(Request $request): Response
     {
-        [$school, $year] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $show = $request->query('show') === 'decided' ? 'decided' : 'pending';
         $all = MarkCorrection::where('school_id', $school->id)
             ->with(['mark.student:id,full_name', 'mark.assessmentSubject.subject:id,name', 'mark.assessmentSubject.assessment.plan', 'mark.assessmentSubject.assessment.schoolClass:id,name', 'mark.assessmentSubject.coefficient', 'requester:id,full_name', 'decider:id,full_name'])
@@ -36,7 +37,7 @@ class CorrectionController extends Controller
         $current = $listed->firstWhere('id', (string) $request->query('id', '')) ?? $listed->first();
 
         return Inertia::render('assessments/corrections', [
-            'tabs' => AssessmentController::tabs($school, $year),
+            'tabs' => AssessmentPlan::tabs($school, $year),
             'show' => $show,
             'counts' => ['pending' => $all->where('status', 'pending')->count(), 'decided' => $all->where('status', '!=', 'pending')->count()],
             'canDecide' => (bool) $request->user()?->can('manage-staff'),
@@ -59,12 +60,8 @@ class CorrectionController extends Controller
      */
     public function store(RequestCorrectionRequest $request): RedirectResponse
     {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
+        $school = $this->schoolContext->school();
         $user = $request->user();
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
 
         $data = $request->validated();
 
@@ -114,7 +111,7 @@ class CorrectionController extends Controller
 
     public function decide(DecideCorrectionRequest $request, string $correction): RedirectResponse
     {
-        [$school] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
         $user = $request->user();
         Gate::authorize('manage-staff');
 

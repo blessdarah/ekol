@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\EnrolmentStatus;
 use App\Enums\Gender;
 use App\Models\Concerns\BelongsToSchool;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -274,5 +275,109 @@ class Student extends Model
     public function reports(): HasMany
     {
         return $this->hasMany(Report::class);
+    }
+
+    /**
+     * The students either side of this one, in the order the roster
+     * lists them: by class, then by name. Stepping past the last
+     * student of a class moves on to the next class.
+     *
+     * @return array{previous: array{id: string, name: string, class: string|null}|null, next: array{id: string, name: string, class: string|null}|null, position: int, total: int}
+     */
+    public static function neighbours(School $school, Student $student, ?AcademicYear $year): array
+    {
+        $list = static::rosterQuery($school, $year)
+            ->orderByRaw('school_classes.name IS NULL')
+            ->orderBy('school_classes.name')
+            ->orderBy('students.full_name')
+            ->orderBy('students.id')
+            ->get(['students.id', 'students.full_name', 'school_classes.name as class_name'])
+            ->values();
+        $at = $list->search(fn (Student $other) => $other->id === $student->id);
+        $at = $at === false ? 0 : (int) $at;
+        $step = function (?Student $other): ?array {
+            if (! $other) {
+                return null;
+            }
+
+            $class = $other->getAttribute('class_name');
+
+            return ['id' => $other->id, 'name' => $other->full_name, 'class' => is_string($class) ? $class : null];
+        };
+
+        return [
+            'previous' => $step($list->get($at - 1)),
+            'next' => $step($list->get($at + 1)),
+            'position' => $at + 1,
+            'total' => $list->count(),
+        ];
+    }
+
+    /**
+     * Students joined to their class for the year, so the roster can
+     * sort and filter by it.
+     *
+     * @return Builder<Student>
+     */
+    public static function rosterQuery(School $school, ?AcademicYear $year): Builder
+    {
+        return Student::query()
+            ->where('students.school_id', $school->id)
+            ->leftJoin('enrolments', fn ($join) => $join
+                ->on('enrolments.student_id', '=', 'students.id')
+                ->where('enrolments.academic_year_id', '=', $year?->id))
+            ->leftJoin('school_classes', 'school_classes.id', '=', 'enrolments.school_class_id');
+    }
+
+    /**
+     * The school and child the parent proved are theirs.
+     */
+    public static function forParentSelection(mixed $selection): ?Student
+    {
+        $chosen = $selection;
+
+        if (! is_array($chosen) || ! is_string($chosen['school_id'] ?? null) || ! is_string($chosen['student_id'] ?? null)) {
+            return null;
+        }
+
+        $school = School::whereKey($chosen['school_id'])->first();
+        $student = $school ? Student::where('school_id', $school->id)->whereKey($chosen['student_id'])->first() : null;
+
+        return $student?->setRelation('school', $school);
+    }
+
+    /**
+     * The child's oldest invoice with something still owed.
+     */
+    public function openInvoice(): ?Invoice
+    {
+        return $this->invoices()
+            ->with(['installments', 'lines', 'payments', 'exemption'])
+            ->orderBy('issued_on')
+            ->get()
+            ->first(fn (Invoice $candidate) => $candidate->ledgerMinor()['balance'] > 0);
+    }
+
+    /**
+     * @return array{name: string, matricule: string, class: string|null, year: string|null, line: string}
+     */
+    public function parentCard(): array
+    {
+        $year = School::whereKey($this->school_id)->firstOrFail()->academicYears()->current()->first();
+        $class = $year
+            ? Enrolment::where('student_id', $this->id)
+                ->where('academic_year_id', $year->id)
+                ->where('status', '!=', EnrolmentStatus::Left)
+                ->with('schoolClass:id,name')
+                ->first()?->schoolClass?->name
+            : null;
+
+        return [
+            'name' => $this->full_name,
+            'matricule' => $this->admission_no,
+            'class' => $class,
+            'year' => $year?->label,
+            'line' => FeeItem::TUITION,
+        ];
     }
 }

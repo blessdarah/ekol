@@ -33,7 +33,8 @@ class TimetableChangeController extends Controller
 
     public function index(Request $request): Response|RedirectResponse
     {
-        [$school, $term] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
 
         if (! $term) {
             return redirect()->route('timetable');
@@ -43,7 +44,7 @@ class TimetableChangeController extends Controller
         $mode = in_array($request->query('mode'), static::MODES, true) ? (string) $request->query('mode') : 'cover';
         $date = $this->date((string) $request->query('date', ''), $term);
         $props = [
-            'phase' => TimetableController::phase($school, $term),
+            'phase' => TimetableVersion::phase($school, $term),
             'live' => $live?->number,
             'mode' => $mode,
             'date' => $date->toDateString(),
@@ -121,7 +122,8 @@ class TimetableChangeController extends Controller
 
     public function store(StoreTimetableChangeRequest $request): RedirectResponse
     {
-        [$school, $term] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         $live = $term ? TimetableVersion::liveFor($term) : null;
 
         if (! $term || ! $live) {

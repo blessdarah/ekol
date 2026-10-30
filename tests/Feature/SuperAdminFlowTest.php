@@ -2,7 +2,6 @@
 
 use App\Enums\SchoolCycle;
 use App\Enums\UserRole;
-use App\Http\Controllers\DemoSchoolController;
 use App\Models\AuditEvent;
 use App\Models\DemoRequest;
 use App\Models\DemoSchoolBuilder;
@@ -258,7 +257,7 @@ test('starting a real school from a demo prefills registration without copying s
 test('demo links require a valid signature and the correct school host then sign in as that demo principal', function () {
     $demo = platformDemo();
     $school = DB::transaction(fn () => app(DemoSchoolBuilder::class)->create($demo));
-    $link = DemoSchoolController::link($demo->fresh(), $school);
+    $link = $demo->fresh()->accessLink($school);
     $this->get('http://'.$school->slug.'.ekol.test/demo-school/'.$demo->id)->assertForbidden();
     $this->get($link)->assertOk()->assertInertia(fn (Assert $page) => $page->component('platform/demo-welcome')->where('name', 'St Bedes'));
     $path = URL::temporarySignedRoute('demo-school.open', $school->demo_expires_at, ['demo' => $demo->id], absolute: false);

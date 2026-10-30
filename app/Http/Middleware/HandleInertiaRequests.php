@@ -4,7 +4,6 @@ namespace App\Http\Middleware;
 
 use App\Enums\InvoiceStatus;
 use App\Enums\UserRole;
-use App\Http\Controllers\ProfileController;
 use App\Models\Invoice;
 use App\Models\School;
 use App\Models\Term;
@@ -145,7 +144,7 @@ class HandleInertiaRequests extends Middleware
         return [
             'full_name' => $user->full_name,
             'email' => $user->is_platform_admin ? null : $user->email,
-            'schools' => ProfileController::schoolsOf($user),
+            'schools' => $user->schoolsOf(),
             'roleLabel' => $user->is_platform_admin ? 'Campus super-admin' : Str::headline($user->role->value),
             'portal' => $user->role->teaches() ? 'teacher' : 'admin',
         ];

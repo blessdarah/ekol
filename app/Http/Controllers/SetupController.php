@@ -28,17 +28,6 @@ use Inertia\Response;
 
 class SetupController extends Controller
 {
-    protected function school(Request $request): School
-    {
-        $school = app('currentSchool');
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        return $school;
-    }
-
     protected function managedYear(Request $request, School $school): ?AcademicYear
     {
         $yearId = $request->query('year');
@@ -49,13 +38,13 @@ class SetupController extends Controller
             return $query->clone()->where('id', $yearId)->firstOrFail();
         }
 
-        return $query->clone()->where('status', 'current')->first()
+        return $query->clone()->current()->first()
             ?? $query->first();
     }
 
     public function show(Request $request): Response
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $year = $this->managedYear($request, $school);
 
         $terms = $year
@@ -172,7 +161,7 @@ class SetupController extends Controller
 
     public function updateProfile(UpdateProfileRequest $request): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
 
         if ($request->has('slug')) {
             throw ValidationException::withMessages([
@@ -213,7 +202,7 @@ class SetupController extends Controller
 
     public function storeYear(StoreYearRequest $request): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
 
         $data = $request->validated();
 
@@ -227,12 +216,14 @@ class SetupController extends Controller
 
         $this->notify('Academic year added.');
 
+        $this->schoolContext->refresh();
+
         return back();
     }
 
     public function updateYear(UpdateYearRequest $request, string $year): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $target = AcademicYear::where('school_id', $school->id)
             ->where('id', $year)
             ->firstOrFail();
@@ -262,6 +253,8 @@ class SetupController extends Controller
 
         $this->notify('Academic year saved.');
 
+        $this->schoolContext->refresh();
+
         return back();
     }
 
@@ -272,7 +265,7 @@ class SetupController extends Controller
      */
     public function activateYear(Request $request, string $year): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $target = AcademicYear::where('school_id', $school->id)
             ->where('id', $year)
             ->firstOrFail();
@@ -313,12 +306,14 @@ class SetupController extends Controller
 
         $this->notify('Academic year made current.');
 
+        $this->schoolContext->refresh();
+
         return back();
     }
 
     public function updateInstallments(UpdateInstallmentsRequest $request): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $year = $this->managedYear($request, $school);
 
         abort_if(! $year, 422, __('Create an academic year first.'));
@@ -358,7 +353,7 @@ class SetupController extends Controller
 
     public function updateWindows(UpdateWindowsRequest $request): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
 
         $data = $request->validated();
 
@@ -388,7 +383,7 @@ class SetupController extends Controller
      */
     public function updateSchoolday(UpdateSchooldayRequest $request): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
 
         $data = $request->validated();
 
@@ -476,7 +471,7 @@ class SetupController extends Controller
 
     public function updateTerms(UpdateTermsRequest $request): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $year = $this->managedYear($request, $school);
 
         abort_if(! $year, 422, __('Create an academic year first.'));
@@ -507,6 +502,8 @@ class SetupController extends Controller
 
         $this->notify('Terms saved.');
 
+        $this->schoolContext->refresh();
+
         return back();
     }
 
@@ -516,7 +513,7 @@ class SetupController extends Controller
      */
     public function activateTerm(Request $request, string $term): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
 
         $target = Term::where('school_id', $school->id)
             ->where('id', $term)
@@ -542,13 +539,15 @@ class SetupController extends Controller
 
         $this->notify('Term made active.');
 
+        $this->schoolContext->refresh();
+
         return back();
     }
 
     protected function audit(Request $request, string $entity, string $entityId, string $action, mixed $diff): void
     {
         AuditEvent::create([
-            'school_id' => $this->school($request)->id,
+            'school_id' => $this->schoolContext->school()->id,
             'actor_id' => $request->user()?->id,
             'entity' => $entity,
             'entity_id' => $entityId,

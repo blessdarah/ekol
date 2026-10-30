@@ -57,9 +57,10 @@ class AttendanceController extends Controller
 
     public function show(Request $request): Response
     {
-        [$school, $teacher] = $this->context($request);
+        $school = $this->schoolContext->school();
+        $teacher = $request->user();
         $now = now($school->timezone);
-        $term = StudentController::currentTerm($school);
+        $term = $this->schoolContext->term();
         $live = $term ? TimetableVersion::liveFor($term) : null;
         $slots = $live ? static::lessonsOn($teacher, $school, $live, $now) : new Collection;
         $date = $now->toDateString();
@@ -128,9 +129,10 @@ class AttendanceController extends Controller
      */
     public function store(Request $request, string $slot): RedirectResponse
     {
-        [$school, $teacher] = $this->context($request);
+        $school = $this->schoolContext->school();
+        $teacher = $request->user();
         $now = now($school->timezone);
-        $term = StudentController::currentTerm($school);
+        $term = $this->schoolContext->term();
         $live = $term ? TimetableVersion::liveFor($term) : null;
         $target = $live ? static::lessonsOn($teacher, $school, $live, $now)->firstWhere('id', $slot) : null;
 
@@ -202,21 +204,6 @@ class AttendanceController extends Controller
         $this->notify('Register saved.');
 
         return back();
-    }
-
-    /**
-     * @return array{0: School, 1: User}
-     */
-    protected function context(Request $request): array
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-        $user = $request->user();
-
-        if (! $school instanceof School || ! $user) {
-            abort(404);
-        }
-
-        return [$school, $user];
     }
 
     protected function week(Term $term, CarbonInterface $now): string

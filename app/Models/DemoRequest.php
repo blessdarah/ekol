@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\URL;
 
 /**
  * A school asking, from the landing page, to be called for a demo.
@@ -69,5 +70,15 @@ class DemoRequest extends Model
             'extended_at' => 'datetime',
             'handled_at' => 'datetime',
         ];
+    }
+
+    public function accessLink(School $school): string
+    {
+        abort_unless($school->is_demo && $school->demo_expires_at !== null, 404);
+        $path = URL::temporarySignedRoute('demo-school.show', $school->demo_expires_at, ['demo' => $this->id], absolute: false);
+        $parent = parse_url((string) config('app.url'));
+        abort_unless(is_array($parent) && isset($parent['host']), 500);
+
+        return ($parent['scheme'] ?? 'https').'://'.$school->slug.'.'.$parent['host'].(isset($parent['port']) ? ':'.$parent['port'] : '').$path;
     }
 }

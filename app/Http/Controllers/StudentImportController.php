@@ -57,8 +57,8 @@ class StudentImportController extends Controller
 
     public function show(Request $request): Response
     {
-        $school = StudentController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $state = $this->state($request);
         $props = [
             'yearLabel' => $year?->label,
@@ -115,7 +115,7 @@ class StudentImportController extends Controller
 
     public function upload(UploadStudentImportRequest $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
+        $school = $this->schoolContext->school();
 
         $this->forget($request);
 
@@ -152,7 +152,7 @@ class StudentImportController extends Controller
 
     public function mapping(Request $request): RedirectResponse
     {
-        StudentController::schoolFor($request);
+        $this->schoolContext->school();
         $state = $this->state($request);
 
         abort_unless($state !== null, 404);
@@ -198,7 +198,7 @@ class StudentImportController extends Controller
 
     public function clearMapping(Request $request): RedirectResponse
     {
-        StudentController::schoolFor($request);
+        $this->schoolContext->school();
 
         if ($state = $this->state($request)) {
             $request->session()->put(static::SESSION_KEY, [...$state, 'mapping' => null]);
@@ -209,8 +209,8 @@ class StudentImportController extends Controller
 
     public function run(Request $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $state = $this->state($request);
 
         abort_unless($state !== null && $state['mapping'] !== null && $year !== null, 404);
@@ -220,7 +220,7 @@ class StudentImportController extends Controller
             $this->analyse($school, $year, $rows, $state['mapping']),
             fn (array $row) => $row['status'] === 'ready',
         );
-        $term = StudentController::currentTerm($school);
+        $term = $this->schoolContext->term();
         $classes = SchoolClass::where('academic_year_id', $year->id)->get()->keyBy('id');
 
         DB::transaction(function () use ($request, $school, $year, $term, $classes, $ready, $state) {
@@ -268,13 +268,13 @@ class StudentImportController extends Controller
 
     public function problems(Request $request): StreamedResponse
     {
-        $school = StudentController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $state = $this->state($request);
 
         abort_unless($state !== null && $state['mapping'] !== null, 404);
 
         [$headers, $rows] = $this->read($state['path']);
-        $report = $this->analyse($school, StructureController::currentYear($school), $rows, $state['mapping']);
+        $report = $this->analyse($school, $this->schoolContext->year(), $rows, $state['mapping']);
 
         return response()->streamDownload(function () use ($headers, $rows, $report) {
             $out = fopen('php://output', 'w');
@@ -297,7 +297,7 @@ class StudentImportController extends Controller
 
     public function template(Request $request): StreamedResponse
     {
-        StudentController::schoolFor($request);
+        $this->schoolContext->school();
 
         return response()->streamDownload(function () {
             $out = fopen('php://output', 'w');
@@ -314,7 +314,7 @@ class StudentImportController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
-        StudentController::schoolFor($request);
+        $this->schoolContext->school();
         $this->forget($request);
 
         $this->notify('Import cleared.');

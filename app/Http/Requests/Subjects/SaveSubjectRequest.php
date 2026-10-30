@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Subjects;
 
-use App\Http\Controllers\StructureController;
 use App\Http\Requests\SchoolRequest;
 use App\Models\AcademicYear;
 use App\Models\School;
@@ -57,7 +56,7 @@ class SaveSubjectRequest extends SchoolRequest
             'mode' => ['required', Rule::in(['draft', 'register'])],
             'classes' => ['present', 'array'],
             'classes.*.class_id' => ['distinct'],
-            ...static::classRules($school, StructureController::currentYear($school), 'classes'),
+            ...static::classRules($school, $this->schoolContext()->year(), 'classes'),
         ];
     }
 }

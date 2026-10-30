@@ -41,9 +41,9 @@ class SeriesRegistrationController extends Controller
 
     public function index(Request $request): Response
     {
-        $school = StudentController::schoolFor($request);
-        $year = StructureController::currentYear($school);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $levels = $this->levels($school);
         $level = $levels->firstWhere('id', $request->query('level')) ?? $levels->first();
 
@@ -102,9 +102,9 @@ class SeriesRegistrationController extends Controller
 
     public function one(Request $request): Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = StructureController::currentYear($school);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $levels = $this->levels($school);
 
         // A link from a student's record names the student, not the level.
@@ -171,8 +171,8 @@ class SeriesRegistrationController extends Controller
 
     public function register(RegisterSeriesRequest $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $term = $this->term($school);
 
         $data = $request->validated();
@@ -204,9 +204,9 @@ class SeriesRegistrationController extends Controller
 
     public function bulk(Request $request): Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = StructureController::currentYear($school);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $level = $this->levels($school)->firstWhere('id', $request->query('level')) ?? $this->levels($school)->first();
 
         if (! $level) {
@@ -241,8 +241,8 @@ class SeriesRegistrationController extends Controller
 
     public function bulkStore(BulkRegisterSeriesRequest $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $term = $this->term($school);
 
         $data = $request->validated();
@@ -272,9 +272,9 @@ class SeriesRegistrationController extends Controller
 
     public function change(Request $request, string $student): Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = StructureController::currentYear($school);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $target = Student::where('school_id', $school->id)->where('id', $student)->firstOrFail();
         $registration = $term
             ? StudentSeries::where('student_id', $target->id)
@@ -320,7 +320,7 @@ class SeriesRegistrationController extends Controller
 
     public function changeStore(Request $request, string $student): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $term = $this->term($school);
         $target = Student::where('school_id', $school->id)->where('id', $student)->firstOrFail();
         $registration = StudentSeries::where('student_id', $target->id)
@@ -400,7 +400,7 @@ class SeriesRegistrationController extends Controller
      */
     protected function term(School $school): Term
     {
-        $term = StudentController::currentTerm($school);
+        $term = $this->schoolContext->term();
 
         if (! $term) {
             throw ValidationException::withMessages([

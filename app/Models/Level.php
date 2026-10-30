@@ -23,6 +23,8 @@ use Illuminate\Support\Carbon;
  */
 class Level extends Model
 {
+    public const array SUBSYSTEMS = ['anglophone', 'francophone'];
+
     use BelongsToSchool, HasUuids, SoftDeletes;
 
     protected $fillable = [

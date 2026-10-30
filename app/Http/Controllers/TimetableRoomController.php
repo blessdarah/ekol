@@ -26,7 +26,8 @@ class TimetableRoomController extends Controller
 {
     public function index(Request $request): Response|RedirectResponse
     {
-        [$school, $term] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
 
         if (! $term) {
             return redirect()->route('timetable');
@@ -41,7 +42,7 @@ class TimetableRoomController extends Controller
         $subjects = Subject::where('school_id', $school->id)->orderBy('name')->get(['id', 'name', 'room_kind']);
 
         return Inertia::render('timetable/rooms', [
-            'phase' => TimetableController::phase($school, $term),
+            'phase' => TimetableVersion::phase($school, $term),
             'slotsAWeek' => count($world['days']) * $world['periods']->count(),
             'schoolDays' => $school->school_days,
             'periods' => $world['periods']->map(fn (Period $period) => ['id' => $period->id, 'label' => $period->label])->values(),
@@ -69,7 +70,7 @@ class TimetableRoomController extends Controller
 
     public function store(SaveRoomRequest $request): RedirectResponse
     {
-        [$school] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
         $data = $this->validated($request);
 
         $room = Room::create([
@@ -90,7 +91,7 @@ class TimetableRoomController extends Controller
 
     public function update(SaveRoomRequest $request, string $room): RedirectResponse
     {
-        [$school] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
         $target = Room::where('school_id', $school->id)->where('id', $room)->firstOrFail();
         $data = $this->validated($request);
 
@@ -132,7 +133,8 @@ class TimetableRoomController extends Controller
      */
     public function destroy(Request $request, string $room): RedirectResponse
     {
-        [$school, $term] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         $target = Room::where('school_id', $school->id)->where('id', $room)->firstOrFail();
 
         DB::transaction(function () use ($request, $school, $term, $target) {

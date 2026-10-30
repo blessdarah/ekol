@@ -18,7 +18,7 @@ class LandingController extends Controller
      */
     public function show(): Response|RedirectResponse
     {
-        if (app()->bound('currentSchool') && app('currentSchool') instanceof School) {
+        if ($this->schoolContext->hasSchool()) {
             return redirect()->route('dashboard');
         }
 

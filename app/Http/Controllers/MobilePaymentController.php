@@ -23,7 +23,7 @@ class MobilePaymentController extends Controller
 
     public function index(Request $request): Response
     {
-        $school = FeeController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $filter = in_array($request->query('show'), static::FILTERS, true) ? (string) $request->query('show') : 'all';
         $base = MobilePayment::where('school_id', $school->id);
         $page = max(1, (int) $request->query('page', 1));
@@ -71,7 +71,7 @@ class MobilePaymentController extends Controller
      */
     public function check(Request $request, string $payment, Campay $campay): RedirectResponse
     {
-        $school = FeeController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = MobilePayment::where('school_id', $school->id)->whereKey($payment)->firstOrFail();
 
         if ($target->status !== MobilePayment::PENDING) {

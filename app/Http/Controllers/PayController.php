@@ -34,17 +34,19 @@ class PayController extends Controller
 
     public function amount(Request $request): Response|RedirectResponse
     {
-        [$school, $student] = ParentController::child($request);
+        $student = Student::forParentSelection($request->session()->get('parent'));
 
-        if (! $school || ! $student) {
+        if (! $student) {
             return redirect()->route('parents');
         }
+
+        $school = $student->school;
 
         if ($waiting = $this->waitingFor($student)) {
             return redirect()->route('parents.pay.status', $waiting->id);
         }
 
-        $ledger = ParentController::openInvoice($student)?->ledgerMinor();
+        $ledger = $student->openInvoice()?->ledgerMinor();
         $next = collect($ledger['installments'] ?? [])->first(fn (array $row) => $row['state'] !== 'paid');
         $options = [];
 
@@ -59,8 +61,8 @@ class PayController extends Controller
         }
 
         return Inertia::render('pay/amount', [
-            'issuer' => ParentController::issuer($school),
-            'student' => ParentController::studentCard($student),
+            'issuer' => $school->issuer(),
+            'student' => $student->parentCard(),
             'balance' => $ledger ? Money::number($ledger['balance']) : 0,
             'overdue' => $ledger ? Money::number($ledger['overdue']) : 0,
             'options' => array_values(array_filter($options, fn (array $option) => $option['amount'] > 0)),
@@ -70,8 +72,8 @@ class PayController extends Controller
 
     public function chooseAmount(ChooseAmountRequest $request): RedirectResponse
     {
-        [, $student] = ParentController::child($request);
-        $invoice = $student ? ParentController::openInvoice($student) : null;
+        $student = Student::forParentSelection($request->session()->get('parent'));
+        $invoice = $student ? $student->openInvoice() : null;
 
         if (! $invoice) {
             return redirect()->route($student ? 'parents.pay' : 'parents');
@@ -91,20 +93,22 @@ class PayController extends Controller
 
     public function phone(Request $request): Response|RedirectResponse
     {
-        [$school, $student] = ParentController::child($request);
+        $student = Student::forParentSelection($request->session()->get('parent'));
         $amount = (int) $request->session()->get('parent.amount', 0);
 
-        if (! $school || ! $student) {
+        if (! $student) {
             return redirect()->route('parents');
         }
 
-        if ($amount < 1 || ! ParentController::openInvoice($student)) {
+        $school = $student->school;
+
+        if ($amount < 1 || ! $student->openInvoice()) {
             return redirect()->route('parents.pay');
         }
 
         return Inertia::render('pay/phone', [
-            'issuer' => ParentController::issuer($school),
-            'student' => ParentController::studentCard($student),
+            'issuer' => $school->issuer(),
+            'student' => $student->parentCard(),
             'amount' => $amount,
             'phone' => (string) $request->session()->get('parent.phone', ''),
         ]);
@@ -115,8 +119,8 @@ class PayController extends Controller
      */
     public function store(RequestMobilePaymentRequest $request, Campay $campay): RedirectResponse
     {
-        [, $student] = ParentController::child($request);
-        $invoice = $student ? ParentController::openInvoice($student) : null;
+        $student = Student::forParentSelection($request->session()->get('parent'));
+        $invoice = $student ? $student->openInvoice() : null;
         $amount = (int) $request->session()->get('parent.amount', 0);
 
         if (! $student) {
@@ -145,11 +149,13 @@ class PayController extends Controller
      */
     public function status(Request $request, string $payment, Campay $campay): Response|RedirectResponse
     {
-        [$school, $student] = ParentController::child($request);
+        $student = Student::forParentSelection($request->session()->get('parent'));
 
-        if (! $school || ! $student) {
+        if (! $student) {
             return redirect()->route('parents');
         }
+
+        $school = $student->school;
 
         $target = MobilePayment::where('student_id', $student->id)->whereKey($payment)->with('payment')->firstOrFail();
 
@@ -169,7 +175,7 @@ class PayController extends Controller
         };
 
         return Inertia::render('pay/status', [
-            'issuer' => ParentController::issuer($school),
+            'issuer' => $school->issuer(),
             'payment' => [
                 'id' => $target->id,
                 'state' => $state,
@@ -183,7 +189,7 @@ class PayController extends Controller
                 'receipt_id' => $target->payment?->id,
                 'went_to' => $target->payment && $invoice ? $invoice->split($target->payment) : [],
             ],
-            'student' => ParentController::studentCard($student),
+            'student' => $student->parentCard(),
             'balance' => $ledger ? Money::number($ledger['balance']) : 0,
             'next' => $next ? ['label' => $next['label'], 'due_on' => $next['due_on']] : null,
         ]);
@@ -191,11 +197,13 @@ class PayController extends Controller
 
     public function receipt(Request $request, string $payment): Response|RedirectResponse
     {
-        [$school, $student] = ParentController::child($request);
+        $student = Student::forParentSelection($request->session()->get('parent'));
 
-        if (! $school || ! $student) {
+        if (! $student) {
             return redirect()->route('parents');
         }
+
+        $school = $student->school;
 
         $target = Payment::whereKey($payment)
             ->whereHas('invoice', fn ($query) => $query->where('student_id', $student->id))
@@ -209,14 +217,14 @@ class PayController extends Controller
      */
     public function retry(Request $request, string $payment, Campay $campay): RedirectResponse
     {
-        [, $student] = ParentController::child($request);
+        $student = Student::forParentSelection($request->session()->get('parent'));
 
         if (! $student) {
             return redirect()->route('parents');
         }
 
         $target = MobilePayment::where('student_id', $student->id)->whereKey($payment)->firstOrFail();
-        $invoice = ParentController::openInvoice($student);
+        $invoice = $student->openInvoice();
 
         if ($target->status !== MobilePayment::FAILED || ! $invoice) {
             return redirect()->route('parents.pay.status', $target->id);

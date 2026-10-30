@@ -36,8 +36,8 @@ class SubjectController extends Controller
 
     public function index(Request $request): Response
     {
-        $school = StructureController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $gaps = $this->seriesGaps($school, $year);
         [$query, $filters] = $this->list($request, $school, $gaps);
 
@@ -85,8 +85,8 @@ class SubjectController extends Controller
      */
     public function export(Request $request): StreamedResponse|Response
     {
-        $school = StructureController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $gaps = $this->seriesGaps($school, $year);
         [$query, , $applied] = $this->list($request, $school, $gaps);
         $ids = $this->exportIds($request);
@@ -196,22 +196,22 @@ class SubjectController extends Controller
 
     public function create(Request $request): Response
     {
-        $school = StructureController::schoolFor($request);
+        $school = $this->schoolContext->school();
 
         return $this->form($school, null);
     }
 
     public function edit(Request $request, string $subject): Response
     {
-        $school = StructureController::schoolFor($request);
+        $school = $this->schoolContext->school();
 
         return $this->form($school, $this->subject($school, $subject));
     }
 
     public function store(SaveSubjectRequest $request): RedirectResponse
     {
-        $school = StructureController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $data = $this->validated($request);
 
         $subject = DB::transaction(function () use ($request, $school, $data) {
@@ -228,7 +228,7 @@ class SubjectController extends Controller
 
     public function update(SaveSubjectRequest $request, string $subject): RedirectResponse
     {
-        $school = StructureController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = $this->subject($school, $subject);
         $data = $this->validated($request);
 
@@ -249,8 +249,8 @@ class SubjectController extends Controller
 
     public function show(Request $request, string $subject): Response
     {
-        $school = StructureController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $target = $this->subject($school, $subject)
             ->load(['classSubjects.schoolClass.level:id,code,name,ordinal', 'classSubjects.staff:id,full_name', 'series:id,stream']);
 
@@ -301,8 +301,8 @@ class SubjectController extends Controller
 
     public function templates(Request $request): Response
     {
-        $school = StructureController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $levels = Level::where('school_id', $school->id)->orderBy('ordinal')->get();
         $registered = Subject::where('school_id', $school->id)->pluck('code')->all();
 
@@ -340,8 +340,8 @@ class SubjectController extends Controller
 
     public function storeTemplates(StoreSubjectTemplatesRequest $request): RedirectResponse
     {
-        $school = StructureController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $set = $this->templateSets()[$request->string('set')->toString()] ?? null;
 
         abort_unless($set !== null, 404);
@@ -409,7 +409,7 @@ class SubjectController extends Controller
 
     protected function form(School $school, ?Subject $subject): Response
     {
-        $year = StructureController::currentYear($school);
+        $year = $this->schoolContext->year();
         $subject?->load('classSubjects');
 
         return Inertia::render('subjects/register', [

@@ -23,14 +23,6 @@ class LoginController extends Controller
 
     protected const int LOCKOUT_SECONDS = 900;
 
-    protected function currentSchool(Request $request): ?School
-    {
-        /** @var School|null $school */
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        return $school instanceof School ? $school : null;
-    }
-
     protected function parentDomain(): string
     {
         return (string) parse_url((string) config('app.url'), PHP_URL_HOST);
@@ -38,7 +30,7 @@ class LoginController extends Controller
 
     public function show(Request $request): Response
     {
-        if ($school = $this->currentSchool($request)) {
+        if ($school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null)) {
             return Inertia::render('auth/login', [
                 'school' => $school->only(['name', 'slug']),
                 'address' => "{$school->slug}.".$this->parentDomain(),
@@ -52,7 +44,7 @@ class LoginController extends Controller
 
     public function store(SignInRequest $request): RedirectResponse
     {
-        $school = $this->currentSchool($request);
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
 
         if (! $school) {
             return redirect()->route('login');

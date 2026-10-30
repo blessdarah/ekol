@@ -24,6 +24,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class SchoolClass extends Model
 {
+    public const int DEFAULT_SEATS = 45;
+
     use BelongsToSchool, HasUuids, SoftDeletes;
 
     protected $table = 'school_classes';

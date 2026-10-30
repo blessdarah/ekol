@@ -27,42 +27,12 @@ use Inertia\Response;
  */
 class TermResultController extends Controller
 {
-    /**
-     * Each student of a class across a term's assessments. Only
-     * published assessments count. The term average is the mean of
-     * the assessment averages, and exists once the student has one in
-     * every published assessment.
-     *
-     * @param  Collection<int, AssessmentPlan>  $plans
-     * @return array<string, array{name: string, matricule: string, values: array<string, float|null>, average: float|null}>
-     */
-    public static function termRows(Collection $plans, SchoolClass $class): array
-    {
-        $published = $plans->where('state', AssessmentState::Published);
-        $rows = [];
-
-        foreach ($published as $plan) {
-            foreach ($plan->standings($class) as $studentId => $row) {
-                $rows[$studentId] ??= ['name' => $row['name'], 'matricule' => $row['matricule'], 'values' => [], 'average' => null];
-                $rows[$studentId]['values'][$plan->id] = $row['complete'] ? $row['average'] : null;
-            }
-        }
-
-        foreach ($rows as $studentId => $row) {
-            $values = array_filter($row['values'], fn (?float $value) => $value !== null);
-            $rows[$studentId]['average'] = $values !== [] && count($values) === $published->count()
-                ? round(array_sum($values) / count($values), 2)
-                : null;
-        }
-
-        return $rows;
-    }
-
     public function term(Request $request): Response
     {
-        [$school, $year] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $terms = $year ? Term::where('academic_year_id', $year->id)->orderBy('sequence')->get() : new Collection;
-        $plans = AssessmentController::plans($school, $year)->filter(fn (AssessmentPlan $plan) => $plan->state !== AssessmentState::Draft)->values();
+        $plans = AssessmentPlan::forYear($school, $year)->filter(fn (AssessmentPlan $plan) => $plan->state !== AssessmentState::Draft)->values();
         $classes = $year
             ? SchoolClass::where('school_id', $school->id)->where('academic_year_id', $year->id)->orderBy('name')->get()
             : new Collection;
@@ -74,7 +44,7 @@ class TermResultController extends Controller
         foreach ($class ? $terms : [] as $option) {
             $mine = $plans->where('term_id', $option->id)->values();
             $perTerm[$option->id] = [
-                'rows' => static::termRows($mine, $class),
+                'rows' => AssessmentPlan::termRows($mine, $class),
                 'complete' => $mine->isNotEmpty() && $mine->every(fn (AssessmentPlan $plan) => $plan->state === AssessmentState::Published),
             ];
         }
@@ -120,7 +90,7 @@ class TermResultController extends Controller
         ));
 
         return Inertia::render('assessments/term', [
-            'tabs' => AssessmentController::tabs($school, $year),
+            'tabs' => AssessmentPlan::tabs($school, $year),
             'passMark' => (float) $school->pass_mark,
             'terms' => $terms->map(fn (Term $option) => [
                 'id' => $option->id,
@@ -144,7 +114,8 @@ class TermResultController extends Controller
 
     public function reports(Request $request): Response
     {
-        [$school, $year] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         [$scope, $plans, $options] = $this->scope($request, $school, $year);
         $classes = $this->classes($plans);
         $class = $classes->firstWhere('id', (string) $request->query('class', '')) ?? $classes->first();
@@ -153,7 +124,7 @@ class TermResultController extends Controller
         $preview = collect($cards)->firstWhere('id', $studentId) ?? ($cards[0] ?? null);
 
         return Inertia::render('assessments/reports', [
-            'tabs' => AssessmentController::tabs($school, $year),
+            'tabs' => AssessmentPlan::tabs($school, $year),
             'issuer' => $this->issuer($school),
             'yearLabel' => $year?->label,
             'options' => $options,
@@ -181,7 +152,8 @@ class TermResultController extends Controller
      */
     public function print(Request $request): Response|RedirectResponse
     {
-        [$school, $year] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         [$scope, $plans] = $this->scope($request, $school, $year);
         $class = $this->classes($plans)->firstWhere('id', (string) $request->query('class', ''));
 
@@ -212,7 +184,7 @@ class TermResultController extends Controller
      */
     protected function scope(Request $request, School $school, ?AcademicYear $year): array
     {
-        $all = AssessmentController::plans($school, $year);
+        $all = AssessmentPlan::forYear($school, $year);
         $published = $all->where('state', AssessmentState::Published)->values();
         $terms = $year ? Term::where('academic_year_id', $year->id)->orderBy('sequence')->get() : new Collection;
         $done = $terms->filter(fn (Term $term) => $all->where('term_id', $term->id)->isNotEmpty()
@@ -297,8 +269,8 @@ class TermResultController extends Controller
     protected function undecided(School $school, ?AcademicYear $year, SchoolClass $class, array $scope): int
     {
         if (! $this->closesYear($scope, $year)
-            || ! EnrolmentController::nextYear($school)
-            || ! isset(EnrolmentController::successors($school)[$class->level_id])) {
+            || ! $this->schoolContext->nextYear()
+            || ! isset($school->successorLevels()[$class->level_id])) {
             return 0;
         }
 
@@ -324,7 +296,7 @@ class TermResultController extends Controller
     protected function cards(School $school, ?AcademicYear $year, Collection $plans, SchoolClass $class, array $scope): array
     {
         $standings = $plans->mapWithKeys(fn (AssessmentPlan $plan) => [$plan->id => $plan->standings($class)]);
-        $rows = static::termRows($plans, $class);
+        $rows = AssessmentPlan::termRows($plans, $class);
         $ranks = static::ranks($rows);
         $planRanks = $plans->mapWithKeys(fn (AssessmentPlan $plan) => [$plan->id => AssessmentPlan::rank(array_map(
             fn (array $row) => (float) $row['average'],
@@ -466,11 +438,11 @@ class TermResultController extends Controller
             return null;
         }
 
-        $all = AssessmentController::plans($school, $year);
+        $all = AssessmentPlan::forYear($school, $year);
         $terms = [];
 
         foreach (Term::where('academic_year_id', $year->id)->orderBy('sequence')->get() as $term) {
-            $rows = static::termRows($all->where('term_id', $term->id)->values(), $class);
+            $rows = AssessmentPlan::termRows($all->where('term_id', $term->id)->values(), $class);
             $terms[] = ['label' => $term->label, 'rows' => $rows, 'ranks' => static::ranks($rows)];
         }
 
@@ -500,14 +472,14 @@ class TermResultController extends Controller
     protected function outcomes(School $school, SchoolClass $class): array
     {
         $levels = Level::where('school_id', $school->id)->pluck('name', 'id');
-        $successor = EnrolmentController::successors($school)[$class->level_id] ?? null;
+        $successor = $school->successorLevels()[$class->level_id] ?? null;
         $enrolments = Enrolment::where('school_class_id', $class->id)->get(['student_id', 'decision']);
 
         if (! $successor) {
             return $enrolments->mapWithKeys(fn (Enrolment $enrolment) => [$enrolment->student_id => ['kind' => 'completed', 'level' => $levels[$class->level_id] ?? null]])->all();
         }
 
-        if (! EnrolmentController::nextYear($school)) {
+        if (! $this->schoolContext->nextYear()) {
             return [];
         }
 

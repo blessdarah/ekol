@@ -60,28 +60,12 @@ class FeeController extends Controller
     ];
 
     /**
-     * The bound school, for a signed-in user allowed to handle fees.
-     */
-    public static function schoolFor(Request $request): School
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        Gate::authorize('manage-fees');
-
-        return $school;
-    }
-
-    /**
      * Everyone enrolled this year with what they were billed and paid.
      */
     public function index(Request $request): Response
     {
-        $school = static::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $rows = $this->ledgerRows($school, $year);
         [$listed, $filters] = $this->ledgerList($request, $rows);
         $perPage = $this->perPage($request);
@@ -129,8 +113,8 @@ class FeeController extends Controller
      */
     public function export(Request $request): StreamedResponse|Response
     {
-        $school = static::schoolFor($request);
-        [$listed, , $applied] = $this->ledgerList($request, $this->ledgerRows($school, StructureController::currentYear($school)));
+        $school = $this->schoolContext->school();
+        [$listed, , $applied] = $this->ledgerList($request, $this->ledgerRows($school, $this->schoolContext->year()));
         $ids = $this->exportIds($request);
         $rows = $listed
             ->filter(fn (array $row) => $ids === [] || in_array($row['id'], $ids, true))
@@ -237,7 +221,7 @@ class FeeController extends Controller
      */
     public function structure(Request $request): Response
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $years = AcademicYear::where('school_id', $school->id)
             ->where('status', '!=', AcademicYearStatus::Closed)
             ->orderBy('starts_on')
@@ -297,7 +281,7 @@ class FeeController extends Controller
 
     public function updateStructure(UpdateFeeStructureRequest $request): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
 
         $data = $request->validated();
 
@@ -376,7 +360,7 @@ class FeeController extends Controller
      */
     public function bill(BillFeesRequest $request): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
 
         $data = $request->validated();
 
@@ -431,9 +415,9 @@ class FeeController extends Controller
      */
     public function student(Request $request, string $student): Response
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = $this->findStudent($school, $student);
-        $year = StructureController::currentYear($school);
+        $year = $this->schoolContext->year();
         $invoices = Invoice::where('student_id', $target->id)
             ->with(['installments', 'lines', 'exemption.granter:id,full_name', 'payments.receiver:id,full_name', 'term.academicYear'])
             ->orderBy('issued_on')
@@ -485,7 +469,7 @@ class FeeController extends Controller
 
     public function pay(RecordPaymentRequest $request, string $student): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = $this->findStudent($school, $student);
 
         $data = $request->validated();
@@ -527,7 +511,7 @@ class FeeController extends Controller
 
     public function receipt(Request $request, string $payment): Response
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = Payment::whereKey($payment)
             ->whereHas('invoice.student', fn (Builder $query) => $query->where('school_id', $school->id))
             ->with(['invoice.installments', 'invoice.lines', 'invoice.exemption', 'invoice.payments', 'invoice.student', 'invoice.term.academicYear', 'receiver:id,full_name'])
@@ -561,17 +545,13 @@ class FeeController extends Controller
      */
     public function studentTab(Request $request, string $student): Response
     {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
+        $school = $this->schoolContext->school();
         $user = $request->user();
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
 
         Gate::authorize('read-student-fees');
 
         $target = $this->findStudent($school, $student)->load('guardians');
-        $year = StructureController::currentYear($school);
+        $year = $this->schoolContext->year();
         $invoices = Invoice::where('student_id', $target->id)
             ->with(['installments', 'lines', 'exemption.granter:id,full_name', 'payments.receiver:id,full_name,role', 'term.academicYear'])
             ->orderBy('issued_on')
@@ -587,7 +567,7 @@ class FeeController extends Controller
         $main = $target->guardians->firstWhere('is_main', true);
 
         return Inertia::render('students/fees', [
-            'neighbours' => StudentController::neighbours($school, $target),
+            'neighbours' => Student::neighbours($school, $target, $this->schoolContext->year()),
             'currency' => $school->currency,
             'canManageFees' => (bool) $user?->can('manage-fees'),
             'canManageStudents' => (bool) $user?->can('manage-students'),
@@ -634,7 +614,7 @@ class FeeController extends Controller
      */
     public function exempt(ExemptInvoiceRequest $request, string $invoice): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = $this->findInvoice($school, $invoice);
 
         $data = $request->validated();
@@ -681,7 +661,7 @@ class FeeController extends Controller
 
     public function removeExemption(Request $request, string $invoice): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = $this->findInvoice($school, $invoice);
         $exemption = $target->exemption;
 
@@ -751,7 +731,7 @@ class FeeController extends Controller
      */
     protected function billingTerm(School $school, AcademicYear $year): ?Term
     {
-        $current = StudentController::currentTerm($school);
+        $current = $this->schoolContext->term();
 
         return $current && $current->academic_year_id === $year->id
             ? $current

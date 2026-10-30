@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AcademicYearStatus;
 use App\Enums\ApplicationStage;
 use App\Enums\EnrolmentDecision;
 use App\Enums\EnrolmentStatus;
@@ -22,7 +21,6 @@ use App\Models\Money;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Term;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -37,138 +35,11 @@ use Inertia\Response;
  */
 class EnrolmentController extends Controller
 {
-    /**
-     * The year enrolment is being prepared for: the first planned year
-     * after the current one.
-     */
-    public static function nextYear(School $school): ?AcademicYear
-    {
-        $current = StructureController::currentYear($school);
-
-        return AcademicYear::where('school_id', $school->id)
-            ->where('status', AcademicYearStatus::Planned)
-            ->when($current, fn (Builder $query) => $query->whereDate('starts_on', '>', $current?->starts_on))
-            ->orderBy('starts_on')
-            ->first();
-    }
-
-    /**
-     * Where enrolment stands, shared by every enrolment page for its
-     * tabs and for the checks before confirming.
-     *
-     * @return array{year: string, confirmed: bool, ready: bool, to_review: int, undecided: int, unplaced: int, expected: int, classes: int, over_levels: list<string>, over_classes: int, has_fee_plan: bool}
-     */
-    public static function progress(School $school, AcademicYear $next): array
-    {
-        $successors = static::successors($school);
-        $undecided = static::continuing($school)
-            ->filter(fn (Enrolment $enrolment) => $enrolment->decision === null
-                && isset($successors[(string) $enrolment->schoolClass?->level_id]))
-            ->count();
-        $toReview = Application::where('academic_year_id', $next->id)
-            ->where('stage', ApplicationStage::ToReview)
-            ->count();
-        $levels = static::capacity($school, $next);
-        $expected = (int) array_sum(array_column($levels, 'expected'));
-        $unplaced = $expected - (int) array_sum(array_column($levels, 'placed'));
-        $overClasses = SchoolClass::where('academic_year_id', $next->id)
-            ->withCount('enrolments')
-            ->get()
-            ->filter(fn (SchoolClass $class) => (int) $class->getAttribute('enrolments_count') > $class->capacity)
-            ->count();
-
-        return [
-            'year' => $next->label,
-            'confirmed' => $next->enrolment_confirmed_at !== null,
-            'ready' => $toReview === 0 && $undecided === 0 && $unplaced === 0 && $expected > 0 && $overClasses === 0,
-            'to_review' => $toReview,
-            'undecided' => $undecided,
-            'unplaced' => $unplaced,
-            'expected' => $expected,
-            'classes' => (int) array_sum(array_column($levels, 'classes')),
-            'over_levels' => array_column(
-                array_filter($levels, fn (array $level) => $level['expected'] > $level['seats']),
-                'name',
-            ),
-            'over_classes' => $overClasses,
-            'has_fee_plan' => FeePlan::where('school_id', $school->id)->where('academic_year_id', $next->id)->exists(),
-        ];
-    }
-
-    /**
-     * Each level's seats in the coming year against the students headed
-     * for it: promoted, repeating and admitted.
-     *
-     * @return list<array{id: string, name: string, classes: int, seats: int, expected: int, placed: int}>
-     */
-    public static function capacity(School $school, AcademicYear $next): array
-    {
-        $classes = SchoolClass::where('academic_year_id', $next->id)->get(['id', 'level_id', 'capacity'])->groupBy('level_id');
-        $enrolments = Enrolment::where('academic_year_id', $next->id)->get(['id', 'level_id', 'school_class_id'])->groupBy('level_id');
-
-        return array_values(Level::where('school_id', $school->id)
-            ->orderBy('ordinal')
-            ->get()
-            ->map(fn (Level $level) => [
-                'id' => $level->id,
-                'name' => $level->name,
-                'classes' => $classes->get($level->id)?->count() ?? 0,
-                'seats' => (int) ($classes->get($level->id)?->sum('capacity') ?? 0),
-                'expected' => $enrolments->get($level->id)?->count() ?? 0,
-                'placed' => $enrolments->get($level->id)?->whereNotNull('school_class_id')->count() ?? 0,
-            ])
-            ->all());
-    }
-
-    /**
-     * The level each level leads to: the next one up in the same
-     * subsystem. A level missing from the map is a final year.
-     *
-     * @return array<string, string>
-     */
-    public static function successors(School $school): array
-    {
-        $levels = Level::where('school_id', $school->id)->orderBy('ordinal')->get()->values();
-        $map = [];
-
-        foreach ($levels as $position => $level) {
-            $next = $levels->slice($position + 1)
-                ->first(fn (Level $candidate) => $candidate->subsystem === $level->subsystem && $candidate->ordinal > $level->ordinal);
-
-            if ($next) {
-                $map[$level->id] = $next->id;
-            }
-        }
-
-        return $map;
-    }
-
-    /**
-     * This year's students who sit in a class, with that class.
-     *
-     * @return Collection<int, Enrolment>
-     */
-    public static function continuing(School $school): Collection
-    {
-        $current = StructureController::currentYear($school);
-
-        if (! $current) {
-            return new Collection;
-        }
-
-        return Enrolment::where('academic_year_id', $current->id)
-            ->whereNotNull('school_class_id')
-            ->where('status', '!=', EnrolmentStatus::Left)
-            ->whereHas('student', fn (Builder $query) => $query->where('school_id', $school->id))
-            ->with('schoolClass:id,name,level_id')
-            ->get();
-    }
-
     public function index(Request $request): Response
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::nextYear($school);
-        $current = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->nextYear();
+        $current = $this->schoolContext->year();
 
         if (! $next) {
             return Inertia::render('enrolment/overview', [
@@ -178,10 +49,10 @@ class EnrolmentController extends Controller
         }
 
         $stages = Application::where('academic_year_id', $next->id)->pluck('stage');
-        $successors = static::successors($school);
-        $continuing = static::continuing($school);
+        $successors = $school->successorLevels();
+        $continuing = Enrolment::continuingFor($school, $this->schoolContext->year());
         $deciding = $continuing->filter(fn (Enrolment $enrolment) => isset($successors[(string) $enrolment->schoolClass?->level_id]));
-        $progress = static::progress($school, $next);
+        $progress = $next->enrolmentProgress($school, $this->schoolContext->year());
 
         return Inertia::render('enrolment/overview', [
             'enrolment' => $progress,
@@ -202,7 +73,7 @@ class EnrolmentController extends Controller
                 'undecided' => $progress['undecided'],
                 'graduating' => $continuing->count() - $deciding->count(),
             ],
-            'levels' => static::capacity($school, $next),
+            'levels' => $next->enrolmentCapacity($school),
             'copyable' => $current
                 ? SchoolClass::where('academic_year_id', $current->id)->count()
                 : 0,
@@ -215,9 +86,9 @@ class EnrolmentController extends Controller
      */
     public function copyClasses(Request $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::requireYear($school);
-        $current = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->requireNextYear();
+        $current = $this->schoolContext->year();
 
         if (SchoolClass::where('academic_year_id', $next->id)->exists()) {
             throw ValidationException::withMessages(['classes' => __(':label already has classes.', ['label' => $next->label])]);
@@ -254,8 +125,8 @@ class EnrolmentController extends Controller
 
     public function storeClass(Request $request, string $level): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::requireYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->requireNextYear();
         $target = Level::where('school_id', $school->id)->where('id', $level)->firstOrFail();
 
         $taken = SchoolClass::withTrashed()
@@ -277,7 +148,7 @@ class EnrolmentController extends Controller
             'academic_year_id' => $next->id,
             'level_id' => $target->id,
             'name' => $name,
-            'capacity' => StructureController::DEFAULT_SEATS,
+            'capacity' => SchoolClass::DEFAULT_SEATS,
         ]);
 
         $this->audit($request, $school, 'school_class', $class->id, 'created', ['name' => $name, 'year' => $next->label]);
@@ -289,17 +160,17 @@ class EnrolmentController extends Controller
 
     public function reEnrolment(Request $request): Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::nextYear($school);
-        $current = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->nextYear();
+        $current = $this->schoolContext->year();
 
         if (! $next) {
             return redirect()->route('enrolment');
         }
 
-        $successors = static::successors($school);
+        $successors = $school->successorLevels();
         $levels = Level::where('school_id', $school->id)->orderBy('ordinal')->get();
-        $continuing = static::continuing($school);
+        $continuing = Enrolment::continuingFor($school, $this->schoolContext->year());
         $classes = $current
             ? SchoolClass::where('academic_year_id', $current->id)->orderBy('name')->get()
             : new Collection;
@@ -330,7 +201,7 @@ class EnrolmentController extends Controller
             : new Collection;
 
         return Inertia::render('enrolment/re-enrolment', [
-            'enrolment' => static::progress($school, $next),
+            'enrolment' => $next->enrolmentProgress($school, $this->schoolContext->year()),
             'levels' => $levels
                 ->filter(fn (Level $option) => isset($successors[$option->id]) && $open->contains('level_id', $option->id))
                 ->map(fn (Level $option) => ['id' => $option->id, 'name' => $option->name])
@@ -369,13 +240,13 @@ class EnrolmentController extends Controller
 
     public function decide(DecideReEnrolmentRequest $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::requireYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->requireNextYear();
 
         $data = $request->validated();
 
-        $enrolment = static::continuing($school)->firstWhere('id', $data['enrolment_id']);
-        $successors = static::successors($school);
+        $enrolment = Enrolment::continuingFor($school, $this->schoolContext->year())->firstWhere('id', $data['enrolment_id']);
+        $successors = $school->successorLevels();
 
         if (! $enrolment || ! isset($successors[(string) $enrolment->schoolClass?->level_id])) {
             throw ValidationException::withMessages([
@@ -401,12 +272,12 @@ class EnrolmentController extends Controller
      */
     public function promoteClass(PromoteClassRequest $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::requireYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->requireNextYear();
         $data = $request->validated();
 
-        $successors = static::successors($school);
-        $undecided = static::continuing($school)
+        $successors = $school->successorLevels();
+        $undecided = Enrolment::continuingFor($school, $this->schoolContext->year())
             ->where('school_class_id', $data['class_id'])
             ->whereNull('decision')
             ->filter(fn (Enrolment $enrolment) => isset($successors[(string) $enrolment->schoolClass?->level_id]));
@@ -431,14 +302,14 @@ class EnrolmentController extends Controller
 
     public function placement(Request $request): Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::nextYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->nextYear();
 
         if (! $next) {
             return redirect()->route('enrolment');
         }
 
-        $capacity = collect(static::capacity($school, $next));
+        $capacity = collect($next->enrolmentCapacity($school));
         $busy = $capacity->filter(fn (array $level) => $level['expected'] > 0 || $level['classes'] > 0)->values();
         $level = $busy->firstWhere('id', (string) $request->query('level', ''))
             ?? $busy->first(fn (array $option) => $option['expected'] > $option['placed'])
@@ -456,7 +327,7 @@ class EnrolmentController extends Controller
             : new Collection;
 
         return Inertia::render('enrolment/placement', [
-            'enrolment' => static::progress($school, $next),
+            'enrolment' => $next->enrolmentProgress($school, $this->schoolContext->year()),
             'levels' => $busy->map(fn (array $option) => [
                 'id' => $option['id'],
                 'name' => $option['name'],
@@ -493,8 +364,8 @@ class EnrolmentController extends Controller
 
     public function place(PlaceStudentsRequest $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::requireYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->requireNextYear();
 
         $data = $request->validated();
 
@@ -543,8 +414,8 @@ class EnrolmentController extends Controller
      */
     public function placeAll(PlaceLevelRequest $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::requireYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->requireNextYear();
         $data = $request->validated();
 
         $classes = SchoolClass::where('academic_year_id', $next->id)
@@ -600,8 +471,8 @@ class EnrolmentController extends Controller
      */
     public function clearClass(ClearClassRequest $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::requireYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->requireNextYear();
         $data = $request->validated();
 
         if ($next->enrolment_confirmed_at) {
@@ -624,22 +495,22 @@ class EnrolmentController extends Controller
 
     public function confirm(Request $request): Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::nextYear($school);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->nextYear();
 
         if (! $next) {
             return redirect()->route('enrolment');
         }
 
-        $successors = static::successors($school);
-        $continuing = static::continuing($school);
+        $successors = $school->successorLevels();
+        $continuing = Enrolment::continuingFor($school, $this->schoolContext->year());
         $enrolments = Enrolment::where('academic_year_id', $next->id)->get();
         $origins = $this->origins($school, $enrolments);
         $kinds = $enrolments->countBy(fn (Enrolment $enrolment) => $origins[$enrolment->student_id]['kind'] ?? 'new');
         $usesSeries = Level::where('school_id', $school->id)->where('uses_series', true)->pluck('id');
 
         return Inertia::render('enrolment/confirm', [
-            'enrolment' => static::progress($school, $next),
+            'enrolment' => $next->enrolmentProgress($school, $this->schoolContext->year()),
             'confirmedOn' => $next->enrolment_confirmed_at?->toDateString(),
             'who' => [
                 'promoted' => (int) $kinds->get('promoted', 0),
@@ -656,9 +527,9 @@ class EnrolmentController extends Controller
 
     public function storeConfirmation(Request $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $next = static::requireYear($school);
-        $progress = static::progress($school, $next);
+        $school = $this->schoolContext->school();
+        $next = $this->schoolContext->requireNextYear();
+        $progress = $next->enrolmentProgress($school, $this->schoolContext->year());
 
         if ($progress['confirmed']) {
             throw ValidationException::withMessages(['confirm' => __('Enrolment for :label is already confirmed.', ['label' => $next->label])]);
@@ -688,16 +559,6 @@ class EnrolmentController extends Controller
         $this->notify('Enrolment confirmed.');
 
         return back();
-    }
-
-    /**
-     * The enrolment year, or a validation error when there is none.
-     */
-    public static function requireYear(School $school): AcademicYear
-    {
-        return static::nextYear($school) ?? throw ValidationException::withMessages([
-            'year' => __('Enrolment needs a planned academic year. Add next year in School Setup first.'),
-        ]);
     }
 
     /**
@@ -799,7 +660,7 @@ class EnrolmentController extends Controller
      */
     protected function origins(School $school, Collection $enrolments): array
     {
-        $current = static::continuing($school)->keyBy('student_id');
+        $current = Enrolment::continuingFor($school, $this->schoolContext->year())->keyBy('student_id');
         $origins = [];
 
         foreach ($enrolments as $enrolment) {

@@ -4,7 +4,6 @@ namespace App\Http\Requests\Assessments;
 
 use App\Enums\AssessmentKind;
 use App\Enums\AssessmentState;
-use App\Http\Controllers\StructureController;
 use App\Http\Requests\SchoolRequest;
 use App\Models\AssessmentPlan;
 use App\Models\Term;
@@ -35,7 +34,7 @@ class SaveAssessmentPlanRequest extends SchoolRequest
     public function rules(): array
     {
         $school = $this->school();
-        $year = StructureController::currentYear($school);
+        $year = $this->schoolContext()->year();
         $term = Term::where('school_id', $school->id)
             ->where('academic_year_id', $year?->id)
             ->where('id', (string) $this->input('term_id'))

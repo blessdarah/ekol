@@ -29,43 +29,11 @@ use Inertia\Response;
  */
 class ExamScheduleController extends Controller
 {
-    /**
-     * Rooms and invigilators booked for two papers at the same time.
-     *
-     * @return list<array{paper_ids: list<string>, text: string}>
-     */
-    public static function clashes(AssessmentPlan $plan): array
-    {
-        $papers = $plan->papers()->with(['subject:id,name', 'level:id,name', 'room:id,code'])->get()->values();
-        $names = User::whereIn('id', $papers->flatMap(fn (ExamPaper $paper) => $paper->invigilator_ids)->unique()->values())->pluck('full_name', 'id');
-        $clashes = [];
-
-        foreach ($papers as $position => $paper) {
-            foreach ($papers->slice($position + 1) as $other) {
-                if (! $paper->overlaps($other)) {
-                    continue;
-                }
-
-                $when = $paper->held_on->translatedFormat('D j M').' at '.substr($paper->starts_at, 0, 5);
-                $pair = "{$paper->level?->name} {$paper->subject?->name} and {$other->level?->name} {$other->subject?->name}";
-
-                if ($paper->room_id && $paper->room_id === $other->room_id) {
-                    $clashes[] = ['paper_ids' => [$paper->id, $other->id], 'text' => "{$paper->room?->code} is used by {$pair} on {$when}"];
-                }
-
-                foreach (array_intersect($paper->invigilator_ids, $other->invigilator_ids) as $staffId) {
-                    $clashes[] = ['paper_ids' => [$paper->id, $other->id], 'text' => "{$names->get($staffId)} invigilates {$pair} on {$when}"];
-                }
-            }
-        }
-
-        return $clashes;
-    }
-
     public function show(Request $request): Response
     {
-        [$school, $year] = AssessmentController::context($request);
-        $exams = AssessmentController::plans($school, $year)
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $exams = AssessmentPlan::forYear($school, $year)
             ->filter(fn (AssessmentPlan $plan) => $plan->kind === AssessmentKind::Exam && $plan->state !== AssessmentState::Draft)
             ->values();
         $plan = $exams->firstWhere('id', (string) $request->query('plan', ''))
@@ -74,7 +42,7 @@ class ExamScheduleController extends Controller
 
         if (! $plan) {
             return Inertia::render('assessments/schedule', [
-                'tabs' => AssessmentController::tabs($school, $year),
+                'tabs' => AssessmentPlan::tabs($school, $year),
                 'plans' => [],
                 'plan' => null,
             ]);
@@ -83,7 +51,7 @@ class ExamScheduleController extends Controller
         $levels = Level::whereIn('id', $plan->level_ids)->orderBy('ordinal')->get();
         $needed = $this->needed($school, $plan);
         $papers = $plan->papers()->with('room:id,code')->get();
-        $clashes = static::clashes($plan);
+        $clashes = $plan->clashes();
         $clashing = collect($clashes)->flatMap(fn (array $clash) => $clash['paper_ids'])->all();
         $level = $levels->firstWhere('id', (string) $request->query('level', ''))
             ?? $levels->first(fn (Level $option) => $papers->where('level_id', $option->id)->whereIn('id', $clashing)->isNotEmpty())
@@ -92,9 +60,9 @@ class ExamScheduleController extends Controller
         $missing = $needed->map(fn (Collection $subjects, string $levelId) => $subjects->reject(fn (Subject $subject) => $papers->where('level_id', $levelId)->contains('subject_id', $subject->id))->count());
 
         return Inertia::render('assessments/schedule', [
-            'tabs' => AssessmentController::tabs($school, $year),
-            'plans' => $exams->map(fn (AssessmentPlan $option) => AssessmentController::summary($option)),
-            'plan' => AssessmentController::summary($plan),
+            'tabs' => AssessmentPlan::tabs($school, $year),
+            'plans' => $exams->map(fn (AssessmentPlan $option) => $option->summary()),
+            'plan' => $plan->summary(),
             'levels' => $levels->map(fn (Level $option) => [
                 'id' => $option->id,
                 'name' => $option->name,
@@ -132,7 +100,7 @@ class ExamScheduleController extends Controller
 
     public function save(SaveExamPaperRequest $request, string $plan): RedirectResponse
     {
-        [$school] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
         $target = $this->exam($school, $plan);
 
         if ($target->state === AssessmentState::Published) {
@@ -161,7 +129,7 @@ class ExamScheduleController extends Controller
 
     public function destroy(Request $request, string $plan, string $paper): RedirectResponse
     {
-        [$school] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
         $target = $this->exam($school, $plan);
 
         $target->papers()->whereKey($paper)->delete();
@@ -178,7 +146,7 @@ class ExamScheduleController extends Controller
      */
     public function publish(Request $request, string $plan): RedirectResponse
     {
-        [$school] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
         $target = $this->exam($school, $plan);
         $papers = $target->papers()->get();
         $unset = $this->needed($school, $target)
@@ -191,7 +159,7 @@ class ExamScheduleController extends Controller
                 : __('Add the papers first.')]);
         }
 
-        if (static::clashes($target) !== []) {
+        if ($target->clashes() !== []) {
             throw ValidationException::withMessages(['publish' => __('Clear the clashes before publishing the schedule.')]);
         }
 

@@ -5,9 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
-
-/**
+use Illuminate\Support\Carbon; /**
  * A sub-topic in a scheme: the week it is planned for (none yet when
  * it is still to place), the periods it takes, and when it was taught.
  *
@@ -71,5 +69,23 @@ class SchemeItem extends Model
     public function scheme(): BelongsTo
     {
         return $this->belongsTo(Scheme::class);
+    }
+
+    /**
+     * @return array{id: string, topic: string, name: string|null, week: int|null, periods: int, from_syllabus: bool, added: bool, carried: bool, taught_on: string|null}
+     */
+    public function summary(): array
+    {
+        return [
+            'id' => $this->id,
+            'topic' => $this->topic,
+            'name' => $this->name,
+            'week' => $this->week,
+            'periods' => $this->periods,
+            'from_syllabus' => $this->syllabus_topic_id !== null,
+            'added' => $this->added_by_teacher,
+            'carried' => $this->carried_over,
+            'taught_on' => $this->taught_on?->toDateString(),
+        ];
     }
 }

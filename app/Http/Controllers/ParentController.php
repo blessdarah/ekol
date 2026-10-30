@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\EnrolmentStatus;
 use App\Http\Requests\Pay\FindChildRequest;
 use App\Http\Requests\Pay\VerifyParentCodeRequest;
-use App\Models\Enrolment;
-use App\Models\FeeItem;
-use App\Models\Invoice;
+use App\Models\Attendance;
 use App\Models\MobilePayment;
 use App\Models\Money;
 use App\Models\School;
@@ -56,7 +53,7 @@ class ParentController extends Controller
 
     public function show(Request $request): Response|RedirectResponse
     {
-        [, $student] = static::child($request);
+        $student = Student::forParentSelection($request->session()->get('parent'));
 
         if ($student) {
             return redirect()->route('parents.home');
@@ -77,7 +74,7 @@ class ParentController extends Controller
      */
     public function fromSchool(): RedirectResponse
     {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
         $query = $school instanceof School ? '?school='.rawurlencode($school->slug) : '';
 
         return redirect()->away('//'.parse_url((string) config('app.url'), PHP_URL_HOST).'/parents'.$query);
@@ -150,7 +147,7 @@ class ParentController extends Controller
         }
 
         return Inertia::render('parents/verify', [
-            'issuer' => static::issuer($school),
+            'issuer' => $school->issuer(),
             'phone' => static::maskedPhone($pending['phone']),
             'expiresAt' => Carbon::createFromTimestamp($pending['expires_at'])->toIso8601String(),
             'resendAt' => Carbon::createFromTimestamp($pending['sent_at'] + static::RESEND_AFTER_SECONDS)->toIso8601String(),
@@ -218,21 +215,23 @@ class ParentController extends Controller
      */
     public function home(Request $request): Response|RedirectResponse
     {
-        [$school, $student] = static::child($request);
+        $student = Student::forParentSelection($request->session()->get('parent'));
 
-        if (! $school || ! $student) {
+        if (! $student) {
             return redirect()->route('parents');
         }
 
-        $invoice = static::openInvoice($student);
+        $school = $student->school;
+
+        $invoice = $student->openInvoice();
         $ledger = $invoice?->ledgerMinor();
         $next = collect($ledger['installments'] ?? [])->first(fn (array $row) => $row['state'] !== 'paid');
-        $term = StudentController::currentTerm($school);
-        $attendance = StudentAttendanceController::summary($student, $term);
+        $term = $school->terms()->current()->first();
+        $attendance = Attendance::summary($student, $term);
 
         return Inertia::render('parents/home', [
-            'issuer' => static::issuer($school),
-            'student' => static::studentCard($student),
+            'issuer' => $school->issuer(),
+            'student' => $student->parentCard(),
             'fees' => [
                 'balance' => $ledger ? Money::number($ledger['balance']) : 0,
                 'overdue' => $ledger ? Money::number($ledger['overdue']) : 0,
@@ -254,18 +253,20 @@ class ParentController extends Controller
      */
     public function attendance(Request $request): Response|RedirectResponse
     {
-        [$school, $student] = static::child($request);
+        $student = Student::forParentSelection($request->session()->get('parent'));
 
-        if (! $school || ! $student) {
+        if (! $student) {
             return redirect()->route('parents');
         }
 
-        $term = StudentController::currentTerm($school);
-        $summary = StudentAttendanceController::summary($student, $term);
+        $school = $student->school;
+
+        $term = $school->terms()->current()->first();
+        $summary = Attendance::summary($student, $term);
 
         return Inertia::render('parents/attendance', [
-            'issuer' => static::issuer($school),
-            'student' => static::studentCard($student),
+            'issuer' => $school->issuer(),
+            'student' => $student->parentCard(),
             'termLabel' => $term?->label,
             'stats' => $summary['stats'],
             'events' => array_map(fn (array $event) => [
@@ -366,68 +367,6 @@ class ParentController extends Controller
     protected static function maskedPhone(string $phone): string
     {
         return substr($phone, 0, 1).'•• ••• •'.substr($phone, -2);
-    }
-
-    /**
-     * The school and child the parent proved are theirs.
-     *
-     * @return array{0: School|null, 1: Student|null}
-     */
-    public static function child(Request $request): array
-    {
-        $chosen = $request->session()->get('parent');
-
-        if (! is_array($chosen) || ! is_string($chosen['school_id'] ?? null) || ! is_string($chosen['student_id'] ?? null)) {
-            return [null, null];
-        }
-
-        $school = School::whereKey($chosen['school_id'])->first();
-        $student = $school ? Student::where('school_id', $school->id)->whereKey($chosen['student_id'])->first() : null;
-
-        return $student ? [$school, $student] : [null, null];
-    }
-
-    /**
-     * The child's oldest invoice with something still owed.
-     */
-    public static function openInvoice(Student $student): ?Invoice
-    {
-        return Invoice::where('student_id', $student->id)
-            ->with(['installments', 'lines', 'payments', 'exemption'])
-            ->orderBy('issued_on')
-            ->get()
-            ->first(fn (Invoice $candidate) => $candidate->ledgerMinor()['balance'] > 0);
-    }
-
-    /**
-     * @return array{name: string, code: string}
-     */
-    public static function issuer(School $school): array
-    {
-        return ['name' => $school->name, 'code' => $school->code];
-    }
-
-    /**
-     * @return array{name: string, matricule: string, class: string|null, year: string|null, line: string}
-     */
-    public static function studentCard(Student $student): array
-    {
-        $year = StructureController::currentYear(School::whereKey($student->school_id)->firstOrFail());
-        $class = $year
-            ? Enrolment::where('student_id', $student->id)
-                ->where('academic_year_id', $year->id)
-                ->where('status', '!=', EnrolmentStatus::Left)
-                ->with('schoolClass:id,name')
-                ->first()?->schoolClass?->name
-            : null;
-
-        return [
-            'name' => $student->full_name,
-            'matricule' => $student->admission_no,
-            'class' => $class,
-            'year' => $year?->label,
-            'line' => FeeItem::TUITION,
-        ];
     }
 
     /**

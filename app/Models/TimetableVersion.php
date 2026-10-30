@@ -749,4 +749,201 @@ class TimetableVersion extends Model
     {
         return Term::whereKey($this->term_id)->firstOrFail();
     }
+
+    /**
+     * Where the term's timetable stands, for the phase bar on every
+     * timetable screen.
+     *
+     * @return array{term: string, draft: int, has_draft: bool, live: int|null, live_since: string|null, setup: bool, checks: bool, generated: bool, reviewed: bool, blocking: int, to_fix: int|null, current: string}
+     */
+    public static function phase(School $school, Term $term): array
+    {
+        $draft = TimetableVersion::draftFor($term);
+        $live = TimetableVersion::liveFor($term);
+        $inputs = static::inputs($school, $term);
+        $setup = Period::where('school_id', $school->id)->where('is_break', false)->exists()
+            && $school->school_days > 0
+            && Room::where('school_id', $school->id)->exists();
+        $checks = $setup && $inputs['blocking'] === [];
+        $generated = $draft?->generated_at !== null;
+        $toFix = $draft && ($generated || $draft->slots()->exists()) ? $draft->toFix() : null;
+        $reviewed = $generated && $toFix === 0;
+        $since = $live ? ($live->effective_on ?? $live->published_at) : null;
+
+        return [
+            'term' => $term->label,
+            'draft' => $draft->number ?? TimetableVersion::nextNumber($term),
+            'has_draft' => $draft !== null,
+            'live' => $live?->number,
+            'live_since' => $since?->toDateString(),
+            'setup' => $setup,
+            'checks' => $checks,
+            'generated' => $generated,
+            'reviewed' => $reviewed,
+            'blocking' => count($inputs['blocking']),
+            'to_fix' => $toFix,
+            'current' => match (true) {
+                ! $setup => 'setup',
+                ! $checks => 'checks',
+                ! $generated => 'generate',
+                ! $reviewed => 'review',
+                default => 'publish',
+            },
+        ];
+    }
+
+    /**
+     * Whether the generator has what it needs. Blocking items stop it;
+     * warnings do not.
+     *
+     * @return array{blocking: list<array{title: string, detail: string|null, action: array{label: string, href: string}|null}>, warnings: list<array{title: string, detail: string|null, action: array{label: string, href: string}|null}>, passed: list<string>}
+     */
+    public static function inputs(School $school, Term $term): array
+    {
+        $world = TimetableVersion::worldFor($school, $term);
+        $slotsAWeek = count($world['days']) * $world['periods']->count();
+        $blocking = [];
+        $warnings = [];
+        $passed = [];
+        $item = fn (string $title, ?string $detail = null, ?string $label = null, ?string $href = null) => [
+            'title' => $title,
+            'detail' => $detail,
+            'action' => $label && $href ? ['label' => $label, 'href' => $href] : null,
+        ];
+
+        if ($slotsAWeek === 0) {
+            $blocking[] = $item('The school day has no periods or no school days', 'Lessons need periods to be placed in', 'Edit in School Setup', route('setup'));
+        }
+
+        if ($world['lessons']->isEmpty()) {
+            $blocking[] = $item('No class takes any subject yet', 'Add subjects to classes first', 'Open subjects', route('classes.subjects'));
+        }
+
+        $unstaffed = $world['lessons']->filter(fn (ClassSubject $lesson) => $lesson->staff_id === null);
+
+        foreach ($unstaffed as $lesson) {
+            $blocking[] = $item(
+                "{$lesson->subject?->name} in {$world['classes']->get($lesson->school_class_id)?->name} has no teacher",
+                "{$lesson->weekly_periods} ".($lesson->weekly_periods === 1 ? 'lesson' : 'lessons').' a week would be left out',
+                'Assign a teacher',
+                route('classes.subjects.edit', $lesson->subject_id),
+            );
+        }
+
+        if ($unstaffed->isEmpty() && $world['lessons']->isNotEmpty()) {
+            $passed[] = 'Every subject has a teacher in every class';
+        }
+
+        $full = false;
+
+        foreach ($world['lessons']->groupBy('school_class_id') as $classId => $lessons) {
+            $periods = (int) $lessons->sum('weekly_periods');
+
+            if ($slotsAWeek > 0 && $periods > $slotsAWeek) {
+                $full = true;
+                $blocking[] = $item(
+                    "{$world['classes']->get($classId)?->name} has {$periods} periods a week for {$slotsAWeek} slots",
+                    'Lower the weekly periods of a subject in this class',
+                    'Open subjects',
+                    route('classes.subjects'),
+                );
+            }
+        }
+
+        if (! $full && $slotsAWeek > 0) {
+            $passed[] = "No class has more than {$slotsAWeek} periods";
+        }
+
+        $homeless = $world['classes']->filter(fn (SchoolClass $class) => $class->home_room_id === null
+            && $world['lessons']->contains('school_class_id', $class->id));
+
+        foreach ($homeless as $class) {
+            $warnings[] = $item("{$class->name} has no home room", 'Its lessons take any free classroom, or none', 'Set under Levels', route('classes'));
+        }
+
+        if ($homeless->isEmpty() && $world['classes']->isNotEmpty()) {
+            $passed[] = 'Every class has a home room';
+        }
+
+        $covered = true;
+
+        foreach (RoomKind::special() as $kind) {
+            $needed = (int) $world['lessons']->filter(fn (ClassSubject $lesson) => $lesson->subject?->room_kind === $kind)->sum('weekly_periods');
+            $rooms = $world['rooms']->filter(fn (Room $room) => $room->kind === $kind);
+            $capacity = $rooms->count() * $slotsAWeek - (int) $rooms->sum(fn (Room $room) => count($room->unavailable ?? []));
+
+            if ($needed === 0) {
+                continue;
+            }
+
+            if ($rooms->isEmpty() || $needed > $capacity) {
+                $covered = false;
+                $blocking[] = $item(
+                    $rooms->isEmpty()
+                        ? "{$needed} lessons a week need a {$kind->label()} and the school has none"
+                        : "{$needed} lessons a week need a {$kind->label()}, which has {$capacity} slots",
+                    'Add a room of this kind, or change which subjects need it',
+                    'Manage rooms',
+                    route('timetable.rooms'),
+                );
+            } elseif ($needed >= $capacity * 0.9) {
+                $warnings[] = $item(
+                    $rooms->count() === 1
+                        ? "{$rooms->first()->code} is needed for {$needed} of its {$capacity} slots. Little room to move lessons."
+                        : "{$kind->label()}s are needed for {$needed} of their {$capacity} slots. Little room to move lessons.",
+                    null,
+                    'Manage rooms',
+                    route('timetable.rooms'),
+                );
+            }
+        }
+
+        if ($covered) {
+            $passed[] = 'Rooms cover every practical lesson';
+        }
+
+        $within = true;
+
+        foreach ($world['teachers'] as $teacher) {
+            $periods = (int) $world['lessons']->where('staff_id', $teacher->id)->sum('weekly_periods');
+            $open = 0;
+
+            foreach ($world['days'] as $day) {
+                foreach ($world['periods'] as $period) {
+                    $open += TimetableVersion::teacherWorks($teacher, $school, $day, $period, $world['periods']) ? 1 : 0;
+                }
+            }
+
+            if ($periods > $open) {
+                $within = false;
+                $blocking[] = $item(
+                    "{$teacher->full_name} has {$periods} periods a week and works {$open}",
+                    'Change the teaching days, or give some classes to another teacher',
+                    'Open teacher record',
+                    route('staff.show', $teacher->id),
+                );
+            } elseif ($teacher->max_periods_week !== null && $periods > $teacher->max_periods_week) {
+                $within = false;
+                $warnings[] = $item(
+                    "{$teacher->full_name} has {$periods} periods a week. The limit is {$teacher->max_periods_week}.",
+                    null,
+                    'Open teacher record',
+                    route('staff.show', $teacher->id),
+                );
+            } elseif ($open > 0 && $periods >= $open * 0.9) {
+                $warnings[] = $item(
+                    "{$teacher->full_name} teaches {$periods} of the {$open} periods worked. Few free periods.",
+                    null,
+                    'Open teacher record',
+                    route('staff.show', $teacher->id),
+                );
+            }
+        }
+
+        if ($within && $world['teachers']->isNotEmpty()) {
+            $passed[] = "All {$world['teachers']->count()} teachers are within their weekly limit";
+        }
+
+        return ['blocking' => $blocking, 'warnings' => $warnings, 'passed' => $passed];
+    }
 }

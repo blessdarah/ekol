@@ -461,4 +461,22 @@ class Scheme extends Model
     {
         return $this->items->whereNull('taught_on')->map(fn (SchemeItem $item) => $item->label())->values();
     }
+
+    /**
+     * Where the school is in the five steps, for the step bar.
+     *
+     * @return array{term: array{id: string, label: string, week: int|null, weeks: int}|null, syllabus: bool, opened: bool, to_approve: int, closed: bool}
+     */
+    public static function steps(School $school, ?Term $term): array
+    {
+        $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
+
+        return [
+            'term' => $term ? ['id' => $term->id, 'label' => $term->label, 'week' => Scheme::currentWeek($term), 'weeks' => $term->week_count, 'ends_on' => $term->ends_on->toDateString()] : null,
+            'syllabus' => SyllabusTopic::where('school_id', $school->id)->exists(),
+            'opened' => $opening !== null,
+            'to_approve' => $term ? Scheme::where('term_id', $term->id)->where('status', SchemeStatus::Submitted)->count() : 0,
+            'closed' => $opening?->closed_at !== null,
+        ];
+    }
 }

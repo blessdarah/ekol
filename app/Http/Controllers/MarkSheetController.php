@@ -33,9 +33,9 @@ class MarkSheetController extends Controller
      */
     public function index(Request $request): Response
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $user = $request->user();
-        $year = StructureController::currentYear($school);
+        $year = $this->schoolContext->year();
         $plans = AssessmentPlan::where('school_id', $school->id)
             ->whereIn('term_id', Term::where('academic_year_id', $year?->id)->select('id'))
             ->where('state', '!=', AssessmentState::Draft)
@@ -73,7 +73,7 @@ class MarkSheetController extends Controller
 
     public function show(Request $request, string $sheet): Response
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         [$target, $plan] = $this->sheet($request, $school, $sheet);
         $classId = (string) $target->assessment?->school_class_id;
 
@@ -111,7 +111,7 @@ class MarkSheetController extends Controller
                 'submitted_on' => $target->submitted_at?->toDateString(),
                 'teacher' => $target->examiner?->full_name,
             ],
-            'plan' => AssessmentController::summary($plan),
+            'plan' => $plan->summary(),
             'open' => $plan->acceptsMarks(),
             'siblings' => $siblings->map(fn (AssessmentSubject $option) => [
                 'id' => $option->id,
@@ -145,7 +145,7 @@ class MarkSheetController extends Controller
      */
     public function update(Request $request, string $sheet): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         [$target, $plan] = $this->sheet($request, $school, $sheet);
 
         if (! $plan->acceptsMarks()) {
@@ -275,17 +275,6 @@ class MarkSheetController extends Controller
     protected function markRows(array $data): array
     {
         return $data['marks'];
-    }
-
-    protected function school(Request $request): School
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        return $school;
     }
 
     /**

@@ -22,10 +22,11 @@ class GradingController extends Controller
 {
     public function show(Request $request): Response
     {
-        [$school, $year] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
 
         return Inertia::render('assessments/grading', [
-            'tabs' => AssessmentController::tabs($school, $year),
+            'tabs' => AssessmentPlan::tabs($school, $year),
             'outOf' => AssessmentPlan::OUT_OF,
             'passMark' => (float) $school->pass_mark,
             'bands' => array_map(fn (array $band) => [
@@ -47,7 +48,7 @@ class GradingController extends Controller
      */
     public function update(UpdateGradingRequest $request): RedirectResponse
     {
-        [$school] = AssessmentController::context($request);
+        $school = $this->schoolContext->school();
         $user = $request->user();
         Gate::authorize('manage-staff');
         $top = AssessmentPlan::OUT_OF;
