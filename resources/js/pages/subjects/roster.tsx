@@ -1,8 +1,9 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     create,
     edit,
+    exportMethod,
     index,
     show,
     templates,
@@ -14,6 +15,22 @@ import {
     outlineButtonClass,
     solidButtonClass,
 } from '../../components/structure/ui';
+import {
+    BulkBar,
+    Checkbox,
+    DownloadIcon,
+    ExportDialog,
+    type FilterField,
+    FilterChips,
+    type QuickPick,
+    TableFooter,
+    TableToolbar,
+    bulkButtonClass,
+    count,
+    toQuery,
+    useSelection,
+    useTableQuery,
+} from '../../components/table/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
@@ -33,16 +50,17 @@ interface SubjectRow {
 }
 
 interface Filters {
-    department: string;
-    needs: boolean;
-    level: string;
     q: string;
+    department: string[];
+    level: string[];
+    staffing: string;
+    sort: string;
 }
 
 interface RosterProps {
     yearLabel: string | null;
     counts: { total: number; departments: number; needs_teacher: number };
-    departments: string[];
+    departments: { name: string; count: number }[];
     levels: { id: string; name: string }[];
     filters: Filters;
     subjects: {
@@ -50,19 +68,14 @@ interface RosterProps {
         page: number;
         lastPage: number;
         total: number;
+        perPage: number;
+        from: number | null;
+        to: number | null;
     };
 }
 
 const headClass =
     'shrink-0 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase';
-
-function tabClass(selected: boolean): string {
-    return `flex h-8 items-center gap-2 rounded-md border border-solid px-3 text-[13px] ${
-        selected
-            ? 'border-primary bg-primary-tint font-semibold text-primary'
-            : 'border-border bg-white font-medium text-text hover:bg-surface'
-    }`;
-}
 
 function plural(count: number, one: string, many: string): string {
     return `${count} ${count === 1 ? t(one) : t(many)}`;
@@ -121,44 +134,62 @@ function SubjectRoster({
     filters,
     subjects,
 }: RosterProps) {
-    const [search, setSearch] = useState(filters.q);
-    const [showFilters, setShowFilters] = useState(filters.level !== '');
+    const { sort, ...values } = filters;
+    const table = useTableQuery((query) => index.url({ query }), values, {
+        sort,
+        per_page: subjects.perPage,
+    });
+    const selection = useSelection(subjects.rows.map((row) => row.id));
+    const [exporting, setExporting] = useState(false);
     const [openMenu, setOpenMenu] = useState<string | null>(null);
-    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    function visit(patch: Partial<Filters> & { page?: number }) {
-        const next = { ...filters, ...patch };
-        const query: Record<string, string | number> = {};
+    const fields: FilterField[] = [
+        {
+            kind: 'chips',
+            key: 'department',
+            label: t('Department'),
+            options: departments.map((department) => ({
+                value: department.name,
+                label: t(department.name),
+            })),
+        },
+        {
+            kind: 'chips',
+            key: 'level',
+            label: t('Taught in'),
+            options: levels.map((level) => ({
+                value: level.id,
+                label: level.name,
+            })),
+        },
+        {
+            kind: 'segments',
+            key: 'staffing',
+            label: t('Teachers'),
+            anyLabel: t('Any'),
+            options: [
+                { value: 'needs', label: t('Needs a teacher') },
+                { value: 'staffed', label: t('Fully staffed') },
+            ],
+        },
+    ];
+    const quickPicks: QuickPick[] = [
+        {
+            label: t('Needs a teacher'),
+            count: counts.needs_teacher,
+            dot: 'bg-warning',
+            values: { staffing: 'needs' },
+        },
+        ...departments.slice(0, 3).map((department) => ({
+            label: t(department.name),
+            count: department.count,
+            values: { department: [department.name] },
+        })),
+    ];
 
-        if (next.department) {
-            query.department = next.department;
-        }
-        if (next.needs) {
-            query.needs = 1;
-        }
-        if (next.level) {
-            query.level = next.level;
-        }
-        if (next.q) {
-            query.q = next.q;
-        }
-        if (patch.page && patch.page > 1) {
-            query.page = patch.page;
-        }
-
-        router.get(
-            index.url({ query }),
-            {},
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    }
-
-    function onSearch(value: string) {
-        setSearch(value);
-        if (timer.current) {
-            clearTimeout(timer.current);
-        }
-        timer.current = setTimeout(() => visit({ q: value.trim() }), 300);
+    function filter(patch: Record<string, string | string[]>) {
+        table.set(patch);
+        selection.clear();
     }
 
     useEffect(() => {
@@ -168,12 +199,7 @@ function SubjectRoster({
 
         document.addEventListener('click', close);
 
-        return () => {
-            document.removeEventListener('click', close);
-            if (timer.current) {
-                clearTimeout(timer.current);
-            }
-        };
+        return () => document.removeEventListener('click', close);
     }, []);
 
     return (
@@ -198,119 +224,14 @@ function SubjectRoster({
                         need: counts.needs_teacher === 1 ? 'needs' : 'need',
                     },
                 )}
-            />
-            <StructureTabs active="subjects" />
-
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-                <div className="flex flex-wrap gap-2">
-                    <button
-                        type="button"
-                        aria-pressed={!filters.department && !filters.needs}
-                        onClick={() => visit({ department: '', needs: false })}
-                        className={tabClass(
-                            !filters.department && !filters.needs,
-                        )}
-                    >
-                        {t('All subjects')}
-                    </button>
-                    {departments.map((department) => (
-                        <button
-                            key={department}
-                            type="button"
-                            aria-pressed={filters.department === department}
-                            onClick={() => visit({ department, needs: false })}
-                            className={tabClass(
-                                filters.department === department,
-                            )}
-                        >
-                            {department}
-                        </button>
-                    ))}
-                    <button
-                        type="button"
-                        aria-pressed={filters.needs}
-                        onClick={() => visit({ department: '', needs: true })}
-                        className={tabClass(filters.needs)}
-                    >
-                        <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                        {t('Needs teacher')}
-                    </button>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                    <label className="flex h-9 w-[260px] items-center gap-2 rounded-md border border-solid border-border bg-white px-3 focus-within:border-primary">
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            className="shrink-0"
-                        >
-                            <circle
-                                cx="11"
-                                cy="11"
-                                r="7"
-                                fill="none"
-                                stroke="#56625C"
-                                strokeWidth="2"
-                            />
-                            <path
-                                d="M16.5 16.5L21 21"
-                                fill="none"
-                                stroke="#56625C"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                            />
-                        </svg>
-                        <input
-                            type="search"
-                            aria-label={t('Search subjects')}
-                            placeholder={t('A subject, code or teacher')}
-                            value={search}
-                            onChange={(e) => onSearch(e.target.value)}
-                            className="min-w-0 flex-1 bg-transparent text-[13px] text-text outline-none placeholder:text-text-muted"
-                        />
-                    </label>
-                    <button
-                        type="button"
-                        aria-expanded={showFilters}
-                        onClick={() => setShowFilters(!showFilters)}
-                        className="flex h-9 items-center justify-center rounded-md border border-solid border-border px-4 text-[14px] font-medium text-primary hover:bg-surface"
-                    >
-                        {t('Filter')}
-                        {filters.level ? ' · 1' : ''}
-                    </button>
+                action={
                     <Link href={create.url()} className={solidButtonClass}>
                         <PlusIcon />
                         {t('Add subject')}
                     </Link>
-                </div>
-            </div>
-
-            {showFilters && (
-                <div className="-mt-3 flex flex-wrap items-center gap-2">
-                    <select
-                        aria-label={t('Level')}
-                        value={filters.level}
-                        onChange={(e) => visit({ level: e.target.value })}
-                        className="h-9 rounded-md border border-solid border-border bg-white px-3 text-[13px] text-text outline-none focus:border-primary"
-                    >
-                        <option value="">{t('Any level')}</option>
-                        {levels.map((level) => (
-                            <option key={level.id} value={level.id}>
-                                {level.name}
-                            </option>
-                        ))}
-                    </select>
-                    {filters.level && (
-                        <button
-                            type="button"
-                            onClick={() => visit({ level: '' })}
-                            className="px-2 text-[13px] font-medium text-primary hover:underline"
-                        >
-                            {t('Clear')}
-                        </button>
-                    )}
-                </div>
-            )}
+                }
+            />
+            <StructureTabs active="subjects" />
 
             {counts.total === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">
@@ -325,33 +246,106 @@ function SubjectRoster({
                 </div>
             ) : (
                 <div className="flex flex-1 flex-col gap-4">
-                    <div className="overflow-x-auto lg:overflow-visible">
-                        <div className="flex min-w-[1080px] flex-col rounded-lg border border-solid border-border bg-white">
-                            <div className="flex items-center gap-4 rounded-t-lg border-b border-solid border-border bg-surface px-4 py-2">
+                    <div className="flex flex-col gap-3">
+                        {selection.ids.length > 0 || selection.allMatching ? (
+                            <BulkBar
+                                selected={selection.ids.length}
+                                total={subjects.total}
+                                allMatching={selection.allMatching}
+                                onSelectAll={selection.selectAllMatching}
+                                onClear={selection.clear}
+                            >
+                                <button
+                                    type="button"
+                                    onClick={() => setExporting(true)}
+                                    className={bulkButtonClass}
+                                >
+                                    <DownloadIcon colour="#FFFFFF" />
+                                    {t('Export :count', {
+                                        count: count(
+                                            selection.allMatching
+                                                ? subjects.total
+                                                : selection.ids.length,
+                                        ),
+                                    })}
+                                </button>
+                            </BulkBar>
+                        ) : (
+                            <TableToolbar
+                                searchLabel={t('Search subjects')}
+                                searchPlaceholder={t(
+                                    'A subject, code or teacher',
+                                )}
+                                search={table.search}
+                                onSearch={(value) => {
+                                    table.onSearch(value);
+                                    selection.clear();
+                                }}
+                                filterTitle={t('Filter subjects')}
+                                fields={fields}
+                                quickPicks={quickPicks}
+                                values={values}
+                                onFilter={filter}
+                                sorts={[
+                                    { value: 'code', label: t('Code') },
+                                    { value: 'name', label: t('Name') },
+                                    {
+                                        value: 'department',
+                                        label: t('Department'),
+                                    },
+                                ]}
+                                sort={sort}
+                                onSort={table.sort}
+                                countLabel={plural(
+                                    subjects.total,
+                                    'subject',
+                                    'subjects',
+                                )}
+                                total={subjects.total}
+                                onExport={() => setExporting(true)}
+                            />
+                        )}
+                        <FilterChips
+                            fields={fields}
+                            values={values}
+                            onFilter={filter}
+                        />
+                    </div>
+                    <div className="overflow-x-auto xl:overflow-visible">
+                        <div className="flex min-w-[930px] flex-col rounded-lg border border-solid border-border bg-white">
+                            <div className="flex items-center gap-3 rounded-t-lg border-b border-solid border-border bg-surface px-4 py-2">
+                                <span className="flex w-4 shrink-0">
+                                    <Checkbox
+                                        label={t('Select this page')}
+                                        checked={selection.pageState === 'all'}
+                                        mixed={selection.pageState === 'some'}
+                                        onChange={selection.togglePage}
+                                    />
+                                </span>
                                 <span
-                                    className={`${headClass} min-w-[200px] flex-1`}
+                                    className={`${headClass} min-w-[180px] flex-1`}
                                 >
                                     {t('Subject')}
                                 </span>
-                                <span className={`${headClass} w-[88px]`}>
+                                <span className={`${headClass} w-[72px]`}>
                                     {t('Code')}
                                 </span>
-                                <span className={`${headClass} w-[120px]`}>
+                                <span className={`${headClass} w-[104px]`}>
                                     {t('Department')}
                                 </span>
-                                <span className={`${headClass} w-[130px]`}>
+                                <span className={`${headClass} w-[110px]`}>
                                     {t('Levels')}
                                 </span>
                                 <span className={`${headClass} w-16`}>
                                     {t('Coeff.')}
                                 </span>
-                                <span className={`${headClass} w-[220px]`}>
+                                <span className={`${headClass} w-[200px]`}>
                                     {t('Classes & teachers')}
                                 </span>
-                                <span className={`${headClass} w-[100px]`}>
+                                <span className={`${headClass} w-[84px]`}>
                                     {t('Periods')}
                                 </span>
-                                <span className="w-10 shrink-0" />
+                                <span className="w-8 shrink-0" />
                             </div>
                             {subjects.rows.length === 0 && (
                                 <p className="px-4 py-8 text-center text-[13px] text-text-muted">
@@ -366,9 +360,20 @@ function SubjectRoster({
                                     onClick={() =>
                                         router.visit(show.url(row.id))
                                     }
-                                    className="flex h-[62px] shrink-0 cursor-pointer items-center gap-4 border-b border-solid border-border px-4 py-2 last:rounded-b-lg last:border-b-0 hover:bg-surface"
+                                    className={`flex h-[62px] shrink-0 cursor-pointer items-center gap-3 border-b border-solid border-border px-4 py-2 last:rounded-b-lg last:border-b-0 ${selection.has(row.id) ? 'bg-primary-tint/60' : 'hover:bg-surface'}`}
                                 >
-                                    <span className="flex min-w-[200px] flex-1 flex-col">
+                                    <span className="flex w-4 shrink-0">
+                                        <Checkbox
+                                            label={t('Select :row', {
+                                                row: row.name,
+                                            })}
+                                            checked={selection.has(row.id)}
+                                            onChange={() =>
+                                                selection.toggle(row.id)
+                                            }
+                                        />
+                                    </span>
+                                    <span className="flex min-w-[180px] flex-1 flex-col">
                                         <Link
                                             href={show.url(row.id)}
                                             onClick={(event) =>
@@ -382,27 +387,27 @@ function SubjectRoster({
                                             {row.kind}
                                         </span>
                                     </span>
-                                    <span className="w-[88px] shrink-0 font-mono text-[13px] leading-4 text-text">
+                                    <span className="w-[72px] shrink-0 font-mono text-[13px] leading-4 text-text">
                                         {row.code}
                                     </span>
-                                    <span className="w-[120px] shrink-0 truncate text-[13px] leading-4 text-text">
+                                    <span className="w-[104px] shrink-0 truncate text-[13px] leading-4 text-text">
                                         {row.department}
                                     </span>
-                                    <span className="w-[130px] shrink-0 truncate text-[13px] leading-4 text-text-muted">
+                                    <span className="w-[110px] shrink-0 truncate text-[13px] leading-4 text-text-muted">
                                         {row.levels.join(', ') || '—'}
                                     </span>
                                     <span className="w-16 shrink-0 font-mono text-[13px] leading-4 text-text">
                                         {row.coefficient ?? '—'}
                                     </span>
-                                    <span className="w-[220px] shrink-0">
+                                    <span className="w-[200px] shrink-0">
                                         <Staffing row={row} />
                                     </span>
-                                    <span className="w-[100px] shrink-0 font-mono text-[13px] leading-4 text-text">
+                                    <span className="w-[84px] shrink-0 font-mono text-[13px] leading-4 text-text">
                                         {t(':periods / wk', {
                                             periods: row.periods,
                                         })}
                                     </span>
-                                    <span className="relative flex w-10 shrink-0 justify-center">
+                                    <span className="relative flex w-8 shrink-0 justify-center">
                                         <button
                                             type="button"
                                             aria-label={t('Actions for :row', {
@@ -480,43 +485,63 @@ function SubjectRoster({
                         </div>
                     </div>
 
-                    <div className="mt-auto flex flex-wrap items-center justify-between gap-4">
-                        <p className="text-[13px] text-text-muted">
-                            {t(':rows of :total shown · sorted by code', {
-                                rows: subjects.rows.length,
-                                total: subjects.total,
-                            })}
-                        </p>
-                        <div className="flex items-center gap-2">
-                            {subjects.lastPage > 1 &&
-                                Array.from(
-                                    { length: subjects.lastPage },
-                                    (_, i) => i + 1,
-                                ).map((page) => (
-                                    <button
-                                        key={page}
-                                        type="button"
-                                        aria-current={
-                                            page === subjects.page
-                                                ? 'page'
-                                                : undefined
-                                        }
-                                        onClick={() => visit({ page })}
-                                        className={`flex h-7 items-center rounded-md px-3 text-[13px] text-primary ${
-                                            page === subjects.page
-                                                ? 'border border-solid border-primary bg-primary-tint font-semibold'
-                                                : 'hover:bg-surface'
-                                        }`}
-                                    >
-                                        {page}
-                                    </button>
-                                ))}
-                            <span className="text-[13px] text-text-muted">
-                                {plural(counts.total, 'subject', 'subjects')}
-                            </span>
-                        </div>
+                    <div className="mt-auto">
+                        <TableFooter
+                            paged={subjects}
+                            onPage={table.page}
+                            onPerPage={table.perPage}
+                        />
                     </div>
                 </div>
+            )}
+
+            {exporting && (
+                <ExportDialog
+                    title={t('Export subjects')}
+                    subtitle={t(':year · as filtered on screen', {
+                        year: yearLabel ?? t('Subjects'),
+                    })}
+                    noun={t('subjects')}
+                    matching={subjects.total}
+                    selected={selection.allMatching ? 'all' : selection.ids}
+                    everyone={counts.total}
+                    columns={[
+                        { key: 'name', label: t('Subject'), on: true },
+                        { key: 'code', label: t('Code'), on: true },
+                        { key: 'department', label: t('Department'), on: true },
+                        { key: 'kind', label: t('Kind'), on: false },
+                        { key: 'levels', label: t('Levels'), on: true },
+                        { key: 'coefficient', label: t('Coeff.'), on: true },
+                        { key: 'classes', label: t('Classes'), on: true },
+                        { key: 'teachers', label: t('Teachers'), on: true },
+                        {
+                            key: 'unstaffed',
+                            label: t('Classes without a teacher'),
+                            on: false,
+                        },
+                        {
+                            key: 'periods',
+                            label: t('Periods a week'),
+                            on: true,
+                        },
+                    ]}
+                    href={({ scope, format, columns }) =>
+                        exportMethod.url({
+                            query: toQuery(scope === 'everyone' ? {} : values, {
+                                sort,
+                                format:
+                                    format === 'print' ? 'print' : undefined,
+                                columns: columns.join(','),
+                                ids:
+                                    scope === 'selected' &&
+                                    !selection.allMatching
+                                        ? selection.ids.join(',')
+                                        : undefined,
+                            }),
+                        })
+                    }
+                    onClose={() => setExporting(false)}
+                />
             )}
         </div>
     );

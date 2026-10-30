@@ -215,7 +215,7 @@ test('progress follows what is ticked against the weeks gone, and a change needs
     $this->patch("http://schemes.ekol.test/my-scheme/{$scheme->id}/items/{$units->id}/taught", ['taught' => true])->assertSessionHasNoErrors();
 
     $this->actingAs($world['principal'])
-        ->get('http://schemes.ekol.test/classes/schemes?show=behind&scheme='.$scheme->id)
+        ->get('http://schemes.ekol.test/classes/schemes?state=behind&scheme='.$scheme->id)
         ->assertInertia(fn (Assert $page) => $page
             ->component('schemes/index')
             ->where('week', 5)
@@ -223,8 +223,23 @@ test('progress follows what is ticked against the weeks gone, and a change needs
             ->where('rows.0.id', $scheme->id)
             ->where('rows.0.progress.taught', 1)
             ->where('rows.0.progress.planned', 3)
+            ->where('rows.0.late', 2)
+            ->where('rows.0.taught_total', 1)
+            ->where('states.behind', 1)
             ->where('picked.late', 2)
             ->where('picked.items.0.state', 'taught'));
+
+    $csv = $this->actingAs($world['principal'])
+        ->get('http://schemes.ekol.test/classes/schemes/export?state=behind&columns=subject,class,state,taught')
+        ->assertDownload()
+        ->streamedContent();
+
+    expect($csv)->toContain('Status: Behind')
+        ->and($csv)->toContain('Behind');
+
+    $this->actingAs($world['principal'])
+        ->get('http://schemes.ekol.test/classes/schemes?state=on_track')
+        ->assertInertia(fn (Assert $page) => $page->where('paged.total', 0));
 
     $this->actingAs($world['teacher'])->patch("http://schemes.ekol.test/my-scheme/{$scheme->id}/items/{$errors->id}/taught", ['taught' => true]);
     $this->patch("http://schemes.ekol.test/my-scheme/{$scheme->id}/items/{$scheme->items[2]->id}/taught", ['taught' => true]);

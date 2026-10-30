@@ -1,12 +1,6 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { index as applications } from '@/actions/App/Http/Controllers/ApplicationController';
-import {
-    confirm,
-    index,
-    placement,
-    reEnrolment,
-} from '@/actions/App/Http/Controllers/EnrolmentController';
+import { index } from '@/actions/App/Http/Controllers/EnrolmentController';
 import { capsLabelClass } from '../structure/ui';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 import { numberLocale, t } from '../../lib/i18n';
@@ -25,13 +19,6 @@ export interface EnrolmentProgress {
     over_classes: number;
     has_fee_plan: boolean;
 }
-
-export type EnrolmentTab =
-    | 'overview'
-    | 'applications'
-    | 're-enrolment'
-    | 'placement'
-    | 'confirm';
 
 export const amberText = 'text-[#8A5A12]';
 
@@ -111,112 +98,7 @@ export function StagePill({
     );
 }
 
-function TabBadge({
-    tone,
-    children,
-}: {
-    tone: 'todo' | 'quiet' | 'done';
-    children: ReactNode;
-}) {
-    const tones = {
-        todo: `bg-warning-tint ${amberText}`,
-        quiet: 'bg-surface text-text-muted',
-        done: 'bg-success-tint text-success',
-    };
-
-    return (
-        <span
-            className={`flex h-[18px] items-center rounded-full px-[6px] font-mono text-[11px] leading-[14px] ${tones[tone]}`}
-        >
-            {children}
-        </span>
-    );
-}
-
-export function EnrolmentTabs({
-    active,
-    progress,
-}: {
-    active: EnrolmentTab;
-    progress: EnrolmentProgress;
-}) {
-    const done = progress.confirmed || progress.ready;
-    const badge = (left: number, label: string = count(left)) =>
-        left > 0 ? (
-            <TabBadge tone="todo">{label}</TabBadge>
-        ) : done ? (
-            <TabBadge tone="done">{t('done')}</TabBadge>
-        ) : null;
-
-    const tabs: {
-        key: EnrolmentTab;
-        label: string;
-        href: string;
-        badge?: ReactNode;
-        locked?: boolean;
-    }[] = [
-        { key: 'overview', label: t('Overview'), href: index.url() },
-        {
-            key: 'applications',
-            label: t('Applications'),
-            href: applications.url(),
-            badge: badge(progress.to_review),
-        },
-        {
-            key: 're-enrolment',
-            label: t('Re-enrolment'),
-            href: reEnrolment.url(),
-            badge: badge(progress.undecided),
-        },
-        {
-            key: 'placement',
-            label: t('Class placement'),
-            href: placement.url(),
-            badge:
-                progress.unplaced > 0 ? (
-                    <TabBadge tone="quiet">
-                        {t(':unplaced left', {
-                            unplaced: count(progress.unplaced),
-                        })}
-                    </TabBadge>
-                ) : (
-                    badge(0)
-                ),
-        },
-        {
-            key: 'confirm',
-            label: t('Confirm'),
-            href: confirm.url(),
-            locked: !done,
-        },
-    ];
-
-    return (
-        <nav
-            aria-label={t('Enrolment steps')}
-            className="flex flex-wrap gap-x-7 border-b border-solid border-border"
-        >
-            {tabs.map((tab) => (
-                <Link
-                    key={tab.key}
-                    href={tab.href}
-                    aria-current={tab.key === active ? 'page' : undefined}
-                    className={`-mb-px flex items-center gap-2 border-b-2 border-solid pb-[10px] text-[14px] leading-[18px] ${
-                        tab.key === active
-                            ? 'border-primary font-semibold text-text'
-                            : `border-transparent font-medium text-text-muted hover:text-text ${tab.locked ? 'opacity-60' : ''}`
-                    }`}
-                >
-                    {t(tab.label)}
-                    {tab.badge}
-                </Link>
-            ))}
-        </nav>
-    );
-}
-
 export function EnrolmentHeader({
-    active,
     progress,
     trail = [],
     title,
@@ -224,13 +106,12 @@ export function EnrolmentHeader({
     status,
     action,
 }: {
-    active: EnrolmentTab;
     progress: EnrolmentProgress;
-    /** Steps after Enrolment; the last one is the page you are on. */
+    /** Steps after New school year; the last one is the page you are on. */
     trail?: Crumb[];
     title: string;
     meta?: string;
-    /** Replaces the "ENROLMENT · year" tag, for pages about one record. */
+    /** Replaces the "NEW SCHOOL YEAR · year" tag, for pages about one record. */
     status?: ReactNode;
     action?: ReactNode;
 }) {
@@ -243,12 +124,12 @@ export function EnrolmentHeader({
                             trail.length > 0
                                 ? [
                                       {
-                                          label: t('Enrolment'),
+                                          label: t('New school year'),
                                           href: index.url(),
                                       },
                                       ...trail,
                                   ]
-                                : [{ label: t('Enrolment') }]
+                                : [{ label: t('New school year') }]
                         }
                     />
                     <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
@@ -257,7 +138,7 @@ export function EnrolmentHeader({
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">
                         {status ?? (
                             <span className="font-mono uppercase">
-                                {t('Enrolment · :year', {
+                                {t('New school year · :year', {
                                     year: progress.year,
                                 })}
                             </span>
@@ -267,7 +148,6 @@ export function EnrolmentHeader({
                 </div>
                 {action}
             </div>
-            <EnrolmentTabs active={active} progress={progress} />
         </>
     );
 }
@@ -352,7 +232,7 @@ export function NoYear({
                 {t('There is no next year to enrol for yet')}
             </p>
             <p className="max-w-[640px] text-[13px] leading-[19px] text-text">
-                {t('Enrolment prepares the academic year after')}
+                {t('The new school year is the one after')}
                 {currentLabel ? ` ${currentLabel}` : t(' the current one')}
                 {t(
                     ': new applications, who is promoted or repeats, and which class each student sits in. Add that year in School Setup and it opens here.',

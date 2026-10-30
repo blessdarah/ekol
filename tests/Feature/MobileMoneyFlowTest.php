@@ -340,6 +340,21 @@ test('an approved request is recorded once on the invoice with a receipt', funct
     $this->artisan('payments:check-mobile')->assertSuccessful();
 
     $payment = Payment::sole();
+    $this->get("http://ekol.test/parents/receipts/{$payment->id}")
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('pay/receipt')
+        ->where('receipt.kind', 'digital')
+        ->where('receipt.method', 'MTN Mobile Money')
+        ->where('receipt.paid_from', '677123456')
+        ->where('receipt.reference', 'MP251001.0912.A1'));
+
+    $receipt = $this->get("http://ekol.test/parents/receipts/{$payment->id}");
+    $this->get($receipt->inertiaProps('receipt.verification_url'))
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('fees/receipt-verify')
+        ->where('receipt.reference', 'MP251001.0912.A1')
+        ->missing('student')->missing('receipt.paid_from'));
+
     expect((float) $payment->amount)->toBe(30000.0)
         ->and($payment->reference)->toBe('MP251001.0912.A1')
         ->and($request->refresh()->payment_id)->toBe($payment->id)
@@ -430,4 +445,24 @@ test('the bursar sees mobile money requests and can check one that is waiting', 
 
     $teacher = User::factory()->create(['school_id' => $world['school']->id, 'role' => UserRole::Teacher]);
     $this->actingAs($teacher)->get('http://momo.ekol.test/fees/mobile-money')->assertForbidden();
+});
+
+test('parents can open their child receipt but cannot open another childs receipt', function () {
+    $world = momoWorld();
+    $payment = $world['invoice']->recordPayment('30000.00', 'cash', $world['admin']);
+    $session = ['parent' => ['school_id' => $world['school']->id, 'student_id' => $world['student']->id]];
+
+    $this->withSession($session)->get("http://ekol.test/parents/receipts/{$payment->id}")
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->component('pay/receipt')->where('student.name', 'Achu Brandon')
+        ->where('receipt.balance', 30000)->where('receipt.state', 'partial'));
+    $other = Student::create([
+        'school_id' => $world['school']->id, 'admission_no' => 'OTHER', 'full_name' => 'Other Child',
+        'gender' => 'male', 'date_of_birth' => '2013-01-01', 'guardian_name' => 'Another Guardian',
+        'guardian_phone' => '+237670000000', 'admitted_on' => '2025-09-01',
+    ]);
+    $this->withSession(['parent' => ['school_id' => $world['school']->id, 'student_id' => $other->id]])
+        ->get("http://ekol.test/parents/receipts/{$payment->id}")->assertNotFound();
+    $this->withSession(['parent' => null])->get("http://ekol.test/parents/receipts/{$payment->id}")
+        ->assertRedirect(route('parents'));
 });

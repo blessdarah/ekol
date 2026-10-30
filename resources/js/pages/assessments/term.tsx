@@ -326,7 +326,7 @@ function TermAndYear({
                             </ul>
                             <p className="text-[13px] leading-[19px] text-text-muted">
                                 {t(
-                                    'Complete after the last term is published. It is the figure the promotion decision in Re-enrolment is meant to use.',
+                                    'Complete after the last term is published. It is the figure the promotion decision in Promotion is meant to use.',
                                 )}
                             </p>
                         </div>

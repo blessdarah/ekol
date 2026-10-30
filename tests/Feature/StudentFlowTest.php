@@ -5,6 +5,7 @@ use App\Enums\EnrolmentStatus;
 use App\Enums\SchoolCycle;
 use App\Enums\UserRole;
 use App\Models\AcademicYear;
+use App\Models\AuditEvent;
 use App\Models\Enrolment;
 use App\Models\FeeInstallmentTemplate;
 use App\Models\FeePlan;
@@ -243,7 +244,7 @@ test('the roster filters by no series, searches, and stays inside the school', f
             ->where('students.rows.1.series.code', 'S1'));
 
     $this->actingAs($world['admin'])
-        ->get('http://studenta.ekol.test/students?tab=no_series')
+        ->get('http://studenta.ekol.test/students?series=none')
         ->assertInertia(fn (Assert $page) => $page->has('students.rows', 1));
 
     $this->actingAs($world['admin'])
@@ -257,6 +258,68 @@ test('the roster filters by no series, searches, and stays inside the school', f
     $this->actingAs($world['admin'])
         ->get("http://studenta.ekol.test/students/{$foreign->id}")
         ->assertNotFound();
+});
+
+test('the roster combines filters, sorts, pages and exports what it shows to the audit log', function () {
+    $world = studentWorld();
+    [$form4a] = $world['classes'];
+    $series = Series::create([
+        'school_id' => $world['school']->id, 'level_id' => $world['level']->id,
+        'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science',
+    ]);
+
+    $this->actingAs($world['admin'])
+        ->post('http://studenta.ekol.test/students', studentPayload($form4a, ['series_id' => $series->id]));
+    $this->actingAs($world['admin'])
+        ->post('http://studenta.ekol.test/students', studentPayload($form4a, [
+            'surname' => 'Achu', 'given_names' => 'Brandon', 'gender' => 'male',
+        ]));
+    $this->actingAs($world['admin'])
+        ->post('http://studenta.ekol.test/students', studentPayload($form4a, [
+            'surname' => 'Bih', 'given_names' => 'Clarisse',
+        ]));
+
+    $this->actingAs($world['admin'])
+        ->get('http://studenta.ekol.test/students?series=S1,none&gender=female&sort=-name&per_page=50')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.series', ['S1', 'none'])
+            ->where('filters.sort', '-name')
+            ->where('students.perPage', 50)
+            ->has('students.rows', 2)
+            ->where('students.rows.0.name', 'Tabi Nkwain Grace Ayuk')
+            ->where('students.rows.1.name', 'Bih Clarisse'));
+
+    $this->actingAs($world['admin'])
+        ->get('http://studenta.ekol.test/students?per_page=7')
+        ->assertInertia(fn (Assert $page) => $page->where('students.perPage', 25));
+
+    $csv = $this->actingAs($world['admin'])
+        ->get('http://studenta.ekol.test/students/export?gender=female&columns=name,class')
+        ->assertOk()
+        ->assertDownload()
+        ->streamedContent();
+
+    expect($csv)->toContain('Gender: Girls')
+        ->and($csv)->toContain('Tabi Nkwain Grace Ayuk')
+        ->and($csv)->toContain('Bih Clarisse')
+        ->and($csv)->not->toContain('Achu Brandon')
+        ->and($csv)->not->toContain('Guardian');
+
+    $achu = Student::where('surname', 'Achu')->firstOrFail();
+
+    $this->actingAs($world['admin'])
+        ->get("http://studenta.ekol.test/students/export?format=print&ids={$achu->id}")
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('tables/print')
+            ->has('rows', 1)
+            ->where('rows.0.name', 'Achu Brandon'));
+
+    $audit = AuditEvent::where('entity', 'export')->get()->keyBy(fn (AuditEvent $event) => $event->diff['format']);
+
+    expect($audit)->toHaveCount(2)
+        ->and($audit['csv']->diff['rows'])->toBe(2)
+        ->and($audit['csv']->diff['columns'])->toBe(['name', 'class'])
+        ->and($audit['print']->diff['rows'])->toBe(1);
 });
 
 test('a registrar manages students but never sees or overwrites private details', function () {

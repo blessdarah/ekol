@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\SchemeStatus;
+use App\Http\Controllers\Concerns\ListsTables;
 use App\Http\Requests\Schemes\CloseSchemesRequest;
 use App\Http\Requests\Schemes\OpenSchemesRequest;
 use App\Http\Requests\Schemes\ReviewSchemeRequest;
 use App\Http\Requests\Schemes\SchemeNoteRequest;
 use App\Models\ClassSubject;
+use App\Models\Level;
 use App\Models\Scheme;
 use App\Models\SchemeEvent;
 use App\Models\SchemeItem;
@@ -32,7 +34,21 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class SchemeController extends Controller
 {
-    protected const array FILTERS = ['all', 'to_approve', 'behind', 'not_submitted'];
+    use ListsTables;
+
+    /**
+     * Where a scheme stands, most in need of attention first, and how
+     * the list names it.
+     */
+    protected const array STATES = [
+        'to_approve' => 'To approve',
+        'behind' => 'Behind',
+        'sent_back' => 'Sent back',
+        'not_submitted' => 'Not submitted',
+        'waiting' => 'No teacher yet',
+        'on_track' => 'On track',
+        'closed' => 'Closed',
+    ];
 
     /**
      * The bound school, for a signed-in user who follows schemes, or
@@ -63,7 +79,7 @@ class SchemeController extends Controller
         $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
 
         return [
-            'term' => $term ? ['id' => $term->id, 'label' => $term->label, 'week' => Scheme::currentWeek($term), 'weeks' => $term->week_count] : null,
+            'term' => $term ? ['id' => $term->id, 'label' => $term->label, 'week' => Scheme::currentWeek($term), 'weeks' => $term->week_count, 'ends_on' => $term->ends_on->toDateString()] : null,
             'syllabus' => SyllabusTopic::where('school_id', $school->id)->exists(),
             'opened' => $opening !== null,
             'to_approve' => $term ? Scheme::where('term_id', $term->id)->where('status', SchemeStatus::Submitted)->count() : 0,
@@ -88,21 +104,20 @@ class SchemeController extends Controller
         }
 
         $week = Scheme::currentWeek($term);
-        $schemes = $this->schemesOf($term)->filter(fn (Scheme $scheme) => $scheme->canBeApprovedBy($request->user(), $opening) || $request->user()->role->managesSchemes());
-        $states = $schemes->mapWithKeys(fn (Scheme $scheme) => [$scheme->id => $scheme->followState($week)]);
-        $filter = in_array($request->query('show'), static::FILTERS, true) ? (string) $request->query('show') : 'all';
-        $listed = $schemes->filter(fn (Scheme $scheme) => match ($filter) {
-            'to_approve' => $states[$scheme->id] === 'to_approve',
-            'behind' => $states[$scheme->id] === 'behind',
-            'not_submitted' => in_array($states[$scheme->id], ['not_submitted', 'sent_back'], true),
-            default => true,
-        })->sortBy(fn (Scheme $scheme) => [array_search($states[$scheme->id], ['to_approve', 'behind', 'sent_back', 'not_submitted', 'waiting', 'on_track', 'closed'], true), $this->title($scheme)])->values();
+        [$schemes, $states, $listed, $filters] = $this->list($request, $term, $opening, $week);
+        $perPage = $this->perPage($request);
+        $lastPage = max(1, (int) ceil($listed->count() / $perPage));
+        $page = min($lastPage, max(1, (int) $request->query('page', 1)));
         $picked = $schemes->firstWhere('id', $request->query('scheme'));
 
         return Inertia::render('schemes/index', [
             'steps' => static::steps($school),
             'week' => $week,
             'dueOn' => $opening->due_on->toDateString(),
+            'daysLate' => $opening->due_on->isPast() ? (int) $opening->due_on->diffInDays(today()) : 0,
+            'states' => collect(array_keys(static::STATES))->mapWithKeys(fn (string $state) => [
+                $state => $states->filter(fn (string $value) => $value === $state)->count(),
+            ]),
             'canManage' => $request->user()->role->managesSchemes(),
             'totals' => [
                 'all' => $schemes->count(),
@@ -110,15 +125,130 @@ class SchemeController extends Controller
                 'to_approve' => $states->filter(fn (string $state) => $state === 'to_approve')->count(),
                 'behind' => $states->filter(fn (string $state) => $state === 'behind')->count(),
                 'not_submitted' => $states->filter(fn (string $state) => in_array($state, ['not_submitted', 'sent_back'], true))->count(),
+                'waiting' => $states->filter(fn (string $state) => $state === 'waiting')->count(),
             ],
-            'filters' => ['show' => $filter],
-            'rows' => $listed->map(fn (Scheme $scheme) => [
+            'filters' => $filters,
+            'levels' => $schemes->map(fn (Scheme $scheme) => $scheme->classSubject?->schoolClass?->level)
+                ->filter()->unique('id')->sortBy('ordinal')
+                ->map(fn (Level $level) => ['id' => $level->id, 'name' => $level->name])->values(),
+            'departments' => $schemes->map(fn (Scheme $scheme) => $scheme->classSubject?->subject?->department)
+                ->filter()->unique()->sort()->values(),
+            'rows' => $listed->forPage($page, $perPage)->map(fn (Scheme $scheme) => [
                 ...$this->summary($scheme),
                 'state' => $states[$scheme->id],
                 'progress' => $scheme->progressTo($week),
+                'taught_total' => $scheme->items->whereNotNull('taught_on')->count(),
+                'late' => $this->lateItems($scheme, $week)->count(),
+                'initials' => $scheme->classSubject?->staff?->initials,
+                'subject_id' => $scheme->classSubject?->subject_id,
             ])->values(),
+            'paged' => [
+                'page' => $page,
+                'lastPage' => $lastPage,
+                'total' => $listed->count(),
+                'perPage' => $perPage,
+                'from' => $listed->isEmpty() ? null : ($page - 1) * $perPage + 1,
+                'to' => $listed->isEmpty() ? null : min($page * $perPage, $listed->count()),
+            ],
             'picked' => $picked ? $this->panel($picked, $week, $states[$picked->id]) : null,
         ]);
+    }
+
+    /**
+     * The schemes as they are filtered on screen, as a CSV file or a
+     * list to print. Selected rows narrow it to those schemes only.
+     */
+    public function export(Request $request): StreamedResponse|Response|RedirectResponse
+    {
+        $school = static::schoolFor($request);
+        $term = StudentController::currentTerm($school);
+        $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
+
+        if (! $term || ! $opening) {
+            return redirect()->route('schemes');
+        }
+
+        $week = Scheme::currentWeek($term);
+        [, $states, $listed, , $applied] = $this->list($request, $term, $opening, $week);
+        $ids = $this->exportIds($request);
+        $rows = $listed
+            ->filter(fn (Scheme $scheme) => $ids === [] || in_array($scheme->id, $ids, true))
+            ->map(function (Scheme $scheme) use ($states, $week) {
+                $progress = $scheme->progressTo($week);
+
+                return [
+                    'subject' => $scheme->classSubject?->subject?->name,
+                    'class' => $scheme->classSubject?->schoolClass?->name,
+                    'department' => $scheme->classSubject?->subject?->department,
+                    'teacher' => $scheme->classSubject->staff->full_name ?? '',
+                    'state' => $this->say(static::STATES[$states[$scheme->id]]),
+                    'taught' => $progress['taught'],
+                    'planned' => $progress['planned'],
+                    'topics' => $scheme->items->count(),
+                    'coverage' => $scheme->coverage(),
+                ];
+            })
+            ->values();
+
+        return $this->sendExport($request, $school, $this->say('Schemes of work').' · '.$this->say($term->label), $ids !== [] ? [...$applied, $this->say(':count selected', ['count' => count($ids)])] : $applied, [
+            'subject' => $this->say('Subject'),
+            'class' => $this->say('Class'),
+            'department' => $this->say('Department'),
+            'teacher' => $this->say('Teacher'),
+            'state' => $this->say('Status'),
+            'taught' => $this->say('Taught so far'),
+            'planned' => $this->say('Planned so far'),
+            'topics' => $this->say('Sub-topics'),
+            'coverage' => $this->say('Coverage %'),
+        ], $rows, $rows->count());
+    }
+
+    /**
+     * The term's schemes this person may follow, where each stands, and
+     * the ones the filters, search and sort from the page address keep,
+     * with the filters as the page shows them and in words.
+     *
+     * @return array{0: Collection<int, Scheme>, 1: Collection<string, string>, 2: Collection<int, Scheme>, 3: array<string, mixed>, 4: list<string>}
+     */
+    protected function list(Request $request, Term $term, SchemeOpening $opening, ?int $week): array
+    {
+        $schemes = $this->schemesOf($term)->filter(fn (Scheme $scheme) => $scheme->canBeApprovedBy($request->user(), $opening) || $request->user()->role->managesSchemes())->values();
+        $states = $schemes->mapWithKeys(fn (Scheme $scheme) => [$scheme->id => $scheme->followState($week)]);
+        $search = trim((string) $request->query('q', ''));
+        $needle = mb_strtolower($search);
+        $wanted = $this->many($request, 'state', array_keys(static::STATES));
+        $levels = $this->many($request, 'level');
+        $departments = $this->many($request, 'department');
+        [$sort, $direction] = $this->sorting($request, ['attention', 'subject', 'class', 'teacher'], 'attention');
+        $order = array_keys(static::STATES);
+
+        $listed = $schemes
+            ->filter(fn (Scheme $scheme) => ($wanted === [] || in_array($states[$scheme->id], $wanted, true))
+                && ($levels === [] || in_array($scheme->classSubject?->schoolClass?->level_id, $levels, true))
+                && ($departments === [] || in_array($scheme->classSubject?->subject?->department, $departments, true))
+                && ($needle === '' || str_contains(mb_strtolower($this->title($scheme).' '.$scheme->classSubject?->staff?->full_name), $needle)))
+            ->sortBy(fn (Scheme $scheme) => match ($sort) {
+                'subject' => [$scheme->classSubject?->subject?->name, $scheme->classSubject?->schoolClass?->name],
+                'class' => [$scheme->classSubject?->schoolClass?->name, $scheme->classSubject?->subject?->name],
+                'teacher' => [$scheme->classSubject->staff->full_name ?? "\u{FFFF}", $this->title($scheme)],
+                default => [array_search($states[$scheme->id], $order, true), $this->title($scheme)],
+            }, descending: $direction === 'desc')
+            ->values();
+
+        $applied = array_values(array_filter([
+            $search !== '' ? $this->say('Search: :q', ['q' => $search]) : null,
+            $wanted !== [] ? $this->say('Status: :value', ['value' => implode(', ', array_map(fn (string $state) => $this->say(static::STATES[$state]), $wanted))]) : null,
+            $levels !== [] ? $this->say('Level: :value', ['value' => Level::whereIn('id', $levels)->orderBy('ordinal')->pluck('name')->join(', ')]) : null,
+            $departments !== [] ? $this->say('Department: :value', ['value' => implode(', ', $departments)]) : null,
+        ]));
+
+        return [$schemes, $states, $listed, [
+            'q' => $search,
+            'state' => $wanted,
+            'level' => $levels,
+            'department' => $departments,
+            'sort' => ($direction === 'desc' ? '-' : '').$sort,
+        ], $applied];
     }
 
     /**
@@ -280,7 +410,7 @@ class SchemeController extends Controller
 
         return $next
             ? redirect()->route('schemes.show', $next->id)
-            : redirect()->route('schemes', ['show' => 'to_approve']);
+            : redirect()->route('schemes', ['state' => 'to_approve']);
     }
 
     /**
@@ -436,7 +566,7 @@ class SchemeController extends Controller
     protected function schemesOf(Term $term): Collection
     {
         return Scheme::where('term_id', $term->id)
-            ->with(['items', 'classSubject.subject:id,name,department', 'classSubject.schoolClass:id,name,level_id', 'classSubject.staff:id,full_name'])
+            ->with(['items', 'classSubject.subject:id,name,department', 'classSubject.schoolClass:id,name,level_id', 'classSubject.schoolClass.level:id,name,ordinal', 'classSubject.staff:id,full_name'])
             ->get()
             ->sortBy(fn (Scheme $scheme) => $this->title($scheme))
             ->values();
@@ -489,7 +619,19 @@ class SchemeController extends Controller
     }
 
     /**
-     * The side panel of the progress page: the plan week by week, each
+     * Sub-topics planned for a week already gone and not taught yet.
+     *
+     * @return Collection<int, SchemeItem>
+     */
+    protected function lateItems(Scheme $scheme, ?int $week): Collection
+    {
+        return $week === null
+            ? new Collection
+            : $scheme->items->filter(fn (SchemeItem $item) => $item->week !== null && $item->week < $week && $item->taught_on === null)->values();
+    }
+
+    /**
+     * The drawer of the progress page: the plan week by week, each
      * sub-topic taught, not yet, this week or planned.
      *
      * @return array<string, mixed>
@@ -497,7 +639,7 @@ class SchemeController extends Controller
     protected function panel(Scheme $scheme, ?int $week, string $state): array
     {
         $approver = $scheme->approved_by ? User::whereKey($scheme->approved_by)->value('full_name') : null;
-        $late = $week === null ? collect() : $scheme->items->filter(fn (SchemeItem $item) => $item->week !== null && $item->week < $week && $item->taught_on === null);
+        $late = $this->lateItems($scheme, $week);
 
         return [
             ...$this->summary($scheme),
@@ -510,6 +652,7 @@ class SchemeController extends Controller
                 'id' => $item->id,
                 'week' => $item->week,
                 'label' => $item->label(),
+                'taught_on' => $item->taught_on?->toDateString(),
                 'state' => match (true) {
                     $item->taught_on !== null => 'taught',
                     $week !== null && $item->week < $week => 'late',

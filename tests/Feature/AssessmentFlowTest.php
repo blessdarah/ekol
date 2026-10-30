@@ -284,7 +284,10 @@ test('progress follows the sheets, and closing marks entry stops teachers', func
             ->where('stats.total', 2)
             ->where('stats.teachers', 1)
             ->where('tabs.missing', 1)
-            ->where('classes.0.missing.0.subject', 'English'));
+            ->where('classes.0.missing.0.subject', 'English')
+            ->has('teachers', 1)
+            ->where('teachers.0.missing.0.subject', 'English')
+            ->where('teachers.0.missing.0.students', fn (int $students) => $students > 0));
 
     $this->actingAs($world['admin'])
         ->post("http://exama.ekol.test/assessments/{$plan->id}/close")

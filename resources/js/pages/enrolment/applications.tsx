@@ -1,7 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
     create,
+    exportMethod,
     index,
     show,
 } from '@/actions/App/Http/Controllers/ApplicationController';
@@ -19,13 +20,32 @@ import {
     solidButtonClass,
 } from '../../components/structure/ui';
 import { shortDate } from '../../components/students/ui';
+import {
+    BulkBar,
+    Checkbox,
+    DownloadIcon,
+    ExportDialog,
+    type FilterField,
+    FilterChips,
+    type QuickPick,
+    TableFooter,
+    TableToolbar,
+    bulkButtonClass,
+    toQuery,
+    useSelection,
+    useTableQuery,
+} from '../../components/table/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
 interface Filters {
-    stage: string;
     q: string;
-    level: string;
+    stage: string[];
+    level: string[];
+    transfer: string;
+    from: string;
+    to: string;
+    sort: string;
 }
 
 interface ApplicationsProps {
@@ -48,16 +68,11 @@ interface ApplicationsProps {
         page: number;
         lastPage: number;
         total: number;
+        perPage: number;
+        from: number | null;
+        to: number | null;
     };
 }
-
-const STAGE_TABS = [
-    { key: '', label: 'All', count: 'all' },
-    { key: 'to_review', label: 'To review', count: 'to_review' },
-    { key: 'admitted', label: 'Admitted', count: 'admitted' },
-    { key: 'waitlist', label: 'Waitlist', count: 'waitlist' },
-    { key: 'declined', label: 'Declined', count: 'declined' },
-];
 
 function Applications({
     enrolment,
@@ -66,52 +81,68 @@ function Applications({
     levels,
     applications,
 }: ApplicationsProps) {
-    const [search, setSearch] = useState(filters.q);
-    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    function visit(patch: Partial<Filters> & { page?: number }) {
-        const next = { ...filters, ...patch };
-        const query: Record<string, string | number> = {};
-
-        if (next.stage) {
-            query.stage = next.stage;
-        }
-        if (next.q) {
-            query.q = next.q;
-        }
-        if (next.level) {
-            query.level = next.level;
-        }
-        if (patch.page && patch.page > 1) {
-            query.page = patch.page;
-        }
-
-        router.get(
-            index.url({ query }),
-            {},
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    }
-
-    function onSearch(value: string) {
-        setSearch(value);
-        if (timer.current) {
-            clearTimeout(timer.current);
-        }
-        timer.current = setTimeout(() => visit({ q: value.trim() }), 300);
-    }
-
+    const { sort, ...values } = filters;
+    const table = useTableQuery((query) => index.url({ query }), values, {
+        sort,
+        per_page: applications.perPage,
+    });
+    const selection = useSelection(applications.rows.map((row) => row.id));
+    const [exporting, setExporting] = useState(false);
+    const stages = [
+        { value: 'to_review', label: t('To review') },
+        { value: 'admitted', label: t('Admitted') },
+        { value: 'waitlist', label: t('Waitlist') },
+        { value: 'declined', label: t('Declined') },
+    ];
+    const fields: FilterField[] = [
+        { kind: 'chips', key: 'stage', label: t('Stage'), options: stages },
+        {
+            kind: 'chips',
+            key: 'level',
+            label: t('Applying to'),
+            options: levels.map((level) => ({
+                value: level.id,
+                label: level.name,
+            })),
+        },
+        {
+            kind: 'segments',
+            key: 'transfer',
+            label: t('Transfer'),
+            anyLabel: t('Any'),
+            options: [
+                { value: 'yes', label: t('Transfers') },
+                { value: 'no', label: t('Not transfers') },
+            ],
+        },
+        { kind: 'dates', from: 'from', to: 'to', label: t('Applied') },
+    ];
+    const quickPicks: QuickPick[] = stages.map((stage) => ({
+        label: stage.label,
+        count: counts[stage.value] ?? 0,
+        dot: stage.value === 'to_review' ? 'bg-warning' : undefined,
+        values: { stage: [stage.value] },
+    }));
     const filtered =
-        filters.stage !== '' || filters.q !== '' || filters.level !== '';
+        values.q !== '' ||
+        values.stage.length > 0 ||
+        values.level.length > 0 ||
+        values.transfer !== '' ||
+        values.from !== '' ||
+        values.to !== '';
+
+    function filter(patch: Record<string, string | string[]>) {
+        table.set(patch);
+        selection.clear();
+    }
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title={t('Applications')} />
+            <Head title={t('Admissions')} />
             <EnrolmentHeader
-                active="applications"
                 progress={enrolment}
-                trail={[{ label: t('Applications') }]}
-                title={t('Applications')}
+                trail={[{ label: t('Admissions') }]}
+                title={t('Admissions')}
                 meta={t('record each application here, then review it')}
                 action={
                     <Link href={create.url()} className={solidButtonClass}>
@@ -121,81 +152,64 @@ function Applications({
                 }
             />
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
-                    {STAGE_TABS.map((tab) => {
-                        const selected = filters.stage === tab.key;
-
-                        return (
-                            <button
-                                key={tab.key}
-                                type="button"
-                                aria-pressed={selected}
-                                onClick={() => visit({ stage: tab.key })}
-                                className={`flex h-8 items-center gap-[6px] rounded-full border border-solid px-[14px] text-[13px] leading-4 ${
-                                    selected
-                                        ? 'border-primary bg-primary-tint font-semibold text-primary'
-                                        : 'border-border font-medium text-text hover:bg-surface'
-                                }`}
-                            >
-                                {tab.key === 'to_review' &&
-                                    (counts.to_review ?? 0) > 0 && (
-                                        <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                    )}
-                                {t(tab.label)} · {count(counts[tab.count] ?? 0)}
-                            </button>
-                        );
-                    })}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                    <label className="flex h-9 w-[240px] items-center gap-2 rounded-md border border-solid border-border px-3 focus-within:border-primary">
-                        <svg
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            className="shrink-0"
-                        >
-                            <circle
-                                cx="11"
-                                cy="11"
-                                r="7"
-                                fill="none"
-                                stroke="#56625C"
-                                strokeWidth="2"
-                            />
-                            <path
-                                d="M16 16l5 5"
-                                fill="none"
-                                stroke="#56625C"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                            />
-                        </svg>
-                        <span className="sr-only">
-                            {t('Search applications')}
-                        </span>
-                        <input
-                            type="search"
-                            value={search}
-                            onChange={(e) => onSearch(e.target.value)}
-                            placeholder={t('Name or reference')}
-                            className="w-full bg-transparent text-[14px] leading-[18px] text-text outline-none placeholder:text-text-muted"
-                        />
-                    </label>
-                    <select
-                        aria-label={t('Applying to')}
-                        value={filters.level}
-                        onChange={(e) => visit({ level: e.target.value })}
-                        className="h-9 rounded-md border border-solid border-border bg-white px-3 text-[13px] leading-4 font-medium text-text outline-none focus:border-primary"
+            <div className="flex flex-col gap-3">
+                {selection.ids.length > 0 || selection.allMatching ? (
+                    <BulkBar
+                        selected={selection.ids.length}
+                        total={applications.total}
+                        allMatching={selection.allMatching}
+                        onSelectAll={selection.selectAllMatching}
+                        onClear={selection.clear}
                     >
-                        <option value="">{t('Applying to: any level')}</option>
-                        {levels.map((level) => (
-                            <option key={level.id} value={level.id}>
-                                {level.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                        <button
+                            type="button"
+                            onClick={() => setExporting(true)}
+                            className={bulkButtonClass}
+                        >
+                            <DownloadIcon colour="#FFFFFF" />
+                            {t('Export :count', {
+                                count: count(
+                                    selection.allMatching
+                                        ? applications.total
+                                        : selection.ids.length,
+                                ),
+                            })}
+                        </button>
+                    </BulkBar>
+                ) : (
+                    <TableToolbar
+                        searchLabel={t('Search applications')}
+                        searchPlaceholder={t('Name or reference')}
+                        search={table.search}
+                        onSearch={(value) => {
+                            table.onSearch(value);
+                            selection.clear();
+                        }}
+                        filterTitle={t('Filter applications')}
+                        fields={fields}
+                        quickPicks={quickPicks}
+                        values={values}
+                        onFilter={filter}
+                        sorts={[
+                            { value: '-applied', label: t('Newest first') },
+                            { value: 'applied', label: t('Oldest first') },
+                            { value: 'name', label: t('Name') },
+                            { value: 'reference', label: t('Reference') },
+                        ]}
+                        sort={sort}
+                        onSort={table.sort}
+                        countLabel={t(':count applications', {
+                            count: count(applications.total),
+                        })}
+                        total={applications.total}
+                        onExport={() => setExporting(true)}
+                    />
+                )}
+                <FilterChips
+                    fields={fields}
+                    values={values}
+                    onFilter={filter}
+                />
             </div>
 
             {applications.rows.length === 0 ? (
@@ -223,10 +237,18 @@ function Applications({
                 </div>
             ) : (
                 <div className="overflow-x-auto rounded-lg border border-solid border-border">
-                    <div className="flex min-w-[880px] flex-col">
+                    <div className="flex min-w-[920px] flex-col">
                         <div
                             className={`flex h-9 items-center gap-4 border-b border-solid border-border bg-surface px-4 ${capsLabelClass}`}
                         >
+                            <span className="flex w-4 shrink-0">
+                                <Checkbox
+                                    label={t('Select this page')}
+                                    checked={selection.pageState === 'all'}
+                                    mixed={selection.pageState === 'some'}
+                                    onChange={selection.togglePage}
+                                />
+                            </span>
                             <span className="w-[250px] shrink-0">
                                 {t('Applicant')}
                             </span>
@@ -241,15 +263,32 @@ function Applications({
                             <span className="w-[70px] shrink-0" />
                         </div>
                         {applications.rows.map((row) => (
-                            <Link
+                            <div
                                 key={row.id}
-                                href={show.url(row.id)}
-                                className="flex h-[54px] shrink-0 items-center gap-4 border-b border-solid border-border px-4 last:border-b-0 hover:bg-surface"
+                                onClick={() => router.visit(show.url(row.id))}
+                                className={`flex h-[54px] shrink-0 cursor-pointer items-center gap-4 border-b border-solid border-border px-4 last:border-b-0 ${selection.has(row.id) ? 'bg-primary-tint/60' : 'hover:bg-surface'}`}
                             >
+                                <span className="flex w-4 shrink-0">
+                                    <Checkbox
+                                        label={t('Select :row', {
+                                            row: row.name,
+                                        })}
+                                        checked={selection.has(row.id)}
+                                        onChange={() =>
+                                            selection.toggle(row.id)
+                                        }
+                                    />
+                                </span>
                                 <span className="flex w-[250px] shrink-0 flex-col">
-                                    <span className="truncate text-[14px] leading-[18px] font-medium text-text">
+                                    <Link
+                                        href={show.url(row.id)}
+                                        onClick={(event) =>
+                                            event.stopPropagation()
+                                        }
+                                        className="truncate text-[14px] leading-[18px] font-medium text-text hover:underline"
+                                    >
                                         {row.name}
-                                    </span>
+                                    </Link>
                                     <span className="font-mono text-[11px] leading-[14px] text-text-muted">
                                         {row.reference}
                                     </span>
@@ -283,54 +322,74 @@ function Applications({
                                         ? t('Review')
                                         : t('Open')}
                                 </span>
-                            </Link>
+                            </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-4">
-                    <p className="text-[13px] leading-4 text-text-muted">
-                        {t(':rows of :total shown · newest first', {
-                            rows: applications.rows.length,
-                            total: count(applications.total),
-                        })}
-                    </p>
-                    {applications.lastPage > 1 && (
-                        <div className="flex items-center gap-1">
-                            <button
-                                type="button"
-                                disabled={applications.page <= 1}
-                                onClick={() =>
-                                    visit({ page: applications.page - 1 })
-                                }
-                                className="flex h-7 items-center rounded-md px-3 text-[13px] text-text hover:bg-surface disabled:opacity-40"
-                            >
-                                {t('← Newer')}
-                            </button>
-                            <span className="px-1 font-mono text-[12px] text-text-muted">
-                                {applications.page} / {applications.lastPage}
-                            </span>
-                            <button
-                                type="button"
-                                disabled={
-                                    applications.page >= applications.lastPage
-                                }
-                                onClick={() =>
-                                    visit({ page: applications.page + 1 })
-                                }
-                                className="flex h-7 items-center rounded-md px-3 text-[13px] text-text hover:bg-surface disabled:opacity-40"
-                            >
-                                {t('Older →')}
-                            </button>
-                        </div>
-                    )}
-                </div>
+            <TableFooter
+                paged={applications}
+                onPage={table.page}
+                onPerPage={table.perPage}
+            />
+
+            <div className="flex justify-end">
                 <Link href={reEnrolment.url()} className={nextStepClass}>
-                    {t('Next: re-enrolment →')}
+                    {t('Next: promotion →')}
                 </Link>
             </div>
+
+            {exporting && (
+                <ExportDialog
+                    title={t('Export applications')}
+                    subtitle={t(':year · as filtered on screen', {
+                        year: enrolment.year,
+                    })}
+                    noun={t('applications')}
+                    matching={applications.total}
+                    selected={selection.allMatching ? 'all' : selection.ids}
+                    everyone={counts.all ?? 0}
+                    columns={[
+                        { key: 'name', label: t('Applicant'), on: true },
+                        { key: 'reference', label: t('Reference'), on: true },
+                        { key: 'level', label: t('Applying to'), on: true },
+                        { key: 'gender', label: t('Gender'), on: false },
+                        {
+                            key: 'date_of_birth',
+                            label: t('Date of birth'),
+                            on: false,
+                        },
+                        { key: 'from', label: t('Coming from'), on: true },
+                        { key: 'transfer', label: t('Transfer'), on: false },
+                        { key: 'guardian', label: t('Main contact'), on: true },
+                        { key: 'phone', label: t('Phone'), on: true },
+                        { key: 'applied', label: t('Applied'), on: true },
+                        { key: 'stage', label: t('Stage'), on: true },
+                        {
+                            key: 'missing',
+                            label: t('Documents missing'),
+                            on: false,
+                        },
+                    ]}
+                    href={({ scope, format, columns }) =>
+                        exportMethod.url({
+                            query: toQuery(scope === 'everyone' ? {} : values, {
+                                sort,
+                                format:
+                                    format === 'print' ? 'print' : undefined,
+                                columns: columns.join(','),
+                                ids:
+                                    scope === 'selected' &&
+                                    !selection.allMatching
+                                        ? selection.ids.join(',')
+                                        : undefined,
+                            }),
+                        })
+                    }
+                    onClose={() => setExporting(false)}
+                />
+            )}
         </div>
     );
 }

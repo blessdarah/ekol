@@ -131,10 +131,9 @@ function NewApplication({
         >
             <Head title={t('Add an application')} />
             <EnrolmentHeader
-                active="applications"
                 progress={enrolment}
                 trail={[
-                    { label: t('Applications'), href: index.url() },
+                    { label: t('Admissions'), href: index.url() },
                     { label: t('Add an application') },
                 ]}
                 title={t('Add an application')}

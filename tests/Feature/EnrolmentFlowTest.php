@@ -199,6 +199,21 @@ test('an application gets a reference and waits for review', function () {
             ->where('counts.to_review', 1)
             ->where('applications.rows.0.reference', 'APP-26-0001')
             ->where('applications.rows.0.missing', 3));
+
+    $this->actingAs($world['admin'])
+        ->get('http://enrola.ekol.test/enrolment/applications?stage=admitted,declined')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('filters.stage', ['admitted', 'declined'])
+            ->where('applications.total', 0));
+
+    $csv = $this->actingAs($world['admin'])
+        ->get('http://enrola.ekol.test/enrolment/applications/export?stage=to_review&columns=name,reference,stage')
+        ->assertDownload()
+        ->streamedContent();
+
+    expect($csv)->toContain('Tabi Nkwain Esther')
+        ->and($csv)->toContain('APP-26-0001')
+        ->and($csv)->toContain('Stage: To review');
 });
 
 test('an application needs a main contact with a phone', function () {

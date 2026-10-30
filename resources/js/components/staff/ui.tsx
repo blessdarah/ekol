@@ -131,6 +131,7 @@ export function PageHeader({
     title,
     tag,
     meta,
+    action,
 }: {
     /** The page you are on. */
     crumb: string;
@@ -139,8 +140,10 @@ export function PageHeader({
     title: string;
     tag: string;
     meta?: string;
+    /** The page's main button, beside the title. */
+    action?: ReactNode;
 }) {
-    return (
+    const heading = (
         <div className="flex flex-col gap-[6px]">
             <Breadcrumbs
                 trail={[
@@ -156,6 +159,17 @@ export function PageHeader({
                 <span className="font-mono uppercase">{tag}</span>
                 {meta && <span>· {meta}</span>}
             </p>
+        </div>
+    );
+
+    if (!action) {
+        return heading;
+    }
+
+    return (
+        <div className="flex flex-wrap items-end justify-between gap-4">
+            {heading}
+            {action}
         </div>
     );
 }

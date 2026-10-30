@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CoefficientStatus;
+use App\Http\Controllers\Concerns\ListsTables;
 use App\Http\Requests\Subjects\SaveSubjectRequest;
 use App\Http\Requests\Subjects\StoreSubjectTemplatesRequest;
 use App\Models\AcademicYear;
@@ -25,10 +26,11 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SubjectController extends Controller
 {
-    protected const int PER_PAGE = 9;
+    use ListsTables;
 
     public const array DEPARTMENTS = ['Sciences', 'Languages', 'Arts', 'Technical', 'Commercial', 'General'];
 
@@ -36,31 +38,12 @@ class SubjectController extends Controller
     {
         $school = StructureController::schoolFor($request);
         $year = StructureController::currentYear($school);
-        $department = (string) $request->query('department', '');
-        $needsTeacher = $request->boolean('needs');
-        $levelId = (string) $request->query('level', '');
-        $search = trim((string) $request->query('q', ''));
-
         $gaps = $this->seriesGaps($school, $year);
-        $unstaffed = fn (Builder $query) => $query
-            ->whereHas('classSubjects', fn (Builder $rows) => $rows->whereNull('staff_id'))
-            ->orDoesntHave('classSubjects')
-            ->orWhereIn('id', array_keys($gaps));
+        [$query, $filters] = $this->list($request, $school, $gaps);
 
-        $subjects = Subject::where('school_id', $school->id)
+        $subjects = $query
             ->with(['classSubjects.schoolClass.level:id,code,name,ordinal', 'series:id,stream'])
-            ->when($department !== '', fn (Builder $query) => $query->where('department', $department))
-            ->when($needsTeacher, fn (Builder $query) => $query->where($unstaffed))
-            ->when($levelId !== '', fn (Builder $query) => $query->whereHas(
-                'classSubjects.schoolClass',
-                fn (Builder $classes) => $classes->where('level_id', $levelId),
-            ))
-            ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $inner) => $inner
-                ->whereLike('name', "%{$search}%")
-                ->orWhereLike('code', "%{$search}%")
-                ->orWhereHas('classSubjects.staff', fn (Builder $staff) => $staff->whereLike('full_name', "%{$search}%"))))
-            ->orderBy('code')
-            ->paginate(static::PER_PAGE)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         $all = Subject::where('school_id', $school->id);
@@ -69,23 +52,18 @@ class SubjectController extends Controller
             ->groupBy('department')
             ->orderByDesc('total')
             ->orderBy('department')
-            ->pluck('department');
+            ->pluck('total', 'department');
 
         return Inertia::render('subjects/roster', [
             'yearLabel' => $year?->label,
             'counts' => [
                 'total' => $all->clone()->count(),
                 'departments' => $departments->count(),
-                'needs_teacher' => $all->clone()->where($unstaffed)->count(),
+                'needs_teacher' => $all->clone()->where($this->unstaffed($gaps))->count(),
             ],
-            'departments' => $departments,
+            'departments' => $departments->map(fn (int $total, string $name) => ['name' => $name, 'count' => $total])->values(),
             'levels' => Level::where('school_id', $school->id)->orderBy('ordinal')->get(['id', 'name']),
-            'filters' => [
-                'department' => $department,
-                'needs' => $needsTeacher,
-                'level' => $levelId,
-                'q' => $search,
-            ],
+            'filters' => $filters,
             'subjects' => [
                 'rows' => collect($subjects->items())->map(fn (Subject $subject) => [
                     ...$this->summary($subject),
@@ -94,8 +72,126 @@ class SubjectController extends Controller
                 'page' => $subjects->currentPage(),
                 'lastPage' => $subjects->lastPage(),
                 'total' => $subjects->total(),
+                'perPage' => $subjects->perPage(),
+                'from' => $subjects->firstItem(),
+                'to' => $subjects->lastItem(),
             ],
         ]);
+    }
+
+    /**
+     * The subject roster as it is filtered on screen, as a CSV file or a
+     * list to print. Selected rows narrow it to those subjects only.
+     */
+    public function export(Request $request): StreamedResponse|Response
+    {
+        $school = StructureController::schoolFor($request);
+        $year = StructureController::currentYear($school);
+        $gaps = $this->seriesGaps($school, $year);
+        [$query, , $applied] = $this->list($request, $school, $gaps);
+        $ids = $this->exportIds($request);
+
+        $subjects = $query
+            ->with(['classSubjects.schoolClass.level:id,code,name,ordinal', 'classSubjects.staff:id,full_name', 'series:id,stream'])
+            ->when($ids !== [], fn (Builder $query) => $query->whereIn('id', $ids))
+            ->get();
+
+        $rows = $subjects->map(function (Subject $subject) {
+            $summary = $this->summary($subject);
+
+            return [
+                'name' => $summary['name'],
+                'code' => $summary['code'],
+                'department' => $summary['department'],
+                'kind' => $this->say($summary['kind']),
+                'levels' => implode(', ', $summary['levels']),
+                'coefficient' => $summary['coefficient'] ?? '',
+                'classes' => $summary['classes'],
+                'teachers' => $subject->classSubjects->map(fn (ClassSubject $row) => $row->staff?->full_name)->filter()->unique()->sort()->join(', '),
+                'unstaffed' => $summary['unstaffed'],
+                'periods' => $summary['periods'],
+            ];
+        });
+
+        return $this->sendExport($request, $school, $this->say('Subjects'), $ids !== [] ? [...$applied, $this->say(':count selected', ['count' => count($ids)])] : $applied, [
+            'name' => $this->say('Subject'),
+            'code' => $this->say('Code'),
+            'department' => $this->say('Department'),
+            'kind' => $this->say('Kind'),
+            'levels' => $this->say('Levels'),
+            'coefficient' => $this->say('Coeff.'),
+            'classes' => $this->say('Classes'),
+            'teachers' => $this->say('Teachers'),
+            'unstaffed' => $this->say('Classes without a teacher'),
+            'periods' => $this->say('Periods a week'),
+        ], $rows, $rows->count());
+    }
+
+    /**
+     * Subjects with a class that has no teacher, no class at all, or a
+     * series that should teach them but does not.
+     *
+     * @param  array<string, list<string>>  $gaps
+     * @return \Closure(Builder<Subject>): Builder<Subject>
+     */
+    protected function unstaffed(array $gaps): \Closure
+    {
+        return fn (Builder $query) => $query
+            ->whereHas('classSubjects', fn (Builder $rows) => $rows->whereNull('staff_id'))
+            ->orDoesntHave('classSubjects')
+            ->orWhereIn('id', array_keys($gaps));
+    }
+
+    /**
+     * The subject query with the filters, search and sort from the page
+     * address applied, the filters as the page shows them, and the same
+     * in words for an export.
+     *
+     * @param  array<string, list<string>>  $gaps
+     * @return array{0: Builder<Subject>, 1: array<string, mixed>, 2: list<string>}
+     */
+    protected function list(Request $request, School $school, array $gaps): array
+    {
+        $search = trim((string) $request->query('q', ''));
+        $departments = $this->many($request, 'department');
+        $levels = $this->many($request, 'level');
+        $staffing = in_array($request->query('staffing'), ['needs', 'staffed'], true) ? (string) $request->query('staffing') : '';
+        [$sort, $direction] = $this->sorting($request, ['code', 'name', 'department'], 'code');
+        $unstaffed = $this->unstaffed($gaps);
+
+        $query = Subject::where('school_id', $school->id)
+            ->when($departments !== [], fn (Builder $query) => $query->whereIn('department', $departments))
+            ->when($staffing === 'needs', fn (Builder $query) => $query->where($unstaffed))
+            ->when($staffing === 'staffed', fn (Builder $query) => $query->whereNot($unstaffed))
+            ->when($levels !== [], fn (Builder $query) => $query->whereHas(
+                'classSubjects.schoolClass',
+                fn (Builder $classes) => $classes->whereIn('level_id', $levels),
+            ))
+            ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $inner) => $inner
+                ->whereLike('name', "%{$search}%")
+                ->orWhereLike('code', "%{$search}%")
+                ->orWhereHas('classSubjects.staff', fn (Builder $staff) => $staff->whereLike('full_name', "%{$search}%"))));
+
+        match ($sort) {
+            'name' => $query->orderBy('name', $direction),
+            'department' => $query->orderBy('department', $direction)->orderBy('code'),
+            default => $query->orderBy('code', $direction),
+        };
+
+        $applied = array_values(array_filter([
+            $search !== '' ? $this->say('Search: :q', ['q' => $search]) : null,
+            $departments !== [] ? $this->say('Department: :value', ['value' => implode(', ', $departments)]) : null,
+            $levels !== [] ? $this->say('Level: :value', ['value' => Level::whereIn('id', $levels)->orderBy('ordinal')->pluck('name')->join(', ')]) : null,
+            $staffing !== '' ? $this->say('Staffing: :value', ['value' => $staffing === 'needs' ? $this->say('Needs a teacher') : $this->say('Fully staffed')]) : null,
+        ]));
+
+        return [$query, [
+            'q' => $search,
+            'department' => $departments,
+            'level' => $levels,
+            'staffing' => $staffing,
+            'sort' => ($direction === 'desc' ? '-' : '').$sort,
+        ], $applied];
     }
 
     public function create(Request $request): Response

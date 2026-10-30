@@ -293,6 +293,14 @@ export default function Sidebar({
     const sections =
         user?.portal === 'teacher' ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
     const path = url.split('?')[0];
+    const covers = (href: string) =>
+        path === href || path.startsWith(`${href}/`);
+    // The most specific link wins, so a page under Admissions does not
+    // also light up Overview.
+    const current = sections
+        .flatMap((section) => section.links)
+        .filter((link) => covers(link.href))
+        .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
     return (
         <aside
@@ -326,9 +334,7 @@ export default function Sidebar({
                             </p>
                         )}
                         {section.links.map((link) => {
-                            const active =
-                                path === link.href ||
-                                path.startsWith(`${link.href}/`);
+                            const active = link.href === current;
                             const badge =
                                 link.href === '/fees' ? feeBadge : null;
 

@@ -341,11 +341,13 @@ function Syllabus({
     };
 
     return (
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-7">
             <Head title={t('Syllabus')} />
-            <StructureTabs active="schemes" />
             <SchemesHeader
                 trail={[{ label: t('Syllabus') }]}
+                tag={t('Schemes:term_label', {
+                    term_label: steps.term ? ` · ${t(steps.term.label)}` : '',
+                })}
                 title={t('Syllabus')}
                 sub={t(
                     'The topics each subject must cover at each level. Every teacher’s scheme starts from this list, and it is kept for next year.',
@@ -356,6 +358,7 @@ function Syllabus({
                     </Link>
                 }
             />
+            <StructureTabs active="schemes" />
             <StepBar steps={steps} active="syllabus" />
 
             {levels.length === 0 ? (

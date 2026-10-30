@@ -93,12 +93,11 @@ function ReEnrolment({
 
     return (
         <div className="flex flex-col gap-5">
-            <Head title={t('Re-enrolment')} />
+            <Head title={t('Promotion')} />
             <EnrolmentHeader
-                active="re-enrolment"
                 progress={enrolment}
-                trail={[{ label: t('Continuing students') }]}
-                title={t('Re-enrolment')}
+                trail={[{ label: t('Promotion') }]}
+                title={t('Promotion')}
                 meta={t('decide for every student: promote, repeat or leaving')}
             />
 

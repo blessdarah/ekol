@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import {
+    exportMethod,
     index,
     structure,
     student,
@@ -15,12 +16,32 @@ import {
     capsLabelClass,
     solidButtonClass,
 } from '../../components/structure/ui';
+import {
+    BulkBar,
+    Checkbox,
+    DownloadIcon,
+    ExportDialog,
+    type FilterField,
+    FilterChips,
+    type FilterValues,
+    type QuickPick,
+    TableFooter,
+    TableToolbar,
+    bulkButtonClass,
+    count,
+    toQuery,
+    useSelection,
+    useTableQuery,
+} from '../../components/table/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
 interface Filters {
-    show: string;
     q: string;
+    state: string[];
+    level: string;
+    class: string[];
+    sort: string;
 }
 
 interface FeesProps {
@@ -34,6 +55,8 @@ interface FeesProps {
     };
     counts: Record<string, number>;
     filters: Filters;
+    levels: { id: string; name: string }[];
+    classes: { id: string; name: string; level_id: string | null }[];
     students: {
         rows: {
             id: string;
@@ -49,17 +72,12 @@ interface FeesProps {
         page: number;
         lastPage: number;
         total: number;
+        perPage: number;
+        from: number | null;
+        to: number | null;
     };
     hasPlans: boolean;
 }
-
-const TABS = [
-    { key: 'all', label: 'All' },
-    { key: 'overdue', label: 'Overdue' },
-    { key: 'owing', label: 'Owing, not late' },
-    { key: 'paid', label: 'Paid' },
-    { key: 'unbilled', label: 'Not billed' },
-];
 
 function Fees({
     yearLabel,
@@ -67,44 +85,97 @@ function Fees({
     totals,
     counts,
     filters,
+    levels,
+    classes,
     students,
     hasPlans,
 }: FeesProps) {
-    const [search, setSearch] = useState(filters.q);
-    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const { sort, ...values } = filters;
+    const table = useTableQuery((query) => index.url({ query }), values, {
+        sort,
+        per_page: students.perPage,
+    });
+    const selection = useSelection(students.rows.map((row) => row.id));
+    const [exporting, setExporting] = useState(false);
+    const shownClasses = values.level
+        ? classes.filter((option) => option.level_id === values.level)
+        : classes;
+    const states = [
+        { value: 'overdue', label: t('Overdue') },
+        { value: 'owing', label: t('Owing, not late') },
+        { value: 'paid', label: t('Paid') },
+        { value: 'unbilled', label: t('Not billed') },
+    ];
+    const fields: FilterField[] = [
+        { kind: 'chips', key: 'state', label: t('Status'), options: states },
+        {
+            kind: 'select',
+            key: 'level',
+            label: t('Level'),
+            anyLabel: t('Any level'),
+            options: levels.map((level) => ({
+                value: level.id,
+                label: level.name,
+            })),
+        },
+        {
+            kind: 'chips',
+            key: 'class',
+            label: t('Class'),
+            options: shownClasses.map((option) => ({
+                value: option.id,
+                label: option.name,
+            })),
+        },
+    ];
+    const quickPicks: QuickPick[] = [
+        {
+            label: t('Overdue'),
+            count: counts.overdue,
+            dot: 'bg-danger',
+            values: { state: ['overdue'] },
+        },
+        {
+            label: t('Still owing'),
+            count: counts.overdue + counts.owing,
+            dot: 'bg-warning',
+            values: { state: ['overdue', 'owing'] },
+        },
+        {
+            label: t('Paid in full'),
+            count: counts.paid,
+            values: { state: ['paid'] },
+        },
+        {
+            label: t('Not billed'),
+            count: counts.unbilled,
+            values: { state: ['unbilled'] },
+        },
+    ];
+
+    /** A level change drops classes that are not in it. */
+    function filter(patch: FilterValues) {
+        if (typeof patch.level === 'string' && patch.level !== values.level) {
+            table.set({
+                ...patch,
+                class: values.class.filter((id) =>
+                    classes.some(
+                        (option) =>
+                            option.id === id &&
+                            (!patch.level || option.level_id === patch.level),
+                    ),
+                ),
+            });
+        } else {
+            table.set(patch);
+        }
+        selection.clear();
+    }
+
     const share =
         totals.billed > 0
             ? Math.round((totals.collected / totals.billed) * 100)
             : 0;
-
-    function visit(patch: Partial<Filters> & { page?: number }) {
-        const next = { ...filters, ...patch };
-        const query: Record<string, string | number> = {};
-
-        if (next.show !== 'all') {
-            query.show = next.show;
-        }
-        if (next.q) {
-            query.q = next.q;
-        }
-        if (patch.page && patch.page > 1) {
-            query.page = patch.page;
-        }
-
-        router.get(
-            index.url({ query }),
-            {},
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    }
-
-    function onSearch(value: string) {
-        setSearch(value);
-        if (timer.current) {
-            clearTimeout(timer.current);
-        }
-        timer.current = setTimeout(() => visit({ q: value.trim() }), 300);
-    }
 
     const stats = [
         {
@@ -211,66 +282,67 @@ function Fees({
                         </div>
                     )}
 
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex flex-wrap gap-2">
-                            {TABS.map((tab) => {
-                                const active = filters.show === tab.key;
-
-                                return (
-                                    <button
-                                        key={tab.key}
-                                        type="button"
-                                        aria-pressed={active}
-                                        onClick={() => visit({ show: tab.key })}
-                                        className={`flex h-8 items-center gap-[6px] rounded-full border border-solid px-[14px] text-[13px] leading-4 ${
-                                            active
-                                                ? 'border-primary bg-primary-tint font-semibold text-primary'
-                                                : 'border-border font-medium text-text hover:bg-surface'
-                                        }`}
-                                    >
-                                        {tab.key === 'overdue' &&
-                                            counts.overdue > 0 && (
-                                                <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-danger" />
-                                            )}
-                                        {t(tab.label)} · {counts[tab.key] ?? 0}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <label className="flex h-9 w-[260px] items-center gap-2 rounded-md border border-solid border-border px-3 focus-within:border-primary">
-                            <svg
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                className="shrink-0"
+                    <div className="flex flex-col gap-3">
+                        {selection.ids.length > 0 || selection.allMatching ? (
+                            <BulkBar
+                                selected={selection.ids.length}
+                                total={students.total}
+                                allMatching={selection.allMatching}
+                                onSelectAll={selection.selectAllMatching}
+                                onClear={selection.clear}
                             >
-                                <circle
-                                    cx="11"
-                                    cy="11"
-                                    r="7"
-                                    fill="none"
-                                    stroke="#56625C"
-                                    strokeWidth="2"
-                                />
-                                <path
-                                    d="M16 16l5 5"
-                                    fill="none"
-                                    stroke="#56625C"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                />
-                            </svg>
-                            <span className="sr-only">
-                                {t('Search students')}
-                            </span>
-                            <input
-                                type="search"
-                                value={search}
-                                onChange={(e) => onSearch(e.target.value)}
-                                placeholder={t('Name or matricule')}
-                                className="w-full bg-transparent text-[14px] leading-[18px] text-text outline-none placeholder:text-text-muted"
+                                <button
+                                    type="button"
+                                    onClick={() => setExporting(true)}
+                                    className={bulkButtonClass}
+                                >
+                                    <DownloadIcon colour="#FFFFFF" />
+                                    {t('Export :count', {
+                                        count: count(
+                                            selection.allMatching
+                                                ? students.total
+                                                : selection.ids.length,
+                                        ),
+                                    })}
+                                </button>
+                            </BulkBar>
+                        ) : (
+                            <TableToolbar
+                                searchLabel={t('Search students')}
+                                searchPlaceholder={t('Name or matricule')}
+                                search={table.search}
+                                onSearch={(value) => {
+                                    table.onSearch(value);
+                                    selection.clear();
+                                }}
+                                filterTitle={t('Filter fees')}
+                                fields={fields}
+                                quickPicks={quickPicks}
+                                values={values}
+                                onFilter={filter}
+                                sorts={[
+                                    { value: 'owed', label: t('Most overdue') },
+                                    {
+                                        value: '-balance',
+                                        label: t('Largest balance'),
+                                    },
+                                    { value: 'name', label: t('Name') },
+                                    { value: 'class', label: t('Class') },
+                                ]}
+                                sort={sort}
+                                onSort={table.sort}
+                                countLabel={t(':count students', {
+                                    count: count(students.total),
+                                })}
+                                total={students.total}
+                                onExport={() => setExporting(true)}
                             />
-                        </label>
+                        )}
+                        <FilterChips
+                            fields={fields}
+                            values={values}
+                            onFilter={filter}
+                        />
                     </div>
 
                     {students.rows.length === 0 ? (
@@ -284,10 +356,22 @@ function Fees({
                         </p>
                     ) : (
                         <div className="overflow-x-auto rounded-lg border border-solid border-border">
-                            <div className="flex min-w-[860px] flex-col">
+                            <div className="flex min-w-[900px] flex-col">
                                 <div
                                     className={`flex h-9 items-center gap-4 border-b border-solid border-border bg-surface px-4 ${capsLabelClass}`}
                                 >
+                                    <span className="flex w-4 shrink-0">
+                                        <Checkbox
+                                            label={t('Select this page')}
+                                            checked={
+                                                selection.pageState === 'all'
+                                            }
+                                            mixed={
+                                                selection.pageState === 'some'
+                                            }
+                                            onChange={selection.togglePage}
+                                        />
+                                    </span>
                                     <span className="flex-1">
                                         {t('Student')}
                                     </span>
@@ -309,15 +393,34 @@ function Fees({
                                     <span className="w-[60px] shrink-0" />
                                 </div>
                                 {students.rows.map((row, position) => (
-                                    <Link
+                                    <div
                                         key={row.id}
-                                        href={student.url(row.id)}
-                                        className={`flex h-[52px] shrink-0 items-center gap-4 border-b border-solid border-border px-4 last:border-b-0 hover:bg-surface ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                        onClick={() =>
+                                            router.visit(student.url(row.id))
+                                        }
+                                        className={`flex h-[52px] shrink-0 cursor-pointer items-center gap-4 border-b border-solid border-border px-4 last:border-b-0 hover:bg-surface ${selection.has(row.id) ? 'bg-primary-tint/60' : position % 2 === 1 ? 'bg-row-alt' : ''}`}
                                     >
+                                        <span className="flex w-4 shrink-0">
+                                            <Checkbox
+                                                label={t('Select :row', {
+                                                    row: row.name,
+                                                })}
+                                                checked={selection.has(row.id)}
+                                                onChange={() =>
+                                                    selection.toggle(row.id)
+                                                }
+                                            />
+                                        </span>
                                         <span className="flex min-w-0 flex-1 flex-col">
-                                            <span className="truncate text-[14px] leading-[18px] font-medium text-text">
+                                            <Link
+                                                href={student.url(row.id)}
+                                                onClick={(event) =>
+                                                    event.stopPropagation()
+                                                }
+                                                className="truncate text-[14px] leading-[18px] font-medium text-text hover:underline"
+                                            >
                                                 {row.name}
-                                            </span>
+                                            </Link>
                                             <span className="font-mono text-[11px] leading-[14px] text-text-muted">
                                                 {row.matricule}
                                             </span>
@@ -348,50 +451,57 @@ function Fees({
                                         <span className="w-[60px] shrink-0 text-right text-[13px] leading-4 font-medium text-primary">
                                             {t('Open')}
                                         </span>
-                                    </Link>
+                                    </div>
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    <div className="flex flex-wrap items-center gap-4">
-                        <p className="text-[13px] leading-4 text-text-muted">
-                            {t(':rows of :total shown · most overdue first', {
-                                rows: students.rows.length,
-                                total: students.total,
-                            })}
-                        </p>
-                        {students.lastPage > 1 && (
-                            <div className="flex items-center gap-1">
-                                <button
-                                    type="button"
-                                    disabled={students.page <= 1}
-                                    onClick={() =>
-                                        visit({ page: students.page - 1 })
-                                    }
-                                    className="flex h-7 items-center rounded-md px-3 text-[13px] text-text hover:bg-surface disabled:opacity-40"
-                                >
-                                    {t('← Previous')}
-                                </button>
-                                <span className="px-1 font-mono text-[12px] text-text-muted">
-                                    {students.page} / {students.lastPage}
-                                </span>
-                                <button
-                                    type="button"
-                                    disabled={
-                                        students.page >= students.lastPage
-                                    }
-                                    onClick={() =>
-                                        visit({ page: students.page + 1 })
-                                    }
-                                    className="flex h-7 items-center rounded-md px-3 text-[13px] text-text hover:bg-surface disabled:opacity-40"
-                                >
-                                    {t('Next →')}
-                                </button>
-                            </div>
-                        )}
-                    </div>
+                    <TableFooter
+                        paged={students}
+                        onPage={table.page}
+                        onPerPage={table.perPage}
+                    />
                 </>
+            )}
+
+            {exporting && (
+                <ExportDialog
+                    title={t('Export fees')}
+                    subtitle={t(':year · as filtered on screen', {
+                        year: yearLabel ?? t('Fees'),
+                    })}
+                    noun={t('students')}
+                    matching={students.total}
+                    selected={selection.allMatching ? 'all' : selection.ids}
+                    everyone={counts.all}
+                    columns={[
+                        { key: 'name', label: t('Name'), on: true },
+                        { key: 'matricule', label: t('Matricule'), on: true },
+                        { key: 'class', label: t('Class'), on: true },
+                        { key: 'due', label: t('Annual fees'), on: true },
+                        { key: 'paid', label: t('Paid'), on: true },
+                        { key: 'balance', label: t('Balance'), on: true },
+                        { key: 'overdue', label: t('Overdue'), on: false },
+                        { key: 'state', label: t('Status'), on: true },
+                    ]}
+                    href={({ scope, format, columns }) =>
+                        exportMethod.url({
+                            query: toQuery(scope === 'everyone' ? {} : values, {
+                                sort,
+                                format:
+                                    format === 'print' ? 'print' : undefined,
+                                columns: columns.join(','),
+                                ids:
+                                    scope === 'selected' &&
+                                    !selection.allMatching
+                                        ? selection.ids.join(',')
+                                        : undefined,
+                            }),
+                        })
+                    }
+                    onClose={() => setExporting(false)}
+                />
             )}
         </div>
     );

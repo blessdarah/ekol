@@ -73,6 +73,14 @@ export default function PlatformLayout({
                                 )}
                             </Link>
                         ))}
+                        {/* Pulse is its own page, not an Inertia one, so it opens in full. */}
+                        <a
+                            href="/platform/pulse"
+                            className="flex min-h-[34px] items-center justify-between gap-3 rounded-lg px-2.5 text-[14px] text-[#8FA89A] hover:bg-[#1E3329]"
+                        >
+                            {t('Health')}
+                            <span aria-hidden="true">↗</span>
+                        </a>
                     </nav>
                 </div>
                 <div className="flex items-center gap-2.5 border-t border-[#1E3329] px-2 pt-3">

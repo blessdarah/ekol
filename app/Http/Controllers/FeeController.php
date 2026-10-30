@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Enums\AcademicYearStatus;
 use App\Enums\EnrolmentStatus;
 use App\Enums\PaymentMethod;
+use App\Http\Controllers\Concerns\BuildsFeeReceipt;
+use App\Http\Controllers\Concerns\ListsTables;
 use App\Http\Requests\Fees\BillFeesRequest;
 use App\Http\Requests\Fees\ExemptInvoiceRequest;
 use App\Http\Requests\Fees\RecordPaymentRequest;
@@ -28,20 +30,32 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Fees: what each level costs in a year, who has been billed, what
  * each student has paid, and the receipts for it.
+ *
+ * @phpstan-type LedgerRow array{id: string, name: string, matricule: string, class: string|null, class_id: string|null, level_id: string|null, due: float, paid: float, balance: float, overdue: float, state: string}
  */
 class FeeController extends Controller
 {
-    protected const int PER_PAGE = 10;
+    use BuildsFeeReceipt, ListsTables;
 
-    protected const array FILTERS = ['all', 'overdue', 'owing', 'paid', 'unbilled'];
+    /**
+     * Where a student's fees stand, and how the list names it.
+     */
+    protected const array STATES = [
+        'overdue' => 'Overdue',
+        'owing' => 'Owing, not late',
+        'paid' => 'Paid',
+        'unbilled' => 'Not billed',
+    ];
 
     /**
      * The bound school, for a signed-in user allowed to handle fees.
@@ -66,43 +80,12 @@ class FeeController extends Controller
     {
         $school = static::schoolFor($request);
         $year = StructureController::currentYear($school);
-        $filter = in_array($request->query('show'), static::FILTERS, true) ? (string) $request->query('show') : 'all';
-        $search = mb_strtolower(trim((string) $request->query('q', '')));
-        $page = max(1, (int) $request->query('page', 1));
-
-        $rows = collect($year ? $this->enrolled($school, $year) : [])->map(function (Enrolment $enrolment) {
-            $ledgers = ($enrolment->student->invoices ?? new Collection)
-                ->map(fn (Invoice $invoice) => $invoice->syncStatus()->ledger());
-            $due = (float) $ledgers->sum('due');
-            $balance = (float) $ledgers->sum('balance');
-            $overdue = (float) $ledgers->sum('overdue');
-
-            return [
-                'id' => $enrolment->student_id,
-                'name' => (string) $enrolment->student?->full_name,
-                'matricule' => (string) $enrolment->student?->admission_no,
-                'class' => $enrolment->schoolClass?->name,
-                'due' => $due,
-                'paid' => (float) $ledgers->sum('paid'),
-                'balance' => $balance,
-                'overdue' => $overdue,
-                'state' => match (true) {
-                    $ledgers->isEmpty() => 'unbilled',
-                    $balance <= 0 => 'paid',
-                    $overdue > 0 => 'overdue',
-                    default => 'owing',
-                },
-            ];
-        });
-
+        $rows = $this->ledgerRows($school, $year);
+        [$listed, $filters] = $this->ledgerList($request, $rows);
+        $perPage = $this->perPage($request);
+        $lastPage = max(1, (int) ceil($listed->count() / $perPage));
+        $page = min($lastPage, max(1, (int) $request->query('page', 1)));
         $counts = ['all' => $rows->count(), ...$rows->countBy('state')->all()];
-        $listed = $rows
-            ->filter(fn (array $row) => $filter === 'all' || $row['state'] === $filter)
-            ->filter(fn (array $row) => $search === ''
-                || str_contains(mb_strtolower($row['name']), $search)
-                || str_contains(mb_strtolower($row['matricule']), $search))
-            ->sortBy([['overdue', 'desc'], ['balance', 'desc'], ['name', 'asc']])
-            ->values();
 
         return Inertia::render('fees/index', [
             'yearLabel' => $year?->label,
@@ -120,15 +103,130 @@ class FeeController extends Controller
                 'paid' => $counts['paid'] ?? 0,
                 'unbilled' => $counts['unbilled'] ?? 0,
             ],
-            'filters' => ['show' => $filter, 'q' => trim((string) $request->query('q', ''))],
+            'filters' => $filters,
+            'levels' => Level::where('school_id', $school->id)->orderBy('ordinal')->get(['id', 'name']),
+            'classes' => $rows->whereNotNull('class_id')->unique('class_id')->sortBy('class')
+                ->map(fn (array $row) => ['id' => $row['class_id'], 'name' => $row['class'], 'level_id' => $row['level_id']])
+                ->values(),
             'students' => [
-                'rows' => $listed->forPage($page, static::PER_PAGE)->values(),
+                'rows' => $listed->forPage($page, $perPage)->values(),
                 'page' => $page,
-                'lastPage' => max(1, (int) ceil($listed->count() / static::PER_PAGE)),
+                'lastPage' => $lastPage,
                 'total' => $listed->count(),
+                'perPage' => $perPage,
+                'from' => $listed->isEmpty() ? null : ($page - 1) * $perPage + 1,
+                'to' => $listed->isEmpty() ? null : min($page * $perPage, $listed->count()),
             ],
             'hasPlans' => $year !== null && FeePlan::where('school_id', $school->id)->where('academic_year_id', $year->id)->exists(),
         ]);
+    }
+
+    /**
+     * The fee list as it is filtered on screen, as a CSV file or a list
+     * to print. Selected rows narrow it to those students only.
+     */
+    public function export(Request $request): StreamedResponse|Response
+    {
+        $school = static::schoolFor($request);
+        [$listed, , $applied] = $this->ledgerList($request, $this->ledgerRows($school, StructureController::currentYear($school)));
+        $ids = $this->exportIds($request);
+        $rows = $listed
+            ->filter(fn (array $row) => $ids === [] || in_array($row['id'], $ids, true))
+            ->map(fn (array $row) => [...$row, 'state' => $this->say(static::STATES[$row['state']])])
+            ->values();
+
+        return $this->sendExport($request, $school, $this->say('Fees'), $ids !== [] ? [...$applied, $this->say(':count selected', ['count' => count($ids)])] : $applied, [
+            'name' => $this->say('Name'),
+            'matricule' => $this->say('Matricule'),
+            'class' => $this->say('Class'),
+            'due' => $this->say('Annual fees'),
+            'paid' => $this->say('Paid'),
+            'balance' => $this->say('Balance'),
+            'overdue' => $this->say('Overdue'),
+            'state' => $this->say('Status'),
+        ], $rows, $rows->count());
+    }
+
+    /**
+     * One row per enrolled student, with what was billed, paid and owed.
+     *
+     * @return SupportCollection<int, LedgerRow>
+     */
+    protected function ledgerRows(School $school, ?AcademicYear $year): SupportCollection
+    {
+        return collect($year ? $this->enrolled($school, $year) : [])->map(function (Enrolment $enrolment) {
+            $ledgers = ($enrolment->student->invoices ?? new Collection)
+                ->map(fn (Invoice $invoice) => $invoice->syncStatus()->ledger());
+            $balance = (float) $ledgers->sum('balance');
+            $overdue = (float) $ledgers->sum('overdue');
+
+            return [
+                'id' => $enrolment->student_id,
+                'name' => (string) $enrolment->student?->full_name,
+                'matricule' => (string) $enrolment->student?->admission_no,
+                'class' => $enrolment->schoolClass?->name,
+                'class_id' => $enrolment->schoolClass?->id,
+                'level_id' => $enrolment->level_id ?? $enrolment->schoolClass?->level_id,
+                'due' => (float) $ledgers->sum('due'),
+                'paid' => (float) $ledgers->sum('paid'),
+                'balance' => $balance,
+                'overdue' => $overdue,
+                'state' => match (true) {
+                    $ledgers->isEmpty() => 'unbilled',
+                    $balance <= 0 => 'paid',
+                    $overdue > 0 => 'overdue',
+                    default => 'owing',
+                },
+            ];
+        });
+    }
+
+    /**
+     * The rows with the filters, search and sort from the page address
+     * applied, the filters as the page shows them, and the same in words.
+     *
+     * @param  SupportCollection<int, LedgerRow>  $rows
+     * @return array{0: SupportCollection<int, LedgerRow>, 1: array<string, mixed>, 2: list<string>}
+     */
+    protected function ledgerList(Request $request, SupportCollection $rows): array
+    {
+        $search = trim((string) $request->query('q', ''));
+        $needle = mb_strtolower($search);
+        $states = $this->many($request, 'state', array_keys(static::STATES));
+        $levelId = (string) $request->query('level', '');
+        $classes = $this->many($request, 'class');
+        [$sort, $direction] = $this->sorting($request, ['owed', 'name', 'class', 'balance'], 'owed');
+        $descending = $direction === 'desc';
+
+        $listed = $rows
+            ->filter(fn (array $row) => ($states === [] || in_array($row['state'], $states, true))
+                && ($levelId === '' || $row['level_id'] === $levelId)
+                && ($classes === [] || in_array($row['class_id'], $classes, true))
+                && ($needle === ''
+                    || str_contains(mb_strtolower($row['name']), $needle)
+                    || str_contains(mb_strtolower($row['matricule']), $needle)))
+            ->sortBy(match ($sort) {
+                'name' => [['name', $direction]],
+                'class' => [['class', $direction], ['name', 'asc']],
+                'balance' => [['balance', $direction], ['name', 'asc']],
+                default => [['overdue', $descending ? 'asc' : 'desc'], ['balance', $descending ? 'asc' : 'desc'], ['name', 'asc']],
+            })
+            ->values();
+
+        $applied = array_values(array_filter([
+            $search !== '' ? $this->say('Search: :q', ['q' => $search]) : null,
+            $states !== [] ? $this->say('Status: :value', ['value' => implode(', ', array_map(fn (string $state) => $this->say(static::STATES[$state]), $states))]) : null,
+            $levelId !== '' ? $this->say('Level: :value', ['value' => Level::whereKey($levelId)->value('name')]) : null,
+            $classes !== [] ? $this->say('Class: :value', ['value' => $rows->whereIn('class_id', $classes)->pluck('class')->unique()->sort()->join(', ')]) : null,
+        ]));
+
+        return [$listed, [
+            'q' => $search,
+            'state' => $states,
+            'level' => $levelId,
+            'class' => $classes,
+            'sort' => ($descending ? '-' : '').$sort,
+        ], $applied];
     }
 
     /**
@@ -431,32 +529,24 @@ class FeeController extends Controller
             ->whereHas('invoice.student', fn (Builder $query) => $query->where('school_id', $school->id))
             ->with(['invoice.installments', 'invoice.lines', 'invoice.exemption', 'invoice.payments', 'invoice.student', 'invoice.term.academicYear', 'receiver:id,full_name'])
             ->firstOrFail();
-        $invoice = $target->invoice;
-        $student = $invoice?->student;
-        $year = StructureController::currentYear($school);
 
-        return Inertia::render('fees/receipt', [
-            'issuer' => ['name' => $school->name, 'town' => $school->town],
-            'currency' => $school->currency,
+        return Inertia::render('fees/receipt', $this->feeReceipt($school, $target));
+    }
+
+    public function verifyReceipt(string $payment): Response
+    {
+        $target = Payment::whereKey($payment)->with('invoice.student')->firstOrFail();
+        $school = School::whereKey($target->invoice?->student?->school_id)->first();
+        abort_unless($school instanceof School, 404);
+
+        return Inertia::render('fees/receipt-verify', [
+            'issuer' => $school->name,
             'receipt' => [
                 'number' => $target->receipt_no,
-                'on' => $target->received_at->toDateString(),
                 'amount' => (float) $target->amount,
-                'method' => $target->method->label(),
+                'currency' => $school->currency,
+                'on' => $target->received_at->copy()->timezone($school->timezone)->toDateString(),
                 'reference' => $target->reference,
-                'by' => $target->receiver?->full_name,
-                'year' => $invoice?->term?->academicYear?->label,
-                'balance' => $invoice ? $invoice->ledger()['balance'] : 0.0,
-                'due' => $invoice ? $invoice->ledger()['due'] : 0.0,
-                'covers' => $invoice ? $invoice->split($target) : [],
-            ],
-            'student' => [
-                'id' => $student?->id,
-                'name' => $student?->full_name,
-                'matricule' => $student?->admission_no,
-                'class' => $student && $year
-                    ? Enrolment::where('student_id', $student->id)->where('academic_year_id', $year->id)->with('schoolClass:id,name')->first()?->schoolClass?->name
-                    : null,
             ],
         ]);
     }

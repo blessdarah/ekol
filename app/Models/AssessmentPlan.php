@@ -209,7 +209,7 @@ class AssessmentPlan extends Model
     public function sheets(): Collection
     {
         return AssessmentSubject::whereIn('assessment_id', $this->assessments()->select('id'))
-            ->with(['assessment.schoolClass.formMaster:id,full_name', 'subject:id,name', 'coefficient', 'examiner:id,full_name'])
+            ->with(['assessment.schoolClass.formMaster:id,full_name', 'subject:id,name', 'coefficient', 'examiner:id,full_name,initials,phone'])
             ->withCount(['marks as entered_count' => fn ($query) => $query->where(fn ($inner) => $inner->whereNotNull('score')->orWhere('is_absent', true))])
             ->get();
     }

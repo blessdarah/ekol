@@ -17,6 +17,7 @@ export interface Steps {
         label: string;
         week: number | null;
         weeks: number;
+        ends_on: string;
     } | null;
     syllabus: boolean;
     opened: boolean;
@@ -67,16 +68,24 @@ export function itemLabel(item: Pick<Item, 'topic' | 'name'>): string {
 export function SchemesHeader({
     trail,
     title,
+    tag,
+    meta,
+    badge,
     sub,
     action,
-    tag,
 }: {
     /** Steps after Schemes of work; the last is the page you are on. */
     trail?: Crumb[];
     title: string;
+    /** The mono line under the title, e.g. "Schemes · Term 1", as on the other Classes & Subjects tabs. */
+    tag: string;
+    /** Short facts after the tag. */
+    meta?: string;
+    /** A status shown before the tag. */
+    badge?: ReactNode;
+    /** A sentence explaining the page, under the tag line. */
     sub?: ReactNode;
     action?: ReactNode;
-    tag?: ReactNode;
 }) {
     return (
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -99,9 +108,13 @@ export function SchemesHeader({
                 <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
                     {title}
                 </h1>
-                {(tag || sub) && (
-                    <p className="flex flex-wrap items-center gap-2 text-[13px] leading-[19px] text-text-muted">
-                        {tag}
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">
+                    {badge}
+                    <span className="font-mono uppercase">{tag}</span>
+                    {meta && <span>· {meta}</span>}
+                </p>
+                {sub && (
+                    <p className="max-w-[720px] text-[13px] leading-[19px] text-text-muted">
                         {sub}
                     </p>
                 )}
@@ -150,7 +163,7 @@ export function StepBar({
             label: t('Review'),
             done: steps.opened && steps.to_approve === 0,
             href: steps.opened
-                ? (reviewHref ?? index.url({ query: { show: 'to_approve' } }))
+                ? (reviewHref ?? index.url({ query: { state: 'to_approve' } }))
                 : undefined,
             badge:
                 steps.to_approve > 0
@@ -241,6 +254,100 @@ export function StepBar({
                 );
             })}
         </ol>
+    );
+}
+
+/**
+ * The term at a glance for the progress page: where the term is, week
+ * by week, and the five steps as a quiet line of links.
+ */
+export function TermStrip({ steps }: { steps: Steps }) {
+    const week = steps.term?.week ?? 0;
+    const weeks = steps.term?.weeks ?? 0;
+    const items = [
+        { label: t('Syllabus'), done: steps.syllabus, href: syllabus.url() },
+        { label: t('Open'), done: steps.opened, href: opening.url() },
+        {
+            label: t('Review'),
+            done: steps.opened && steps.to_approve === 0,
+            href: index.url({ query: { state: 'to_approve' } }),
+        },
+        {
+            label: t('Follow progress'),
+            done: false,
+            current: true,
+            href: index.url(),
+        },
+        { label: t('Close term'), done: steps.closed, href: closing.url() },
+    ];
+
+    return (
+        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3 border-b border-solid border-border pb-5">
+            {steps.term && (
+                <div className="flex flex-wrap items-center gap-x-[14px] gap-y-2">
+                    <span className="font-mono text-[12px] leading-4 tracking-[0.04em] text-text-muted uppercase">
+                        {t('Week')}{' '}
+                        <span className="text-[13px] text-text">{week}</span>{' '}
+                        {t('of :weeks', { weeks })}
+                    </span>
+                    <span className="flex items-center gap-[3px]" aria-hidden>
+                        {Array.from({ length: weeks }, (_, index) => (
+                            <span
+                                key={index}
+                                className={`w-[14px] rounded-[3px] sm:w-[22px] ${
+                                    index + 1 <= week
+                                        ? 'bg-primary'
+                                        : 'bg-border'
+                                } ${index + 1 === week ? 'h-[10px]' : 'h-[6px]'}`}
+                            />
+                        ))}
+                    </span>
+                    <span className="text-[13px] leading-4 text-text-muted">
+                        {t('ends :date', {
+                            date: dayMonth(steps.term.ends_on, false),
+                        })}
+                    </span>
+                </div>
+            )}
+            <nav
+                aria-label={t('Steps')}
+                className="flex flex-wrap items-center gap-x-[18px] gap-y-2 text-[13px] leading-4"
+            >
+                {items.map((item) => (
+                    <Link
+                        key={item.label}
+                        href={item.href}
+                        aria-current={item.current ? 'step' : undefined}
+                        className={`flex items-center gap-[6px] hover:text-text ${
+                            item.current
+                                ? 'font-semibold text-text'
+                                : 'text-text-muted'
+                        }`}
+                    >
+                        {item.current ? (
+                            <span className="h-[7px] w-[7px] rounded-full bg-primary" />
+                        ) : (
+                            item.done && (
+                                <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="#1E7F4F"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden
+                                >
+                                    <path d="M5 12.5l4.5 4.5L19 7.5" />
+                                </svg>
+                            )
+                        )}
+                        {item.label}
+                    </Link>
+                ))}
+            </nav>
+        </div>
     );
 }
 
