@@ -1,3 +1,4 @@
+import { moneyNumber, moneyUnits } from '@/lib/money';
 import {
     bill,
     updateStructure,
@@ -89,8 +90,14 @@ export function fingerprint(items: ItemDraft[]): string {
             item.spread,
             item.new_only,
             Object.entries(item.amounts)
-                .filter(([, amount]) => Number(amount) > 0)
-                .map(([level, amount]) => [level, Number(amount)])
+                .filter(
+                    ([, amount]) =>
+                        amount.trim() !== '' && moneyUnits(amount) !== 0n,
+                )
+                .map(([level, amount]) => [
+                    level,
+                    String(moneyUnits(amount) ?? amount.trim()),
+                ])
                 .sort(([a], [b]) => String(a).localeCompare(String(b))),
         ]),
     );
@@ -127,17 +134,22 @@ export function useFeeStructure({
 
     const drafts = form.data.items;
     const dirty = fingerprint(drafts) !== fingerprint(saved);
-    const amountOf = (item: ItemDraft, levelId: string): number => {
-        const value = Number(item.amounts[levelId] ?? '');
+    const amountUnitsOf = (item: ItemDraft, levelId: string): bigint => {
+        const units = moneyUnits(item.amounts[levelId] ?? '') ?? 0n;
 
-        return Number.isFinite(value) && value > 0 ? value : 0;
+        return units > 0n ? units : 0n;
     };
-    const totalOf = (levelId: string, forNew: boolean): number =>
+    const amountOf = (item: ItemDraft, levelId: string): number =>
+        moneyNumber(amountUnitsOf(item, levelId));
+    const totalUnitsOf = (levelId: string, forNew: boolean): bigint =>
         drafts.reduce(
             (sum, item) =>
-                sum + (item.new_only && !forNew ? 0 : amountOf(item, levelId)),
-            0,
+                sum +
+                (item.new_only && !forNew ? 0n : amountUnitsOf(item, levelId)),
+            0n,
         );
+    const totalOf = (levelId: string, forNew: boolean): number =>
+        moneyNumber(totalUnitsOf(levelId, forNew));
     /** Which levels pay an item, when it is not all of them. */
     const payers = (item: ItemDraft): string | null => {
         const paying = levels
@@ -163,9 +175,12 @@ export function useFeeStructure({
             sum + (level.has_fee ? level.students - level.billed : 0),
         0,
     );
-    const expected = levels.reduce(
-        (sum, level) => sum + totalOf(level.id, false) * level.students,
-        0,
+    const expected = moneyNumber(
+        levels.reduce(
+            (sum, level) =>
+                sum + totalUnitsOf(level.id, false) * BigInt(level.students),
+            0n,
+        ),
     );
     const hasNewOnly = drafts.some((item) => item.new_only);
     const hasUpfront = drafts.some((item) => !item.spread);
@@ -215,7 +230,7 @@ export function useFeeStructure({
                 amounts: Object.fromEntries(
                     Object.entries(item.amounts).map(([level, amount]) => [
                         level,
-                        amount.trim() === '' ? null : Number(amount),
+                        amount.trim() === '' ? null : amount.trim(),
                     ]),
                 ),
             })),

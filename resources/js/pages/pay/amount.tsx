@@ -84,6 +84,13 @@ export default function ChooseAmount({
                                   })
                         }
                     />
+                    {balance % 1 !== 0 && (
+                        <p className="text-[14px] text-text-muted">
+                            {t(
+                                'Mobile payments use whole francs. Please settle any fractional balance at school.',
+                            )}
+                        </p>
+                    )}
                     <Form
                         action={chooseAmount.url()}
                         method="post"
@@ -175,7 +182,11 @@ export default function ChooseAmount({
                                 )}
                                 <button
                                     type="submit"
-                                    disabled={processing || amount < 1}
+                                    disabled={
+                                        processing ||
+                                        amount < 1 ||
+                                        amount > balance
+                                    }
                                     className={`${payButtonClass} mt-2`}
                                 >
                                     {amount > 0

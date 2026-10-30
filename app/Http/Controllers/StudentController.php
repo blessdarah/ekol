@@ -12,7 +12,7 @@ use App\Models\FeeInstallmentTemplate;
 use App\Models\FeePlan;
 use App\Models\Invoice;
 use App\Models\Level;
-use App\Models\Payment;
+use App\Models\Money;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Series;
@@ -652,7 +652,7 @@ class StudentController extends Controller
             ->orderBy('seq')
             ->get();
 
-        $percents = array_values($templates->map(fn (FeeInstallmentTemplate $template) => (float) $template->percent)->all());
+        $percents = array_values($templates->map(fn (FeeInstallmentTemplate $template) => (string) $template->percent)->all());
 
         return FeePlan::where('school_id', $school->id)
             ->where('academic_year_id', $year->id)
@@ -663,12 +663,12 @@ class StudentController extends Controller
 
                 return [
                     'level_id' => $plan->level_id,
-                    'amount' => array_sum(array_map(fn (array $line) => (float) $line['amount'], $lines)),
-                    'items' => array_map(fn (array $line) => ['name' => $line['name'], 'amount' => (float) $line['amount']], $lines),
+                    'amount' => Money::number(Money::sum(array_column($lines, 'amount'))),
+                    'items' => array_map(fn (array $line) => ['name' => $line['name'], 'amount' => Money::number(Money::units((string) $line['amount']))], $lines),
                     'installments' => $templates->values()->map(fn (FeeInstallmentTemplate $template, int $index) => [
                         'seq' => $template->seq,
                         'due_on' => $template->due_on?->toDateString(),
-                        'amount' => ($parts[$index] ?? 0) / 100,
+                        'amount' => Money::number($parts[$index] ?? 0),
                     ])->all(),
                 ];
             })
@@ -814,9 +814,9 @@ class StudentController extends Controller
             return ['status' => null, 'balance' => 0.0, 'due' => 0.0];
         }
 
-        $due = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->amount_due - $invoice->exempted());
-        $paid = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->payments->sum(fn (Payment $payment) => (float) $payment->amount));
-        $balance = max(0.0, $due - $paid);
+        $due = (int) $invoices->sum(fn (Invoice $invoice) => Money::units($invoice->amount_due) - $invoice->exemptedMinor());
+        $paid = Money::sum($invoices->flatMap(fn (Invoice $invoice) => $invoice->payments->pluck('amount')));
+        $balance = max(0, $due - $paid);
 
         $status = match (true) {
             $balance <= 0 => 'paid',
@@ -825,7 +825,7 @@ class StudentController extends Controller
             default => 'due',
         };
 
-        return ['status' => $status, 'balance' => $balance, 'due' => $due];
+        return ['status' => $status, 'balance' => Money::number($balance), 'due' => Money::number($due)];
     }
 
     protected function initials(Student $student): string

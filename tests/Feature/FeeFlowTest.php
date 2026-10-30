@@ -699,3 +699,95 @@ test('receipts are unavailable to staff of a different school and teachers', fun
     $teacher = User::factory()->create(['school_id' => $world['school']->id, 'role' => UserRole::Teacher]);
     $this->actingAs($teacher)->get("http://feesa.ekol.test/fees/payments/{$payment->id}/receipt")->assertForbidden();
 });
+
+test('decimal fees agree across payment limits receipts item totals and the dashboard', function () {
+    $world = feeWorld();
+    $level = $world['levels'][1]->id;
+    $this->actingAs($world['admin'])->patch('http://feesa.ekol.test/fees/structure', feeItems($world, [
+        ['name' => 'School fees', 'amounts' => [$level => '10.10']],
+        ['name' => 'Transport', 'amounts' => [$level => '20.70']],
+    ]))->assertSessionHasNoErrors();
+    billEveryone($world);
+    $student = $world['students'][0];
+    $invoice = Invoice::where('student_id', $student->id)->firstOrFail();
+    $pay = fn (string $amount) => $this->post("http://feesa.ekol.test/fees/students/{$student->id}/payments", [
+        'invoice_id' => $invoice->id, 'amount' => $amount, 'method' => 'cash', 'date' => '2025-10-01',
+    ]);
+
+    $pay('10.10')->assertSessionHasNoErrors();
+    $pay('20.71')->assertSessionHasErrors('amount');
+    $pay('20.70')->assertSessionHasNoErrors();
+
+    expect($invoice->fresh()->status)->toBe(InvoiceStatus::Paid);
+    $payments = $invoice->payments()->orderBy('receipt_no')->get();
+    $this->get("http://feesa.ekol.test/fees/payments/{$payments[1]->id}/receipt")
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('receipt.balance', 0)->where('receipt.paid', 30.8)
+        ->where('receipt.state', 'paid')->where('receipt.next', null));
+    $this->get("http://feesa.ekol.test/fees/payments/{$payments[0]->id}/receipt")
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('receipt.balance', 20.7)->where('receipt.paid', 10.1)
+        ->where('receipt.next.amount', 5.3)->has('receipt.history', 1));
+    $this->get('http://feesa.ekol.test/fees')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('totals.billed', 61.6)->where('totals.collected', 30.8)
+        ->where('totals.outstanding', 30.8)->where('totals.overdue', 15.4));
+    $this->get('http://feesa.ekol.test/fees/structure')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('items.0.billed', 20.2)->where('items.0.collected', 10.1)
+        ->where('items.1.billed', 41.4)->where('items.1.collected', 20.7));
+    $this->get('http://feesa.ekol.test/dashboard')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('fees.due', 61.6)->where('fees.collected', 30.8)
+        ->where('fees.overdue', 15.4)->where('fees.overdue_students', 1));
+});
+
+test('fee payment and exemption inputs reject unsupported decimal precision', function () {
+    $world = feeWorld();
+    $level = $world['levels'][1]->id;
+    $this->actingAs($world['admin'])->patch('http://feesa.ekol.test/fees/structure', feeItems($world, [
+        ['name' => 'School fees', 'amounts' => [$level => '10.001']],
+    ]))->assertSessionHasErrors("items.0.amounts.$level");
+    setFees($world, [$level => '30.80']);
+    billEveryone($world);
+    $student = $world['students'][0];
+    $invoice = Invoice::where('student_id', $student->id)->firstOrFail();
+    $this->post("http://feesa.ekol.test/fees/students/{$student->id}/payments", [
+        'invoice_id' => $invoice->id, 'amount' => '10.001', 'method' => 'cash', 'date' => '2025-10-01',
+    ])->assertSessionHasErrors('amount');
+    $this->post("http://feesa.ekol.test/fees/invoices/{$invoice->id}/exemption", [
+        'kind' => 'amount', 'value' => '1.001', 'reason' => 'Hardship',
+    ])->assertSessionHasErrors('value');
+
+    expect($invoice->payments()->count())->toBe(0)
+        ->and($invoice->exemption()->exists())->toBeFalse();
+});
+
+test('a remaining hundredth can be settled at school without overpayment', function () {
+    $world = feeWorld();
+    setFees($world, [$world['levels'][1]->id => '1.01']);
+    billEveryone($world);
+    $student = $world['students'][0];
+    $invoice = Invoice::where('student_id', $student->id)->firstOrFail();
+    foreach (['1.00', '0.01'] as $amount) {
+        $this->post("http://feesa.ekol.test/fees/students/{$student->id}/payments", [
+            'invoice_id' => $invoice->id, 'amount' => $amount, 'method' => 'cash', 'date' => '2025-10-01',
+        ])->assertSessionHasNoErrors();
+    }
+
+    expect($invoice->fresh()->status)->toBe(InvoiceStatus::Paid)
+        ->and($invoice->fresh()->ledgerMinor()['paid'])->toBe(101)
+        ->and($invoice->fresh()->ledgerMinor()['balance'])->toBe(0);
+});
+
+test('a full percentage exemption clears a fractional invoice exactly', function (string $amount, int $expected) {
+    $world = feeWorld();
+    setFees($world, [$world['levels'][1]->id => $amount]);
+    billEveryone($world);
+    $invoice = Invoice::where('student_id', $world['students'][0]->id)->firstOrFail();
+
+    $this->post("http://feesa.ekol.test/fees/invoices/{$invoice->id}/exemption", [
+        'kind' => 'percent', 'value' => '100.00', 'reason' => 'Hardship',
+    ])->assertSessionHasNoErrors();
+
+    expect($invoice->fresh()->ledgerMinor()['exempted'])->toBe($expected)
+        ->and($invoice->fresh()->ledgerMinor()['balance'])->toBe(0)
+        ->and($invoice->fresh()->status)->toBe(InvoiceStatus::Paid);
+})->with([['30.80', 3080], ['0.01', 1]]);

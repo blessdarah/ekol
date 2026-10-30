@@ -1,3 +1,4 @@
+import { moneyNumber, moneySum } from '@/lib/money';
 import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { dayMonth } from './ui';
@@ -410,10 +411,12 @@ function CounterfoilReceipt(props: FeeReceiptProps) {
                                 <div>
                                     <strong>
                                         {money(
-                                            earlier.reduce(
-                                                (sum, entry) =>
-                                                    sum + entry.amount,
-                                                0,
+                                            moneyNumber(
+                                                moneySum(
+                                                    earlier.map(
+                                                        (entry) => entry.amount,
+                                                    ),
+                                                ),
                                             ),
                                         )}
                                     </strong>

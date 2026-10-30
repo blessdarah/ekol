@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MobilePayment;
+use App\Models\Money;
 use BlessDarah\PhpCampay\Campay;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -39,7 +40,7 @@ class MobilePaymentController extends Controller
         return Inertia::render('fees/mobile-money', [
             'currency' => $school->currency,
             'totals' => [
-                'collected_today' => (float) (clone $today)->where('status', MobilePayment::SUCCESSFUL)->sum('amount'),
+                'collected_today' => Money::number(Money::sum((clone $today)->where('status', MobilePayment::SUCCESSFUL)->pluck('amount'))),
                 'paid_today' => (clone $today)->where('status', MobilePayment::SUCCESSFUL)->count(),
                 'waiting' => (clone $base)->where('status', MobilePayment::PENDING)->count(),
                 'failed_today' => (clone $today)->where('status', MobilePayment::FAILED)->count(),
@@ -49,7 +50,7 @@ class MobilePaymentController extends Controller
                 'rows' => collect($listed->items())->map(fn (MobilePayment $payment) => [
                     'id' => $payment->id,
                     'student' => $payment->student ? ['id' => $payment->student_id, 'name' => $payment->student->full_name, 'matricule' => $payment->student->admission_no] : null,
-                    'amount' => (float) $payment->amount,
+                    'amount' => Money::number(Money::units($payment->amount)),
                     'phone' => $payment->phone,
                     'operator' => $payment->operator,
                     'status' => $payment->status,

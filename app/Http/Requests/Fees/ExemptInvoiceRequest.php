@@ -20,7 +20,7 @@ class ExemptInvoiceRequest extends SchoolRequest
     {
         return [
             'kind' => ['required', Rule::in(FeeExemption::KINDS)],
-            'value' => ['required', 'numeric', 'gt:0'],
+            'value' => ['required', 'numeric', 'decimal:0,2', 'gt:0', 'max:99999999.99'],
             'reason' => ['required', 'string', 'max:150'],
         ];
     }

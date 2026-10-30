@@ -9,6 +9,7 @@ use App\Models\Enrolment;
 use App\Models\FeeItem;
 use App\Models\Invoice;
 use App\Models\MobilePayment;
+use App\Models\Money;
 use App\Models\School;
 use App\Models\Student;
 use App\Notifications\ParentVerificationCode;
@@ -224,7 +225,7 @@ class ParentController extends Controller
         }
 
         $invoice = static::openInvoice($student);
-        $ledger = $invoice?->ledger();
+        $ledger = $invoice?->ledgerMinor();
         $next = collect($ledger['installments'] ?? [])->first(fn (array $row) => $row['state'] !== 'paid');
         $term = StudentController::currentTerm($school);
         $attendance = StudentAttendanceController::summary($student, $term);
@@ -233,8 +234,8 @@ class ParentController extends Controller
             'issuer' => static::issuer($school),
             'student' => static::studentCard($student),
             'fees' => [
-                'balance' => $ledger ? (int) round($ledger['balance']) : 0,
-                'overdue' => $ledger ? (int) round($ledger['overdue']) : 0,
+                'balance' => $ledger ? Money::number($ledger['balance']) : 0,
+                'overdue' => $ledger ? Money::number($ledger['overdue']) : 0,
                 'next' => $next ? ['label' => $next['label'], 'due_on' => $next['due_on']] : null,
             ],
             'attendance' => [
@@ -395,7 +396,7 @@ class ParentController extends Controller
             ->with(['installments', 'lines', 'payments', 'exemption'])
             ->orderBy('issued_on')
             ->get()
-            ->first(fn (Invoice $candidate) => $candidate->ledger()['balance'] > 0);
+            ->first(fn (Invoice $candidate) => $candidate->ledgerMinor()['balance'] > 0);
     }
 
     /**

@@ -18,7 +18,7 @@ use App\Models\Enrolment;
 use App\Models\FeePlan;
 use App\Models\Invoice;
 use App\Models\Level;
-use App\Models\Payment;
+use App\Models\Money;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Term;
@@ -825,10 +825,10 @@ class EnrolmentController extends Controller
     {
         $student = $enrolment->student;
         $invoices = $student ? $student->invoices : new Collection;
-        $due = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->amount_due - $invoice->exempted());
-        $paid = (float) $invoices->sum(fn (Invoice $invoice) => (float) $invoice->payments->sum(fn (Payment $payment) => (float) $payment->amount));
+        $due = (int) $invoices->sum(fn (Invoice $invoice) => Money::units($invoice->amount_due) - $invoice->exemptedMinor());
+        $paid = Money::sum($invoices->flatMap(fn (Invoice $invoice) => $invoice->payments->pluck('amount')));
 
-        return max(0.0, $due - $paid);
+        return Money::number(max(0, $due - $paid));
     }
 
     protected function audit(Request $request, School $school, string $entity, string $entityId, string $action, mixed $diff): void

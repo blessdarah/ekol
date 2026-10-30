@@ -118,7 +118,7 @@ class MobilePayment extends Model
             'school_id' => $student->school_id,
             'student_id' => $student->id,
             'invoice_id' => $invoice->id,
-            'amount' => number_format($amount, 2, '.', ''),
+            'amount' => Money::decimal($amount * 100),
             'phone' => $digits,
             'operator' => static::operatorFor($digits),
             'status' => static::PENDING,

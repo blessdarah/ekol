@@ -1,3 +1,4 @@
+import { moneyNumber, moneyUnits } from '@/lib/money';
 import { t } from '../../../lib/i18n';
 import { dayMonth, figure } from '../../fees/ui';
 import { capsLabelClass } from '../../structure/ui';
@@ -31,7 +32,10 @@ export function Installments({ invoice }: { invoice: ShownInvoice }) {
                     </div>
                     {invoice.installments.map((row, position) => {
                         const status = STATUS[row.state];
-                        const left = row.amount - row.paid;
+                        const left = moneyNumber(
+                            (moneyUnits(row.amount) ?? 0n) -
+                                (moneyUnits(row.paid) ?? 0n),
+                        );
                         const share =
                             invoice.due > 0
                                 ? Math.round((row.amount / invoice.due) * 100)

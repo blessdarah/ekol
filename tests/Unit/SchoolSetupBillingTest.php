@@ -202,3 +202,60 @@ test('assessment window open check follows its bounds', function () {
         ->and($closed->windowOpen())->toBeFalse()
         ->and($unbounded->windowOpen())->toBeTrue();
 });
+
+test('decimal payments settle an invoice without a phantom overdue balance', function () {
+    $this->travelTo('2025-10-01');
+    $school = billingSchool();
+    $year = billingYear($school);
+    billingTemplate($school, $year, [100]);
+    [$student, $term, $plan] = billingParties($school, $year);
+    $invoice = Invoice::issue($student, $term, $plan, '30.80', '2025-09-05');
+
+    $invoice->recordPayment('10.10', PaymentMethod::Cash);
+    $invoice->recordPayment('20.70', PaymentMethod::Cash);
+
+    expect($invoice->fresh()->ledger()['balance'])->toBe(0.0)
+        ->and($invoice->fresh()->ledger()['overdue'])->toBe(0.0)
+        ->and($invoice->fresh()->status)->toBe(InvoiceStatus::Paid);
+});
+
+test('a tiny discounted balance is shared without negative installments', function () {
+    $school = billingSchool();
+    $year = billingYear($school);
+    billingTemplate($school, $year, [25, 25, 25, 25]);
+    [$student, $term, $plan] = billingParties($school, $year);
+    $invoice = Invoice::issue($student, $term, $plan, '1200.00', '2025-09-05');
+    $invoice->exemption()->create(['kind' => 'amount', 'amount' => '1198.00', 'reason' => 'Hardship']);
+
+    $ledger = $invoice->fresh()->ledger();
+
+    expect(array_column($ledger['installments'], 'amount'))->toBe([0.5, 0.5, 0.5, 0.5])
+        ->and($ledger['due'])->toBe(2.0);
+});
+
+test('uneven installment percentages preserve every stored hundredth', function () {
+    $school = billingSchool();
+    $year = billingYear($school);
+    billingTemplate($school, $year, [50, 30, 20]);
+    [$student, $term, $plan] = billingParties($school, $year);
+    $invoice = Invoice::issue($student, $term, $plan, '60001.00', '2025-09-05');
+
+    expect(array_column($invoice->ledger()['installments'], 'amount'))->toBe([30000.5, 18000.3, 12000.2])
+        ->and(array_sum(array_column($invoice->ledgerMinor()['installments'], 'amount')))->toBe(6000100);
+});
+
+test('payments target the oldest installment still owing after a discount', function () {
+    $school = billingSchool();
+    $year = billingYear($school);
+    billingTemplate($school, $year, [50, 30, 20]);
+    [$student, $term, $plan] = billingParties($school, $year);
+    $invoice = Invoice::issue($student, $term, $plan, '1000.00', '2025-09-05');
+    $invoice->recordPayment('400.00', PaymentMethod::Cash);
+    $invoice->exemption()->create(['kind' => 'amount', 'amount' => '200.00', 'reason' => 'Hardship']);
+    $invoice = $invoice->fresh();
+
+    $payment = $invoice->recordPayment('100.00', PaymentMethod::Cash);
+
+    expect($payment->installment_id)->toBe($invoice->installments->firstWhere('seq', 2)->id)
+        ->and($invoice->ledgerMinor()['balance'])->toBe(30000);
+});

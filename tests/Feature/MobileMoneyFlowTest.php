@@ -466,3 +466,19 @@ test('parents can open their child receipt but cannot open another childs receip
     $this->withSession(['parent' => null])->get("http://ekol.test/parents/receipts/{$payment->id}")
         ->assertRedirect(route('parents'));
 });
+
+test('mobile payment choices never round a fractional balance upward', function () {
+    $world = momoWorld();
+    $world['invoice']->recordPayment('59969.20', 'cash');
+    findChild();
+
+    $this->get('http://ekol.test/parents/pay')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('balance', 30.8)->where('options.0.amount', 30));
+    $this->post('http://ekol.test/parents/pay', ['amount' => 31])->assertSessionHasErrors('amount');
+    $this->post('http://ekol.test/parents/pay', ['amount' => 30])->assertSessionHasNoErrors();
+
+    $world['invoice']->recordPayment('30.00', 'cash');
+    $this->get('http://ekol.test/parents/pay')->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('balance', 0.8)->has('options', 0));
+    $this->post('http://ekol.test/parents/pay', ['amount' => 1])->assertSessionHasErrors('amount');
+});
