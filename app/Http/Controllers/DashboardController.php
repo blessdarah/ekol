@@ -11,6 +11,7 @@ use App\Models\AssessmentSubject;
 use App\Models\Attendance;
 use App\Models\Enrolment;
 use App\Models\Invoice;
+use App\Models\Money;
 use App\Models\Period;
 use App\Models\School;
 use App\Models\SchoolClass;
@@ -59,10 +60,10 @@ class DashboardController extends Controller
         $term = StudentController::currentTerm($school);
         $enrolments = $year ? Enrolment::where('academic_year_id', $year->id)->where('status', EnrolmentStatus::Enrolled)->count() : 0;
         $invoices = Invoice::whereHas('student', fn ($q) => $q->where('school_id', $school->id))
-            ->when($term, fn ($q) => $q->where('term_id', $term->id))->with('student')->withSum('payments', 'amount')->with('exemption')->get();
-        $due = $invoices->sum('amount_due');
-        $paid = $invoices->sum('payments_sum_amount');
-        $balance = fn ($invoice) => max(0, (float) $invoice->amount_due - (float) $invoice->getAttribute('payments_sum_amount') - (float) ($invoice->exemption->amount ?? 0));
+            ->when($term, fn ($q) => $q->where('term_id', $term->id))->with('student')->with('payments')->with('exemption')->get();
+        $due = Money::sum($invoices->pluck('amount_due'));
+        $paid = Money::sum($invoices->flatMap(fn (Invoice $invoice) => $invoice->payments->pluck('amount')));
+        $balance = fn ($invoice) => max(0, Money::units($invoice->amount_due) - Money::sum($invoice->payments->pluck('amount')) - Money::units((string) ($invoice->exemption->amount ?? 0)));
         $overdue = $invoices->filter(fn ($invoice) => $balance($invoice) > 0)->values();
         $staff = User::where('school_id', $school->id)->whereIn('role', ['teacher', 'form_master', 'head_of_department'])->count();
         $openPlans = AssessmentPlan::where('school_id', $school->id)->where('state', 'marks_open')->count();
@@ -70,11 +71,11 @@ class DashboardController extends Controller
         return Inertia::render('platform/school-dashboard', [
             'date' => now($school->timezone)->translatedFormat('l, j F'), 'schoolName' => $school->name,
             'students' => $enrolments, 'classes' => $year ? SchoolClass::where('academic_year_id', $year->id)->count() : 0,
-            'teachers' => $staff, 'collected' => $paid, 'billed' => $due,
-            'percent' => $due > 0 ? min(100, (int) round($paid / $due * 100)) : 0,
+            'teachers' => $staff, 'collected' => Money::number($paid), 'billed' => Money::number($due),
+            'percent' => $due > 0 ? min(100, Money::ratio($paid, 100, $due)) : 0,
             'openAssessments' => $openPlans, 'overdueCount' => $overdue->count(),
             'overdue' => $overdue->take(5)->map(fn ($invoice) => ['id' => $invoice->student_id, 'name' => $invoice->student->full_name,
-                'admission' => $invoice->student->admission_no, 'balance' => $balance($invoice)]),
+                'admission' => $invoice->student->admission_no, 'balance' => Money::number($balance($invoice))]),
         ]);
     }
 

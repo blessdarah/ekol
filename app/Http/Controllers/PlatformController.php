@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\UserRole;
 use App\Models\DemoRequest;
 use App\Models\DemoSchoolBuilder;
+use App\Models\Money;
 use App\Models\Payment;
 use App\Models\PendingRegistration;
 use App\Models\School;
@@ -67,7 +68,7 @@ class PlatformController extends Controller
                 ...$selected->only(['id', 'name', 'slug', 'town', 'region', 'cycle', 'created_at']),
                 'administrator' => User::where('school_id', $selected->id)->whereIn('role', [UserRole::Principal, UserRole::Admin])->value('full_name'),
                 'term' => $term?->label,
-                'fees' => $term ? Payment::whereHas('invoice', fn ($q) => $q->where('term_id', $term->id))->sum('amount') : 0,
+                'fees' => $term ? Money::number(Money::sum(Payment::whereHas('invoice', fn ($q) => $q->where('term_id', $term->id))->pluck('amount'))) : 0,
                 'visits' => SchoolVisit::where('school_id', $selected->id)->with('user:id,full_name')->latest('started_at')->limit(5)->get(),
             ] : null,
         ]);

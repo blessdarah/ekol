@@ -25,7 +25,7 @@ class UpdateFeeStructureRequest extends SchoolRequest
             'items.*.spread' => ['required', 'boolean'],
             'items.*.new_only' => ['required', 'boolean'],
             'items.*.amounts' => ['present', 'array'],
-            'items.*.amounts.*' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'items.*.amounts.*' => ['nullable', 'numeric', 'decimal:0,2', 'min:0', 'max:99999999.99'],
         ];
     }
 

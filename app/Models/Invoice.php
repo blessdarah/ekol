@@ -121,9 +121,14 @@ class Invoice extends Model
     /**
      * What an exemption or discount takes off the bill.
      */
+    public function exemptedMinor(): int
+    {
+        return min(Money::units($this->amount_due), Money::units((string) ($this->exemption->amount ?? 0)));
+    }
+
     public function exempted(): float
     {
-        return min((float) $this->amount_due, (float) ($this->exemption->amount ?? 0));
+        return Money::number($this->exemptedMinor());
     }
 
     /**
@@ -162,13 +167,13 @@ class Invoice extends Model
                 ->orderBy('seq')
                 ->get();
 
-            foreach (static::schedule($lines, array_values($templates->map(fn (FeeInstallmentTemplate $template) => (float) $template->percent)->all())) as $index => $cents) {
+            foreach (static::schedule($lines, array_values($templates->map(fn (FeeInstallmentTemplate $template) => (string) $template->percent)->all())) as $index => $cents) {
                 $template = $templates[$index];
 
                 $invoice->installments()->create([
                     'seq' => $template->seq,
                     'label' => "Installment {$template->seq}",
-                    'amount' => number_format($cents / 100, 2, '.', ''),
+                    'amount' => Money::decimal($cents),
                     'due_on' => $template->due_on ?? $invoice->issued_on,
                     'status' => InstallmentStatus::Pending,
                 ]);
@@ -184,8 +189,8 @@ class Invoice extends Model
      * land whole on the first. Cents lost to rounding go to the last
      * installment so the parts always sum to the whole.
      *
-     * @param  array<int, array{is_spread: bool, amount: string|float, ...}>  $lines
-     * @param  list<float>  $percents
+     * @param  array<int, array{is_spread: bool, amount: string|int|float, ...}>  $lines
+     * @param  list<string|int|float>  $percents
      * @return list<int>
      */
     public static function schedule(array $lines, array $percents): array
@@ -194,17 +199,14 @@ class Invoice extends Model
         $upfront = 0;
 
         foreach ($lines as $line) {
-            $cents = (int) round((float) $line['amount'] * 100);
-            $line['is_spread'] ? $spread += $cents : $upfront += $cents;
+            $units = Money::units((string) $line['amount']);
+            $line['is_spread'] ? $spread += $units : $upfront += $units;
         }
 
-        $made = 0;
-        $parts = [];
+        $parts = Money::allocate($spread, array_map(fn ($percent) => Money::units((string) $percent), $percents));
 
-        foreach ($percents as $index => $percent) {
-            $cents = $index === count($percents) - 1 ? $spread - $made : (int) round($spread * $percent / 100);
-            $made += $cents;
-            $parts[] = $cents + ($index === 0 ? $upfront : 0);
+        if ($parts !== []) {
+            $parts[0] += $upfront;
         }
 
         return $parts;
@@ -245,29 +247,55 @@ class Invoice extends Model
     }
 
     /**
+     * Major-unit page values derived from the integer ledger.
+     *
+     * @return array{gross: float, exempted: float, due: float, paid: float, balance: float, overdue: float, installments: list<array{seq: int, label: string, due_on: string, amount: float, paid: float, state: string, days_late: int}>, items: list<array{name: string, upfront: bool, billed: float, amount: float, paid: float, balance: float}>}
+     */
+    public function ledger(): array
+    {
+        $ledger = $this->ledgerMinor();
+
+        return [
+            'gross' => Money::number($ledger['gross']),
+            'exempted' => Money::number($ledger['exempted']),
+            'due' => Money::number($ledger['due']),
+            'paid' => Money::number($ledger['paid']),
+            'balance' => Money::number($ledger['balance']),
+            'overdue' => Money::number($ledger['overdue']),
+            'installments' => array_map(fn (array $part) => [
+                ...$part, 'amount' => Money::number($part['amount']), 'paid' => Money::number($part['paid']),
+            ], $ledger['installments']),
+            'items' => array_map(fn (array $item) => [
+                ...$item, 'billed' => Money::number($item['billed']), 'amount' => Money::number($item['amount']),
+                'paid' => Money::number($item['paid']), 'balance' => Money::number($item['balance']),
+            ], $ledger['items']),
+        ];
+    }
+
+    /**
      * The invoice as the bursar reads it: each installment with what
      * has been paid towards it, and each item on the bill with what
      * has gone to it. Payments fill installments in order, oldest
      * first, and inside an installment the items in their set order,
      * whatever installment a receipt was written against.
      *
-     * @return array{gross: float, exempted: float, due: float, paid: float, balance: float, overdue: float, installments: list<array{seq: int, label: string, due_on: string, amount: float, paid: float, state: string, days_late: int}>, items: list<array{name: string, upfront: bool, billed: float, amount: float, paid: float, balance: float}>}
+     * @return array{gross: int, exempted: int, due: int, paid: int, balance: int, overdue: int, installments: list<array{seq: int, label: string, due_on: string, amount: int, paid: int, state: string, days_late: int}>, items: list<array{name: string, upfront: bool, billed: int, amount: int, paid: int, balance: int}>}
      */
-    public function ledger(): array
+    public function ledgerMinor(): array
     {
-        $gross = (float) $this->amount_due;
-        $exempted = $this->exempted();
+        $gross = Money::units($this->amount_due);
+        $exempted = $this->exemptedMinor();
         $due = $gross - $exempted;
-        $paid = (float) $this->payments->sum(fn (Payment $payment) => (float) $payment->amount);
+        $paid = Money::sum($this->payments->pluck('amount'));
         $lines = $this->billed();
         $parts = $this->parts();
         $cells = $this->cells($parts, $lines);
-        $poured = $this->pour($cells, (int) round($paid * 100));
-        $overdue = 0.0;
+        $poured = $this->pour($cells, $paid);
+        $overdue = 0;
         $rows = [];
 
         foreach ($parts as $index => $part) {
-            $covered = array_sum($poured[$index]) / 100;
+            $covered = array_sum($poured[$index]);
             $short = $part['amount'] - $covered;
             $late = $short > 0 && $part['due_on']->lt(today());
 
@@ -294,8 +322,8 @@ class Invoice extends Model
         $items = [];
 
         foreach ($lines as $key => $line) {
-            $amount = array_sum(array_column($cells, $key)) / 100;
-            $covered = array_sum(array_column($poured, $key)) / 100;
+            $amount = array_sum(array_column($cells, $key));
+            $covered = array_sum(array_column($poured, $key));
 
             $items[] = [
                 'name' => $line['name'],
@@ -303,7 +331,7 @@ class Invoice extends Model
                 'billed' => $line['amount'],
                 'amount' => $amount,
                 'paid' => $covered,
-                'balance' => max(0.0, $amount - $covered),
+                'balance' => max(0, $amount - $covered),
             ];
         }
 
@@ -312,7 +340,7 @@ class Invoice extends Model
             'exempted' => $exempted,
             'due' => $due,
             'paid' => $paid,
-            'balance' => max(0.0, $due - $paid),
+            'balance' => max(0, $due - $paid),
             'overdue' => $overdue,
             'installments' => $rows,
             'items' => $items,
@@ -329,19 +357,19 @@ class Invoice extends Model
     {
         $lines = $this->billed();
         $cells = $this->cells($this->parts(), $lines);
-        $before = (int) round(100 * (float) $this->payments
+        $before = Money::sum($this->payments
             ->filter(fn (Payment $other) => $other->id !== $payment->id
                 && [$other->received_at, $other->receipt_no] < [$payment->received_at, $payment->receipt_no])
-            ->sum(fn (Payment $other) => (float) $other->amount));
+            ->pluck('amount'));
         $earlier = $this->pour($cells, $before);
-        $after = $this->pour($cells, $before + (int) round((float) $payment->amount * 100));
+        $after = $this->pour($cells, $before + Money::units($payment->amount));
         $shares = [];
 
         foreach ($lines as $key => $line) {
             $cents = array_sum(array_column($after, $key)) - array_sum(array_column($earlier, $key));
 
             if ($cents > 0) {
-                $shares[] = ['name' => $line['name'], 'amount' => $cents / 100];
+                $shares[] = ['name' => $line['name'], 'amount' => Money::number($cents)];
             }
         }
 
@@ -352,18 +380,18 @@ class Invoice extends Model
      * The items on the bill, in the order money is shared out. An
      * invoice from before items existed is one line of school fees.
      *
-     * @return list<array{name: string, is_spread: bool, amount: float}>
+     * @return list<array{name: string, is_spread: bool, amount: int}>
      */
     protected function billed(): array
     {
         if ($this->lines->isEmpty()) {
-            return [['name' => FeeItem::TUITION, 'is_spread' => true, 'amount' => (float) $this->amount_due]];
+            return [['name' => FeeItem::TUITION, 'is_spread' => true, 'amount' => Money::units($this->amount_due)]];
         }
 
         return array_values($this->lines->sortBy('position')->map(fn (InvoiceLine $line) => [
             'name' => $line->name,
             'is_spread' => $line->is_spread,
-            'amount' => (float) $line->amount,
+            'amount' => Money::units($line->amount),
         ])->all());
     }
 
@@ -371,32 +399,28 @@ class Invoice extends Model
      * The installments as they are owed: what each was billed, and
      * what it comes to once any exemption is spread across them.
      *
-     * @return list<array{seq: int, label: string, gross: float, amount: float, due_on: Carbon}>
+     * @return list<array{seq: int, label: string, gross: int, amount: int, due_on: Carbon}>
      */
     protected function parts(): array
     {
-        $gross = (float) $this->amount_due;
-        $due = $gross - $this->exempted();
+        $gross = Money::units($this->amount_due);
+        $due = $gross - $this->exemptedMinor();
         $installments = $this->installments->sortBy('seq')->values();
         $parts = $installments->isEmpty()
             ? [['seq' => 1, 'label' => __('Annual fees'), 'gross' => $gross, 'amount' => $gross, 'due_on' => $this->issued_on]]
             : array_values($installments->map(fn (Installment $installment) => [
                 'seq' => $installment->seq,
                 'label' => __(':ordinal installment', ['ordinal' => static::ordinal($installment->seq, true)]),
-                'gross' => (float) $installment->amount,
-                'amount' => (float) $installment->amount,
+                'gross' => Money::units($installment->amount),
+                'amount' => Money::units($installment->amount),
                 'due_on' => $installment->due_on,
             ])->all());
 
         if ($due < $gross && $gross > 0) {
-            $spread = 0.0;
-            $final = count($parts) - 1;
+            $allocated = Money::allocate($due, array_column($parts, 'gross'));
 
             foreach ($parts as $position => $part) {
-                $parts[$position]['amount'] = $position === $final
-                    ? round($due - $spread, 2)
-                    : round($part['gross'] * $due / $gross);
-                $spread += $parts[$position]['amount'];
+                $parts[$position]['amount'] = $allocated[$position];
             }
         }
 
@@ -410,18 +434,18 @@ class Invoice extends Model
      * between the spread lines by what they still have to place. An
      * exemption shrinks every cell of an installment alike.
      *
-     * @param  list<array{gross: float, amount: float, ...}>  $parts
-     * @param  list<array{is_spread: bool, amount: float, ...}>  $lines
+     * @param  list<array{gross: int, amount: int, ...}>  $parts
+     * @param  list<array{is_spread: bool, amount: int, ...}>  $lines
      * @return array<int, array<int, int>>
      */
     protected function cells(array $parts, array $lines): array
     {
-        $left = array_map(fn (array $line) => (int) round($line['amount'] * 100), $lines);
+        $left = array_map(fn (array $line) => $line['amount'], $lines);
         $final = count($parts) - 1;
         $cells = [];
 
         foreach ($parts as $index => $part) {
-            $room = (int) round($part['gross'] * 100);
+            $room = $part['gross'];
             $row = array_fill(0, count($lines), 0);
 
             if ($index === $final) {
@@ -435,14 +459,10 @@ class Invoice extends Model
                 }
 
                 $spread = array_keys(array_filter($lines, fn (array $line) => $line['is_spread']));
-                $pool = array_sum(array_map(fn (int $key) => $left[$key], $spread));
-                $share = $room;
+                $allocated = Money::allocate($room, array_map(fn (int $key) => $left[$key], $spread));
 
                 foreach ($spread as $place => $key) {
-                    $take = $place === count($spread) - 1
-                        ? $room
-                        : ($pool > 0 ? (int) round($share * $left[$key] / $pool) : 0);
-                    $row[$key] = max(0, min($take, $left[$key], $room));
+                    $row[$key] = min($allocated[$place], $left[$key], $room);
                     $room -= $row[$key];
                 }
             }
@@ -451,7 +471,7 @@ class Invoice extends Model
                 $left[$key] -= $cents;
             }
 
-            $cells[] = $this->shrink($row, (int) round($part['amount'] * 100));
+            $cells[] = $this->shrink($row, $part['amount']);
         }
 
         return $cells;
@@ -472,13 +492,8 @@ class Invoice extends Model
             return $row;
         }
 
-        $filled = array_keys(array_filter($row));
-        $made = 0;
-
-        foreach ($filled as $place => $key) {
-            $row[$key] = $place === count($filled) - 1 ? $total - $made : (int) round($row[$key] * $total / $whole);
-            $made += $row[$key];
-        }
+        $allocated = Money::allocate($total, array_values($row));
+        $row = array_combine(array_keys($row), $allocated);
 
         return $row;
     }
@@ -506,7 +521,7 @@ class Invoice extends Model
      */
     public function syncStatus(): static
     {
-        $ledger = $this->ledger();
+        $ledger = $this->ledgerMinor();
         $status = match (true) {
             $ledger['balance'] <= 0 => InvoiceStatus::Paid,
             $ledger['overdue'] > 0 => InvoiceStatus::Overdue,
@@ -546,7 +561,7 @@ class Invoice extends Model
      */
     public function paidTotal(): float
     {
-        return (float) $this->payments()->sum('amount');
+        return Money::number(Money::sum($this->payments()->pluck('amount')));
     }
 
     /**
@@ -554,20 +569,13 @@ class Invoice extends Model
      */
     public function outstanding(): float
     {
-        return (float) $this->amount_due - $this->exempted() - $this->paidTotal();
+        return Money::number($this->ledgerMinor()['balance']);
     }
 
     protected function oldestUnpaidInstallmentId(): ?string
     {
-        $received = $this->payments()
-            ->selectRaw('installment_id, SUM(amount) as total')
-            ->whereNotNull('installment_id')
-            ->groupBy('installment_id')
-            ->pluck('total', 'installment_id');
+        $next = collect($this->ledgerMinor()['installments'])->first(fn (array $part) => $part['state'] !== 'paid');
 
-        $oldest = $this->installments()->orderBy('seq')->get()
-            ->first(fn ($installment) => ((float) ($received[$installment->id] ?? 0)) < (float) $installment->amount);
-
-        return $oldest?->id;
+        return $next ? $this->installments->firstWhere('seq', $next['seq'])?->id : null;
     }
 }

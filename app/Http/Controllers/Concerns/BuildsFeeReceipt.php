@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Models\Enrolment;
 use App\Models\MobilePayment;
+use App\Models\Money;
 use App\Models\Payment;
 use App\Models\School;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
@@ -42,7 +43,7 @@ trait BuildsFeeReceipt
             ->filter(fn (Payment $other) => [$other->received_at, $other->receipt_no] <= [$payment->received_at, $payment->receipt_no])
             ->sortBy([['received_at', 'asc'], ['receipt_no', 'asc']])->values();
         $invoice->setRelation('payments', $history);
-        $ledger = $invoice->ledger();
+        $ledger = $invoice->ledgerMinor();
         $next = collect($ledger['installments'])->first(fn (array $row) => $row['state'] !== 'paid');
         $student = $invoice->student;
         $year = $invoice->term?->academicYear;
@@ -62,23 +63,23 @@ trait BuildsFeeReceipt
                 'number' => $payment->receipt_no,
                 'on' => $on->toDateString(),
                 'time' => $on->format('H:i'),
-                'amount' => (float) $payment->amount,
-                'words' => ucfirst((string) Number::spell((float) $payment->amount, app()->getLocale())).' '.($school->currency === 'XAF' ? __('CFA francs') : $school->currency),
+                'amount' => Money::number(Money::units($payment->amount)),
+                'words' => ucfirst((string) Number::spell(Money::number(Money::units($payment->amount)), app()->getLocale())).' '.($school->currency === 'XAF' ? __('CFA francs') : $school->currency),
                 'method' => $mobile?->operator ? $mobile->operator.' Mobile Money' : $payment->method->label(),
                 'reference' => $payment->reference,
                 'paid_from' => $mobile?->phone,
                 'by' => $payment->receiver?->full_name,
                 'year' => $year?->label,
-                'balance' => $ledger['balance'],
-                'due' => $ledger['due'],
-                'paid' => $ledger['paid'],
-                'can_pay' => $payment->invoice->ledger()['balance'] > 0,
+                'balance' => Money::number($ledger['balance']),
+                'due' => Money::number($ledger['due']),
+                'paid' => Money::number($ledger['paid']),
+                'can_pay' => $payment->invoice->ledgerMinor()['balance'] > 0,
                 'state' => $ledger['balance'] <= 0 ? 'paid' : 'partial',
-                'next' => $next ? ['amount' => round($next['amount'] - $next['paid'], 2), 'due_on' => $next['due_on']] : null,
+                'next' => $next ? ['amount' => Money::number($next['amount'] - $next['paid']), 'due_on' => $next['due_on']] : null,
                 'covers' => $invoice->split($payment),
                 'history' => array_values($history->map(fn (Payment $entry) => [
                     'number' => $entry->receipt_no, 'on' => $entry->received_at->copy()->timezone($school->timezone)->toDateString(),
-                    'amount' => (float) $entry->amount, 'method' => $entry->method->label(), 'current' => $entry->id === $payment->id,
+                    'amount' => Money::number(Money::units($entry->amount)), 'method' => $entry->method->label(), 'current' => $entry->id === $payment->id,
                 ])->all()),
                 'verification_url' => $verificationUrl,
                 'qr' => 'data:image/svg+xml;base64,'.base64_encode($qr),

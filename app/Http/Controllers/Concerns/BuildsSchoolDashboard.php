@@ -19,6 +19,7 @@ use App\Models\Attendance;
 use App\Models\Enrolment;
 use App\Models\Invoice;
 use App\Models\Level;
+use App\Models\Money;
 use App\Models\Payment;
 use App\Models\Period;
 use App\Models\Scheme;
@@ -103,7 +104,7 @@ trait BuildsSchoolDashboard
             ->whereHas('student', fn ($query) => $query->where('school_id', $school->id))
             ->with(['installments', 'lines', 'payments', 'exemption'])
             ->get();
-        $ledgers = $invoices->map(fn (Invoice $invoice) => ['student' => $invoice->student_id, 'ledger' => $invoice->ledger()]);
+        $ledgers = $invoices->map(fn (Invoice $invoice) => ['student' => $invoice->student_id, 'ledger' => $invoice->ledgerMinor()]);
         $parts = $ledgers->flatMap(fn (array $row) => $row['ledger']['installments']);
         $payments = $invoices->flatMap(fn (Invoice $invoice) => $invoice->payments);
         $today = today();
@@ -113,17 +114,17 @@ trait BuildsSchoolDashboard
                 'label' => $point['label'],
                 'starts_on' => $point['start']->toDateString(),
                 'ends_on' => $point['end']->toDateString(),
-                'due' => round((float) $parts->filter(fn (array $part) => $part['due_on'] <= $point['end']->toDateString())->sum('amount')),
+                'due' => Money::number((int) $parts->filter(fn (array $part) => $part['due_on'] <= $point['end']->toDateString())->sum('amount')),
                 'collected' => $point['start']->gt($today)
                     ? null
-                    : round((float) $payments->filter(fn (Payment $payment) => $payment->received_at->lte(($point['end']->lt($today) ? $point['end'] : $today)->copy()->endOfDay()))->sum(fn (Payment $payment) => (float) $payment->amount)),
+                    : Money::number(Money::sum($payments->filter(fn (Payment $payment) => $payment->received_at->lte(($point['end']->lt($today) ? $point['end'] : $today)->copy()->endOfDay()))->pluck('amount'))),
             ])
             ->values();
 
         return [
-            'due' => round((float) $ledgers->sum(fn (array $row) => $row['ledger']['due'])),
-            'collected' => round((float) $ledgers->sum(fn (array $row) => $row['ledger']['paid'])),
-            'overdue' => round((float) $ledgers->sum(fn (array $row) => $row['ledger']['overdue'])),
+            'due' => Money::number((int) $ledgers->sum(fn (array $row) => $row['ledger']['due'])),
+            'collected' => Money::number((int) $ledgers->sum(fn (array $row) => $row['ledger']['paid'])),
+            'overdue' => Money::number((int) $ledgers->sum(fn (array $row) => $row['ledger']['overdue'])),
             'overdue_students' => $ledgers->filter(fn (array $row) => $row['ledger']['overdue'] > 0)->pluck('student')->unique()->count(),
             'series' => $series,
             'today' => $series->search(fn (array $point) => $point['starts_on'] <= $today->toDateString() && $point['ends_on'] >= $today->toDateString()),

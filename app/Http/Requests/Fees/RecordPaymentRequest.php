@@ -20,7 +20,7 @@ class RecordPaymentRequest extends SchoolRequest
     {
         return [
             'invoice_id' => ['required', Rule::exists('invoices', 'id')->where('student_id', $this->route('student'))],
-            'amount' => ['required', 'numeric', 'min:1'],
+            'amount' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:99999999.99'],
             'method' => ['required', Rule::in([PaymentMethod::Cash->value, PaymentMethod::MobileMoney->value, PaymentMethod::BankTransfer->value])],
             'reference' => ['nullable', 'required_unless:method,cash', 'string', 'max:60'],
             'date' => ['required', 'date', 'before_or_equal:today'],

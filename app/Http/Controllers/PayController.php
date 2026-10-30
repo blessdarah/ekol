@@ -7,6 +7,7 @@ use App\Http\Requests\Pay\ChooseAmountRequest;
 use App\Http\Requests\Pay\RequestMobilePaymentRequest;
 use App\Models\Invoice;
 use App\Models\MobilePayment;
+use App\Models\Money;
 use App\Models\Payment;
 use App\Models\Student;
 use BlessDarah\PhpCampay\Campay;
@@ -43,26 +44,26 @@ class PayController extends Controller
             return redirect()->route('parents.pay.status', $waiting->id);
         }
 
-        $ledger = ParentController::openInvoice($student)?->ledger();
+        $ledger = ParentController::openInvoice($student)?->ledgerMinor();
         $next = collect($ledger['installments'] ?? [])->first(fn (array $row) => $row['state'] !== 'paid');
         $options = [];
 
         if ($ledger && $ledger['overdue'] > 0) {
-            $options[] = ['key' => 'overdue', 'amount' => (int) round($ledger['overdue']), 'label' => __('What is overdue'), 'detail' => $next ? __(':installment, due :date', ['installment' => $next['label'], 'date' => $this->day($next['due_on'])]) : null, 'late' => true];
+            $options[] = ['key' => 'overdue', 'amount' => intdiv($ledger['overdue'], 100), 'label' => __('What is overdue'), 'detail' => $next ? __(':installment, due :date', ['installment' => $next['label'], 'date' => $this->day($next['due_on'])]) : null, 'late' => true];
         } elseif ($next) {
-            $options[] = ['key' => 'next', 'amount' => (int) round($next['amount'] - $next['paid']), 'label' => __('The next installment'), 'detail' => __(':installment, due :date', ['installment' => $next['label'], 'date' => $this->day($next['due_on'])]), 'late' => false];
+            $options[] = ['key' => 'next', 'amount' => intdiv($next['amount'] - $next['paid'], 100), 'label' => __('The next installment'), 'detail' => __(':installment, due :date', ['installment' => $next['label'], 'date' => $this->day($next['due_on'])]), 'late' => false];
         }
 
-        if ($ledger && $ledger['balance'] > 0 && (! $options || $options[0]['amount'] < (int) round($ledger['balance']))) {
-            $options[] = ['key' => 'all', 'amount' => (int) round($ledger['balance']), 'label' => __('Everything left'), 'detail' => __('The whole balance for the year'), 'late' => false];
+        if ($ledger && $ledger['balance'] > 0 && (! $options || $options[0]['amount'] < intdiv($ledger['balance'], 100))) {
+            $options[] = ['key' => 'all', 'amount' => intdiv($ledger['balance'], 100), 'label' => __('Everything left'), 'detail' => __('The whole balance for the year'), 'late' => false];
         }
 
         return Inertia::render('pay/amount', [
             'issuer' => ParentController::issuer($school),
             'student' => ParentController::studentCard($student),
-            'balance' => $ledger ? (int) round($ledger['balance']) : 0,
-            'overdue' => $ledger ? (int) round($ledger['overdue']) : 0,
-            'options' => $options,
+            'balance' => $ledger ? Money::number($ledger['balance']) : 0,
+            'overdue' => $ledger ? Money::number($ledger['overdue']) : 0,
+            'options' => array_values(array_filter($options, fn (array $option) => $option['amount'] > 0)),
             'chosen' => $request->session()->get('parent.amount'),
         ]);
     }
@@ -77,10 +78,10 @@ class PayController extends Controller
         }
 
         $amount = (int) $request->validated('amount');
-        $balance = (int) round($invoice->ledger()['balance']);
+        $balance = $invoice->ledgerMinor()['balance'];
 
-        if ($amount > $balance) {
-            throw ValidationException::withMessages(['amount' => __('That is more than the :amount still owed.', ['amount' => number_format($balance)])]);
+        if ($amount * 100 > $balance) {
+            throw ValidationException::withMessages(['amount' => __('That is more than the :amount still owed.', ['amount' => number_format(Money::number($balance), 2)])]);
         }
 
         $request->session()->put('parent.amount', $amount);
@@ -126,7 +127,7 @@ class PayController extends Controller
             return redirect()->route('parents.pay.status', $waiting->id);
         }
 
-        $amount = $invoice ? min($amount, (int) round($invoice->ledger()['balance'])) : 0;
+        $amount = $invoice ? min($amount, intdiv($invoice->ledgerMinor()['balance'], 100)) : 0;
 
         if (! $invoice || $amount < 1) {
             return redirect()->route('parents.pay');
@@ -158,7 +159,7 @@ class PayController extends Controller
         }
 
         $invoice = Invoice::whereKey($target->invoice_id)->with(['installments', 'lines', 'payments', 'exemption'])->first();
-        $ledger = $invoice?->ledger();
+        $ledger = $invoice?->ledgerMinor();
         $next = collect($ledger['installments'] ?? [])->first(fn (array $row) => $row['state'] !== 'paid');
         $state = match (true) {
             $target->status === MobilePayment::SUCCESSFUL => 'paid',
@@ -172,7 +173,7 @@ class PayController extends Controller
             'payment' => [
                 'id' => $target->id,
                 'state' => $state,
-                'amount' => (int) round((float) $target->amount),
+                'amount' => intdiv(Money::units($target->amount), 100),
                 'phone' => $target->phone,
                 'operator' => $target->operator,
                 'reason' => $target->failure_reason,
@@ -183,7 +184,7 @@ class PayController extends Controller
                 'went_to' => $target->payment && $invoice ? $invoice->split($target->payment) : [],
             ],
             'student' => ParentController::studentCard($student),
-            'balance' => $ledger ? (int) round($ledger['balance']) : 0,
+            'balance' => $ledger ? Money::number($ledger['balance']) : 0,
             'next' => $next ? ['label' => $next['label'], 'due_on' => $next['due_on']] : null,
         ]);
     }
@@ -225,7 +226,7 @@ class PayController extends Controller
             return redirect()->route('parents.pay.status', $waiting->id);
         }
 
-        $amount = min((int) round((float) $target->amount), (int) round($invoice->ledger()['balance']));
+        $amount = min(intdiv(Money::units($target->amount), 100), intdiv($invoice->ledgerMinor()['balance'], 100));
 
         if ($amount < 1) {
             return redirect()->route('parents.pay.status', $target->id);

@@ -9,7 +9,7 @@ export const amberText = 'text-warning-text';
 
 export function figure(amount: number): string {
     return new Intl.NumberFormat(numberLocale(), {
-        maximumFractionDigits: 0,
+        maximumFractionDigits: 2,
     }).format(amount);
 }
 

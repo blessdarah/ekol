@@ -89,7 +89,7 @@ export function AmountsByLevel({ fees }: { fees: FeeStructure }) {
                                             >
                                                 <input
                                                     type="text"
-                                                    inputMode="numeric"
+                                                    inputMode="decimal"
                                                     aria-label={t(
                                                         ':item for :level',
                                                         {

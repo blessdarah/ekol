@@ -1,3 +1,4 @@
+import { moneyNumber, moneyUnits } from '@/lib/money';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import {
@@ -124,15 +125,18 @@ function PaymentDrawer({
     methods: StudentFeesProps['methods'];
     onClose: () => void;
 }) {
+    const target = invoice.installments.find((row) => row.state !== 'paid');
+    const balanceUnits = moneyUnits(invoice.balance) ?? 0n;
+    const targetUnits = target
+        ? (moneyUnits(target.amount) ?? 0n)
+        : balanceUnits;
+    const paidUnits = target ? (moneyUnits(target.paid) ?? 0n) : 0n;
     const form = useForm({
         invoice_id: invoice.id,
         amount: String(
             invoice.overdue > 0
                 ? invoice.overdue
-                : (invoice.installments.find((row) => row.state !== 'paid')
-                      ?.amount ?? invoice.balance) -
-                      (invoice.installments.find((row) => row.state !== 'paid')
-                          ?.paid ?? 0),
+                : moneyNumber(targetUnits - paidUnits),
         ),
         method: 'cash',
         reference: '',
@@ -140,11 +144,14 @@ function PaymentDrawer({
     });
     const { data, setData, processing } = form;
     const errors = form.errors as Record<string, string | undefined>;
-    const amount = Number(data.amount) || 0;
-    const target = invoice.installments.find((row) => row.state !== 'paid');
-    const applied = target ? Math.min(target.amount, target.paid + amount) : 0;
-    const after = Math.max(0, invoice.balance - amount);
-    const over = amount > invoice.balance;
+    const amountUnits = moneyUnits(data.amount) ?? 0n;
+    const appliedUnits = paidUnits + amountUnits;
+    const applied = moneyNumber(
+        appliedUnits < targetUnits ? appliedUnits : targetUnits,
+    );
+    const remaining = balanceUnits - amountUnits;
+    const after = moneyNumber(remaining > 0n ? remaining : 0n);
+    const over = amountUnits > balanceUnits;
 
     useEffect(() => {
         function onKeyDown(event: KeyboardEvent) {
@@ -172,7 +179,7 @@ function PaymentDrawer({
                     event.preventDefault();
                     form.transform((values) => ({
                         ...values,
-                        amount: Number(values.amount),
+                        amount: values.amount.trim(),
                         reference: values.reference.trim() || null,
                     }));
                     form.post(pay.url(studentId));
@@ -215,13 +222,15 @@ function PaymentDrawer({
                             <input
                                 id="payment-amount"
                                 type="text"
-                                inputMode="numeric"
+                                inputMode="decimal"
                                 autoFocus
                                 value={data.amount}
                                 onChange={(e) =>
                                     setData(
                                         'amount',
-                                        e.target.value.replace(/[^\d]/g, ''),
+                                        e.target.value
+                                            .replace(/,/g, '.')
+                                            .replace(/[^\d.]/g, ''),
                                     )
                                 }
                                 className="w-full min-w-0 bg-transparent font-mono text-[22px] leading-7 text-text outline-none"
@@ -379,7 +388,7 @@ function PaymentDrawer({
                     </button>
                     <button
                         type="submit"
-                        disabled={processing || amount <= 0 || over}
+                        disabled={processing || amountUnits <= 0n || over}
                         className="flex h-9 items-center rounded-md bg-primary px-4 text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-40"
                     >
                         {t('Save & print receipt')}

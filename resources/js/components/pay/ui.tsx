@@ -20,7 +20,7 @@ export interface ChildCard {
 
 /** "25 000 FCFA": amounts parents read are always in whole francs. */
 export function francs(amount: number): string {
-    return `${new Intl.NumberFormat(numberLocale(), { maximumFractionDigits: 0 }).format(amount)} FCFA`;
+    return `${new Intl.NumberFormat(numberLocale(), { maximumFractionDigits: 2 }).format(amount)} FCFA`;
 }
 
 /** Which network a Cameroonian number is on, from its first digits. */

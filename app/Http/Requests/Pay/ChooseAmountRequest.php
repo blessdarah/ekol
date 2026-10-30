@@ -12,7 +12,7 @@ class ChooseAmountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'amount' => ['required', 'integer', 'min:1'],
+            'amount' => ['required', 'integer', 'min:1', 'max:99999999'],
         ];
     }
 

@@ -1,3 +1,4 @@
+import { moneyNumber, moneyUnits, percentageDiscount } from '@/lib/money';
 import {
     exempt,
     removeExemption,
@@ -33,12 +34,15 @@ export function ExemptionCard({
         reason: current?.reason ?? '',
     });
     const errors = form.errors as Record<string, string | undefined>;
-    const value = Number(form.data.value) || 0;
-    const off =
+    const valueUnits = moneyUnits(form.data.value) ?? 0n;
+    const grossUnits = moneyUnits(invoice.gross) ?? 0n;
+    const paidUnits = moneyUnits(invoice.paid) ?? 0n;
+    const offUnits =
         form.data.kind === 'percent'
-            ? Math.round((invoice.gross * value) / 100)
-            : value;
-    const room = invoice.gross - invoice.paid;
+            ? percentageDiscount(grossUnits, valueUnits)
+            : valueUnits;
+    const roomUnits = grossUnits - paidUnits;
+    const afterUnits = grossUnits - offUnits;
 
     if (open) {
         return (
@@ -47,7 +51,7 @@ export function ExemptionCard({
                     event.preventDefault();
                     form.transform((data) => ({
                         ...data,
-                        value: Number(data.value),
+                        value: data.value.trim(),
                     }));
                     form.post(exempt.url(invoice.id), {
                         preserveScroll: true,
@@ -94,7 +98,7 @@ export function ExemptionCard({
                     <div className="flex h-10 items-center gap-2 rounded-md border border-solid border-border bg-white px-3 focus-within:border-primary">
                         <input
                             type="text"
-                            inputMode="numeric"
+                            inputMode="decimal"
                             aria-label={
                                 form.data.kind === 'percent'
                                     ? t('Percentage off')
@@ -148,16 +152,18 @@ export function ExemptionCard({
                     <ErrorText message={errors.reason} />
                 </label>
                 <p
-                    className={`text-[12px] leading-[17px] ${off > room ? 'text-danger' : 'text-text-muted'}`}
+                    className={`text-[12px] leading-[17px] ${offUnits > roomUnits ? 'text-danger' : 'text-text-muted'}`}
                 >
-                    {value > 0
+                    {valueUnits > 0n
                         ? t(
                               'Takes :off :currency off. :off_a would be owed for the year.',
                               {
-                                  off: figure(off),
+                                  off: figure(moneyNumber(offUnits)),
                                   currency,
                                   off_a: figure(
-                                      Math.max(0, invoice.gross - off),
+                                      moneyNumber(
+                                          afterUnits > 0n ? afterUnits : 0n,
+                                      ),
                                   ),
                               },
                           )
@@ -168,13 +174,16 @@ export function ExemptionCard({
                     {invoice.paid > 0 &&
                         t(
                             ' :paid is already paid, so at most :room can come off.',
-                            { paid: figure(invoice.paid), room: figure(room) },
+                            {
+                                paid: figure(invoice.paid),
+                                room: figure(moneyNumber(roomUnits)),
+                            },
                         )}
                 </p>
                 <div className="flex items-center gap-3">
                     <button
                         type="submit"
-                        disabled={form.processing || value <= 0}
+                        disabled={form.processing || valueUnits <= 0n}
                         className="flex h-9 items-center rounded-md bg-primary px-4 text-[13px] leading-4 font-semibold text-white hover:bg-primary-hover disabled:opacity-40"
                     >
                         {current ? t('Save change') : t('Apply')}

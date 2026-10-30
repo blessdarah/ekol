@@ -21,6 +21,7 @@ use App\Models\FeeItemAmount;
 use App\Models\FeePlan;
 use App\Models\Invoice;
 use App\Models\Level;
+use App\Models\Money;
 use App\Models\Payment;
 use App\Models\School;
 use App\Models\Student;
@@ -42,7 +43,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  * Fees: what each level costs in a year, who has been billed, what
  * each student has paid, and the receipts for it.
  *
- * @phpstan-type LedgerRow array{id: string, name: string, matricule: string, class: string|null, class_id: string|null, level_id: string|null, due: float, paid: float, balance: float, overdue: float, state: string}
+ * @phpstan-type LedgerRow array{id: string, name: string, matricule: string, class: string|null, class_id: string|null, level_id: string|null, due: int, paid: int, balance: int, overdue: int, state: string}
  */
 class FeeController extends Controller
 {
@@ -92,10 +93,10 @@ class FeeController extends Controller
             'yearLabel' => $year?->label,
             'currency' => $school->currency,
             'totals' => [
-                'billed' => (float) $rows->sum('due'),
-                'collected' => (float) $rows->sum('paid'),
-                'outstanding' => (float) $rows->sum('balance'),
-                'overdue' => (float) $rows->sum('overdue'),
+                'billed' => Money::number((int) $rows->sum('due')),
+                'collected' => Money::number((int) $rows->sum('paid')),
+                'outstanding' => Money::number((int) $rows->sum('balance')),
+                'overdue' => Money::number((int) $rows->sum('overdue')),
             ],
             'counts' => [
                 'all' => $counts['all'],
@@ -110,7 +111,7 @@ class FeeController extends Controller
                 ->map(fn (array $row) => ['id' => $row['class_id'], 'name' => $row['class'], 'level_id' => $row['level_id']])
                 ->values(),
             'students' => [
-                'rows' => $listed->forPage($page, $perPage)->values(),
+                'rows' => $listed->forPage($page, $perPage)->map(fn (array $row) => [...$row, 'due' => Money::number($row['due']), 'paid' => Money::number($row['paid']), 'balance' => Money::number($row['balance']), 'overdue' => Money::number($row['overdue'])])->values(),
                 'page' => $page,
                 'lastPage' => $lastPage,
                 'total' => $listed->count(),
@@ -133,6 +134,7 @@ class FeeController extends Controller
         $ids = $this->exportIds($request);
         $rows = $listed
             ->filter(fn (array $row) => $ids === [] || in_array($row['id'], $ids, true))
+            ->map(fn (array $row) => [...$row, 'due' => Money::number($row['due']), 'paid' => Money::number($row['paid']), 'balance' => Money::number($row['balance']), 'overdue' => Money::number($row['overdue'])])
             ->map(fn (array $row) => [...$row, 'state' => $this->say(static::STATES[$row['state']])])
             ->values();
 
@@ -157,9 +159,9 @@ class FeeController extends Controller
     {
         return collect($year ? $this->enrolled($school, $year) : [])->map(function (Enrolment $enrolment) {
             $ledgers = ($enrolment->student->invoices ?? new Collection)
-                ->map(fn (Invoice $invoice) => $invoice->syncStatus()->ledger());
-            $balance = (float) $ledgers->sum('balance');
-            $overdue = (float) $ledgers->sum('overdue');
+                ->map(fn (Invoice $invoice) => $invoice->syncStatus()->ledgerMinor());
+            $balance = (int) $ledgers->sum('balance');
+            $overdue = (int) $ledgers->sum('overdue');
 
             return [
                 'id' => $enrolment->student_id,
@@ -168,8 +170,8 @@ class FeeController extends Controller
                 'class' => $enrolment->schoolClass?->name,
                 'class_id' => $enrolment->schoolClass?->id,
                 'level_id' => $enrolment->level_id ?? $enrolment->schoolClass?->level_id,
-                'due' => (float) $ledgers->sum('due'),
-                'paid' => (float) $ledgers->sum('paid'),
+                'due' => (int) $ledgers->sum('due'),
+                'paid' => (int) $ledgers->sum('paid'),
                 'balance' => $balance,
                 'overdue' => $overdue,
                 'state' => match (true) {
@@ -307,7 +309,7 @@ class FeeController extends Controller
         }
 
         $rows = $this->itemRows($data);
-        $charged = collect($rows)->flatMap(fn (array $row) => array_keys(array_filter($row['amounts'], fn ($amount) => (float) $amount > 0)))->unique();
+        $charged = collect($rows)->flatMap(fn (array $row) => array_keys(array_filter($row['amounts'], fn ($amount) => Money::units((string) ($amount ?? 0)) > 0)))->unique();
         $stranded = FeePlan::where('school_id', $school->id)
             ->where('academic_year_id', $year->id)
             ->whereNotIn('level_id', $charged->all())
@@ -337,12 +339,12 @@ class FeeController extends Controller
                 $kept[] = $item->id;
 
                 foreach ($levels->keys() as $levelId) {
-                    $amount = (float) ($row['amounts'][$levelId] ?? 0);
+                    $amount = Money::units((string) ($row['amounts'][$levelId] ?? 0));
 
                     if ($amount > 0) {
                         FeeItemAmount::updateOrCreate(
                             ['fee_item_id' => $item->id, 'level_id' => $levelId],
-                            ['amount' => number_format($amount, 2, '.', '')],
+                            ['amount' => Money::decimal($amount)],
                         );
                     } else {
                         FeeItemAmount::where('fee_item_id', $item->id)->where('level_id', $levelId)->delete();
@@ -358,7 +360,7 @@ class FeeController extends Controller
                     'name' => trim($row['name']),
                     'spread' => (bool) $row['spread'],
                     'new_only' => (bool) $row['new_only'],
-                    'amounts' => array_filter($row['amounts'], fn ($amount) => (float) $amount > 0),
+                    'amounts' => array_filter($row['amounts'], fn ($amount) => Money::units((string) ($amount ?? 0)) > 0),
                 ], $rows),
             ]);
         });
@@ -437,7 +439,7 @@ class FeeController extends Controller
             ->orderBy('issued_on')
             ->get();
         $invoice = $invoices->firstWhere('id', (string) $request->query('invoice', ''))
-            ?? $invoices->first(fn (Invoice $candidate) => $candidate->syncStatus()->ledger()['balance'] > 0)
+            ?? $invoices->first(fn (Invoice $candidate) => $candidate->syncStatus()->ledgerMinor()['balance'] > 0)
             ?? $invoices->last();
         $enrolment = $year
             ? Enrolment::where('student_id', $target->id)->where('academic_year_id', $year->id)->with('schoolClass.level')->first()
@@ -471,7 +473,7 @@ class FeeController extends Controller
                     'method' => $payment->method->label(),
                     'reference' => $payment->reference,
                     'by' => $payment->receiver?->full_name,
-                    'amount' => (float) $payment->amount,
+                    'amount' => Money::number(Money::units($payment->amount)),
                     'receipt' => $payment->receipt_no,
                 ]),
             ] : null,
@@ -489,19 +491,19 @@ class FeeController extends Controller
         $data = $request->validated();
 
         $invoice = Invoice::whereKey($data['invoice_id'])->with(['installments', 'lines', 'payments', 'exemption'])->firstOrFail();
-        $balance = $invoice->ledger()['balance'];
+        $balance = $invoice->ledgerMinor()['balance'];
 
-        if ((float) $data['amount'] > $balance) {
+        if (Money::units((string) $data['amount']) > $balance) {
             throw ValidationException::withMessages([
                 'amount' => $balance > 0
-                    ? __('That is more than the :amount still owed.', ['amount' => number_format($balance)])
+                    ? __('That is more than the :amount still owed.', ['amount' => number_format(Money::number($balance), 2)])
                     : __('This invoice is already paid in full.'),
             ]);
         }
 
         $payment = DB::transaction(function () use ($request, $school, $invoice, $data) {
             $payment = $invoice->recordPayment(
-                number_format((float) $data['amount'], 2, '.', ''),
+                Money::decimal(Money::units((string) $data['amount'])),
                 $data['method'],
                 $request->user(),
                 null,
@@ -544,7 +546,7 @@ class FeeController extends Controller
             'issuer' => $school->name,
             'receipt' => [
                 'number' => $target->receipt_no,
-                'amount' => (float) $target->amount,
+                'amount' => Money::number(Money::units($target->amount)),
                 'currency' => $school->currency,
                 'on' => $target->received_at->copy()->timezone($school->timezone)->toDateString(),
                 'reference' => $target->reference,
@@ -618,7 +620,7 @@ class FeeController extends Controller
                     'on' => $payment->received_at->toDateString(),
                     'method' => $payment->method->label(),
                     'by' => $payment->receiver ? mb_strtolower($payment->receiver->role->label()) : null,
-                    'amount' => (float) $payment->amount,
+                    'amount' => Money::number(Money::units($payment->amount)),
                     'receipt' => $payment->receipt_no,
                 ]),
             ] : null,
@@ -627,7 +629,8 @@ class FeeController extends Controller
 
     /**
      * Grant or replace the exemption on an invoice. It can never take
-     * the bill below what has already been paid.
+     * the bill below what has already been paid. Percentage discounts
+     * retain whole-currency-unit rounding.
      */
     public function exempt(ExemptInvoiceRequest $request, string $invoice): RedirectResponse
     {
@@ -636,29 +639,33 @@ class FeeController extends Controller
 
         $data = $request->validated();
 
-        $gross = (float) $target->amount_due;
-        $paid = (float) $target->payments->sum(fn (Payment $payment) => (float) $payment->amount);
-        $percent = $data['kind'] === 'percent' ? (float) $data['value'] : null;
+        $gross = Money::units($target->amount_due);
+        $paid = Money::sum($target->payments->pluck('amount'));
+        $percentBasisPoints = $data['kind'] === 'percent' ? Money::units((string) $data['value']) : null;
 
-        if ($percent !== null && $percent > 100) {
+        if ($percentBasisPoints !== null && $percentBasisPoints > 10_000) {
             throw ValidationException::withMessages(['value' => __('A discount cannot be more than 100%.')]);
         }
 
-        $amount = $percent !== null ? round($gross * $percent / 100) : (float) $data['value'];
+        $amount = match ($percentBasisPoints) {
+            null => Money::units((string) $data['value']),
+            10_000 => $gross,
+            default => min($gross, Money::ratio($gross, $percentBasisPoints, 1_000_000) * 100),
+        };
 
         if ($amount > $gross - $paid) {
             throw ValidationException::withMessages([
                 'value' => $paid > 0
-                    ? __(':paid is already paid, so at most :room can be taken off.', ['paid' => number_format($paid), 'room' => number_format($gross - $paid)])
-                    : __('That is more than the :amount billed.', ['amount' => number_format($gross)]),
+                    ? __(':paid is already paid, so at most :room can be taken off.', ['paid' => number_format(Money::number($paid), 2), 'room' => number_format(Money::number($gross - $paid), 2)])
+                    : __('That is more than the :amount billed.', ['amount' => number_format(Money::number($gross), 2)]),
             ]);
         }
 
-        DB::transaction(function () use ($request, $school, $target, $data, $percent, $amount) {
+        DB::transaction(function () use ($request, $school, $target, $data, $percentBasisPoints, $amount) {
             $exemption = FeeExemption::updateOrCreate(['invoice_id' => $target->id], [
                 'kind' => $data['kind'],
-                'percent' => $percent,
-                'amount' => number_format($amount, 2, '.', ''),
+                'percent' => $percentBasisPoints !== null ? Money::decimal($percentBasisPoints) : null,
+                'amount' => Money::decimal($amount),
                 'reason' => trim($data['reason']),
                 'granted_by' => $request->user()?->id,
             ]);
@@ -701,7 +708,7 @@ class FeeController extends Controller
         return $exemption ? [
             'kind' => $exemption->kind,
             'percent' => $exemption->percent !== null ? (float) $exemption->percent : null,
-            'amount' => (float) $exemption->amount,
+            'amount' => Money::number(Money::units($exemption->amount)),
             'reason' => $exemption->reason,
             'by' => $exemption->granter?->full_name,
             'on' => $exemption->created_at->toDateString(),
@@ -764,7 +771,7 @@ class FeeController extends Controller
      * A year's fee items in the order money is shared out, each with
      * its amount per level and, when asked, what it has brought in.
      *
-     * @param  array<string, array{billed: float, collected: float}>|null  $collected
+     * @param  array<string, array{billed: int, collected: int}>|null  $collected
      * @return list<array<string, mixed>>
      */
     protected function items(School $school, AcademicYear $year, ?array $collected = null): array
@@ -779,9 +786,9 @@ class FeeController extends Controller
                 'name' => $item->name,
                 'spread' => $item->is_spread,
                 'new_only' => $item->new_students_only,
-                'amounts' => $item->amounts->mapWithKeys(fn (FeeItemAmount $amount) => [$amount->level_id => (float) $amount->amount])->all(),
-                'billed' => $collected[$item->name]['billed'] ?? 0.0,
-                'collected' => $collected[$item->name]['collected'] ?? 0.0,
+                'amounts' => $item->amounts->mapWithKeys(fn (FeeItemAmount $amount) => [$amount->level_id => Money::number(Money::units($amount->amount))])->all(),
+                'billed' => Money::number($collected[$item->name]['billed'] ?? 0),
+                'collected' => Money::number($collected[$item->name]['collected'] ?? 0),
             ])
             ->all());
     }
@@ -791,7 +798,7 @@ class FeeController extends Controller
      * received, by item name.
      *
      * @param  list<Enrolment>  $enrolments
-     * @return array<string, array{billed: float, collected: float}>
+     * @return array<string, array{billed: int, collected: int}>
      */
     protected function collected(array $enrolments): array
     {
@@ -799,8 +806,8 @@ class FeeController extends Controller
 
         foreach ($enrolments as $enrolment) {
             foreach ($enrolment->student->invoices ?? [] as $invoice) {
-                foreach ($invoice->ledger()['items'] as $item) {
-                    $totals[$item['name']] ??= ['billed' => 0.0, 'collected' => 0.0];
+                foreach ($invoice->ledgerMinor()['items'] as $item) {
+                    $totals[$item['name']] ??= ['billed' => 0, 'collected' => 0];
                     $totals[$item['name']]['billed'] += $item['amount'];
                     $totals[$item['name']]['collected'] += $item['paid'];
                 }

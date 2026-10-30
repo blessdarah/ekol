@@ -1,3 +1,4 @@
+import { moneyNumber, moneyUnits } from '@/lib/money';
 import type { ReactNode } from 'react';
 import {
     Area,
@@ -146,7 +147,10 @@ export function FeeChart({
                         const gap =
                             point.collected === null
                                 ? null
-                                : point.due - point.collected;
+                                : moneyNumber(
+                                      (moneyUnits(point.due) ?? 0n) -
+                                          (moneyUnits(point.collected) ?? 0n),
+                                  );
 
                         return (
                             <TooltipCard>

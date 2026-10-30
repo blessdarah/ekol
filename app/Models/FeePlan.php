@@ -63,9 +63,8 @@ class FeePlan extends Model
             static::updateOrCreate(
                 ['school_id' => $school->id, 'level_id' => $levelId, 'academic_year_id' => $year->id],
                 [
-                    'annual_amount' => number_format((float) $rows
-                        ->filter(fn (FeeItemAmount $row) => ! $row->item?->new_students_only)
-                        ->sum(fn (FeeItemAmount $row) => (float) $row->amount), 2, '.', ''),
+                    'annual_amount' => Money::decimal(Money::sum($rows
+                        ->filter(fn (FeeItemAmount $row) => ! $row->item?->new_students_only)->pluck('amount'))),
                     'currency' => $school->currency,
                     'is_active' => true,
                 ],
@@ -117,9 +116,9 @@ class FeePlan extends Model
     public function billTo(Student $student, Term $term, ?string $issuedOn = null): Invoice
     {
         $lines = $this->lines($student->isNewIn($this->academic_year_id));
-        $total = array_sum(array_map(fn (array $line) => (float) $line['amount'], $lines));
+        $total = Money::sum(array_column($lines, 'amount'));
 
-        return Invoice::issue($student, $term, $this, number_format($total, 2, '.', ''), $issuedOn, $lines);
+        return Invoice::issue($student, $term, $this, Money::decimal($total), $issuedOn, $lines);
     }
 
     /**
