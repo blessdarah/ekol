@@ -107,6 +107,7 @@ test('creating the account sends a seven-day invitation link', function () {
     $school = staffSchool();
     $admin = staffAdmin($school);
     $member = registeredMember($school);
+    $member->update(['locale' => 'fr']);
 
     $this->actingAs($admin)
         ->post("http://rostera.ekol.test/staff/{$member->id}/access", [
@@ -125,8 +126,9 @@ test('creating the account sends a seven-day invitation link', function () {
         ->and((int) round(now()->diffInDays($member->invitation_expires_at)))->toBe(7)
         ->and($member->hasPortalAccount())->toBeFalse();
 
-    Mail::assertSent(StaffInvitationMail::class, fn (StaffInvitationMail $mail) => $mail->hasTo($member->email)
-        && hash('sha256', basename($mail->url)) === $member->invitation_token_hash);
+    Mail::assertQueued(StaffInvitationMail::class, fn (StaffInvitationMail $mail) => $mail->hasTo($member->email)
+        && hash('sha256', basename($mail->url)) === $member->invitation_token_hash
+        && $mail->locale === 'fr');
 });
 
 test('access can wait: no invitation goes out when the account is left off', function () {
@@ -145,7 +147,7 @@ test('access can wait: no invitation goes out when the account is left off', fun
         ])
         ->assertRedirect();
 
-    Mail::assertNothingSent();
+    Mail::assertNothingOutgoing();
     expect($member->fresh()->invitation_token_hash)->toBeNull();
 });
 
@@ -232,7 +234,7 @@ test('a reminder replaces the old link', function () {
         ->post("http://rostera.ekol.test/staff/{$member->id}/reminder")
         ->assertRedirect();
 
-    Mail::assertSent(StaffInvitationMail::class, 1);
+    Mail::assertQueued(StaffInvitationMail::class, 1);
     expect($member->fresh()->invitation_token_hash)->not->toBe(hash('sha256', 'first-token'))
         ->and($member->fresh()->invitation_expires_at->isFuture())->toBeTrue();
 });

@@ -247,7 +247,7 @@ class PendingRegistration extends Model
         $email = $this->admin_payload['email'] ?? null;
 
         try {
-            Mail::to($email)->send(new VerificationCodeMail($code, static::CODE_TTL_MINUTES));
+            Mail::to($email)->locale(app()->getLocale())->send(new VerificationCodeMail($code, static::CODE_TTL_MINUTES));
         } catch (\Throwable $exception) {
             $this->update(['channel' => 'sms']);
 

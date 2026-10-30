@@ -206,7 +206,7 @@ class RegistrationController extends Controller
         $address = "https://{$school->slug}.".$this->parentDomain();
 
         try {
-            Mail::to($user->email)->send(new WorkspaceReadyMail($school, $user, $address));
+            Mail::to($user->email)->locale(app()->getLocale())->send(new WorkspaceReadyMail($school, $user, $address));
         } catch (\Throwable $exception) {
             Log::warning('Workspace-ready email failed.', [
                 'school_id' => $school->id,
