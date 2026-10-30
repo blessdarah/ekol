@@ -9,6 +9,7 @@ use App\Models\GradeBand;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -36,7 +37,7 @@ class GradingController extends Controller
             ], GradeBand::scale($school->id)),
             'standard' => GradeBand::STANDARD,
             'isStandard' => ! GradeBand::where('school_id', $school->id)->exists(),
-            'canEdit' => (bool) $request->user()?->role->managesStaff(),
+            'canEdit' => (bool) $request->user()?->can('manage-staff'),
         ]);
     }
 
@@ -48,7 +49,7 @@ class GradingController extends Controller
     {
         [$school] = AssessmentController::context($request);
         $user = $request->user();
-        abort_unless($user !== null && $user->role->managesStaff(), 403);
+        Gate::authorize('manage-staff');
         $top = AssessmentPlan::OUT_OF;
 
         $data = $request->validated();

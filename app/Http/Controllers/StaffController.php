@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -48,7 +49,7 @@ class StaffController extends Controller
             abort(404);
         }
 
-        abort_unless((bool) $request->user()?->role->managesStaff(), 403);
+        Gate::authorize('manage-staff');
 
         return $school;
     }

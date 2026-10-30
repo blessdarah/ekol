@@ -27,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -48,7 +49,7 @@ class StructureController extends Controller
             abort(404);
         }
 
-        abort_unless((bool) $request->user()?->role->managesStructure(), 403);
+        Gate::authorize('manage-structure');
 
         return $school;
     }

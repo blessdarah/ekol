@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Enums\UserRole;
 use App\Livewire\Pulse\SchoolExceptions;
 use App\Models\AuditEvent;
 use App\Models\School;
@@ -40,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureGates();
         $this->configurePulse();
 
         User::saving(function (User $user) {
@@ -56,6 +58,17 @@ class AppServiceProvider extends ServiceProvider
                 return false;
             }
         });
+    }
+
+    /**
+     * One gate per ability a role can hold. The role decides; policies
+     * and form requests ask the gate.
+     */
+    protected function configureGates(): void
+    {
+        foreach (UserRole::ABILITIES as $ability) {
+            Gate::define($ability, fn (User $user): bool => $user->role->allows($ability));
+        }
     }
 
     /**

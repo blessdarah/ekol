@@ -9,7 +9,7 @@ class ExtendMarksWindowRequest extends SchoolRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->role->managesAssessments();
+        return (bool) $this->user()?->can('manage-assessments');
     }
 
     /**

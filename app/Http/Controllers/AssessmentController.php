@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -45,7 +46,7 @@ class AssessmentController extends Controller
             abort(404);
         }
 
-        abort_unless((bool) $request->user()?->role->managesAssessments(), 403);
+        Gate::authorize('manage-assessments');
 
         return [$school, StructureController::currentYear($school)];
     }
@@ -125,7 +126,7 @@ class AssessmentController extends Controller
 
     public function index(Request $request): Response|RedirectResponse
     {
-        if ($request->user() && ! $request->user()->role->managesAssessments()) {
+        if ($request->user() && ! $request->user()->can('manage-assessments')) {
             return redirect()->route('assessments.sheets');
         }
 

@@ -8,7 +8,7 @@ class SchemeNoteRequest extends SchoolRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->role->followsSchemes();
+        return (bool) $this->user()?->can('follow-schemes');
     }
 
     /**

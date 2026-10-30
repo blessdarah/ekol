@@ -47,13 +47,12 @@ trait BuildsSchoolDashboard
         $now = now($school->timezone);
         $year = StructureController::currentYear($school);
         $term = StudentController::currentTerm($school);
-        $role = $user->role;
         $week = $term ? Scheme::currentWeek($term) : null;
 
-        $fees = $role->managesFees() && $year ? $this->dashboardFees($school, $year, $term, $range) : null;
-        $marks = $role->managesAssessments() && $year ? $this->dashboardMarks($school, $year) : null;
-        $schemes = $role->followsSchemes() && $term ? $this->dashboardSchemes($term, $week) : null;
-        $admissions = $role->managesStudents() ? $this->dashboardAdmissions($school) : null;
+        $fees = $user->can('manage-fees') && $year ? $this->dashboardFees($school, $year, $term, $range) : null;
+        $marks = $user->can('manage-assessments') && $year ? $this->dashboardMarks($school, $year) : null;
+        $schemes = $user->can('follow-schemes') && $term ? $this->dashboardSchemes($term, $week) : null;
+        $admissions = $user->can('manage-students') ? $this->dashboardAdmissions($school) : null;
         $attendance = $this->dashboardAttendance($school, $year, $term, $range, $now);
 
         return [
@@ -78,7 +77,7 @@ trait BuildsSchoolDashboard
             'attendance' => $attendance,
             'marks' => $marks,
             'schemes' => $schemes,
-            'results' => $role->managesAssessments() && $year ? $this->dashboardResults($school, $year) : null,
+            'results' => $user->can('manage-assessments') && $year ? $this->dashboardResults($school, $year) : null,
             'levels' => $year ? $this->dashboardLevels($school, $year) : [],
             'admissions' => $admissions,
             'attention' => array_values(array_filter([

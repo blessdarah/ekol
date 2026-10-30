@@ -16,7 +16,7 @@ class SaveStudentRequest extends SchoolRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->role->managesStudents();
+        return (bool) $this->user()?->can('manage-students');
     }
 
     /**

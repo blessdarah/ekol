@@ -15,7 +15,7 @@ class SaveSeriesRequest extends SchoolRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->role->managesStructure();
+        return (bool) $this->user()?->can('manage-structure');
     }
 
     /**

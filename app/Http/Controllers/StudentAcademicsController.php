@@ -93,7 +93,7 @@ class StudentAcademicsController extends Controller
 
         return Inertia::render('students/academics', [
             'neighbours' => StudentController::neighbours($school, $target),
-            'canOpenReports' => (bool) $request->user()?->role->managesAssessments(),
+            'canOpenReports' => (bool) $request->user()?->can('manage-assessments'),
             'student' => [
                 'id' => $target->id,
                 'name' => $target->full_name,

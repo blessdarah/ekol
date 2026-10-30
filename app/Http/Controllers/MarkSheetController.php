@@ -16,6 +16,7 @@ use App\Models\Term;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -49,7 +50,7 @@ class MarkSheetController extends Controller
             ->get();
 
         return Inertia::render('assessments/sheets', [
-            'canManage' => (bool) $user?->role->managesAssessments(),
+            'canManage' => (bool) $user?->can('manage-assessments'),
             'sheets' => $sheets->map(function (AssessmentSubject $sheet) use ($plans) {
                 $plan = $plans->get((string) $sheet->assessment?->assessment_plan_id);
 
@@ -236,7 +237,7 @@ class MarkSheetController extends Controller
     protected function whatNext(Request $request, AssessmentSubject $target, AssessmentPlan $plan): array
     {
         $user = $request->user();
-        $followsClass = $user->role->managesAssessments()
+        $followsClass = $user->can('manage-assessments')
             && ($request->query('from') === 'progress' || $target->examiner_id !== $user->id);
         $sheets = AssessmentSubject::query()
             ->when(
@@ -303,7 +304,7 @@ class MarkSheetController extends Controller
         $user = $request->user();
 
         abort_unless($plan !== null, 404);
-        abort_unless($user && ($user->role->managesAssessments() || $sheet->examiner_id === $user->id), 403);
+        Gate::authorize('enterMarks', $sheet);
 
         return [$sheet, $plan->refreshState()];
     }

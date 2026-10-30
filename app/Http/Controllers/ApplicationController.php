@@ -215,7 +215,7 @@ class ApplicationController extends Controller
             'levels' => Level::where('school_id', $school->id)->orderBy('ordinal')->get(['id', 'name']),
             'religions' => Student::RELIGIONS,
             'documents' => Application::DOCUMENTS,
-            'canSeePrivate' => (bool) $request->user()?->role->seesPrivateStudentDetails(),
+            'canSeePrivate' => (bool) $request->user()?->can('see-private-student-details'),
         ]);
     }
 
@@ -235,7 +235,7 @@ class ApplicationController extends Controller
             ]);
         }
 
-        $private = (bool) $request->user()?->role->seesPrivateStudentDetails();
+        $private = (bool) $request->user()?->can('see-private-student-details');
         $surname = trim((string) $data['surname']);
         $given = trim((string) $data['given_names']);
 
@@ -282,7 +282,7 @@ class ApplicationController extends Controller
         }
 
         $target = $this->application($school, $application);
-        $private = (bool) $request->user()?->role->seesPrivateStudentDetails();
+        $private = (bool) $request->user()?->can('see-private-student-details');
         $sibling = $this->sibling($school, $target);
         $level = collect(EnrolmentController::capacity($school, $year))->firstWhere('id', $target->level_id);
         $required = $target->requiredDocuments();

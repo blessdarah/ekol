@@ -26,6 +26,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -47,7 +48,7 @@ class StudentController extends Controller
             abort(404);
         }
 
-        abort_unless((bool) $request->user()?->role->managesStudents(), 403);
+        Gate::authorize('manage-students');
 
         return $school;
     }
@@ -404,7 +405,7 @@ class StudentController extends Controller
         $year = StructureController::currentYear($school);
         $term = static::currentTerm($school);
         $target = $this->student($school, $student)->load(['guardians', 'invoices.payments', 'invoices.exemption']);
-        $private = (bool) $request->user()?->role->seesPrivateStudentDetails();
+        $private = (bool) $request->user()?->can('see-private-student-details');
 
         $enrolment = $year
             ? Enrolment::where('student_id', $target->id)
@@ -549,7 +550,7 @@ class StudentController extends Controller
     {
         $year = StructureController::currentYear($school);
         $term = static::currentTerm($school);
-        $private = (bool) $request->user()?->role->seesPrivateStudentDetails();
+        $private = (bool) $request->user()?->can('see-private-student-details');
         $classes = $this->classes($school, $year);
         $counts = Enrolment::whereIn('school_class_id', $classes->modelKeys())
             ->selectRaw('school_class_id, COUNT(*) as total')
@@ -775,7 +776,7 @@ class StudentController extends Controller
             'lives_with' => $data['lives_with'] ?? null,
         ];
 
-        if ($request->user()?->role->seesPrivateStudentDetails()) {
+        if ($request->user()?->can('see-private-student-details')) {
             $profile += [
                 'religion' => $data['religion'] ?? null,
                 'has_disability' => $data['has_disability'],
