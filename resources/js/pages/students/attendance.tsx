@@ -54,7 +54,7 @@ interface AttendanceProps {
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const amber = 'text-[#8A5A12]';
+const amber = 'text-warning-text';
 
 const BOXES: Record<DayState, { letter: string; box: string }> = {
     present: {
@@ -230,9 +230,6 @@ function StudentAttendance({
                 trail={[{ label: student.name }, { label: t('Attendance') }]}
                 title={student.name}
                 tag={[student.matricule, student.class]
-                    .filter(Boolean)
-                    .join(' · ')}
-                meta={[`enrolled ${student.admitted_year}`, student.level]
                     .filter(Boolean)
                     .join(' · ')}
                 action={

@@ -1,10 +1,11 @@
+import SharedPageHeader from '../shell/page-header';
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { studentTab } from '@/actions/App/Http/Controllers/FeeController';
 import { show as academicsTab } from '@/actions/App/Http/Controllers/StudentAcademicsController';
 import { show as attendanceTab } from '@/actions/App/Http/Controllers/StudentAttendanceController';
 import { index, show } from '@/actions/App/Http/Controllers/StudentController';
-import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { type Crumb } from '../shell/breadcrumbs';
 import { numberLocale, t } from '../../lib/i18n';
 
 export const GENDER_LABELS: Record<string, string> = {
@@ -68,7 +69,7 @@ const FEE_STYLES: Record<string, { label: string; pill: string; dot: string }> =
         },
         partial: {
             label: 'Partial',
-            pill: 'bg-warning-tint text-[#8A5A12]',
+            pill: 'bg-warning-tint text-warning-text',
             dot: 'bg-warning',
         },
         due: {
@@ -117,24 +118,14 @@ export function StudentHeader({
     action?: ReactNode;
 }) {
     return (
-        <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="flex min-w-0 flex-col gap-[6px]">
-                <Breadcrumbs
-                    trail={[
-                        { label: t('Students'), href: index.url() },
-                        ...trail,
-                    ]}
-                />
-                <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                    {title}
-                </h1>
-                <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-4 text-text-muted">
-                    <span className="font-mono uppercase">{tag}</span>
-                    {meta && <span>· {meta}</span>}
-                </p>
-            </div>
-            {action}
-        </div>
+        <SharedPageHeader
+            root={{ label: t('Students'), href: index.url() }}
+            trail={trail}
+            title={title}
+            tag={tag}
+            meta={meta}
+            action={action}
+        />
     );
 }
 

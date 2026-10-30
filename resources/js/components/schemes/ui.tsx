@@ -1,3 +1,4 @@
+import SharedPageHeader from '../shell/page-header';
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import {
@@ -7,7 +8,7 @@ import {
 } from '@/actions/App/Http/Controllers/SchemeController';
 import { show as syllabus } from '@/actions/App/Http/Controllers/SyllabusController';
 import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
-import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { type Crumb } from '../shell/breadcrumbs';
 import { dayMonth } from '../fees/ui';
 import { t } from '../../lib/i18n';
 
@@ -88,39 +89,16 @@ export function SchemesHeader({
     action?: ReactNode;
 }) {
     return (
-        <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="flex min-w-0 flex-col gap-[6px]">
-                <Breadcrumbs
-                    trail={[
-                        {
-                            label: t('Classes & Subjects'),
-                            href: levelsIndex.url(),
-                        },
-                        trail && trail.length > 0
-                            ? {
-                                  label: t(schemesCrumb.label),
-                                  href: schemesCrumb.href,
-                              }
-                            : { label: t(schemesCrumb.label) },
-                        ...(trail ?? []),
-                    ]}
-                />
-                <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                    {title}
-                </h1>
-                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">
-                    {badge}
-                    <span className="font-mono uppercase">{tag}</span>
-                    {meta && <span>· {meta}</span>}
-                </p>
-                {sub && (
-                    <p className="max-w-[720px] text-[13px] leading-[19px] text-text-muted">
-                        {sub}
-                    </p>
-                )}
-            </div>
-            {action}
-        </div>
+        <SharedPageHeader
+            root={{ label: t('Classes & Subjects'), href: levelsIndex.url() }}
+            trail={[schemesCrumb, ...(trail ?? [])]}
+            title={title}
+            tag={tag}
+            meta={meta}
+            badge={badge}
+            sub={sub}
+            action={action}
+        />
     );
 }
 
@@ -223,7 +201,7 @@ export function StepBar({
                             {item.label}
                         </span>
                         {item.badge && (
-                            <span className="rounded-full bg-warning-tint px-2 py-[2px] font-mono text-[11px] text-[#8A5A12]">
+                            <span className="rounded-full bg-warning-tint px-2 py-[2px] font-mono text-[11px] text-warning-text">
                                 {item.badge}
                             </span>
                         )}
@@ -333,7 +311,7 @@ export function TermStrip({ steps }: { steps: Steps }) {
                                     height="12"
                                     viewBox="0 0 24 24"
                                     fill="none"
-                                    stroke="#1E7F4F"
+                                    stroke="var(--color-success)"
                                     strokeWidth="3"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -356,7 +334,7 @@ export const STATES: Record<
     { label: string; dot: string; text: string }
 > = {
     on_track: { label: 'On track', dot: 'bg-success', text: 'text-success' },
-    behind: { label: 'Behind', dot: 'bg-warning', text: 'text-[#8A5A12]' },
+    behind: { label: 'Behind', dot: 'bg-warning', text: 'text-warning-text' },
     to_approve: {
         label: 'To approve',
         dot: 'bg-science',
@@ -365,7 +343,7 @@ export const STATES: Record<
     sent_back: {
         label: 'Sent back',
         dot: 'bg-warning',
-        text: 'text-[#8A5A12]',
+        text: 'text-warning-text',
     },
     not_submitted: {
         label: 'Not submitted',
@@ -397,14 +375,14 @@ export function StateLabel({ state }: { state: string }) {
 
 export const STATUSES: Record<string, { label: string; pill: string }> = {
     not_started: { label: 'Not started', pill: 'bg-danger-tint text-danger' },
-    draft: { label: 'Draft', pill: 'bg-warning-tint text-[#8A5A12]' },
+    draft: { label: 'Draft', pill: 'bg-warning-tint text-warning-text' },
     submitted: {
         label: 'Waiting for approval',
         pill: 'bg-science-tint text-science',
     },
     changes_requested: {
         label: 'Changes asked for',
-        pill: 'bg-warning-tint text-[#8A5A12]',
+        pill: 'bg-warning-tint text-warning-text',
     },
     approved: { label: 'Approved', pill: 'bg-success-tint text-success' },
     closed: { label: 'Closed', pill: 'bg-surface text-text-muted' },

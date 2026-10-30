@@ -46,7 +46,13 @@ class ResolveSchool
             abort(403, __('This account does not belong to this school.'));
         }
 
-        return $next($request);
+        try {
+            return $next($request);
+        } finally {
+            // The school lasts for this request only: nothing after it is
+            // left scoped to a school it was not asked about.
+            app()->forgetInstance('currentSchool');
+        }
     }
 
     protected function subdomain(Request $request): ?string

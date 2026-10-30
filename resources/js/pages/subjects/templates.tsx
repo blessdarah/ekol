@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
@@ -113,7 +114,7 @@ function Progress({ step }: { step: number }) {
                                     <path
                                         d="M2.6 6.2 4.9 8.5 9.4 3.9"
                                         fill="none"
-                                        stroke="#0E4D3A"
+                                        stroke="var(--color-primary)"
                                         strokeWidth="1.8"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
@@ -480,7 +481,7 @@ function Templates({
                                 })}
                             </p>
                             {picked.length - ready.length > 0 && (
-                                <span className="flex h-6 items-center gap-[6px] rounded-full bg-warning-tint px-[10px] text-[12px] leading-4 font-medium text-[#8A5A12]">
+                                <span className="flex h-6 items-center gap-[6px] rounded-full bg-warning-tint px-[10px] text-[12px] leading-4 font-medium text-warning-text">
                                     <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                                     {picked.length - ready.length}{' '}
                                     {t('need teachers')}
@@ -622,7 +623,7 @@ function Templates({
                                     'Drafts',
                                     picked.length - ready.length,
                                     'need a teacher',
-                                    'text-[#8A5A12]',
+                                    'text-warning-text',
                                 ],
                                 [
                                     'Periods',
@@ -673,7 +674,7 @@ function Templates({
                                     return (
                                         <div
                                             key={subject.code}
-                                            className={`flex h-[38px] shrink-0 items-center gap-3 border-t border-solid border-border px-3 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                            className={`flex h-[38px] shrink-0 items-center gap-3 border-t border-solid border-border px-3 ${tableRowClass({ index: position })}`}
                                         >
                                             <span className="flex-1 truncate text-[14px] leading-[18px] font-medium text-text">
                                                 {subject.name}
@@ -694,7 +695,7 @@ function Templates({
                                                 className={`flex h-[22px] w-[92px] shrink-0 items-center gap-[6px] rounded-full px-2 text-[12px] leading-4 font-medium ${
                                                     done
                                                         ? 'bg-success-tint text-success'
-                                                        : 'bg-warning-tint text-[#8A5A12]'
+                                                        : 'bg-warning-tint text-warning-text'
                                                 }`}
                                             >
                                                 <span

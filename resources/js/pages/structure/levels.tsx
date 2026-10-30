@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
 import { index as seriesIndex } from '@/actions/App/Http/Controllers/SeriesController';
@@ -410,7 +411,7 @@ function LevelPanel({
                         <path
                             d="M5 12h14M13 6l6 6-6 6"
                             fill="none"
-                            stroke="#101915"
+                            stroke="var(--color-text)"
                             strokeWidth="2.2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -453,9 +454,9 @@ function LevelPanel({
                                     key={item.id}
                                     type="button"
                                     onClick={() => setEditing(item.id)}
-                                    className={`flex items-center gap-3 border-b border-solid border-border px-[14px] py-[10px] text-left last:border-b-0 hover:bg-surface ${
-                                        position % 2 === 1 ? 'bg-row-alt' : ''
-                                    }`}
+                                    className={`flex items-center gap-3 border-b border-solid border-border px-[14px] py-[10px] text-left last:border-b-0 hover:bg-surface ${tableRowClass(
+                                        { index: position },
+                                    )}`}
                                 >
                                     <span className="flex min-w-0 flex-1 flex-col gap-[2px]">
                                         <span className="text-[14px] leading-[18px] font-medium text-text">
@@ -602,7 +603,7 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
                                         className={`flex h-[54px] shrink-0 items-center gap-4 border-b border-solid border-border px-4 text-left last:border-b-0 ${
                                             active
                                                 ? 'bg-primary-tint'
-                                                : `hover:bg-surface ${position % 2 === 1 ? 'bg-row-alt' : ''}`
+                                                : `hover:bg-surface ${tableRowClass({ index: position })}`
                                         }`}
                                     >
                                         <span className="flex w-[150px] shrink-0 flex-col">

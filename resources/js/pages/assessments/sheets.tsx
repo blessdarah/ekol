@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link } from '@inertiajs/react';
 import { index } from '@/actions/App/Http/Controllers/AssessmentController';
 import { show } from '@/actions/App/Http/Controllers/MarkSheetController';
@@ -86,7 +87,7 @@ function Sheets({ canManage, sheets }: SheetsProps) {
                             <Link
                                 key={sheet.id}
                                 href={show.url(sheet.id)}
-                                className={`flex min-h-[52px] items-center gap-4 border-b border-solid border-border px-4 py-2 last:border-b-0 hover:bg-surface ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                className={`flex min-h-[52px] items-center gap-4 border-b border-solid border-border px-4 py-2 last:border-b-0 hover:bg-surface ${tableRowClass({ index: position })}`}
                             >
                                 <span className="flex min-w-0 flex-1 flex-col">
                                     <span className="truncate text-[14px] leading-[18px] font-medium text-text">

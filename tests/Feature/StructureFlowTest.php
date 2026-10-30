@@ -128,14 +128,14 @@ test('a class can be added, given a form master and home room, and renamed', fun
     $admin = structureAdmin($school);
     $year = structureYear($school);
     $level = structureLevel($school);
-    structureClass($school, $year, $level, 'Form 4 A');
+    structureClass($school, $year, $level, 'Form 4A');
     $teacher = structureAdmin($school, UserRole::Teacher);
 
     $this->actingAs($admin)
         ->post("http://structa.ekol.test/classes/levels/{$level->id}/classes")
         ->assertRedirect();
 
-    $added = SchoolClass::where('name', 'Form 4 B')->firstOrFail();
+    $added = SchoolClass::where('name', 'Form 4B')->firstOrFail();
 
     $this->actingAs($admin)
         ->post('http://structa.ekol.test/classes/rooms', ['code' => 'A5', 'capacity' => 45])
@@ -175,8 +175,8 @@ test('a home room and a class name cannot be shared', function () {
     $admin = structureAdmin($school);
     $year = structureYear($school);
     $level = structureLevel($school);
-    $first = structureClass($school, $year, $level, 'Form 4 A');
-    $second = structureClass($school, $year, $level, 'Form 4 B');
+    $first = structureClass($school, $year, $level, 'Form 4A');
+    $second = structureClass($school, $year, $level, 'Form 4B');
     $room = Room::create([
         'school_id' => $school->id, 'code' => 'A4', 'name' => 'A4',
         'capacity' => 45, 'kind' => RoomKind::Classroom,
@@ -353,7 +353,7 @@ test('a standard structure creates its levels and classes and skips existing one
     expect(Level::where('school_id', $school->id)->orderBy('ordinal')->pluck('name')->all())
         ->toBe(['Form 1', 'Form 2', 'Upper Sixth'])
         ->and(SchoolClass::where('level_id', $form2->id)->orderBy('name')->pluck('name')->all())
-        ->toBe(['Form 2 A', 'Form 2 B'])
+        ->toBe(['Form 2A', 'Form 2B'])
         ->and(SchoolClass::where('academic_year_id', $year->id)->count())->toBe(3)
         ->and($upper->uses_series)->toBeTrue()
         ->and($form2->uses_series)->toBeFalse()
@@ -405,4 +405,20 @@ test('the series form receives core and elective ids as plain lists', function (
             ->component('structure/series-edit')
             ->where('series.core', [$physics->id])
             ->where('series.electives', [$biology->id]));
+});
+
+test('existing class names join the letter to the level number, word levels keep the space', function () {
+    $school = structureSchool();
+    $year = structureYear($school);
+    $level = structureLevel($school);
+    $numbered = structureClass($school, $year, $level, 'Form 1 A');
+    $worded = structureClass($school, $year, $level, 'Lower Sixth A');
+    $migration = require database_path('migrations/2026_10_30_123736_join_class_letters_to_level_numbers.php');
+
+    $migration->up();
+
+    expect($numbered->fresh()->name)->toBe('Form 1A')
+        ->and($worded->fresh()->name)->toBe('Lower Sixth A')
+        ->and(SchoolClass::nameFor('Form 2', 'C'))->toBe('Form 2C')
+        ->and(SchoolClass::nameFor('Upper Sixth', 'B'))->toBe('Upper Sixth B');
 });

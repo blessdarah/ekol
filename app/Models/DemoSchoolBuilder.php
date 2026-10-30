@@ -157,7 +157,7 @@ class DemoSchoolBuilder
             $room = Room::create(['school_id' => $school->id, 'code' => 'R'.($index + 1), 'name' => $name, 'capacity' => 40, 'kind' => 'classroom']);
             $class = SchoolClass::create([
                 'school_id' => $school->id, 'academic_year_id' => $year->id, 'level_id' => $level->id,
-                'name' => $name.' A', 'capacity' => 40, 'form_master_id' => $lessons[$index]['teacher']->id, 'home_room_id' => $room->id,
+                'name' => SchoolClass::nameFor($name, 'A'), 'capacity' => 40, 'form_master_id' => $lessons[$index]['teacher']->id, 'home_room_id' => $room->id,
             ]);
             foreach ($lessons as $lesson) {
                 ClassSubject::create([

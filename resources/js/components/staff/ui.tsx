@@ -1,7 +1,8 @@
+import SharedPageHeader from '../shell/page-header';
 import type { ReactNode } from 'react';
 import { index as staffIndex } from '@/actions/App/Http/Controllers/StaffController';
 import { t } from '../../lib/i18n';
-import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { type Crumb } from '../shell/breadcrumbs';
 
 export const GENDER_LABELS: Record<string, string> = {
     female: 'Female',
@@ -143,34 +144,15 @@ export function PageHeader({
     /** The page's main button, beside the title. */
     action?: ReactNode;
 }) {
-    const heading = (
-        <div className="flex flex-col gap-[6px]">
-            <Breadcrumbs
-                trail={[
-                    { label: t('Teachers & Staff'), href: staffIndex.url() },
-                    ...parents,
-                    { label: crumb },
-                ]}
-            />
-            <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                {title}
-            </h1>
-            <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-4 text-text-muted">
-                <span className="font-mono uppercase">{tag}</span>
-                {meta && <span>· {meta}</span>}
-            </p>
-        </div>
-    );
-
-    if (!action) {
-        return heading;
-    }
-
     return (
-        <div className="flex flex-wrap items-end justify-between gap-4">
-            {heading}
-            {action}
-        </div>
+        <SharedPageHeader
+            root={{ label: t('Teachers & Staff'), href: staffIndex.url() }}
+            trail={[...parents, { label: crumb }]}
+            title={title}
+            tag={tag}
+            meta={meta}
+            action={action}
+        />
     );
 }
 
@@ -214,7 +196,7 @@ export function FlowSteps({
                                     <path
                                         d="M2.6 6.2 4.9 8.5 9.4 3.9"
                                         fill="none"
-                                        stroke="#fff"
+                                        stroke="var(--color-bg)"
                                         strokeWidth="1.8"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"

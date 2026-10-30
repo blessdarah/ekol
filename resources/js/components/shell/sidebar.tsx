@@ -119,7 +119,7 @@ function AccountMenu({
             {open && (
                 <div
                     role="menu"
-                    className="absolute top-[calc(100%-6px)] right-3 left-3 z-50 flex flex-col overflow-hidden rounded-xl border border-solid border-border bg-white shadow-[0_12px_32px_rgba(16,25,21,0.14)] lg:right-auto lg:w-[300px]"
+                    className="absolute top-[calc(100%-6px)] right-3 left-3 z-50 flex flex-col overflow-hidden rounded-xl border border-solid border-border bg-white shadow-[0_12px_32px_color-mix(in_srgb,var(--color-text)_14%,transparent)] lg:right-auto lg:w-[300px]"
                 >
                     <div className="flex items-center gap-3 p-4">
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-tint text-[14px] font-semibold text-primary">
@@ -222,7 +222,7 @@ function AccountMenu({
                                             <path
                                                 d="M5 12.5l4.5 4.5L19 7.5"
                                                 fill="none"
-                                                stroke="#0E4D3A"
+                                                stroke="var(--color-primary)"
                                                 strokeWidth="3"
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"
@@ -276,13 +276,11 @@ function AccountMenu({
 
 export default function Sidebar({
     school,
-    term,
     user,
     feeBadge,
     open = false,
 }: {
     school: ShellSchool | null;
-    term: ShellTerm | null;
     user: ShellUser | null;
     feeBadge: number | null;
     /** Whether the menu is slid in, on screens too narrow to keep it in view. */
@@ -310,20 +308,6 @@ export default function Sidebar({
             }`}
         >
             <AccountMenu school={school} user={user} />
-
-            {term && (
-                <div className="mx-3 mb-5 flex items-center gap-[10px] rounded-md border border-solid border-border bg-white px-3 py-[10px]">
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-success" />
-                    <span className="flex flex-col">
-                        <span className="text-[13px] font-medium text-text">
-                            {t(term.label)}
-                        </span>
-                        <span className="text-[12px] text-text-muted">
-                            {term.weekLabel}
-                        </span>
-                    </span>
-                </div>
-            )}
 
             <nav className="flex flex-1 flex-col gap-5 overflow-y-auto px-3 pb-4">
                 {sections.map((section) => (

@@ -1,5 +1,10 @@
+import {
+    TableRowMenu,
+    TableEmptyState,
+    tableRowClass,
+} from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
     create,
     edit,
@@ -192,16 +197,6 @@ function SubjectRoster({
         selection.clear();
     }
 
-    useEffect(() => {
-        function close() {
-            setOpenMenu(null);
-        }
-
-        document.addEventListener('click', close);
-
-        return () => document.removeEventListener('click', close);
-    }, []);
-
     return (
         <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('The subject roster')} />
@@ -260,7 +255,7 @@ function SubjectRoster({
                                     onClick={() => setExporting(true)}
                                     className={bulkButtonClass}
                                 >
-                                    <DownloadIcon colour="#FFFFFF" />
+                                    <DownloadIcon colour="var(--color-bg)" />
                                     {t('Export :count', {
                                         count: count(
                                             selection.allMatching
@@ -348,19 +343,19 @@ function SubjectRoster({
                                 <span className="w-8 shrink-0" />
                             </div>
                             {subjects.rows.length === 0 && (
-                                <p className="px-4 py-8 text-center text-[13px] text-text-muted">
+                                <TableEmptyState>
                                     {t(
                                         'No subject matches. Try another name, or clear the filters.',
                                     )}
-                                </p>
+                                </TableEmptyState>
                             )}
-                            {subjects.rows.map((row) => (
+                            {subjects.rows.map((row, position) => (
                                 <div
                                     key={row.id}
                                     onClick={() =>
                                         router.visit(show.url(row.id))
                                     }
-                                    className={`flex h-[62px] shrink-0 cursor-pointer items-center gap-3 border-b border-solid border-border px-4 py-2 last:rounded-b-lg last:border-b-0 ${selection.has(row.id) ? 'bg-primary-tint/60' : 'hover:bg-surface'}`}
+                                    className={`flex h-[62px] shrink-0 cursor-pointer items-center gap-3 border-b border-solid border-border px-4 py-2 last:rounded-b-lg last:border-b-0 ${tableRowClass({ index: position, selected: selection.has(row.id), interactive: true })}`}
                                 >
                                     <span className="flex w-4 shrink-0">
                                         <Checkbox
@@ -407,79 +402,35 @@ function SubjectRoster({
                                             periods: row.periods,
                                         })}
                                     </span>
-                                    <span className="relative flex w-8 shrink-0 justify-center">
-                                        <button
-                                            type="button"
-                                            aria-label={t('Actions for :row', {
-                                                row: row.name,
-                                            })}
-                                            aria-expanded={openMenu === row.id}
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                setOpenMenu(
-                                                    openMenu === row.id
-                                                        ? null
-                                                        : row.id,
-                                                );
-                                            }}
-                                            className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-primary-tint"
+                                    <TableRowMenu
+                                        label={t('Actions for :row', {
+                                            row: row.name,
+                                        })}
+                                        open={openMenu === row.id}
+                                        onToggle={() =>
+                                            setOpenMenu(
+                                                openMenu === row.id
+                                                    ? null
+                                                    : row.id,
+                                            )
+                                        }
+                                        onClose={() => setOpenMenu(null)}
+                                    >
+                                        <Link
+                                            role="menuitem"
+                                            href={show.url(row.id)}
+                                            className="flex h-8 items-center rounded-sm px-3 text-[13px] text-text hover:bg-surface"
                                         >
-                                            <svg
-                                                width="16"
-                                                height="16"
-                                                viewBox="0 0 16 16"
-                                            >
-                                                <circle
-                                                    cx="3"
-                                                    cy="8"
-                                                    r="1"
-                                                    fill="none"
-                                                    stroke="#56625C"
-                                                    strokeWidth="1.6"
-                                                />
-                                                <circle
-                                                    cx="8"
-                                                    cy="8"
-                                                    r="1"
-                                                    fill="none"
-                                                    stroke="#56625C"
-                                                    strokeWidth="1.6"
-                                                />
-                                                <circle
-                                                    cx="13"
-                                                    cy="8"
-                                                    r="1"
-                                                    fill="none"
-                                                    stroke="#56625C"
-                                                    strokeWidth="1.6"
-                                                />
-                                            </svg>
-                                        </button>
-                                        {openMenu === row.id && (
-                                            <span
-                                                role="menu"
-                                                onClick={(event) =>
-                                                    event.stopPropagation()
-                                                }
-                                                className="absolute top-full right-0 z-10 mt-1 flex w-[170px] flex-col rounded-md border border-solid border-border bg-white p-1 shadow-[0_8px_24px_rgba(16,25,21,0.12)]"
-                                            >
-                                                <Link
-                                                    role="menuitem"
-                                                    href={show.url(row.id)}
-                                                    className="flex h-8 items-center rounded-sm px-3 text-[13px] text-text hover:bg-surface"
-                                                >
-                                                    {t('Open record')}
-                                                </Link>
-                                                <Link
-                                                    role="menuitem"
-                                                    href={edit.url(row.id)}
-                                                    className="flex h-8 items-center rounded-sm px-3 text-[13px] text-text hover:bg-surface"
-                                                >
-                                                    {t('Edit subject')}
-                                                </Link>
-                                            </span>
-                                        )}
-                                    </span>
+                                            {t('Open record')}
+                                        </Link>
+                                        <Link
+                                            role="menuitem"
+                                            href={edit.url(row.id)}
+                                            className="flex h-8 items-center rounded-sm px-3 text-[13px] text-text hover:bg-surface"
+                                        >
+                                            {t('Edit subject')}
+                                        </Link>
+                                    </TableRowMenu>
                                 </div>
                             ))}
                         </div>

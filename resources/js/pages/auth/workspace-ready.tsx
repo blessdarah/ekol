@@ -122,7 +122,7 @@ export default function WorkspaceReady({
                             <path
                                 d="M5 12h14M13 6l6 6-6 6"
                                 fill="none"
-                                stroke="#FFFFFF"
+                                stroke="var(--color-bg)"
                                 strokeWidth="2.5"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"

@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, useForm } from '@inertiajs/react';
 import { update } from '@/actions/App/Http/Controllers/GradingController';
 import {
@@ -38,8 +39,8 @@ interface Draft {
 const TONES = [
     'bg-primary',
     'bg-success',
-    'bg-[#8FB79B]',
-    'bg-[#D2B55B]',
+    'bg-grading-pass',
+    'bg-grading-borderline',
     'bg-warning',
     'bg-danger',
 ];
@@ -205,7 +206,7 @@ function Grading({
                                 {data.bands.map((band, position) => (
                                     <div
                                         key={position}
-                                        className={`flex h-[42px] shrink-0 items-center gap-3 border-b border-solid border-border px-[14px] last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                        className={`flex h-[42px] shrink-0 items-center gap-3 border-b border-solid border-border px-[14px] last:border-b-0 ${tableRowClass({ index: position })}`}
                                     >
                                         <input
                                             aria-label={t('Grade letter')}
@@ -322,7 +323,7 @@ function Grading({
                                             <path
                                                 d="M5 12.5l4.5 4.5L19 7.5"
                                                 fill="none"
-                                                stroke="#0E4D3A"
+                                                stroke="var(--color-primary)"
                                                 strokeWidth="3"
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"

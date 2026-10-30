@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Enums\InvoiceStatus;
+use App\Enums\UserRole;
 use App\Http\Controllers\ProfileController;
 use App\Models\Invoice;
 use App\Models\School;
@@ -55,6 +56,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'can' => fn () => $this->sharedAbilities($request),
             'locale' => fn () => app()->getLocale(),
             'locales' => School::LOCALES,
             'school' => fn () => $this->sharedSchool($request),
@@ -62,6 +64,21 @@ class HandleInertiaRequests extends Middleware
             'shellUser' => fn () => $this->sharedShellUser($request),
             'feeBadge' => fn () => $this->sharedFeeBadge($request),
         ];
+    }
+
+    /**
+     * What the signed-in person may do, ability by ability, so pages read
+     * permissions instead of working them out again.
+     *
+     * @return array<string, bool>
+     */
+    protected function sharedAbilities(Request $request): array
+    {
+        $user = $request->user();
+
+        return collect(UserRole::ABILITIES)
+            ->mapWithKeys(fn (string $ability) => [$ability => $user !== null && $user->can($ability)])
+            ->all();
     }
 
     /**

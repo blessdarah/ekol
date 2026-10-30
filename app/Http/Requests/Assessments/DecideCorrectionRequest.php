@@ -9,9 +9,9 @@ class DecideCorrectionRequest extends SchoolRequest
 {
     public function authorize(): bool
     {
-        $role = $this->user()?->role;
+        $user = $this->user();
 
-        return $role !== null && $role->managesAssessments() && $role->managesStaff();
+        return $user !== null && $user->can('manage-assessments') && $user->can('manage-staff');
     }
 
     /**

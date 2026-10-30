@@ -86,7 +86,7 @@ export function LevelPicker({
                                     )
                                 }
                             >
-                                <RemoveIcon tone="#0E4D3A" />
+                                <RemoveIcon tone="var(--color-primary)" />
                             </button>
                         </span>
                     ))}
@@ -195,7 +195,7 @@ export function ClassTable({
                                     className={`${cellInputClass} min-w-0 flex-1 ${
                                         row.staff_id
                                             ? ''
-                                            : 'border-warning bg-warning-tint text-[#8A5A12]'
+                                            : 'border-warning bg-warning-tint text-warning-text'
                                     }`}
                                 >
                                     <option value="">

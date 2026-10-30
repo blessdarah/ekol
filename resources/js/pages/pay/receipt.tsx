@@ -40,7 +40,7 @@ export default function Receipt(props: FeeReceiptProps) {
         }
     }
     return (
-        <div className="min-h-screen bg-[#EEF1EF] px-[14px] py-5 font-auth text-text print:bg-white print:p-0">
+        <div className="min-h-screen bg-document-canvas px-[14px] py-5 font-auth text-text print:bg-white print:p-0">
             <Head
                 title={t('Receipt :number', {
                     number: props.receipt.number ?? '',

@@ -229,6 +229,13 @@ test('progress follows what is ticked against the weeks gone, and a change needs
             ->where('picked.late', 2)
             ->where('picked.items.0.state', 'taught'));
 
+    $this->actingAs($world['principal'])
+        ->get('http://schemes.ekol.test/dashboard')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard')
+            ->where('schemes.behind', 1)
+            ->where('schemes.all', fn (int $all) => $all >= 1));
+
     $csv = $this->actingAs($world['principal'])
         ->get('http://schemes.ekol.test/classes/schemes/export?state=behind&columns=subject,class,state,taught')
         ->assertDownload()

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PaymentMethod;
+use App\Models\Concerns\BelongsToSchool;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,6 +14,7 @@ use Illuminate\Support\Carbon;
  * against the whole invoice. Rows are never updated.
  *
  * @property string $id
+ * @property string|null $school_id
  * @property string $invoice_id
  * @property string|null $installment_id
  * @property string $amount
@@ -24,11 +26,12 @@ use Illuminate\Support\Carbon;
  */
 class Payment extends Model
 {
-    use HasUuids;
+    use BelongsToSchool, HasUuids;
 
     public $timestamps = false;
 
     protected $fillable = [
+        'school_id',
         'invoice_id',
         'installment_id',
         'amount',
@@ -38,6 +41,16 @@ class Payment extends Model
         'received_by',
         'receipt_no',
     ];
+
+    /**
+     * A payment belongs to its invoice's school, wherever it is taken.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Payment $payment): void {
+            $payment->school_id ??= Invoice::withoutGlobalScopes()->whereKey($payment->invoice_id)->value('school_id');
+        });
+    }
 
     /**
      * @return array<string, string>

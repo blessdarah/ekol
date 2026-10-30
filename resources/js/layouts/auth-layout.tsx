@@ -16,11 +16,14 @@ export function LogoMark() {
                     xmlns="http://www.w3.org/2000/svg"
                     className="shrink-0"
                 >
-                    <path d="M12 3L2 8l10 5 10-5-10-5z" fill="#FFFFFF" />
+                    <path
+                        d="M12 3L2 8l10 5 10-5-10-5z"
+                        fill="var(--color-bg)"
+                    />
                     <path
                         d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5"
                         fill="none"
-                        stroke="#FFFFFF"
+                        stroke="var(--color-bg)"
                         strokeWidth="2"
                     />
                 </svg>

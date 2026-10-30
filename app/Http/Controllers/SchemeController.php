@@ -22,6 +22,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -62,8 +63,7 @@ class SchemeController extends Controller
             abort(404);
         }
 
-        $role = $request->user()?->role;
-        abort_unless($manage ? (bool) $role?->managesSchemes() : (bool) $role?->followsSchemes(), 403);
+        Gate::authorize($manage ? 'manage-schemes' : 'follow-schemes');
 
         return $school;
     }
@@ -98,7 +98,7 @@ class SchemeController extends Controller
         $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
 
         if (! $term || ! $opening) {
-            return $request->user()?->role->managesSchemes()
+            return $request->user()?->can('manage-schemes')
                 ? redirect()->route(SyllabusTopic::where('school_id', $school->id)->exists() ? 'schemes.open' : 'schemes.syllabus')
                 : redirect()->route('dashboard');
         }
@@ -118,7 +118,7 @@ class SchemeController extends Controller
             'states' => collect(array_keys(static::STATES))->mapWithKeys(fn (string $state) => [
                 $state => $states->filter(fn (string $value) => $value === $state)->count(),
             ]),
-            'canManage' => $request->user()->role->managesSchemes(),
+            'canManage' => $request->user()->can('manage-schemes'),
             'totals' => [
                 'all' => $schemes->count(),
                 'submitted' => $schemes->filter(fn (Scheme $scheme) => $scheme->status->isSubmitted())->count(),
@@ -212,7 +212,7 @@ class SchemeController extends Controller
      */
     protected function list(Request $request, Term $term, SchemeOpening $opening, ?int $week): array
     {
-        $schemes = $this->schemesOf($term)->filter(fn (Scheme $scheme) => $scheme->canBeApprovedBy($request->user(), $opening) || $request->user()->role->managesSchemes())->values();
+        $schemes = $this->schemesOf($term)->filter(fn (Scheme $scheme) => $request->user()->can('view', [$scheme, $opening]))->values();
         $states = $schemes->mapWithKeys(fn (Scheme $scheme) => [$scheme->id => $scheme->followState($week)]);
         $search = trim((string) $request->query('q', ''));
         $needle = mb_strtolower($search);
@@ -346,8 +346,8 @@ class SchemeController extends Controller
         $target = $this->find($school, $scheme);
         $term = $target->term;
         $opening = SchemeOpening::where('term_id', $target->term_id)->first();
-        $canApprove = $target->canBeApprovedBy($request->user(), $opening);
-        abort_unless($canApprove || $request->user()->role->managesSchemes(), 403);
+        Gate::authorize('view', [$target, $opening]);
+        $canApprove = $request->user()->can('approve', [$target, $opening]);
 
         $next = Scheme::where('term_id', $target->term_id)
             ->where('status', SchemeStatus::Submitted)
@@ -355,7 +355,7 @@ class SchemeController extends Controller
             ->with(['classSubject.subject', 'classSubject.schoolClass'])
             ->orderBy('submitted_at')
             ->get()
-            ->first(fn (Scheme $candidate) => $candidate->canBeApprovedBy($request->user(), $opening));
+            ->first(fn (Scheme $candidate) => $request->user()->can('approve', [$candidate, $opening]));
 
         return Inertia::render('schemes/show', [
             'steps' => static::steps($school),
@@ -384,7 +384,7 @@ class SchemeController extends Controller
         $school = static::schoolFor($request);
         $target = $this->find($school, $scheme);
         $opening = SchemeOpening::where('term_id', $target->term_id)->first();
-        abort_unless($target->canBeApprovedBy($request->user(), $opening), 403);
+        Gate::authorize('approve', [$target, $opening]);
 
         if ($target->status !== SchemeStatus::Submitted) {
             throw ValidationException::withMessages(['decision' => __('This scheme is not waiting for approval.')]);
@@ -406,7 +406,7 @@ class SchemeController extends Controller
             ->with(['classSubject.subject', 'classSubject.schoolClass'])
             ->orderBy('submitted_at')
             ->get()
-            ->first(fn (Scheme $candidate) => $candidate->canBeApprovedBy($request->user(), $opening));
+            ->first(fn (Scheme $candidate) => $request->user()->can('approve', [$candidate, $opening]));
 
         return $next
             ? redirect()->route('schemes.show', $next->id)

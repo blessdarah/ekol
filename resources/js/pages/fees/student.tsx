@@ -87,7 +87,7 @@ function Marker({ state, current }: { state: string; current: boolean }) {
                     <path
                         d="M5 12l5 5 9-10"
                         fill="none"
-                        stroke="#FFFFFF"
+                        stroke="var(--color-bg)"
                         strokeWidth="3"
                         strokeLinecap="round"
                     />
@@ -177,7 +177,7 @@ function PaymentDrawer({
                     }));
                     form.post(pay.url(studentId));
                 }}
-                className="flex h-full w-full max-w-[400px] flex-col border-l border-solid border-border bg-white shadow-[-12px_0_32px_#1019150F]"
+                className="flex h-full w-full max-w-[400px] flex-col border-l border-solid border-border bg-white shadow-[-12px_0_32px_color-mix(in_srgb,var(--color-text)_5.88%,transparent)]"
             >
                 <div className="flex items-center justify-between border-b border-solid border-border px-6 pt-6 pb-5">
                     <h2 className="font-display text-[20px] leading-6 font-bold tracking-[-0.01em] text-text">
@@ -193,7 +193,7 @@ function PaymentDrawer({
                             <path
                                 d="M6 6l12 12M18 6L6 18"
                                 fill="none"
-                                stroke="#56625C"
+                                stroke="var(--color-text-muted)"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                             />
@@ -323,7 +323,7 @@ function PaymentDrawer({
                                             method.value === 'mobile_money'
                                                 ? 'flex-[1.4]'
                                                 : 'flex-1'
-                                        } ${on ? 'bg-white font-semibold text-text shadow-[0_1px_2px_#10191514]' : 'font-medium text-text-muted hover:text-text'}`}
+                                        } ${on ? 'bg-white font-semibold text-text shadow-[0_1px_2px_color-mix(in_srgb,var(--color-text)_7.84%,transparent)]' : 'font-medium text-text-muted hover:text-text'}`}
                                     >
                                         {t(method.label)}
                                     </button>

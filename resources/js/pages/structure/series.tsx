@@ -75,7 +75,7 @@ function Card({
                         {t('Complete')}
                     </span>
                 ) : (
-                    <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-warning-tint px-2 text-[12px] leading-4 font-medium text-[#8A5A12]">
+                    <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-warning-tint px-2 text-[12px] leading-4 font-medium text-warning-text">
                         <span className="h-[6px] w-[6px] rounded-full bg-warning" />
                         {t('Needs setup')}
                     </span>
@@ -86,7 +86,7 @@ function Card({
                     {item.name}
                 </span>
                 <span
-                    className={`text-[13px] leading-[18px] ${complete ? 'text-text-muted' : 'text-[#8A5A12]'}`}
+                    className={`text-[13px] leading-[18px] ${complete ? 'text-text-muted' : 'text-warning-text'}`}
                 >
                     {complete
                         ? item.core.join(', ')

@@ -34,7 +34,7 @@ export type TimetablePage = StepKey | 'overview' | 'changes';
 
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export const amberText = 'text-[#8A5A12]';
+export const amberText = 'text-warning-text';
 
 export const linkClass =
     'text-[13px] leading-4 font-medium text-primary hover:underline';
@@ -51,7 +51,7 @@ export function plural(count: number, one: string, many = `${one}s`): string {
 
 export function CheckMark({
     size = 12,
-    tone = '#FFFFFF',
+    tone = 'var(--color-bg)',
 }: {
     size?: number;
     tone?: string;
@@ -105,7 +105,7 @@ export function TickBox({
                         : 'border-border bg-white'
                 }`}
             >
-                {checked && <CheckMark tone="#0E4D3A" />}
+                {checked && <CheckMark tone="var(--color-primary)" />}
             </span>
             <span>{children}</span>
         </label>

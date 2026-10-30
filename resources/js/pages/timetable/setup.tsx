@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link } from '@inertiajs/react';
 import { show as schoolSetup } from '@/actions/App/Http/Controllers/SetupController';
 import {
@@ -133,7 +134,7 @@ function Setup({
                                     className={`flex items-center gap-4 border-b border-solid border-border px-[14px] last:border-b-0 ${
                                         period.is_break
                                             ? 'h-[34px] bg-surface'
-                                            : `h-10 ${position % 2 === 1 ? 'bg-row-alt' : ''}`
+                                            : `h-10 ${tableRowClass({ index: position })}`
                                     }`}
                                 >
                                     <span
@@ -216,7 +217,7 @@ function Setup({
                                             href={roomsIndex.url({
                                                 query: { room: room.id },
                                             })}
-                                            className={`flex h-9 shrink-0 items-center gap-4 border-b border-solid border-border px-[14px] last:border-b-0 hover:bg-surface ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                            className={`flex h-9 shrink-0 items-center gap-4 border-b border-solid border-border px-[14px] last:border-b-0 hover:bg-surface ${tableRowClass({ index: position })}`}
                                         >
                                             <span className="w-[86px] shrink-0 truncate text-[14px] leading-[18px] font-semibold text-text">
                                                 {room.code}
@@ -294,7 +295,7 @@ function Setup({
                                                 href={staffRecord.url(
                                                     teacher.id,
                                                 )}
-                                                className={`flex min-h-9 items-center gap-4 px-[14px] py-2 hover:bg-surface ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                                className={`flex min-h-9 items-center gap-4 px-[14px] py-2 hover:bg-surface ${tableRowClass({ index: position })}`}
                                             >
                                                 <span className="min-w-0 flex-1 truncate text-[14px] leading-[18px] font-medium text-text">
                                                     {teacher.name}

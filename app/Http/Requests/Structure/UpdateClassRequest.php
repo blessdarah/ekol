@@ -10,7 +10,17 @@ class UpdateClassRequest extends SchoolRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->role->managesStructure();
+        return (bool) $this->user()?->can('manage-structure');
+    }
+
+    /**
+     * Join the letter to the level number, as every class name is written.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('name'))) {
+            $this->merge(['name' => SchoolClass::tidyName($this->input('name'))]);
+        }
     }
 
     /**

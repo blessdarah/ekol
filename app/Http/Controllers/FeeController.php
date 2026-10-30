@@ -32,6 +32,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -68,7 +69,7 @@ class FeeController extends Controller
             abort(404);
         }
 
-        abort_unless((bool) $request->user()?->role->managesFees(), 403);
+        Gate::authorize('manage-fees');
 
         return $school;
     }
@@ -559,13 +560,13 @@ class FeeController extends Controller
     public function studentTab(Request $request, string $student): Response
     {
         $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-        $role = $request->user()?->role;
+        $user = $request->user();
 
         if (! $school instanceof School) {
             abort(404);
         }
 
-        abort_unless($role && ($role->managesStudents() || $role->managesFees()), 403);
+        Gate::authorize('read-student-fees');
 
         $target = $this->findStudent($school, $student)->load('guardians');
         $year = StructureController::currentYear($school);
@@ -586,8 +587,8 @@ class FeeController extends Controller
         return Inertia::render('students/fees', [
             'neighbours' => StudentController::neighbours($school, $target),
             'currency' => $school->currency,
-            'canManageFees' => $role->managesFees(),
-            'canManageStudents' => $role->managesStudents(),
+            'canManageFees' => (bool) $user?->can('manage-fees'),
+            'canManageStudents' => (bool) $user?->can('manage-students'),
             'student' => [
                 'id' => $target->id,
                 'name' => $target->full_name,

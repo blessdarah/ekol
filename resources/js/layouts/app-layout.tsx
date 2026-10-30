@@ -168,7 +168,6 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 )}
                 <Sidebar
                     school={school}
-                    term={props.term ?? null}
                     user={props.shellUser ?? null}
                     feeBadge={props.feeBadge ?? null}
                     open={menuOpen}

@@ -111,12 +111,6 @@ function StudentRecord({
                 ]
                     .filter(Boolean)
                     .join(' · ')}
-                meta={[
-                    `enrolled ${student.admitted_on.slice(0, 4)}`,
-                    student.class?.level,
-                ]
-                    .filter(Boolean)
-                    .join(' · ')}
                 action={
                     <Link
                         href={edit.url(student.id)}
@@ -199,7 +193,7 @@ function StudentRecord({
                                                 {student.series.name}
                                             </span>
                                         ) : (
-                                            <span className="flex items-center gap-[6px] text-[#8A5A12]">
+                                            <span className="flex items-center gap-[6px] text-warning-text">
                                                 <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                                                 {t(
                                                     'No series yet. Until one is chosen, there is no subject list.',

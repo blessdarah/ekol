@@ -15,6 +15,21 @@ enum UserRole: string
     case Bursar = 'bursar';
 
     /**
+     * The abilities a role can hold, each a gate of the same name.
+     */
+    public const array ABILITIES = [
+        'manage-structure',
+        'manage-students',
+        'see-private-student-details',
+        'manage-assessments',
+        'manage-schemes',
+        'follow-schemes',
+        'manage-fees',
+        'read-student-fees',
+        'manage-staff',
+    ];
+
+    /**
      * Roles the school can hand out when it opens a portal account.
      *
      * @return array<int, self>
@@ -132,5 +147,24 @@ enum UserRole: string
     public function managesStaff(): bool
     {
         return in_array($this, [self::Admin, self::Principal], true);
+    }
+
+    /**
+     * Whether the role holds an ability from ABILITIES.
+     */
+    public function allows(string $ability): bool
+    {
+        return match ($ability) {
+            'manage-structure' => $this->managesStructure(),
+            'manage-students' => $this->managesStudents(),
+            'see-private-student-details' => $this->seesPrivateStudentDetails(),
+            'manage-assessments' => $this->managesAssessments(),
+            'manage-schemes' => $this->managesSchemes(),
+            'follow-schemes' => $this->followsSchemes(),
+            'manage-fees' => $this->managesFees(),
+            'read-student-fees' => $this->managesFees() || $this->managesStudents(),
+            'manage-staff' => $this->managesStaff(),
+            default => false,
+        };
     }
 }

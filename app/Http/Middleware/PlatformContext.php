@@ -58,7 +58,14 @@ class PlatformContext
         app()->instance('currentPlatformVisit', $visit);
         $request->session()->put('school_id', $school->id);
         Auth::guard('web')->setUser($admin);
-        $response = $next($request);
+
+        try {
+            $response = $next($request);
+        } finally {
+            app()->forgetInstance('currentSchool');
+            app()->forgetInstance('currentPlatformVisit');
+        }
+
         if (! $request->isMethodSafe() && $response->getStatusCode() < 400) {
             AuditEvent::create([
                 'school_id' => $school->id, 'actor_id' => $admin->id,

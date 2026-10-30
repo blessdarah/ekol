@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import {
@@ -308,7 +309,7 @@ function Generate({
                                                       }
                                                     : undefined,
                                             )}
-                                            className={`flex min-h-12 items-center gap-3 px-[14px] py-2 hover:bg-surface ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                            className={`flex min-h-12 items-center gap-3 px-[14px] py-2 hover:bg-surface ${tableRowClass({ index: position })}`}
                                         >
                                             <span
                                                 className={`flex h-[22px] shrink-0 items-center rounded-full px-2 text-[12px] leading-4 font-medium ${

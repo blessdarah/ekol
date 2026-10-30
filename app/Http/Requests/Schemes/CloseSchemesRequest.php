@@ -8,7 +8,7 @@ class CloseSchemesRequest extends SchoolRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->role->managesSchemes();
+        return (bool) $this->user()?->can('manage-schemes');
     }
 
     /**

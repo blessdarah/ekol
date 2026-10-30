@@ -13,6 +13,7 @@ use App\Models\School;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -38,7 +39,7 @@ class CorrectionController extends Controller
             'tabs' => AssessmentController::tabs($school, $year),
             'show' => $show,
             'counts' => ['pending' => $all->where('status', 'pending')->count(), 'decided' => $all->where('status', '!=', 'pending')->count()],
-            'canDecide' => (bool) $request->user()?->role->managesStaff(),
+            'canDecide' => (bool) $request->user()?->can('manage-staff'),
             'list' => $listed->map(fn (MarkCorrection $correction) => [
                 'id' => $correction->id,
                 'reference' => $correction->reference,
@@ -74,7 +75,8 @@ class CorrectionController extends Controller
         $sheet = $mark->assessmentSubject;
         $plan = $sheet?->assessment?->plan;
 
-        abort_unless($user && $sheet && ($user->role->managesAssessments() || $sheet->examiner_id === $user->id), 403);
+        abort_unless($sheet !== null, 404);
+        Gate::authorize('enterMarks', $sheet);
 
         if ($plan?->state !== AssessmentState::Published) {
             throw ValidationException::withMessages(['new_score' => __('A correction is for a published mark. This one can still be edited on its sheet.')]);
@@ -114,7 +116,7 @@ class CorrectionController extends Controller
     {
         [$school] = AssessmentController::context($request);
         $user = $request->user();
-        abort_unless($user !== null && $user->role->managesStaff(), 403);
+        Gate::authorize('manage-staff');
 
         $target = MarkCorrection::where('school_id', $school->id)->where('id', $correction)->with('mark')->firstOrFail();
         $data = $request->validated();

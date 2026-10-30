@@ -27,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -48,7 +49,7 @@ class StructureController extends Controller
             abort(404);
         }
 
-        abort_unless((bool) $request->user()?->role->managesStructure(), 403);
+        Gate::authorize('manage-structure');
 
         return $school;
     }
@@ -186,7 +187,7 @@ class StructureController extends Controller
                     'school_id' => $school->id,
                     'academic_year_id' => $year->id,
                     'level_id' => $level->id,
-                    'name' => "{$level->name} {$letter}",
+                    'name' => SchoolClass::nameFor($level->name, $letter),
                     'capacity' => static::DEFAULT_SEATS,
                 ]);
             }
@@ -276,7 +277,7 @@ class StructureController extends Controller
                         'school_id' => $school->id,
                         'academic_year_id' => $year?->id,
                         'level_id' => $level->id,
-                        'name' => "{$name} {$letter}",
+                        'name' => SchoolClass::nameFor($name, $letter),
                         'capacity' => static::DEFAULT_SEATS,
                     ]);
                 }
@@ -342,7 +343,7 @@ class StructureController extends Controller
             ->all();
 
         $name = collect(range('A', 'Z'))
-            ->map(fn (string $letter) => "{$target->name} {$letter}")
+            ->map(fn (string $letter) => SchoolClass::nameFor($target->name, $letter))
             ->first(fn (string $candidate) => ! in_array($candidate, $taken, true));
 
         if (! $name) {

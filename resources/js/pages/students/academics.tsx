@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link } from '@inertiajs/react';
 import { show } from '@/actions/App/Http/Controllers/StudentAcademicsController';
 import { edit } from '@/actions/App/Http/Controllers/StudentController';
@@ -105,9 +106,6 @@ function Academics({
                 trail={[{ label: student.name }, { label: t('Academics') }]}
                 title={student.name}
                 tag={[student.matricule, student.class, student.series]
-                    .filter(Boolean)
-                    .join(' · ')}
-                meta={[`enrolled ${student.admitted_year}`, student.level]
                     .filter(Boolean)
                     .join(' · ')}
                 action={
@@ -258,7 +256,7 @@ function Academics({
                                     {subjects.map((subject, position) => (
                                         <div
                                             key={subject.subject}
-                                            className={`flex h-[52px] shrink-0 items-center gap-4 border-b border-solid border-border px-4 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                            className={`flex h-[52px] shrink-0 items-center gap-4 border-b border-solid border-border px-4 ${tableRowClass({ index: position })}`}
                                         >
                                             <span className="flex min-w-0 flex-1 items-center gap-[10px]">
                                                 <span className="truncate text-[15px] leading-5 text-text">

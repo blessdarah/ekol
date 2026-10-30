@@ -40,11 +40,11 @@ class TeacherSchemeController extends Controller
                 ->values()
             : collect();
         $picked = $schemes->firstWhere('id', $request->query('scheme')) ?? $schemes->first();
-        $toApprove = $term && $user->role->followsSchemes()
+        $toApprove = $term && $user->can('follow-schemes')
             ? Scheme::where('term_id', $term->id)->where('status', SchemeStatus::Submitted)
                 ->with(['classSubject.subject:id,name,department'])
                 ->get()
-                ->filter(fn (Scheme $scheme) => $scheme->canBeApprovedBy($user, $opening))
+                ->filter(fn (Scheme $scheme) => $user->can('approve', [$scheme, $opening]))
                 ->count()
             : 0;
 

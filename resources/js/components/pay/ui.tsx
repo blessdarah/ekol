@@ -73,8 +73,8 @@ export function OperatorBadge({ operator }: { operator: string | null }) {
         <span
             className={`flex h-6 shrink-0 items-center rounded-full px-[10px] text-[12px] leading-4 font-semibold ${
                 operator === 'MTN'
-                    ? 'bg-[#FFCC00] text-[#1A1A1A]'
-                    : 'bg-[#FF7900] text-white'
+                    ? 'bg-mtn text-mtn-ink'
+                    : 'bg-orange-money text-white'
             }`}
         >
             {operator === 'MTN' ? 'MTN MoMo' : 'Orange Money'}

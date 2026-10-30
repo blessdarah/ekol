@@ -1,5 +1,6 @@
+import { TableRowMenu, TableEmptyState } from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
     access,
     create,
@@ -96,70 +97,44 @@ function RowMenu({
         'flex h-8 w-full items-center rounded-sm px-3 text-left text-[13px] text-text hover:bg-surface';
 
     return (
-        <div className="relative w-10 shrink-0">
-            <button
-                type="button"
-                aria-label={t('Actions for :row', { row: row.name })}
-                aria-expanded={open}
-                onClick={(event) => {
-                    event.stopPropagation();
-                    onToggle();
-                }}
-                className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-primary-tint"
+        <TableRowMenu
+            className="w-10"
+            label={t('Actions for :row', { row: row.name })}
+            open={open}
+            onToggle={onToggle}
+            onClose={onToggle}
+        >
+            <Link role="menuitem" href={show.url(row.id)} className={itemClass}>
+                {t('Open record')}
+            </Link>
+            <Link role="menuitem" href={edit.url(row.id)} className={itemClass}>
+                {t('Edit details')}
+            </Link>
+            <Link
+                role="menuitem"
+                href={access.url(row.id)}
+                className={itemClass}
             >
-                <svg width="16" height="16" viewBox="0 0 24 24">
-                    <circle cx="5" cy="12" r="1.6" fill="#56625C" />
-                    <circle cx="12" cy="12" r="1.6" fill="#56625C" />
-                    <circle cx="19" cy="12" r="1.6" fill="#56625C" />
-                </svg>
-            </button>
-            {open && (
-                <div
-                    role="menu"
-                    onClick={(event) => event.stopPropagation()}
-                    className="absolute top-full right-0 z-10 mt-1 flex w-[190px] flex-col rounded-md border border-solid border-border bg-white p-1 shadow-[0_8px_24px_rgba(16,25,21,0.12)]"
+                {t('Portal access')}
+            </Link>
+            {!row.has_account && row.invited_on && (
+                <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                        onToggle();
+                        router.post(
+                            remind.url(row.id),
+                            {},
+                            { preserveScroll: true },
+                        );
+                    }}
+                    className={itemClass}
                 >
-                    <Link
-                        role="menuitem"
-                        href={show.url(row.id)}
-                        className={itemClass}
-                    >
-                        {t('Open record')}
-                    </Link>
-                    <Link
-                        role="menuitem"
-                        href={edit.url(row.id)}
-                        className={itemClass}
-                    >
-                        {t('Edit details')}
-                    </Link>
-                    <Link
-                        role="menuitem"
-                        href={access.url(row.id)}
-                        className={itemClass}
-                    >
-                        {t('Portal access')}
-                    </Link>
-                    {!row.has_account && row.invited_on && (
-                        <button
-                            type="button"
-                            role="menuitem"
-                            onClick={() => {
-                                onToggle();
-                                router.post(
-                                    remind.url(row.id),
-                                    {},
-                                    { preserveScroll: true },
-                                );
-                            }}
-                            className={itemClass}
-                        >
-                            {t('Send a reminder')}
-                        </button>
-                    )}
-                </div>
+                    {t('Send a reminder')}
+                </button>
             )}
-        </div>
+        </TableRowMenu>
     );
 }
 
@@ -237,16 +212,6 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
         selection.clear();
     }
 
-    useEffect(() => {
-        function close() {
-            setOpenMenu(null);
-        }
-
-        document.addEventListener('click', close);
-
-        return () => document.removeEventListener('click', close);
-    }, []);
-
     return (
         <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('The staff roster')} />
@@ -274,7 +239,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                             <path
                                 d="M7 2.4v9.2M2.4 7h9.2"
                                 fill="none"
-                                stroke="#fff"
+                                stroke="var(--color-bg)"
                                 strokeWidth="1.6"
                                 strokeLinecap="round"
                             />
@@ -298,7 +263,7 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                             onClick={() => setExporting(true)}
                             className={bulkButtonClass}
                         >
-                            <DownloadIcon colour="#FFFFFF" />
+                            <DownloadIcon colour="var(--color-bg)" />
                             {t('Export :count', {
                                 count: count(
                                     selection.allMatching
@@ -373,11 +338,11 @@ function Roster({ yearLabel, counts, filters, roles, staff }: RosterProps) {
                             <span className="w-10 shrink-0" />
                         </div>
                         {staff.rows.length === 0 && (
-                            <p className="px-4 py-8 text-center text-[13px] text-text-muted">
+                            <TableEmptyState>
                                 {t(
                                     'Nobody on the roster matches. Try another name, or clear the filters.',
                                 )}
-                            </p>
+                            </TableEmptyState>
                         )}
                         {staff.rows.map((row, position) => (
                             <div

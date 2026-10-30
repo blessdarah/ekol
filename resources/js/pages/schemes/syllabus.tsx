@@ -430,7 +430,7 @@ function Syllabus({
                                             })}
                                         </span>
                                     ) : (
-                                        <span className="flex shrink-0 items-center gap-1 text-[12px] text-[#8A5A12]">
+                                        <span className="flex shrink-0 items-center gap-1 text-[12px] text-warning-text">
                                             <span className="h-[6px] w-[6px] rounded-full bg-warning" />
                                             {t('Empty')}
                                         </span>

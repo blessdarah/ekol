@@ -1,8 +1,9 @@
+import SharedPageHeader from '../shell/page-header';
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { index } from '@/actions/App/Http/Controllers/EnrolmentController';
 import { capsLabelClass } from '../structure/ui';
-import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { type Crumb } from '../shell/breadcrumbs';
 import { numberLocale, t } from '../../lib/i18n';
 
 /** Where enrolment stands; every enrolment page receives it. */
@@ -20,7 +21,7 @@ export interface EnrolmentProgress {
     has_fee_plan: boolean;
 }
 
-export const amberText = 'text-[#8A5A12]';
+export const amberText = 'text-warning-text';
 
 export const linkClass =
     'text-[13px] leading-4 font-medium text-primary hover:underline';
@@ -116,39 +117,16 @@ export function EnrolmentHeader({
     action?: ReactNode;
 }) {
     return (
-        <>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="flex min-w-0 flex-col gap-[6px]">
-                    <Breadcrumbs
-                        trail={
-                            trail.length > 0
-                                ? [
-                                      {
-                                          label: t('New school year'),
-                                          href: index.url(),
-                                      },
-                                      ...trail,
-                                  ]
-                                : [{ label: t('New school year') }]
-                        }
-                    />
-                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                        {title}
-                    </h1>
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">
-                        {status ?? (
-                            <span className="font-mono uppercase">
-                                {t('New school year · :year', {
-                                    year: progress.year,
-                                })}
-                            </span>
-                        )}
-                        {meta && <span>· {meta}</span>}
-                    </div>
-                </div>
-                {action}
-            </div>
-        </>
+        <SharedPageHeader
+            root={{ label: t('New school year'), href: index.url() }}
+            trail={trail}
+            title={title}
+            tag={
+                status ?? t('New school year · :year', { year: progress.year })
+            }
+            meta={meta}
+            action={action}
+        />
     );
 }
 

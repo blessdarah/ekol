@@ -245,7 +245,7 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                             </ul>
                         )}
                         {belowMin && target && (
-                            <p className="text-[13px] leading-[19px] text-[#8A5A12]">
+                            <p className="text-[13px] leading-[19px] text-warning-text">
                                 {t(
                                     'That leaves :after subjects, below the minimum of :target. After changing, add electives from Register one by one.',
                                     { after, target: target.min },
@@ -360,7 +360,7 @@ function ChangeSeries({ student, current, series, reasons }: ChangeProps) {
                         </p>
                     </div>
                     <div className="flex flex-col gap-2 rounded-lg border border-solid border-warning bg-warning-tint p-4">
-                        <p className="text-[14px] leading-[18px] font-semibold text-[#8A5A12]">
+                        <p className="text-[14px] leading-[18px] font-semibold text-warning-text">
                             {t('Do it early')}
                         </p>
                         <p className="text-[13px] leading-[19px] text-text">

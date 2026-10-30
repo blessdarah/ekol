@@ -9,7 +9,7 @@ class UpdateFeeStructureRequest extends SchoolRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->role->managesFees();
+        return (bool) $this->user()?->can('manage-fees');
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\InstallmentStatus;
 use App\Enums\InvoiceStatus;
 use App\Enums\PaymentMethod;
+use App\Models\Concerns\BelongsToSchool;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,7 @@ use Illuminate\Support\Facades\DB;
  * always amount_due, less any exemption, minus payments.
  *
  * @property string $id
+ * @property string|null $school_id
  * @property string $student_id
  * @property string $term_id
  * @property string $fee_plan_id
@@ -27,9 +29,10 @@ use Illuminate\Support\Facades\DB;
  */
 class Invoice extends Model
 {
-    use HasUuids;
+    use BelongsToSchool, HasUuids;
 
     protected $fillable = [
+        'school_id',
         'student_id',
         'term_id',
         'fee_plan_id',
@@ -37,6 +40,16 @@ class Invoice extends Model
         'issued_on',
         'status',
     ];
+
+    /**
+     * An invoice belongs to its student's school, wherever it is issued.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Invoice $invoice): void {
+            $invoice->school_id ??= Student::withoutGlobalScopes()->whereKey($invoice->student_id)->value('school_id');
+        });
+    }
 
     /**
      * @return array<string, string>

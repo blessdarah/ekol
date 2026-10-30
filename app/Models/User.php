@@ -69,6 +69,16 @@ class User extends Authenticatable
     use BelongsToSchool, HasFactory, HasUuids, Notifiable, SoftDeletes;
 
     /**
+     * Users are found before the school is known (signing in, and the
+     * super-admin visiting a school has no school), so their queries
+     * keep filtering by school themselves.
+     */
+    public static function scopesToCurrentSchool(): bool
+    {
+        return false;
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

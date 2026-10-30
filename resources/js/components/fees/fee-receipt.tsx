@@ -88,7 +88,7 @@ function ReceiptBackground() {
                 width="1152"
                 height="804"
                 fill="none"
-                stroke="#333333"
+                stroke="var(--color-document-border)"
                 strokeWidth="1"
             />
         </svg>
@@ -106,7 +106,7 @@ export function ReceiptStamp({
             role="img"
             aria-label={t(paid ? 'Paid in full' : 'Part payment')}
             viewBox="0 0 180 180"
-            className="receipt-stamp text-[#222222]"
+            className="receipt-stamp text-document-text"
         >
             <defs>
                 <path id={id} d="M90,26 a64,64 0 1,1 -0.01,0" />
@@ -284,7 +284,7 @@ function CounterfoilReceipt(props: FeeReceiptProps) {
                 )}
                 <div>
                     <Label>{t('Amount')}</Label>
-                    <p className="font-serif text-[22px] text-[#222222]">
+                    <p className="font-serif text-[22px] text-document-text">
                         {money(receipt.amount)}
                     </p>
                 </div>
@@ -297,7 +297,7 @@ function CounterfoilReceipt(props: FeeReceiptProps) {
                 </div>
                 <div>
                     <Label>{t('Balance after')}</Label>
-                    <strong className="text-[#222222]">
+                    <strong className="text-document-text">
                         {money(receipt.balance)}
                     </strong>
                 </div>
@@ -318,7 +318,7 @@ function CounterfoilReceipt(props: FeeReceiptProps) {
                         <Label>{t('School bursary')}</Label>
                         <h1>{issuer.name}</h1>
                         {issuer.motto && (
-                            <p className="font-serif text-[12px] text-[#555555] italic">
+                            <p className="font-serif text-[12px] text-document-muted italic">
                                 {issuer.motto}
                             </p>
                         )}
@@ -492,7 +492,7 @@ function PhoneCounterReceipt({
                 <p className="receipt-phone-amount">
                     {figure(receipt.amount)} <span>{currency}</span>
                 </p>
-                <p className="font-serif text-[12px] text-[#555555] italic">
+                <p className="font-serif text-[12px] text-document-muted italic">
                     {receipt.words}
                 </p>
                 <p className="receipt-received">
@@ -547,7 +547,7 @@ function PhoneCounterReceipt({
             </div>
             <YearBalance receipt={receipt} currency={currency} />
             <div className="receipt-phone-status">
-                <span className="text-[#222222]">
+                <span className="text-document-text">
                     ✓{' '}
                     {t(
                         receipt.state === 'paid'
