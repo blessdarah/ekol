@@ -14,6 +14,16 @@ class UpdateClassRequest extends SchoolRequest
     }
 
     /**
+     * Join the letter to the level number, as every class name is written.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('name'))) {
+            $this->merge(['name' => SchoolClass::tidyName($this->input('name'))]);
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array

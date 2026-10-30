@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import {
@@ -397,9 +398,6 @@ function StudentFees({
                 tag={[student.matricule, student.class]
                     .filter(Boolean)
                     .join(' · ')}
-                meta={[`enrolled ${student.admitted_year}`, student.level]
-                    .filter(Boolean)
-                    .join(' · ')}
                 action={
                     canManageStudents && (
                         <Link
@@ -564,7 +562,7 @@ function StudentFees({
                                         {invoice.items.map((item, position) => (
                                             <div
                                                 key={item.name}
-                                                className={`flex min-h-10 shrink-0 items-center gap-3 border-b border-solid border-border px-4 py-2 last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                                className={`flex min-h-10 shrink-0 items-center gap-3 border-b border-solid border-border px-4 py-2 last:border-b-0 ${tableRowClass({ index: position })}`}
                                             >
                                                 <span className="flex min-w-0 flex-1 flex-col">
                                                     <span className="truncate text-[14px] leading-[18px] text-text">
@@ -642,7 +640,7 @@ function StudentFees({
                                             return (
                                                 <div
                                                     key={row.seq}
-                                                    className={`flex h-[46px] shrink-0 items-center gap-3 border-b border-solid border-border px-4 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                                    className={`flex h-[46px] shrink-0 items-center gap-3 border-b border-solid border-border px-4 ${tableRowClass({ index: position })}`}
                                                 >
                                                     <span className="w-[110px] shrink-0 truncate text-[14px] leading-[18px] font-medium text-text">
                                                         {row.label.replace(

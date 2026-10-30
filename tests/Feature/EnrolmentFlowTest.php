@@ -54,7 +54,7 @@ function enrolmentWorld(string $slug = 'enrola'): array
         ]);
         $classes[$ordinal] = SchoolClass::create([
             'school_id' => $school->id, 'academic_year_id' => $year->id,
-            'level_id' => $levels[$ordinal]->id, 'name' => "Form {$ordinal} A", 'capacity' => 40,
+            'level_id' => $levels[$ordinal]->id, 'name' => "Form {$ordinal}A", 'capacity' => 40,
         ]);
     }
 
@@ -161,7 +161,7 @@ test('this year\'s classes can be copied into the coming year once', function ()
         ->assertSessionHasNoErrors();
 
     expect(SchoolClass::where('academic_year_id', $world['next']->id)->pluck('name')->sort()->values()->all())
-        ->toBe(['Form 1 A', 'Form 2 A', 'Form 3 A']);
+        ->toBe(['Form 1A', 'Form 2A', 'Form 3A']);
 
     $this->actingAs($world['admin'])
         ->post('http://enrola.ekol.test/enrolment/classes')
@@ -171,7 +171,7 @@ test('this year\'s classes can be copied into the coming year once', function ()
         ->post("http://enrola.ekol.test/enrolment/levels/{$world['levels'][2]->id}/classes")
         ->assertSessionHasNoErrors();
 
-    expect(SchoolClass::where('academic_year_id', $world['next']->id)->where('name', 'Form 2 B')->exists())->toBeTrue();
+    expect(SchoolClass::where('academic_year_id', $world['next']->id)->where('name', 'Form 2B')->exists())->toBeTrue();
 });
 
 test('an application gets a reference and waits for review', function () {
@@ -363,7 +363,7 @@ test('final year students are not decided', function () {
             ->where('graduating', ['Form 3'])
             ->where('level.name', 'Form 1')
             ->where('level.next', 'Form 2')
-            ->where('class.name', 'Form 1 A')
+            ->where('class.name', 'Form 1A')
             ->has('students', 2));
 });
 
@@ -386,7 +386,7 @@ test('students are placed within a class\'s seats', function () {
         ->post('http://enrola.ekol.test/enrolment/re-enrolment/promote', ['class_id' => $world['classes'][1]->id]);
     $class = SchoolClass::create([
         'school_id' => $world['school']->id, 'academic_year_id' => $world['next']->id,
-        'level_id' => $world['levels'][2]->id, 'name' => 'Form 2 A', 'capacity' => 1,
+        'level_id' => $world['levels'][2]->id, 'name' => 'Form 2A', 'capacity' => 1,
     ]);
     $waiting = Enrolment::where('academic_year_id', $world['next']->id)->pluck('id')->all();
 
@@ -398,7 +398,7 @@ test('students are placed within a class\'s seats', function () {
             ->where('level.name', 'Form 2')
             ->where('levels.0.over', true)
             ->where('waiting.0.kind', 'promoted')
-            ->where('waiting.0.from', 'Form 1 A')
+            ->where('waiting.0.from', 'Form 1A')
             ->has('waiting', 2)
             ->where('classes.0.placed', 0));
 

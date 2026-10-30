@@ -232,9 +232,6 @@ function StudentAttendance({
                 tag={[student.matricule, student.class]
                     .filter(Boolean)
                     .join(' · ')}
-                meta={[`enrolled ${student.admitted_year}`, student.level]
-                    .filter(Boolean)
-                    .join(' · ')}
                 action={
                     <Link
                         href={edit.url(student.id)}

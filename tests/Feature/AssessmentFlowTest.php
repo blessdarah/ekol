@@ -290,6 +290,15 @@ test('progress follows the sheets, and closing marks entry stops teachers', func
             ->where('teachers.0.missing.0.students', fn (int $students) => $students > 0));
 
     $this->actingAs($world['admin'])
+        ->get('http://exama.ekol.test/dashboard')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard')
+            ->where('marks.plan', 'Sequence 1')
+            ->where('marks.submitted', 1)
+            ->where('marks.missing', 1)
+            ->where('attention.0.key', 'marks'));
+
+    $this->actingAs($world['admin'])
         ->post("http://exama.ekol.test/assessments/{$plan->id}/close")
         ->assertRedirect(route('assessments.results', ['plan' => $plan->id]));
 

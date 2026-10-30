@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\AssessmentState;
 use App\Enums\EnrolmentStatus;
 use App\Enums\Gender;
+use App\Http\Controllers\Concerns\BuildsSchoolDashboard;
 use App\Models\AssessmentPlan;
 use App\Models\AssessmentSubject;
 use App\Models\Attendance;
@@ -28,20 +29,28 @@ use Inertia\Response;
  */
 class DashboardController extends Controller
 {
+    use BuildsSchoolDashboard;
+
     public function show(Request $request): Response
     {
         $user = $request->user();
         $school = app()->bound('currentSchool') ? app('currentSchool') : null;
 
-        if ($school instanceof School && (app()->bound('currentPlatformVisit') || $school->is_demo)) {
+        if ($school instanceof School && app()->bound('currentPlatformVisit')) {
             return $this->schoolOverview($school);
         }
 
-        if (! $user || ! $school instanceof School || ! $user->role->teaches()) {
+        if (! $user || ! $school instanceof School) {
             return Inertia::render('dashboard');
         }
 
-        return $this->today($user, $school);
+        if ($user->role->teaches()) {
+            return $this->today($user, $school);
+        }
+
+        $range = $request->query('range') === 'year' ? 'year' : 'term';
+
+        return Inertia::render('dashboard', $this->schoolDashboard($user, $school, $range));
     }
 
     protected function schoolOverview(School $school): Response

@@ -306,6 +306,16 @@ test('a register is saved per lesson, for every student, once the lesson has sta
     $this->actingAs($world['teacher'])
         ->get('http://teacha.ekol.test/dashboard')
         ->assertInertia(fn (Assert $page) => $page->where('lessons.0.marked', true)->where('unmarked', 0));
+
+    $this->actingAs($world['admin'])
+        ->get('http://teacha.ekol.test/dashboard')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard')
+            ->where('attendance.today.marked', 2)
+            ->where('attendance.today.present', 1)
+            ->where('attendance.today.rate', 50)
+            ->where('attendance.series.0.rate', 50)
+            ->where('attendance.lowest.rate', 50));
 });
 
 test('the student attendance tab reads the registers and the office can excuse an absence', function () {

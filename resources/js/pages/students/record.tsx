@@ -111,12 +111,6 @@ function StudentRecord({
                 ]
                     .filter(Boolean)
                     .join(' · ')}
-                meta={[
-                    `enrolled ${student.admitted_on.slice(0, 4)}`,
-                    student.class?.level,
-                ]
-                    .filter(Boolean)
-                    .join(' · ')}
                 action={
                     <Link
                         href={edit.url(student.id)}

@@ -40,6 +40,25 @@ class SchoolClass extends Model
     ];
 
     /**
+     * A class's name from its level and letter. A level that ends in a
+     * number takes the letter straight after it ("Form 1A"); a level
+     * named in words keeps the space ("Lower Sixth A").
+     */
+    public static function nameFor(string $level, string $letter): string
+    {
+        return static::tidyName("{$level} {$letter}");
+    }
+
+    /**
+     * A class name as the school writes it: the letter joined to the
+     * number before it, so "Form 1 A" becomes "Form 1A".
+     */
+    public static function tidyName(string $name): string
+    {
+        return preg_replace('/(\d)\s+(\p{Lu})$/u', '$1$2', trim($name)) ?? trim($name);
+    }
+
+    /**
      * @return BelongsTo<AcademicYear, $this>
      */
     public function academicYear(): BelongsTo

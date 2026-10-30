@@ -265,7 +265,7 @@ class EnrolmentController extends Controller
             ->all();
 
         $name = collect(range('A', 'Z'))
-            ->map(fn (string $letter) => "{$target->name} {$letter}")
+            ->map(fn (string $letter) => SchoolClass::nameFor($target->name, $letter))
             ->first(fn (string $candidate) => ! in_array($candidate, $taken, true));
 
         if (! $name) {

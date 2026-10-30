@@ -247,6 +247,47 @@ test('the fees list totals the year and flags who is overdue or not billed', fun
         ->and($csv)->not->toContain('Che Emmanuel');
 });
 
+test('the school dashboard shows fees collected against what is due, for those who handle fees', function () {
+    $world = feeWorld();
+    setFees($world, [$world['levels'][1]->id => 60000]);
+    billEveryone($world);
+    Invoice::where('student_id', $world['students'][1]->id)->firstOrFail()
+        ->recordPayment('60000.00', 'cash', $world['admin']);
+    $registrar = User::factory()->create(['school_id' => $world['school']->id, 'role' => UserRole::Registrar]);
+
+    $this->actingAs($world['admin'])
+        ->get('http://feesa.ekol.test/dashboard')
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard')
+            ->where('counts.students', 3)
+            ->where('fees.due', 120000)
+            ->where('fees.collected', 60000)
+            ->where('fees.overdue', 30000)
+            ->where('fees.overdue_students', 1)
+            ->where('fees.today', 4)
+            ->where('fees.series.4.label', 'W5')
+            ->where('fees.series.4.due', 60000)
+            ->where('fees.series.4.collected', 60000)
+            ->where('fees.series.5.collected', null)
+            ->where('attention.0.key', 'fees')
+            ->has('levels', 2));
+
+    $this->actingAs($world['admin'])
+        ->get('http://feesa.ekol.test/dashboard?range=year')
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('range', 'year')
+            ->has('fees.series', 11)
+            ->where('fees.series.0.label', 'Sep'));
+
+    $this->actingAs($registrar)
+        ->get('http://feesa.ekol.test/dashboard')
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('dashboard')
+            ->where('fees', null)
+            ->where('marks', null));
+});
+
 test('a payment fills the oldest installment, gets a receipt and updates the ledger', function () {
     $world = feeWorld();
     setFees($world, [$world['levels'][1]->id => 60000]);
