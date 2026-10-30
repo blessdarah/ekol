@@ -31,6 +31,9 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Audit PHP Dependencies
+        run: composer audit --locked --no-interaction
+
       - name: Setup Application
         run: composer setup
 
