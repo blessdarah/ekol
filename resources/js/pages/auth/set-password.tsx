@@ -186,7 +186,7 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                             <path
                                                 d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"
                                                 fill="none"
-                                                stroke="#56625C"
+                                                stroke="var(--color-text-muted)"
                                                 strokeWidth="1.7"
                                                 strokeLinejoin="round"
                                             />
@@ -195,7 +195,7 @@ function SetPassword({ token, schoolName, member }: SetPasswordProps) {
                                                 cy="12"
                                                 r="3"
                                                 fill="none"
-                                                stroke="#56625C"
+                                                stroke="var(--color-text-muted)"
                                                 strokeWidth="1.7"
                                             />
                                         </svg>

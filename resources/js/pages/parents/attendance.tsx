@@ -33,7 +33,7 @@ interface AttendanceProps {
 const STATUS: Record<string, { label: string; pill: string }> = {
     absent: { label: 'Absent', pill: 'bg-danger-tint text-danger' },
     excused: { label: 'Excused', pill: 'bg-surface text-text-muted' },
-    late: { label: 'Late', pill: 'bg-warning-tint text-[#8A5A12]' },
+    late: { label: 'Late', pill: 'bg-warning-tint text-warning-text' },
 };
 
 export default function ParentAttendance({

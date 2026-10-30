@@ -515,7 +515,7 @@ function MyScheme({ term, opening, schemes, scheme, toApprove }: MineProps) {
                                             </div>
                                         ))}
                                         {over && (
-                                            <span className="text-[12px] text-[#8A5A12]">
+                                            <span className="text-[12px] text-warning-text">
                                                 {t(
                                                     ':count periods more than the week has. Move a sub-topic to another week.',
                                                     {
@@ -528,7 +528,7 @@ function MyScheme({ term, opening, schemes, scheme, toApprove }: MineProps) {
                                         )}
                                     </div>
                                     <span
-                                        className={`w-[60px] shrink-0 text-right font-mono text-[13px] leading-6 ${over ? 'text-[#8A5A12]' : 'text-text'}`}
+                                        className={`w-[60px] shrink-0 text-right font-mono text-[13px] leading-6 ${over ? 'text-warning-text' : 'text-text'}`}
                                     >
                                         {week.free && rows.length === 0
                                             ? '—'
@@ -556,7 +556,7 @@ function MyScheme({ term, opening, schemes, scheme, toApprove }: MineProps) {
                                 <span className={capsLabelClass}>
                                     {t('Not placed yet')}
                                 </span>
-                                <span className="font-mono text-[12px] text-[#8A5A12]">
+                                <span className="font-mono text-[12px] text-warning-text">
                                     {t(':count left', {
                                         count: unplaced.length,
                                     })}

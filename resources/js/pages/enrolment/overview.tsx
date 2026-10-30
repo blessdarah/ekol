@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
 import { index as applicationsIndex } from '@/actions/App/Http/Controllers/ApplicationController';
 import {
@@ -439,7 +440,7 @@ function Overview({
                         {levels.map((level, position) => (
                             <div
                                 key={level.id}
-                                className={`flex h-11 items-center gap-4 border-b border-solid border-border px-4 last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                className={`flex h-11 items-center gap-4 border-b border-solid border-border px-4 last:border-b-0 ${tableRowClass({ index: position })}`}
                             >
                                 <Link
                                     href={placementPage.url({

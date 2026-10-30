@@ -189,11 +189,11 @@ function HoursDialog({
             role="dialog"
             aria-modal="true"
             aria-labelledby="hours-title"
-            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#10191580] p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[color-mix(in_srgb,var(--color-text)_50.2%,transparent)] p-4"
         >
             <form
                 onSubmit={submit}
-                className="flex w-full max-w-[540px] flex-col gap-[18px] rounded-lg bg-white p-6 shadow-[0_24px_60px_rgba(16,25,21,0.28)]"
+                className="flex w-full max-w-[540px] flex-col gap-[18px] rounded-lg bg-white p-6 shadow-[0_24px_60px_color-mix(in_srgb,var(--color-text)_28%,transparent)]"
             >
                 <div className="flex flex-col gap-1">
                     <h2

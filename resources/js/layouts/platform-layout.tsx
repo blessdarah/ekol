@@ -37,17 +37,17 @@ export default function PlatformLayout({
     return (
         <div className="flex min-h-screen flex-col bg-white font-auth text-text lg:flex-row">
             <Head title={t(title)} />
-            <aside className="flex shrink-0 flex-col justify-between gap-8 bg-[#101915] p-3 text-[#EAF2EC] lg:sticky lg:top-0 lg:h-screen lg:w-[232px] lg:py-5">
+            <aside className="flex shrink-0 flex-col justify-between gap-8 bg-text p-3 text-primary-soft lg:sticky lg:top-0 lg:h-screen lg:w-[232px] lg:py-5">
                 <div className="flex flex-col gap-7">
                     <div className="flex items-center gap-2.5 px-2">
-                        <span className="flex size-7 items-center justify-center rounded-[7px] bg-[#7BD8A6] font-display text-[13px] font-extrabold text-[#0B1712]">
+                        <span className="flex size-7 items-center justify-center rounded-[7px] bg-brand-accent font-display text-[13px] font-extrabold text-brand-bg">
                             C
                         </span>
                         <div>
                             <div className="font-display text-[15px] font-bold">
                                 Campus
                             </div>
-                            <div className="font-mono text-[11px] tracking-[0.06em] text-[#8FA89A]">
+                            <div className="font-mono text-[11px] tracking-[0.06em] text-primary-muted">
                                 PLATFORM
                             </div>
                         </div>
@@ -63,11 +63,11 @@ export default function PlatformLayout({
                                 aria-current={
                                     active === link.key ? 'page' : undefined
                                 }
-                                className={`flex min-h-[34px] items-center justify-between gap-3 rounded-lg px-2.5 text-[14px] ${active === link.key ? 'bg-[#1E3329] font-semibold text-[#EAF2EC]' : 'text-[#8FA89A] hover:bg-[#1E3329]'}`}
+                                className={`flex min-h-[34px] items-center justify-between gap-3 rounded-lg px-2.5 text-[14px] ${active === link.key ? 'bg-brand-surface font-semibold text-primary-soft' : 'text-primary-muted hover:bg-brand-surface'}`}
                             >
                                 {t(link.label)}
                                 {link.key === 'signups' && pendingCount > 0 && (
-                                    <span className="font-mono text-[12px] text-[#E8B35A]">
+                                    <span className="font-mono text-[12px] text-warning-on-dark">
                                         {pendingCount}
                                     </span>
                                 )}
@@ -76,29 +76,29 @@ export default function PlatformLayout({
                         {/* Pulse is its own page, not an Inertia one, so it opens in full. */}
                         <a
                             href="/platform/pulse"
-                            className="flex min-h-[34px] items-center justify-between gap-3 rounded-lg px-2.5 text-[14px] text-[#8FA89A] hover:bg-[#1E3329]"
+                            className="flex min-h-[34px] items-center justify-between gap-3 rounded-lg px-2.5 text-[14px] text-primary-muted hover:bg-brand-surface"
                         >
                             {t('Health')}
                             <span aria-hidden="true">↗</span>
                         </a>
                     </nav>
                 </div>
-                <div className="flex items-center gap-2.5 border-t border-[#1E3329] px-2 pt-3">
-                    <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-[#1E3329] text-xs font-semibold">
+                <div className="flex items-center gap-2.5 border-t border-brand-surface px-2 pt-3">
+                    <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-brand-surface text-xs font-semibold">
                         {platformUser.initials}
                     </span>
                     <div className="flex-1">
                         <p className="text-[13px] font-semibold">
                             {platformUser.full_name}
                         </p>
-                        <p className="text-xs text-[#8FA89A]">
+                        <p className="text-xs text-primary-muted">
                             {t('Super-admin')}
                         </p>
                     </div>
                     <Link
                         href={logout()}
                         as="button"
-                        className="text-xs text-[#8FA89A] hover:text-white"
+                        className="text-xs text-primary-muted hover:text-white"
                     >
                         {t('Sign out')}
                     </Link>

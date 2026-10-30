@@ -124,7 +124,7 @@ export default function Toasts() {
                 <div
                     key={toast.id}
                     role={toast.type === 'error' ? 'alert' : 'status'}
-                    className="pointer-events-auto flex items-start gap-3 rounded-lg border border-solid border-border bg-white p-3 shadow-[0_8px_24px_rgba(16,25,21,0.12)]"
+                    className="pointer-events-auto flex items-start gap-3 rounded-lg border border-solid border-border bg-white p-3 shadow-[0_8px_24px_color-mix(in_srgb,var(--color-text)_12%,transparent)]"
                 >
                     <Mark type={toast.type} />
                     <p className="min-w-0 flex-1 py-[3px] text-[13px] leading-[18px] text-text">

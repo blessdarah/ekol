@@ -290,7 +290,7 @@ function FilterPanel({
         <div
             role="dialog"
             aria-label={title}
-            className="absolute top-[calc(100%+8px)] left-0 z-40 flex w-[380px] max-w-[calc(100vw-32px)] flex-col rounded-xl border border-solid border-border bg-white shadow-[0_16px_40px_rgba(16,25,21,0.16)]"
+            className="absolute top-[calc(100%+8px)] left-0 z-40 flex w-[380px] max-w-[calc(100vw-32px)] flex-col rounded-xl border border-solid border-border bg-white shadow-[0_16px_40px_color-mix(in_srgb,var(--color-text)_16%,transparent)]"
         >
             <div className="flex items-center justify-between border-b border-solid border-border px-4 py-[14px]">
                 <p className="text-[14px] leading-[18px] font-semibold text-text">
@@ -536,7 +536,7 @@ function SortMenu({
                     <path
                         d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4"
                         fill="none"
-                        stroke="#56625C"
+                        stroke="var(--color-text-muted)"
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -547,7 +547,7 @@ function SortMenu({
             {open && (
                 <div
                     role="menu"
-                    className="absolute top-[calc(100%+6px)] left-0 z-40 flex w-[220px] flex-col rounded-lg border border-solid border-border bg-white p-[6px] shadow-[0_12px_32px_rgba(16,25,21,0.14)]"
+                    className="absolute top-[calc(100%+6px)] left-0 z-40 flex w-[220px] flex-col rounded-lg border border-solid border-border bg-white p-[6px] shadow-[0_12px_32px_color-mix(in_srgb,var(--color-text)_14%,transparent)]"
                 >
                     {options.map((option) => (
                         <button
@@ -570,7 +570,11 @@ function SortMenu({
     );
 }
 
-export function DownloadIcon({ colour = '#101915' }: { colour?: string }) {
+export function DownloadIcon({
+    colour = 'var(--color-text)',
+}: {
+    colour?: string;
+}) {
     return (
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
             <path
@@ -657,13 +661,13 @@ export function TableToolbar({
                         cy="11"
                         r="7"
                         fill="none"
-                        stroke="#56625C"
+                        stroke="var(--color-text-muted)"
                         strokeWidth="2"
                     />
                     <path
                         d="M16 16l5 5"
                         fill="none"
-                        stroke="#56625C"
+                        stroke="var(--color-text-muted)"
                         strokeWidth="2"
                         strokeLinecap="round"
                     />
@@ -819,7 +823,7 @@ export function FilterChips({
                         >
                             <path
                                 d="M2.5 2.5l5 5M7.5 2.5l-5 5"
-                                stroke="#56625C"
+                                stroke="var(--color-text-muted)"
                                 strokeWidth="1.5"
                                 strokeLinecap="round"
                             />
@@ -978,7 +982,7 @@ export function Checkbox({
             className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[4px] border-[1.5px] border-solid ${
                 checked || mixed
                     ? 'border-primary bg-primary'
-                    : 'border-[#B8C2BD] bg-white hover:border-primary'
+                    : 'border-text-disabled bg-white hover:border-primary'
             }`}
         >
             {mixed ? (
@@ -989,7 +993,7 @@ export function Checkbox({
                         <path
                             d="M2.5 6.2l2.3 2.3 4.7-4.9"
                             fill="none"
-                            stroke="#FFFFFF"
+                            stroke="var(--color-bg)"
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -1068,11 +1072,11 @@ export function BulkBar({
             </span>
             {!allMatching && selected < total && (
                 <>
-                    <span className="text-[13px] text-[#BFD8CC]">·</span>
+                    <span className="text-[13px] text-primary-border">·</span>
                     <button
                         type="button"
                         onClick={onSelectAll}
-                        className="text-[13px] font-semibold text-[#F3E7C4] underline"
+                        className="text-[13px] font-semibold text-print-cream underline"
                     >
                         {t('Select all :total that match', {
                             total: count(total),
@@ -1092,7 +1096,7 @@ export function BulkBar({
                 <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
                     <path
                         d="M2.5 2.5l5 5M7.5 2.5l-5 5"
-                        stroke="#FFFFFF"
+                        stroke="var(--color-bg)"
                         strokeWidth="1.5"
                         strokeLinecap="round"
                     />
@@ -1213,7 +1217,7 @@ export function ExportDialog({
                 role="dialog"
                 aria-modal="true"
                 aria-label={title}
-                className="flex max-h-[calc(100vh-32px)] w-[520px] max-w-full flex-col overflow-y-auto rounded-xl bg-white shadow-[0_24px_60px_rgba(16,25,21,0.28)]"
+                className="flex max-h-[calc(100vh-32px)] w-[520px] max-w-full flex-col overflow-y-auto rounded-xl bg-white shadow-[0_24px_60px_color-mix(in_srgb,var(--color-text)_28%,transparent)]"
             >
                 <div className="flex items-start justify-between gap-4 px-[22px] pt-5 pb-[14px]">
                     <div className="flex flex-col gap-1">
@@ -1238,7 +1242,7 @@ export function ExportDialog({
                         >
                             <path
                                 d="M2.5 2.5l5 5M7.5 2.5l-5 5"
-                                stroke="#56625C"
+                                stroke="var(--color-text-muted)"
                                 strokeWidth="1.3"
                                 strokeLinecap="round"
                             />
@@ -1388,11 +1392,30 @@ export function ExportDialog({
                         onClick={go}
                         className="flex h-9 items-center gap-2 rounded-md bg-primary px-4 text-[13px] font-semibold text-white hover:bg-primary-hover disabled:opacity-40"
                     >
-                        <DownloadIcon colour="#FFFFFF" />
+                        <DownloadIcon colour="var(--color-bg)" />
                         {t('Export :count :noun', { count: count(rows), noun })}
                     </button>
                 </div>
             </div>
         </div>
     );
+}
+
+export { default as TableRowMenu } from './row-menu';
+export { default as TableEmptyState } from './empty-state';
+
+export function tableRowClass({
+    index,
+    selected = false,
+    interactive = false,
+}: {
+    index: number;
+    selected?: boolean;
+    interactive?: boolean;
+}): string {
+    if (selected)
+        return interactive
+            ? 'bg-primary-tint/60 hover:bg-primary-tint'
+            : 'bg-primary-tint/60';
+    return `${index % 2 === 1 ? 'bg-row-alt' : 'bg-white'}${interactive ? ' hover:bg-surface' : ''}`;
 }

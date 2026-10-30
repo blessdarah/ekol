@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
 import { progress } from '@/actions/App/Http/Controllers/AssessmentController';
@@ -186,7 +187,7 @@ function NextBar({
                         <path
                             d="M5 12.5l4.5 4.5L19 7.5"
                             fill="none"
-                            stroke="#FFFFFF"
+                            stroke="var(--color-bg)"
                             strokeWidth="3"
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -579,7 +580,7 @@ function Sheet({
                                     className="flex flex-col border-b border-solid border-border last:border-b-0"
                                 >
                                     <div
-                                        className={`flex min-h-12 items-center gap-4 px-4 py-[6px] ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                        className={`flex min-h-12 items-center gap-4 px-4 py-[6px] ${tableRowClass({ index: position })}`}
                                     >
                                         <span className="w-7 shrink-0 font-mono text-[12px] leading-4 text-text-muted">
                                             {String(position + 1).padStart(

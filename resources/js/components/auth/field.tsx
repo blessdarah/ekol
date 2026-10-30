@@ -94,7 +94,7 @@ export function PrimaryButton({
                 <path
                     d="M5 12h14M13 6l6 6-6 6"
                     fill="none"
-                    stroke="#FFFFFF"
+                    stroke="var(--color-bg)"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -199,13 +199,13 @@ export function ErrorBanner({ title, body }: { title: string; body?: string }) {
                     cy="12"
                     r="9"
                     fill="none"
-                    stroke="#B42318"
+                    stroke="var(--color-danger)"
                     strokeWidth="2"
                 />
                 <path
                     d="M12 7.5v5.5M12 16.5v.5"
                     fill="none"
-                    stroke="#B42318"
+                    stroke="var(--color-danger)"
                     strokeWidth="2.2"
                     strokeLinecap="round"
                 />

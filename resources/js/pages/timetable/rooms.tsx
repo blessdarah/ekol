@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { setup } from '@/actions/App/Http/Controllers/TimetableController';
@@ -252,7 +253,7 @@ function RoomPanel({
                                         }
                                         className="flex size-4 items-center justify-center rounded-sm hover:bg-white"
                                     >
-                                        <RemoveIcon tone="#0E4D3A" />
+                                        <RemoveIcon tone="var(--color-primary)" />
                                     </button>
                                 </span>
                             ))}
@@ -326,7 +327,7 @@ function RoomPanel({
                                     }
                                     className="flex size-5 items-center justify-center rounded-sm hover:bg-white"
                                 >
-                                    <RemoveIcon tone="#56625C" />
+                                    <RemoveIcon tone="var(--color-text-muted)" />
                                 </button>
                             </li>
                         ))}
@@ -581,7 +582,7 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
                                             className={`flex min-h-10 shrink-0 items-center gap-4 border-b border-solid border-border px-[14px] py-1 last:border-b-0 ${
                                                 active
                                                     ? 'bg-primary-tint'
-                                                    : `hover:bg-surface ${position % 2 === 1 ? 'bg-row-alt' : ''}`
+                                                    : `hover:bg-surface ${tableRowClass({ index: position })}`
                                             }`}
                                         >
                                             <span className="w-[86px] shrink-0 text-[14px] leading-[18px] font-semibold text-text">

@@ -198,7 +198,7 @@ function RegisterOne({
                                 onClick={() => visit({ tab: option.value })}
                                 className={`flex h-7 flex-1 items-center justify-center rounded-[6px] text-[13px] leading-4 ${
                                     tab === option.value
-                                        ? 'bg-white font-semibold text-text shadow-[0_1px_2px_rgba(16,25,21,0.08)]'
+                                        ? 'bg-white font-semibold text-text shadow-[0_1px_2px_color-mix(in_srgb,var(--color-text)_8%,transparent)]'
                                         : 'font-medium text-text-muted hover:text-text'
                                 }`}
                             >
@@ -218,13 +218,13 @@ function RegisterOne({
                                 cy="11"
                                 r="7"
                                 fill="none"
-                                stroke="#56625C"
+                                stroke="var(--color-text-muted)"
                                 strokeWidth="2"
                             />
                             <path
                                 d="M20 20l-3.5-3.5"
                                 fill="none"
-                                stroke="#56625C"
+                                stroke="var(--color-text-muted)"
                                 strokeWidth="2"
                                 strokeLinecap="round"
                             />
@@ -281,7 +281,7 @@ function RegisterOne({
                                             <path
                                                 d="M9 6l6 6-6 6"
                                                 fill="none"
-                                                stroke="#0E4D3A"
+                                                stroke="var(--color-primary)"
                                                 strokeWidth="2"
                                                 strokeLinecap="round"
                                             />
@@ -412,13 +412,13 @@ function RegisterOne({
                                                         height="10"
                                                         rx="2"
                                                         fill="none"
-                                                        stroke="#FFFFFF"
+                                                        stroke="var(--color-bg)"
                                                         strokeWidth="3"
                                                     />
                                                     <path
                                                         d="M8 11V7a4 4 0 018 0v4"
                                                         fill="none"
-                                                        stroke="#FFFFFF"
+                                                        stroke="var(--color-bg)"
                                                         strokeWidth="3"
                                                     />
                                                 </svg>
@@ -481,7 +481,7 @@ function RegisterOne({
 
                         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                             <p
-                                className={`text-[13px] leading-4 ${problem ? 'text-[#8A5A12]' : 'text-text-muted'}`}
+                                className={`text-[13px] leading-4 ${problem ? 'text-warning-text' : 'text-text-muted'}`}
                             >
                                 {!chosen
                                     ? t('Choose a series to see its subjects.')
@@ -544,7 +544,7 @@ function RegisterOne({
                                             <path
                                                 d="M5 12h14M13 6l6 6-6 6"
                                                 fill="none"
-                                                stroke="#FFFFFF"
+                                                stroke="var(--color-bg)"
                                                 strokeWidth="2.5"
                                                 strokeLinecap="round"
                                             />

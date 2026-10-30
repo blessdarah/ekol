@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import {
     bill,
@@ -598,7 +599,7 @@ function StructureForm({
                                         return (
                                             <div
                                                 key={level.id}
-                                                className={`flex min-h-[52px] shrink-0 items-start gap-3 border-b border-solid border-border px-4 py-2 last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                                className={`flex min-h-[52px] shrink-0 items-start gap-3 border-b border-solid border-border px-4 py-2 last:border-b-0 ${tableRowClass({ index: position })}`}
                                             >
                                                 <span className="flex h-9 w-[84px] shrink-0 items-center truncate text-[14px] leading-[18px] font-medium text-text">
                                                     {level.name}

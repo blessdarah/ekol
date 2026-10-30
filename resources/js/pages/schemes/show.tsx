@@ -209,7 +209,7 @@ function ShowScheme({
                                             )}
                                         </span>
                                         <span
-                                            className={`w-[150px] shrink-0 text-[13px] ${item.added ? 'text-science' : item.carried ? 'text-[#8A5A12]' : 'text-success'}`}
+                                            className={`w-[150px] shrink-0 text-[13px] ${item.added ? 'text-science' : item.carried ? 'text-warning-text' : 'text-success'}`}
                                         >
                                             {item.added
                                                 ? t('Added by the teacher')

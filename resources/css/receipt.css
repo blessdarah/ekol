@@ -3,8 +3,8 @@
     display: flex;
     width: 1188px;
     min-height: 840px;
-    background: #ffffff;
-    color: #111111;
+    background: var(--color-white);
+    color: var(--color-document-ink);
     font-family: 'Inter', sans-serif;
     font-size: 12px;
     line-height: 16px;
@@ -20,7 +20,7 @@
     pointer-events: none;
 }
 .receipt-label {
-    color: #555555;
+    color: var(--color-document-muted);
     font-size: 9px;
     line-height: 12px;
     font-weight: 700;
@@ -38,14 +38,14 @@
 }
 .receipt-counterfoil h2 {
     font-family: 'Fraunces', Georgia, serif;
-    color: #111111;
+    color: var(--color-document-ink);
     font-size: 17px;
     line-height: 21px;
     font-weight: 600;
 }
 .receipt-counterfoil hr {
     border: 0;
-    border-top: 1px solid #bdbdbd;
+    border-top: 1px solid var(--color-document-faint);
 }
 .receipt-counterfoil > div {
     display: flex;
@@ -55,7 +55,7 @@
 .receipt-counterfoil footer {
     margin-top: auto;
     padding-top: 6px;
-    border-top: 1px solid #bdbdbd;
+    border-top: 1px solid var(--color-document-faint);
     font-size: 10px;
 }
 .receipt-perforation {
@@ -63,14 +63,14 @@
     flex-shrink: 0;
     position: relative;
     margin: 36px 0;
-    border-left: 1.5px dashed #999999;
+    border-left: 1.5px dashed var(--color-document-disabled);
 }
 .receipt-perforation span {
     position: absolute;
     top: 48%;
     left: -8px;
-    background: #ffffff;
-    color: #555555;
+    background: var(--color-white);
+    color: var(--color-document-muted);
 }
 .receipt-original {
     position: relative;
@@ -86,14 +86,14 @@
     align-items: center;
     gap: 16px;
     padding-bottom: 16px;
-    border-bottom: 3px double #222222;
+    border-bottom: 3px double var(--color-document-text);
 }
 .receipt-letterhead h1 {
     font-family: 'Fraunces', Georgia, serif;
     font-weight: 600;
     font-size: 22px;
     line-height: 26px;
-    color: #111111;
+    color: var(--color-document-ink);
 }
 .receipt-school-mark {
     display: flex;
@@ -103,9 +103,9 @@
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    border: 4px double #777777;
-    background: #f5f5f5;
-    color: #222222;
+    border: 4px double var(--color-document-subtle);
+    background: var(--color-document-surface);
+    color: var(--color-document-text);
     font-family: 'Fraunces', Georgia, serif;
     font-size: 19px;
     font-weight: 600;
@@ -115,22 +115,22 @@
     flex-direction: column;
     gap: 3px;
     text-align: right;
-    border-left: 1px solid #bdbdbd;
+    border-left: 1px solid var(--color-document-faint);
     padding-left: 16px;
     max-width: 220px;
 }
 .receipt-student {
     display: flex;
-    border: 1px solid #bdbdbd;
+    border: 1px solid var(--color-document-faint);
     border-radius: 3px;
-    background: #ffffff99;
+    background: var(--color-document-translucent);
 }
 .receipt-student > div {
     padding: 9px 14px;
     flex: 1;
 }
 .receipt-student > div + div {
-    border-left: 1px solid #cccccc;
+    border-left: 1px solid var(--color-document-outline);
     flex: 0 0 190px;
 }
 .receipt-student h2 {
@@ -138,7 +138,7 @@
     font-size: 16px;
     line-height: 20px;
     font-weight: 600;
-    color: #111111;
+    color: var(--color-document-ink);
     margin: 2px 0;
 }
 .receipt-columns {
@@ -150,24 +150,24 @@
 .receipt-amount {
     border-radius: 3px;
     padding: 12px 16px;
-    background: #f5f5f5;
-    color: #333333;
+    background: var(--color-document-surface);
+    color: var(--color-document-border);
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
 .receipt-amount .receipt-label {
-    color: #444444;
+    color: var(--color-document-secondary);
 }
 .receipt-amount strong {
-    color: #222222;
+    color: var(--color-document-text);
     font-family: 'Fraunces', Georgia, serif;
     font-size: 36px;
     line-height: 40px;
     font-weight: 600;
 }
 .receipt-amount p > span {
-    color: #444444;
+    color: var(--color-document-secondary);
     font-size: 13px;
     font-weight: 600;
 }
@@ -177,21 +177,21 @@
     justify-content: center;
     gap: 6px;
     padding: 12px 14px;
-    border: 1px solid #bdbdbd;
+    border: 1px solid var(--color-document-faint);
     border-radius: 3px;
-    background: #ffffff99;
+    background: var(--color-document-translucent);
 }
 .receipt-items {
     width: 100%;
     border-collapse: collapse;
-    border: 1px solid #bdbdbd;
+    border: 1px solid var(--color-document-faint);
     align-self: start;
     font-size: 11px;
 }
 .receipt-items th,
 .receipt-items td {
     padding: 6px 12px;
-    border-bottom: 1px solid #dddddd;
+    border-bottom: 1px solid var(--color-document-rule);
     text-align: left;
     font-weight: 500;
 }
@@ -202,18 +202,18 @@
     font-family: 'JetBrains Mono', monospace;
 }
 .receipt-items thead {
-    background: #f5f5f5;
-    color: #222222;
+    background: var(--color-document-surface);
+    color: var(--color-document-text);
     font-size: 8px;
     text-transform: uppercase;
     letter-spacing: 0.12em;
 }
 .receipt-items tbody tr:nth-child(even) {
-    background: #22222209;
+    background: var(--color-document-zebra);
 }
 .receipt-items tfoot {
-    background: #7777771f;
-    color: #555555;
+    background: var(--color-document-total);
+    color: var(--color-document-muted);
     font-weight: 700;
 }
 .receipt-year {
@@ -221,9 +221,9 @@
     flex-direction: column;
     gap: 8px;
     padding: 11px 14px;
-    border: 1px solid #bdbdbd;
+    border: 1px solid var(--color-document-faint);
     border-radius: 3px;
-    background: #ffffff99;
+    background: var(--color-document-translucent);
     font-size: 11px;
     line-height: 14px;
 }
@@ -238,28 +238,28 @@
     white-space: nowrap;
 }
 .receipt-balance {
-    border-top: 1px solid #cccccc;
+    border-top: 1px solid var(--color-document-outline);
     padding-top: 4px;
 }
 .receipt-balance strong:last-child {
     font-family: 'Fraunces', Georgia, serif;
     font-size: 18px;
     line-height: 22px;
-    color: #333333;
+    color: var(--color-document-border);
 }
 .receipt-settled .receipt-balance strong:last-child {
-    color: #222222;
+    color: var(--color-document-text);
 }
 .receipt-progress {
     height: 6px;
     border-radius: 99px;
-    background: #2222221a;
+    background: var(--color-document-track);
     overflow: hidden;
 }
 .receipt-progress span {
     display: block;
     height: 100%;
-    background: #444444;
+    background: var(--color-document-secondary);
     border-radius: inherit;
 }
 .receipt-lower {
@@ -279,7 +279,7 @@
     flex-direction: column;
     gap: 4px;
     padding-top: 10px;
-    border-top: 2px solid #555555;
+    border-top: 2px solid var(--color-document-muted);
     position: relative;
     font-size: 9px;
     line-height: 12px;
@@ -292,7 +292,7 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #555555;
+    background: var(--color-document-muted);
 }
 .receipt-timeline strong {
     font-family: 'JetBrains Mono', monospace;
@@ -300,12 +300,12 @@
     font-weight: 500;
 }
 .receipt-timeline .receipt-current {
-    color: #222222;
+    color: var(--color-document-text);
     font-weight: 600;
 }
 .receipt-timeline .receipt-current::before {
-    background: #222222;
-    box-shadow: 0 0 0 3px #2222222e;
+    background: var(--color-document-text);
+    box-shadow: 0 0 0 3px var(--color-document-ring);
 }
 .receipt-stamp {
     flex-shrink: 0;
@@ -326,13 +326,13 @@
     display: flex;
     justify-content: space-between;
     gap: 10px;
-    border-top: 1px solid #bdbdbd;
+    border-top: 1px solid var(--color-document-faint);
     padding-top: 4px;
     margin-top: 30px;
     font-size: 10px;
 }
 .receipt-signature p span {
-    color: #555555;
+    color: var(--color-document-muted);
 }
 .receipt-verification {
     display: flex;
@@ -340,7 +340,7 @@
     gap: 12px;
     font-size: 9px;
     line-height: 13px;
-    color: #555555;
+    color: var(--color-document-muted);
 }
 .receipt-verification img {
     width: 104px;
@@ -348,14 +348,14 @@
     flex-shrink: 0;
 }
 .receipt-verification strong {
-    color: #111111;
+    color: var(--color-document-ink);
     font-size: 10px;
 }
 .receipt-microprint {
     font-size: 4.5px;
     line-height: 6px;
     letter-spacing: 0.12em;
-    color: #777777;
+    color: var(--color-document-subtle);
     white-space: nowrap;
     overflow: hidden;
     height: 6px;
@@ -363,21 +363,21 @@
 .receipt-preview {
     overflow-x: auto;
     padding: 20px;
-    background: #f5f5f5;
+    background: var(--color-document-surface);
     border-radius: 12px;
 }
 .receipt-preview .receipt-sheet {
     zoom: 0.72;
     margin: 0 auto;
-    box-shadow: 0 8px 24px #1111111f;
+    box-shadow: 0 8px 24px var(--color-document-soft-shadow);
 }
 .receipt-phone {
     margin: 0 auto;
     width: 100%;
     max-width: 420px;
     border-radius: 16px;
-    background: #ffffff;
-    box-shadow: 0 10px 30px #1111111f;
+    background: var(--color-white);
+    box-shadow: 0 10px 30px var(--color-document-soft-shadow);
     overflow: hidden;
     font-family: 'Inter', sans-serif;
 }
@@ -386,7 +386,7 @@
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    background: #f5f5f5;
+    background: var(--color-document-surface);
     padding: 20px 18px 18px;
     text-align: center;
 }
@@ -400,10 +400,10 @@
     font-family: 'Fraunces', Georgia, serif;
     font-size: 16px;
     font-weight: 600;
-    color: #222222;
+    color: var(--color-document-text);
 }
 .receipt-phone header .receipt-label {
-    color: #444444;
+    color: var(--color-document-secondary);
     font-size: 9px;
 }
 .receipt-phone-amount {
@@ -412,19 +412,19 @@
     font-size: 40px;
     line-height: 44px;
     font-weight: 600;
-    color: #111111;
+    color: var(--color-document-ink);
 }
 .receipt-phone-amount span {
     font-family: 'Inter', sans-serif;
     font-size: 14px;
-    color: #444444;
+    color: var(--color-document-secondary);
 }
 .receipt-received {
     margin-top: 6px;
     padding: 4px 10px;
     border-radius: 99px;
-    background: #ffffff1f;
-    color: #111111;
+    background: var(--color-document-badge);
+    color: var(--color-document-ink);
     font-size: 11px;
 }
 .receipt-phone-details {
@@ -436,12 +436,12 @@
     gap: 16px;
     justify-content: space-between;
     padding: 9px 0;
-    border-bottom: 1px solid #dddddd;
+    border-bottom: 1px solid var(--color-document-rule);
     font-size: 13px;
     line-height: 18px;
 }
 .receipt-phone-details > div > :first-child {
-    color: #555555;
+    color: var(--color-document-muted);
     flex-shrink: 0;
 }
 .receipt-phone-details > div > :last-child {
@@ -452,24 +452,24 @@
     display: block;
     font-size: 11px;
     font-weight: 400;
-    color: #555555;
+    color: var(--color-document-muted);
 }
 .receipt-phone .receipt-year {
     margin: 8px 18px 16px;
-    background: #f5f5f5;
+    background: var(--color-document-surface);
     border: 0;
     border-radius: 10px;
     padding: 12px 14px;
 }
 .receipt-phone .receipt-settled {
-    background: #f5f5f5;
+    background: var(--color-document-surface);
 }
 .receipt-phone-status {
-    border-top: 1px dashed #bdbdbd;
+    border-top: 1px dashed var(--color-document-faint);
     padding: 12px 18px;
     font-size: 11px;
     line-height: 15px;
-    color: #555555;
+    color: var(--color-document-muted);
 }
 .receipt-phone-status > span {
     font-weight: 700;
@@ -493,7 +493,7 @@
     body:has(.receipt-sheet, .receipt-confirmation) {
         margin: 0 !important;
         padding: 0 !important;
-        background: #ffffff !important;
+        background: var(--color-white) !important;
     }
     body:has(.receipt-sheet, .receipt-confirmation) .min-h-screen {
         min-height: 0 !important;
@@ -518,9 +518,9 @@
     max-width: 680px;
     margin: 0 auto;
     padding: 28px;
-    border: 1px solid #cccccc;
+    border: 1px solid var(--color-document-outline);
     background: white;
-    color: #111111;
+    color: var(--color-document-ink);
     font-family: 'Inter', sans-serif;
     font-size: 13px;
     line-height: 19px;
@@ -533,7 +533,7 @@
     justify-content: space-between;
     gap: 12px;
     padding-bottom: 18px;
-    border-bottom: 2px solid #222222;
+    border-bottom: 2px solid var(--color-document-text);
 }
 .receipt-confirmation h1 {
     font-size: 18px;
@@ -541,12 +541,12 @@
     font-weight: 700;
 }
 .receipt-confirmation header p:not(.receipt-confirmed) {
-    color: #555555;
+    color: var(--color-document-muted);
     margin-top: 3px;
     font-size: 12px;
 }
 .receipt-confirmed {
-    border: 1px solid #888888;
+    border: 1px solid var(--color-document-line);
     padding: 3px 8px;
     font-size: 11px;
     font-weight: 600;
@@ -562,7 +562,7 @@
 }
 .receipt-confirmation-title p {
     margin-top: 4px;
-    color: #555555;
+    color: var(--color-document-muted);
     font-size: 12px;
 }
 .receipt-confirmation-amount {
@@ -571,11 +571,11 @@
     gap: 5px;
     margin: 20px 0;
     padding-bottom: 20px;
-    border-bottom: 1px solid #cccccc;
+    border-bottom: 1px solid var(--color-document-outline);
 }
 .receipt-confirmation-amount > span {
     font-size: 12px;
-    color: #555555;
+    color: var(--color-document-muted);
 }
 .receipt-confirmation-amount strong {
     font-size: 32px;
@@ -595,7 +595,7 @@
 .receipt-confirmation-details dt {
     font-size: 11px;
     line-height: 16px;
-    color: #555555;
+    color: var(--color-document-muted);
 }
 .receipt-confirmation-details dd {
     margin-top: 3px;
@@ -605,16 +605,16 @@
     display: block;
     font-size: 11px;
     font-weight: 400;
-    color: #555555;
+    color: var(--color-document-muted);
 }
 .receipt-confirmation-covers {
     margin-top: 20px;
     padding-top: 12px;
-    border-top: 1px solid #cccccc;
+    border-top: 1px solid var(--color-document-outline);
 }
 .receipt-confirmation-covers h3 {
     font-size: 11px;
-    color: #555555;
+    color: var(--color-document-muted);
     font-weight: 600;
 }
 .receipt-confirmation-covers > div {
@@ -622,7 +622,7 @@
     justify-content: space-between;
     gap: 12px;
     padding: 6px 0;
-    border-bottom: 1px solid #eeeeee;
+    border-bottom: 1px solid var(--color-document-soft);
     font-size: 12px;
 }
 .receipt-confirmation-covers > div > :last-child {
@@ -632,10 +632,10 @@
 .receipt-confirmation > footer {
     margin-top: 20px;
     padding-top: 12px;
-    border-top: 1px solid #cccccc;
+    border-top: 1px solid var(--color-document-outline);
 }
 .receipt-confirmation > footer > p {
-    color: #444444;
+    color: var(--color-document-secondary);
     font-size: 11px;
     line-height: 16px;
     margin-bottom: 12px;
@@ -666,7 +666,7 @@
 @media print {
     .receipt-sheet,
     .receipt-phone {
-        color: #111111;
+        color: var(--color-document-ink);
     }
     .receipt-sheet .receipt-school-mark {
         filter: grayscale(1);

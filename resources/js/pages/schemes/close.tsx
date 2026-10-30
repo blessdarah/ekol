@@ -75,7 +75,7 @@ function CloseTerm({
         {
             label: t('Below 80%'),
             value: String(totals.below),
-            tone: totals.below > 0 ? 'text-[#8A5A12]' : 'text-text',
+            tone: totals.below > 0 ? 'text-warning-text' : 'text-text',
         },
         {
             label: t('To carry over'),

@@ -166,7 +166,7 @@ function Applications({
                             onClick={() => setExporting(true)}
                             className={bulkButtonClass}
                         >
-                            <DownloadIcon colour="#FFFFFF" />
+                            <DownloadIcon colour="var(--color-bg)" />
                             {t('Export :count', {
                                 count: count(
                                     selection.allMatching

@@ -54,10 +54,10 @@ export interface ReportCardData {
     principal: string | null;
 }
 
-const PINE = '#0E4D3A';
-const GOLD = '#B08D3C';
-const PAPER = '#FCFBF6';
-const INK = '#0E2E24';
+const PINE = 'var(--color-primary)';
+const GOLD = 'var(--color-print-gold)';
+const PAPER = 'var(--color-print-paper)';
+const INK = 'var(--color-print-ink)';
 
 /** Below this mark a subject is printed in red. */
 const PASS = 10;
@@ -185,35 +185,35 @@ function SecurityPaper({ id }: { id: string }) {
 
 const SEALS = {
     promoted: {
-        seal: '#0E4D3A',
-        deep: '#0A3A2C',
-        gold: '#B08D3C',
-        light: '#F3E7C4',
-        accent: '#C9A54E',
+        seal: 'var(--color-primary)',
+        deep: 'var(--color-primary-hover)',
+        gold: 'var(--color-print-gold)',
+        light: 'var(--color-print-cream)',
+        accent: 'var(--color-print-accent)',
         mark: '★ ★ ★',
     },
     repeats: {
-        seal: '#9A6516',
-        deep: '#6E470D',
-        gold: '#E2C07A',
-        light: '#FFF4DC',
-        accent: '#F0D28E',
+        seal: 'var(--color-print-amber)',
+        deep: 'var(--color-print-amber-deep)',
+        gold: 'var(--color-print-amber-gold)',
+        light: 'var(--color-print-amber-light)',
+        accent: 'var(--color-print-amber-accent)',
         mark: '● ● ●',
     },
     leaving: {
-        seal: '#4A5550',
-        deep: '#333C38',
-        gold: '#B9C2BD',
-        light: '#F1F4F2',
-        accent: '#D3DAD6',
+        seal: 'var(--color-print-neutral)',
+        deep: 'var(--color-print-neutral-deep)',
+        gold: 'var(--color-print-neutral-gold)',
+        light: 'var(--color-print-neutral-light)',
+        accent: 'var(--color-print-neutral-accent)',
         mark: '· · ·',
     },
     completed: {
-        seal: '#1F3B6B',
-        deep: '#152A4E',
-        gold: '#C9A54E',
-        light: '#F3E7C4',
-        accent: '#E0C27A',
+        seal: 'var(--color-print-blue)',
+        deep: 'var(--color-print-blue-deep)',
+        gold: 'var(--color-print-accent)',
+        light: 'var(--color-print-cream)',
+        accent: 'var(--color-print-blue-gold)',
         mark: '★ ★ ★',
     },
 } as const;
@@ -448,7 +448,7 @@ function PositionMedallion({
                 fontSize="8"
                 fontWeight="700"
                 letterSpacing="2.4"
-                fill="#8A7A4E"
+                fill="var(--color-print-muted)"
             >
                 {t('CLASS POSITION')}
             </text>
@@ -480,9 +480,9 @@ function PositionMedallion({
 }
 
 const labelClass =
-    'font-auth text-[5.5pt] leading-[7pt] font-semibold tracking-[0.14em] text-[#8A7A4E] uppercase';
+    'font-auth text-[5.5pt] leading-[7pt] font-semibold tracking-[0.14em] text-print-muted uppercase';
 const boxClass =
-    'rounded-[1mm] border border-solid border-[#D8CFB4] bg-[#FCFBF6]/60';
+    'rounded-[1mm] border border-solid border-print-border bg-print-paper/60';
 
 function Mark({
     value,
@@ -495,7 +495,7 @@ function Mark({
 
     return (
         <span
-            className={`font-mono ${strong ? 'text-[7.5pt] font-bold' : 'text-[7pt]'} ${low ? 'text-[#B42318]' : strong ? 'text-[#0E2E24]' : 'text-text'}`}
+            className={`font-mono ${strong ? 'text-[7.5pt] font-bold' : 'text-[7pt]'} ${low ? 'text-danger' : strong ? 'text-print-ink' : 'text-text'}`}
         >
             {score(value)}
         </span>
@@ -507,24 +507,24 @@ function Glance({ glance }: { glance: NonNullable<ReportCardData['glance']> }) {
         const below = row.average !== null && row.average < PASS;
         const colour = total
             ? below
-                ? '#9A6516'
+                ? 'var(--color-print-amber)'
                 : PINE
             : below
-              ? '#C9A15A'
-              : '#5D8C7A';
+              ? 'var(--color-print-blue-accent)'
+              : 'var(--color-print-line)';
 
         return (
             <div
                 key={row.label}
-                className={`flex items-center gap-[2.5mm] ${total ? 'border-t border-solid border-[#E6DFC9] pt-[1.2mm]' : ''}`}
+                className={`flex items-center gap-[2.5mm] ${total ? 'border-t border-solid border-print-divider pt-[1.2mm]' : ''}`}
             >
                 <span
-                    className={`w-[16mm] shrink-0 truncate font-auth text-[6.5pt] ${total ? 'font-bold text-[#0E2E24]' : 'text-text-muted'}`}
+                    className={`w-[16mm] shrink-0 truncate font-auth text-[6.5pt] ${total ? 'font-bold text-print-ink' : 'text-text-muted'}`}
                 >
                     {t(row.label)}
                 </span>
                 <span
-                    className={`relative flex-1 rounded-full bg-[#0E4D3A]/8 ${total ? 'h-[2.2mm]' : 'h-[1.8mm]'}`}
+                    className={`relative flex-1 rounded-full bg-primary/8 ${total ? 'h-[2.2mm]' : 'h-[1.8mm]'}`}
                 >
                     <span
                         className="absolute inset-y-0 left-0 rounded-full"
@@ -533,7 +533,7 @@ function Glance({ glance }: { glance: NonNullable<ReportCardData['glance']> }) {
                             backgroundColor: colour,
                         }}
                     />
-                    <span className="absolute -top-[0.8mm] -bottom-[0.8mm] left-1/2 border-l border-dashed border-[#B42318]" />
+                    <span className="absolute -top-[0.8mm] -bottom-[0.8mm] left-1/2 border-l border-dashed border-danger" />
                 </span>
                 <span
                     className={`w-[10mm] shrink-0 text-right font-mono ${total ? 'text-[7.5pt] font-bold' : 'text-[7pt]'}`}
@@ -558,7 +558,7 @@ function Glance({ glance }: { glance: NonNullable<ReportCardData['glance']> }) {
                         ? t('The year at a glance')
                         : t('This term at a glance')}
                 </span>
-                <span className="font-auth text-[5.5pt] text-[#8A8F86]">
+                <span className="font-auth text-[5.5pt] text-print-subtle">
                     {t('dashed line · :pass / 20', { pass: PASS })}
                 </span>
             </div>
@@ -615,11 +615,11 @@ export function ReportCard({
     ).join(' · ');
 
     return (
-        <article className="report-card relative flex h-[210mm] w-[148mm] shrink-0 break-after-page flex-col gap-[2.6mm] overflow-hidden bg-[#FCFBF6] px-[9.5mm] pt-[8.5mm] pb-[6.5mm] font-auth text-text antialiased [print-color-adjust:exact] last:break-after-auto">
+        <article className="report-card relative flex h-[210mm] w-[148mm] shrink-0 break-after-page flex-col gap-[2.6mm] overflow-hidden bg-print-paper px-[9.5mm] pt-[8.5mm] pb-[6.5mm] font-auth text-text antialiased [print-color-adjust:exact] last:break-after-auto">
             <SecurityPaper id={card.id} />
 
             <header className="relative flex items-center gap-[3mm]">
-                <span className="flex h-[12mm] w-[12mm] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0E4D3A] shadow-[0_0_0_0.6mm_#FCFBF6,0_0_0_0.8mm_#B08D3C]">
+                <span className="flex h-[12mm] w-[12mm] shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary shadow-[0_0_0_0.6mm_var(--color-print-paper),0_0_0_0.8mm_var(--color-print-gold)]">
                     {issuer.logo_url ? (
                         <img
                             src={issuer.logo_url}
@@ -627,20 +627,20 @@ export function ReportCard({
                             className="h-full w-full bg-white object-cover"
                         />
                     ) : (
-                        <span className="flex h-[10mm] w-[10mm] items-center justify-center rounded-full border border-solid border-[#B08D3C] font-serif text-[11pt] font-semibold text-[#F3E7C4]">
+                        <span className="flex h-[10mm] w-[10mm] items-center justify-center rounded-full border border-solid border-print-gold font-serif text-[11pt] font-semibold text-print-cream">
                             {initials(issuer.code)}
                         </span>
                     )}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col gap-[0.4mm]">
-                    <span className="font-auth text-[5pt] leading-[6.5pt] font-semibold tracking-[0.16em] text-[#6B5A2E]">
+                    <span className="font-auth text-[5pt] leading-[6.5pt] font-semibold tracking-[0.16em] text-print-heading">
                         {t('REPUBLIC OF CAMEROON · PEACE – WORK – FATHERLAND')}
                     </span>
-                    <span className="truncate font-serif text-[13pt] leading-[15pt] font-semibold tracking-[-0.01em] text-[#0E2E24]">
+                    <span className="truncate font-serif text-[13pt] leading-[15pt] font-semibold tracking-[-0.01em] text-print-ink">
                         {issuer.name}
                     </span>
                     {issuer.motto && (
-                        <span className="truncate font-serif text-[7pt] leading-[9pt] text-[#6B5A2E] italic">
+                        <span className="truncate font-serif text-[7pt] leading-[9pt] text-print-heading italic">
                             “{issuer.motto}”
                         </span>
                     )}
@@ -650,15 +650,15 @@ export function ReportCard({
                         </span>
                     )}
                 </span>
-                <span className="flex shrink-0 flex-col items-end gap-[0.4mm] border-l border-solid border-[#D8CFB4] pl-[3mm]">
-                    <span className="text-[5pt] leading-[6.5pt] font-bold tracking-[0.2em] text-[#B08D3C]">
+                <span className="flex shrink-0 flex-col items-end gap-[0.4mm] border-l border-solid border-print-border pl-[3mm]">
+                    <span className="text-[5pt] leading-[6.5pt] font-bold tracking-[0.2em] text-print-gold">
                         {t('REPORT CARD')}
                     </span>
-                    <span className="font-serif text-[10.5pt] leading-[12pt] font-medium text-[#0E2E24] italic">
+                    <span className="font-serif text-[10.5pt] leading-[12pt] font-medium text-print-ink italic">
                         {t(card.title)}
                     </span>
                     {yearLabel && (
-                        <span className="text-[6pt] leading-[8pt] font-semibold text-[#0E2E24]">
+                        <span className="text-[6pt] leading-[8pt] font-semibold text-print-ink">
                             {yearLabel}
                         </span>
                     )}
@@ -669,36 +669,36 @@ export function ReportCard({
             </header>
 
             <div className="relative flex flex-col gap-[0.4mm]">
-                <span className="h-[0.4mm] bg-[#0E4D3A]" />
-                <span className="h-[0.15mm] bg-[#B08D3C]" />
+                <span className="h-[0.4mm] bg-primary" />
+                <span className="h-[0.15mm] bg-print-gold" />
             </div>
 
             <section className={`relative flex ${boxClass}`}>
-                <span className="flex min-w-0 flex-1 flex-col gap-[0.4mm] border-r border-solid border-[#E6DFC9] px-[3mm] py-[2mm]">
+                <span className="flex min-w-0 flex-1 flex-col gap-[0.4mm] border-r border-solid border-print-divider px-[3mm] py-[2mm]">
                     <span className={labelClass}>{t('Student')}</span>
-                    <span className="truncate font-serif text-[10.5pt] leading-[12pt] font-semibold text-[#0E2E24]">
+                    <span className="truncate font-serif text-[10.5pt] leading-[12pt] font-semibold text-print-ink">
                         {card.name}
                     </span>
                     <span className="font-mono text-[5.5pt] leading-[7pt] text-text-muted">
                         {card.matricule}
                     </span>
                 </span>
-                <span className="flex w-[24mm] shrink-0 flex-col gap-[0.4mm] border-r border-solid border-[#E6DFC9] px-[3mm] py-[2mm]">
+                <span className="flex w-[24mm] shrink-0 flex-col gap-[0.4mm] border-r border-solid border-print-divider px-[3mm] py-[2mm]">
                     <span className={labelClass}>{t('Class')}</span>
-                    <span className="font-serif text-[10.5pt] leading-[12pt] font-semibold text-[#0E2E24]">
+                    <span className="font-serif text-[10.5pt] leading-[12pt] font-semibold text-print-ink">
                         {className(card.class)}
                     </span>
                 </span>
                 <span className="flex w-[36mm] shrink-0 flex-col gap-[0.4mm] px-[3mm] py-[2mm]">
                     <span className={labelClass}>{t('Class master')}</span>
-                    <span className="truncate text-[7pt] leading-[12pt] font-semibold text-[#0E2E24]">
+                    <span className="truncate text-[7pt] leading-[12pt] font-semibold text-print-ink">
                         {card.class_master ?? '—'}
                     </span>
                 </span>
             </section>
 
-            <section className="relative flex flex-col overflow-hidden rounded-[1mm] border border-solid border-[#D8CFB4] bg-[#FCFBF6]/55">
-                <div className="flex h-[5mm] items-center gap-[1mm] bg-[#0E4D3A] px-[2.5mm] text-[5pt] font-bold tracking-[0.12em] text-[#F3E7C4] uppercase">
+            <section className="relative flex flex-col overflow-hidden rounded-[1mm] border border-solid border-print-border bg-print-paper/55">
+                <div className="flex h-[5mm] items-center gap-[1mm] bg-primary px-[2.5mm] text-[5pt] font-bold tracking-[0.12em] text-print-cream uppercase">
                     <span className="flex-1">{t('Subject')}</span>
                     <span className="w-[7mm] text-right">{t('Coef')}</span>
                     {card.columns.map((column) => (
@@ -722,7 +722,7 @@ export function ReportCard({
                 {card.subjects.map((subject, index) => (
                     <div
                         key={subject.subject}
-                        className={`flex h-[4.4mm] items-center gap-[1mm] border-b border-solid border-[#ECE6D3] px-[2.5mm] ${index % 2 ? 'bg-[#0E4D3A]/[0.035]' : ''}`}
+                        className={`flex h-[4.4mm] items-center gap-[1mm] border-b border-solid border-print-rule px-[2.5mm] ${index % 2 ? 'bg-primary/[0.035]' : ''}`}
                     >
                         <span className="min-w-0 flex-1 truncate text-[7pt] font-semibold">
                             {subject.subject}
@@ -756,7 +756,7 @@ export function ReportCard({
                             {score(subject.points)}
                         </span>
                         <span
-                            className={`w-[8mm] text-right font-mono text-[6.5pt] ${subject.rank === 1 ? 'font-bold text-[#B08D3C]' : ''}`}
+                            className={`w-[8mm] text-right font-mono text-[6.5pt] ${subject.rank === 1 ? 'font-bold text-print-gold' : ''}`}
                         >
                             {subject.rank !== null
                                 ? ordinal(subject.rank)
@@ -765,7 +765,7 @@ export function ReportCard({
                         <span
                             className={`w-[15mm] truncate pl-[2.5mm] text-[6.5pt] italic ${
                                 subject.score !== null && subject.score < PASS
-                                    ? 'text-[#B42318]'
+                                    ? 'text-danger'
                                     : 'text-text-muted'
                             }`}
                         >
@@ -773,20 +773,20 @@ export function ReportCard({
                         </span>
                     </div>
                 ))}
-                <div className="flex h-[5mm] items-center gap-[1mm] bg-[#B08D3C]/12 px-[2.5mm]">
-                    <span className="flex-1 text-[5.5pt] font-bold tracking-[0.12em] text-[#6B5A2E] uppercase">
+                <div className="flex h-[5mm] items-center gap-[1mm] bg-print-gold/12 px-[2.5mm]">
+                    <span className="flex-1 text-[5.5pt] font-bold tracking-[0.12em] text-print-heading uppercase">
                         {t('Total · :count subjects', {
                             count: card.subjects.length,
                         })}
                     </span>
-                    <span className="w-[7mm] text-right font-mono text-[6.5pt] font-bold text-[#0E2E24]">
+                    <span className="w-[7mm] text-right font-mono text-[6.5pt] font-bold text-print-ink">
                         {card.total_coefficient}
                     </span>
                     {card.columns.map((column) => (
                         <span key={column.id} className="w-[9.5mm]" />
                     ))}
                     {card.columns.length > 1 && <span className="w-[10.5mm]" />}
-                    <span className="w-[10.5mm] text-right font-mono text-[7pt] font-bold text-[#0E2E24]">
+                    <span className="w-[10.5mm] text-right font-mono text-[7pt] font-bold text-print-ink">
                         {score(card.total_points)}
                     </span>
                     <span className="w-[8mm]" />
@@ -797,11 +797,11 @@ export function ReportCard({
             <section className="relative flex items-stretch gap-[3mm]">
                 <div className="flex min-w-0 flex-1 flex-col gap-[2mm]">
                     <div className={`flex ${boxClass}`}>
-                        <span className="flex flex-1 flex-col gap-[0.3mm] border-r border-solid border-[#E6DFC9] px-[3mm] py-[1.8mm]">
+                        <span className="flex flex-1 flex-col gap-[0.3mm] border-r border-solid border-print-divider px-[3mm] py-[1.8mm]">
                             <span className={labelClass}>{t('Average')}</span>
                             <span className="flex items-baseline gap-[0.6mm] whitespace-nowrap">
                                 <span
-                                    className={`font-serif text-[16pt] leading-[18pt] font-semibold ${card.average !== null && card.average < PASS ? 'text-[#9A6516]' : 'text-[#0E4D3A]'}`}
+                                    className={`font-serif text-[16pt] leading-[18pt] font-semibold ${card.average !== null && card.average < PASS ? 'text-print-amber' : 'text-primary'}`}
                                 >
                                     {score(card.average)}
                                 </span>
@@ -810,10 +810,10 @@ export function ReportCard({
                                 </span>
                             </span>
                         </span>
-                        <span className="flex w-[22mm] shrink-0 flex-col gap-[0.3mm] border-r border-solid border-[#E6DFC9] px-[3mm] py-[1.8mm]">
+                        <span className="flex w-[22mm] shrink-0 flex-col gap-[0.3mm] border-r border-solid border-print-divider px-[3mm] py-[1.8mm]">
                             <span className={labelClass}>{t('Position')}</span>
                             <span className="flex items-baseline gap-[0.6mm] whitespace-nowrap">
-                                <span className="font-serif text-[16pt] leading-[18pt] font-semibold text-[#0E2E24]">
+                                <span className="font-serif text-[16pt] leading-[18pt] font-semibold text-print-ink">
                                     {card.position !== null
                                         ? ordinal(card.position)
                                         : '—'}
@@ -888,7 +888,7 @@ export function ReportCard({
                         className={`flex flex-1 flex-col gap-[11mm] px-[3mm] py-[2mm] ${boxClass}`}
                     >
                         <span className={labelClass}>{signer.role}</span>
-                        <span className="flex items-end justify-between border-t border-solid border-[#D8CFB4] pt-[1mm] text-[6pt] text-text-muted">
+                        <span className="flex items-end justify-between border-t border-solid border-print-border pt-[1mm] text-[6pt] text-text-muted">
                             <span>{signer.name ?? ''}</span>
                             <span>{t('Signature')}</span>
                         </span>
@@ -896,7 +896,7 @@ export function ReportCard({
                 ))}
             </section>
 
-            <footer className="relative mt-auto flex flex-col gap-[1.2mm] border-t border-solid border-[#B08D3C]/70 pt-[1.6mm]">
+            <footer className="relative mt-auto flex flex-col gap-[1.2mm] border-t border-solid border-print-gold/70 pt-[1.6mm]">
                 <span className="flex items-center justify-between text-[5.5pt] text-text-muted">
                     <span>
                         {t('Nº :serial · printed from Campus', {
@@ -905,7 +905,7 @@ export function ReportCard({
                     </span>
                     <span>A5</span>
                 </span>
-                <span className="block h-[1.6mm] overflow-hidden text-[3.2pt] leading-[1.6mm] font-semibold tracking-[0.12em] whitespace-nowrap text-[#B08D3C]/80">
+                <span className="block h-[1.6mm] overflow-hidden text-[3.2pt] leading-[1.6mm] font-semibold tracking-[0.12em] whitespace-nowrap text-print-gold/80">
                     {microtext}
                 </span>
             </footer>
@@ -931,7 +931,7 @@ export function ReportCardPreview({
 
     return (
         <div
-            className="overflow-hidden rounded-md shadow-[0_8px_24px_rgba(16,25,21,0.12)]"
+            className="overflow-hidden rounded-md shadow-[0_8px_24px_color-mix(in_srgb,var(--color-text)_12%,transparent)]"
             style={{ width, height: 793.7 * scale }}
         >
             <div

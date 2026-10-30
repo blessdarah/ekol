@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
@@ -296,7 +297,7 @@ function Fees({
                                     onClick={() => setExporting(true)}
                                     className={bulkButtonClass}
                                 >
-                                    <DownloadIcon colour="#FFFFFF" />
+                                    <DownloadIcon colour="var(--color-bg)" />
                                     {t('Export :count', {
                                         count: count(
                                             selection.allMatching
@@ -398,7 +399,7 @@ function Fees({
                                         onClick={() =>
                                             router.visit(student.url(row.id))
                                         }
-                                        className={`flex h-[52px] shrink-0 cursor-pointer items-center gap-4 border-b border-solid border-border px-4 last:border-b-0 hover:bg-surface ${selection.has(row.id) ? 'bg-primary-tint/60' : position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                        className={`flex h-[52px] shrink-0 cursor-pointer items-center gap-4 border-b border-solid border-border px-4 last:border-b-0 ${tableRowClass({ index: position, selected: selection.has(row.id), interactive: true })}`}
                                     >
                                         <span className="flex w-4 shrink-0">
                                             <Checkbox

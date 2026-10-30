@@ -5,7 +5,7 @@ import { index as mobileMoney } from '@/actions/App/Http/Controllers/MobilePayme
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 import { numberLocale, t } from '../../lib/i18n';
 
-export const amberText = 'text-[#8A5A12]';
+export const amberText = 'text-warning-text';
 
 export function figure(amount: number): string {
     return new Intl.NumberFormat(numberLocale(), {

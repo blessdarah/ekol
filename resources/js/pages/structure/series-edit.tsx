@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import {
@@ -308,7 +309,7 @@ function SeriesEdit({
                                                             )
                                                         }
                                                     >
-                                                        <RemoveIcon tone="#0E4D3A" />
+                                                        <RemoveIcon tone="var(--color-primary)" />
                                                     </button>
                                                 )}
                                             </span>
@@ -407,7 +408,7 @@ function SeriesEdit({
                                         >
                                             <LockIcon
                                                 size={11}
-                                                tone="#101915"
+                                                tone="var(--color-text)"
                                             />
                                             {subject.name}
                                             <button
@@ -427,7 +428,7 @@ function SeriesEdit({
                                                     )
                                                 }
                                             >
-                                                <RemoveIcon tone="#56625C" />
+                                                <RemoveIcon tone="var(--color-text-muted)" />
                                             </button>
                                         </span>
                                     ))}
@@ -470,7 +471,7 @@ function SeriesEdit({
                                         return (
                                             <label
                                                 key={subject.id}
-                                                className={`flex h-[34px] shrink-0 cursor-pointer items-center gap-3 border-t border-solid border-border px-3 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                                className={`flex h-[34px] shrink-0 cursor-pointer items-center gap-3 border-t border-solid border-border px-3 ${tableRowClass({ index: position })}`}
                                             >
                                                 <input
                                                     type="checkbox"
@@ -503,7 +504,7 @@ function SeriesEdit({
                                                       0 ? (
                                                         <>
                                                             <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
-                                                            <span className="text-[#8A5A12]">
+                                                            <span className="text-warning-text">
                                                                 {t(
                                                                     'No teacher assigned',
                                                                 )}

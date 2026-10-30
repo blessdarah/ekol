@@ -244,7 +244,7 @@ function OpenSchemes({
                                     </dd>
                                 </div>
                                 <div
-                                    className={`flex justify-between py-2 ${creates.without_teacher.length > 0 ? 'text-[#8A5A12]' : ''}`}
+                                    className={`flex justify-between py-2 ${creates.without_teacher.length > 0 ? 'text-warning-text' : ''}`}
                                 >
                                     <dt>{t('No teacher yet')}</dt>
                                     <dd className="font-mono">
@@ -252,7 +252,7 @@ function OpenSchemes({
                                     </dd>
                                 </div>
                                 <div
-                                    className={`flex justify-between py-2 ${creates.empty_syllabus.length > 0 ? 'text-[#8A5A12]' : ''}`}
+                                    className={`flex justify-between py-2 ${creates.empty_syllabus.length > 0 ? 'text-warning-text' : ''}`}
                                 >
                                     <dt>{t('Syllabus still empty')}</dt>
                                     <dd className="font-mono">
@@ -265,7 +265,7 @@ function OpenSchemes({
                             </dl>
                             {fixes && (
                                 <div className="flex flex-col gap-2 rounded-lg bg-warning-tint px-4 py-3 text-[13px] leading-[19px] text-text">
-                                    <p className="font-semibold text-[#8A5A12]">
+                                    <p className="font-semibold text-warning-text">
                                         {t('Worth fixing first')}
                                     </p>
                                     {creates.without_teacher.length > 0 && (

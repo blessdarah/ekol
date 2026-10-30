@@ -1,3 +1,4 @@
+import SharedPageHeader from '../shell/page-header';
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import {
@@ -12,7 +13,7 @@ import {
     reports,
     term,
 } from '@/actions/App/Http/Controllers/TermResultController';
-import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { type Crumb } from '../shell/breadcrumbs';
 import { ordinalOf, t } from '../../lib/i18n';
 
 export interface AssessmentTabs {
@@ -54,7 +55,7 @@ export type TabKey =
     | 'corrections'
     | 'grading';
 
-export const amberText = 'text-[#8A5A12]';
+export const amberText = 'text-warning-text';
 
 export const linkClass =
     'text-[13px] leading-4 font-medium text-primary hover:underline';
@@ -218,32 +219,13 @@ export function AssessmentHeader({
 
     return (
         <>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-                <div className="flex min-w-0 flex-col gap-[6px]">
-                    <Breadcrumbs
-                        trail={
-                            trail.length > 0
-                                ? [
-                                      {
-                                          label: t('Sequences & Exams'),
-                                          href: index.url(),
-                                      },
-                                      ...trail,
-                                  ]
-                                : [{ label: t('Sequences & Exams') }]
-                        }
-                    />
-                    <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                        {title}
-                    </h1>
-                    {meta && (
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-4 text-text-muted">
-                            {meta}
-                        </div>
-                    )}
-                </div>
-                {action && <div className="flex flex-wrap gap-2">{action}</div>}
-            </div>
+            <SharedPageHeader
+                root={{ label: t('Sequences & Exams'), href: index.url() }}
+                trail={trail}
+                title={title}
+                meta={meta}
+                action={action}
+            />
             <nav
                 aria-label={t('Sequences and exams')}
                 className="flex flex-wrap gap-x-[26px] border-b border-solid border-border"

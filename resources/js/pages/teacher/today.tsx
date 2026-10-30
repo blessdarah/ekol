@@ -224,7 +224,7 @@ function Today({
                             </Link>
                             <Link
                                 href="/teaching-log"
-                                className="flex h-9 items-center rounded-md border border-solid border-[#C9DED4] bg-white px-4 text-[14px] leading-[18px] font-medium text-text hover:bg-surface"
+                                className="flex h-9 items-center rounded-md border border-solid border-primary-divider bg-white px-4 text-[14px] leading-[18px] font-medium text-text hover:bg-surface"
                             >
                                 {t('Start lesson')}
                             </Link>
@@ -290,7 +290,7 @@ function Today({
                             return (
                                 <div
                                     key={sheet.id}
-                                    className={`flex flex-wrap items-center gap-4 px-4 py-3 ${position > 0 ? 'border-t border-solid border-border' : ''} ${resume ? 'bg-[#EDF4F0]' : ''}`}
+                                    className={`flex flex-wrap items-center gap-4 px-4 py-3 ${position > 0 ? 'border-t border-solid border-border' : ''} ${resume ? 'bg-primary-faint' : ''}`}
                                 >
                                     <div className="flex w-[240px] shrink-0 flex-col gap-[2px]">
                                         <p className="font-display text-[14px] leading-[18px] font-semibold text-text">
@@ -312,7 +312,7 @@ function Today({
                                                     className={`flex h-[6px] rounded-full ${resume ? 'bg-white' : 'bg-surface'}`}
                                                 >
                                                     <span
-                                                        className={`h-[6px] rounded-full ${sheet.entered > 0 ? 'bg-primary' : 'bg-[#C3CCC8]'}`}
+                                                        className={`h-[6px] rounded-full ${sheet.entered > 0 ? 'bg-primary' : 'bg-neutral-outline'}`}
                                                         style={{
                                                             width: `${Math.max(2, share)}%`,
                                                         }}
@@ -400,7 +400,7 @@ function Today({
                                 : lesson.state === 'done'
                                   ? {
                                         label: t('Not marked'),
-                                        pill: 'bg-warning-tint text-[#8A5A12]',
+                                        pill: 'bg-warning-tint text-warning-text',
                                     }
                                   : LESSON_PILLS[lesson.state];
 
@@ -408,7 +408,7 @@ function Today({
                                 <Link
                                     key={lesson.id}
                                     href={`/attendance?lesson=${lesson.id}`}
-                                    className={`flex items-center gap-3 px-4 py-[11px] hover:bg-surface ${focus ? 'bg-[#EDF4F0]' : position > 0 ? 'border-t border-solid border-border' : ''}`}
+                                    className={`flex items-center gap-3 px-4 py-[11px] hover:bg-surface ${focus ? 'bg-primary-faint' : position > 0 ? 'border-t border-solid border-border' : ''}`}
                                 >
                                     <span
                                         className={`w-11 shrink-0 font-mono text-[13px] leading-4 ${focus ? 'text-primary' : 'text-text-muted'}`}
@@ -472,17 +472,22 @@ function Today({
                         cy="7"
                         r="5.5"
                         fill="none"
-                        stroke="#56625C"
+                        stroke="var(--color-text-muted)"
                         strokeWidth="1.5"
                     />
                     <path
                         d="M7 4.5V7.5"
                         fill="none"
-                        stroke="#56625C"
+                        stroke="var(--color-text-muted)"
                         strokeWidth="1.5"
                         strokeLinecap="round"
                     />
-                    <circle cx="7" cy="9.6" r="0.8" fill="#56625C" />
+                    <circle
+                        cx="7"
+                        cy="9.6"
+                        r="0.8"
+                        fill="var(--color-text-muted)"
+                    />
                 </svg>
                 {t(
                     'A sheet you save is a draft until you submit it. After the marks window closes, nobody can change a mark without the school reopening it.',

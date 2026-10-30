@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
 import {
     checks,
@@ -31,7 +32,7 @@ function List({ items, dot }: { items: Item[]; dot: string }) {
             {items.map((item, position) => (
                 <li
                     key={`${item.title}-${position}`}
-                    className={`flex min-h-[46px] items-center gap-3 border-b border-solid border-border px-4 py-[10px] last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                    className={`flex min-h-[46px] items-center gap-3 border-b border-solid border-border px-4 py-[10px] last:border-b-0 ${tableRowClass({ index: position })}`}
                 >
                     <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} />
                     <span className="flex min-w-0 flex-1 flex-col">

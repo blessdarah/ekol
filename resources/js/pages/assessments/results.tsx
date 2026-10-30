@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
     progress,
@@ -212,7 +213,7 @@ function Results({
                                 {rows.map((row, position) => (
                                     <div
                                         key={row.id}
-                                        className={`flex min-h-10 items-center gap-4 border-b border-solid border-border px-[14px] py-[6px] last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                        className={`flex min-h-10 items-center gap-4 border-b border-solid border-border px-[14px] py-[6px] last:border-b-0 ${tableRowClass({ index: position })}`}
                                     >
                                         <span className="w-10 shrink-0 font-mono text-[13px] leading-4 text-text">
                                             {row.rank ?? '—'}

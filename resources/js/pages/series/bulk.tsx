@@ -345,7 +345,7 @@ function RegisterMany({
                                                 {!staffed.includes(
                                                     subject.id,
                                                 ) && (
-                                                    <span className="text-[12px] leading-4 text-[#8A5A12]">
+                                                    <span className="text-[12px] leading-4 text-warning-text">
                                                         {t('no teacher')}
                                                     </span>
                                                 )}
@@ -354,7 +354,7 @@ function RegisterMany({
                                     ))}
                                 </ul>
                                 {problem && (
-                                    <span className="text-[12px] leading-4 text-[#8A5A12]">
+                                    <span className="text-[12px] leading-4 text-warning-text">
                                         {problem}
                                     </span>
                                 )}

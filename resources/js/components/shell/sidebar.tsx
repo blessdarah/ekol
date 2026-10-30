@@ -119,7 +119,7 @@ function AccountMenu({
             {open && (
                 <div
                     role="menu"
-                    className="absolute top-[calc(100%-6px)] right-3 left-3 z-50 flex flex-col overflow-hidden rounded-xl border border-solid border-border bg-white shadow-[0_12px_32px_rgba(16,25,21,0.14)] lg:right-auto lg:w-[300px]"
+                    className="absolute top-[calc(100%-6px)] right-3 left-3 z-50 flex flex-col overflow-hidden rounded-xl border border-solid border-border bg-white shadow-[0_12px_32px_color-mix(in_srgb,var(--color-text)_14%,transparent)] lg:right-auto lg:w-[300px]"
                 >
                     <div className="flex items-center gap-3 p-4">
                         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-tint text-[14px] font-semibold text-primary">
@@ -222,7 +222,7 @@ function AccountMenu({
                                             <path
                                                 d="M5 12.5l4.5 4.5L19 7.5"
                                                 fill="none"
-                                                stroke="#0E4D3A"
+                                                stroke="var(--color-primary)"
                                                 strokeWidth="3"
                                                 strokeLinecap="round"
                                                 strokeLinejoin="round"

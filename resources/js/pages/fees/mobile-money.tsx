@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
 import { receipt, student } from '@/actions/App/Http/Controllers/FeeController';
 import {
@@ -208,7 +209,7 @@ function MobileMoney({
                             return (
                                 <div
                                     key={row.id}
-                                    className={`flex min-h-[52px] shrink-0 items-center gap-4 border-b border-solid border-border px-4 py-2 last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                    className={`flex min-h-[52px] shrink-0 items-center gap-4 border-b border-solid border-border px-4 py-2 last:border-b-0 ${tableRowClass({ index: position })}`}
                                 >
                                     <span className="w-[110px] shrink-0 text-[13px] leading-4 text-text-muted">
                                         {when(row.requested_at)}

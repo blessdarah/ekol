@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
 import { index } from '@/actions/App/Http/Controllers/StudentController';
@@ -86,7 +87,7 @@ function Progress({ step }: { step: number }) {
                                     <path
                                         d="M2.6 6.2 4.9 8.5 9.4 3.9"
                                         fill="none"
-                                        stroke="#0E4D3A"
+                                        stroke="var(--color-primary)"
                                         strokeWidth="1.8"
                                         strokeLinecap="round"
                                         strokeLinejoin="round"
@@ -126,7 +127,7 @@ function FileBar({ file, note }: { file: FileInfo; note: string }) {
                 <path
                     d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5"
                     fill="none"
-                    stroke="#101915"
+                    stroke="var(--color-text)"
                     strokeWidth="1.8"
                     strokeLinejoin="round"
                 />
@@ -417,7 +418,7 @@ function CheckStep({
         ['Rows', report.rows, 'text-text'],
         ['Ready', report.ready, 'text-success'],
         [t('Need fixing'), report.fix, 'text-danger'],
-        [t('Possible duplicates'), report.duplicates, 'text-[#8A5A12]'],
+        [t('Possible duplicates'), report.duplicates, 'text-warning-text'],
     ];
 
     return (
@@ -458,7 +459,7 @@ function CheckStep({
                         {shown.map((problem, position) => (
                             <div
                                 key={problem.row}
-                                className={`flex min-h-[42px] items-center gap-3 border-t border-solid border-border px-3 py-2 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                className={`flex min-h-[42px] items-center gap-3 border-t border-solid border-border px-3 py-2 ${tableRowClass({ index: position })}`}
                             >
                                 <span className="w-11 shrink-0 font-mono text-[13px] leading-4 text-text-muted">
                                     {problem.row}

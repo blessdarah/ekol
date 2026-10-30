@@ -67,7 +67,7 @@ function ReportPrint({
                 {cards.map((card) => (
                     <div
                         key={card.id}
-                        className="shadow-[0_8px_24px_rgba(16,25,21,0.12)] print:shadow-none"
+                        className="shadow-[0_8px_24px_color-mix(in_srgb,var(--color-text)_12%,transparent)] print:shadow-none"
                     >
                         <ReportCard
                             card={card}

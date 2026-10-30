@@ -60,14 +60,14 @@ function Check({ done }: { done: boolean }) {
                 cy="12"
                 r="9"
                 fill="none"
-                stroke={done ? '#1E7F4F' : '#DDE3E0'}
+                stroke={done ? 'var(--color-success)' : 'var(--color-border)'}
                 strokeWidth="2"
             />
             {done && (
                 <path
                     d="M8 12.5l2.8 2.8L16 9.5"
                     fill="none"
-                    stroke="#1E7F4F"
+                    stroke="var(--color-success)"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"

@@ -64,7 +64,7 @@ const MARKS: { key: Status; letter: string; on: string; avatar: string }[] = [
         key: 'late',
         letter: 'L',
         on: 'border-warning bg-warning text-white',
-        avatar: 'bg-warning-tint text-[#8A5A12]',
+        avatar: 'bg-warning-tint text-warning-text',
     },
 ];
 
@@ -293,9 +293,9 @@ function Register({
                         onClick={() => setFocus(position)}
                         className={`flex min-h-[50px] items-center gap-3 rounded-lg border border-solid px-4 py-[6px] ${
                             entry.status === 'absent'
-                                ? 'border-[#F1D5D1] bg-[#FDF6F5]'
+                                ? 'border-danger-border bg-danger-faint'
                                 : entry.status === 'late'
-                                  ? 'border-[#EFDDBB] bg-[#FDFAF3]'
+                                  ? 'border-warning-outline bg-warning-faint'
                                   : 'border-border bg-white'
                         } ${position === focus && !locked ? 'outline outline-2 outline-offset-1 outline-primary' : ''}`}
                     >
@@ -648,13 +648,13 @@ function Attendance({
                                       ? {
                                             label: t('Marking'),
                                             dot: 'bg-warning',
-                                            text: 'text-[#8A5A12]',
+                                            text: 'text-warning-text',
                                         }
                                       : option.started
                                         ? {
                                               label: t('Not marked'),
                                               dot: 'bg-warning',
-                                              text: 'text-[#8A5A12]',
+                                              text: 'text-warning-text',
                                           }
                                         : {
                                               label: t('Not started'),
@@ -674,7 +674,7 @@ function Attendance({
                                         }
                                         className={`flex flex-col gap-[6px] rounded-lg border-solid p-3 ${
                                             active
-                                                ? 'border-2 border-primary bg-[#F3F7F5]'
+                                                ? 'border-2 border-primary bg-surface-raised'
                                                 : 'border border-border bg-white hover:bg-surface'
                                         }`}
                                     >

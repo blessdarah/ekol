@@ -1,6 +1,7 @@
+import SharedPageHeader from '../shell/page-header';
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
+import { type Crumb } from '../shell/breadcrumbs';
 import { index as seriesIndex } from '@/actions/App/Http/Controllers/SeriesController';
 import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
 import { index as schemesIndex } from '@/actions/App/Http/Controllers/SchemeController';
@@ -43,7 +44,7 @@ export function segmentClass(selected: boolean): string {
 
 export function LockIcon({
     size = 12,
-    tone = '#56625C',
+    tone = 'var(--color-text-muted)',
 }: {
     size?: number;
     tone?: string;
@@ -81,7 +82,7 @@ export function PlusIcon() {
             <path
                 d="M12 5v14M5 12h14"
                 fill="none"
-                stroke="#FFFFFF"
+                stroke="var(--color-bg)"
                 strokeWidth="2.5"
                 strokeLinecap="round"
             />
@@ -132,27 +133,14 @@ export function StructureHeader({
     action?: ReactNode;
 }) {
     return (
-        <div className="flex flex-wrap items-end justify-between gap-4">
-            <div className="flex flex-col gap-[6px]">
-                <Breadcrumbs
-                    trail={[
-                        {
-                            label: t('Classes & Subjects'),
-                            href: levelsIndex.url(),
-                        },
-                        ...trail,
-                    ]}
-                />
-                <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
-                    {title}
-                </h1>
-                <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-4 text-text-muted">
-                    <span className="font-mono uppercase">{tag}</span>
-                    {meta && <span>· {meta}</span>}
-                </p>
-            </div>
-            {action}
-        </div>
+        <SharedPageHeader
+            root={{ label: t('Classes & Subjects'), href: levelsIndex.url() }}
+            trail={trail}
+            title={title}
+            tag={tag}
+            meta={meta}
+            action={action}
+        />
     );
 }
 

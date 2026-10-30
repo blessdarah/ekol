@@ -1,3 +1,4 @@
+import { tableRowClass } from '../../components/table/ui';
 import { Head, Link } from '@inertiajs/react';
 import {
     edit as editSeries,
@@ -148,7 +149,7 @@ function Overview({
                                         />
                                     </span>
                                     <span
-                                        className={`text-[12px] leading-4 ${missing > 0 ? 'text-[#8A5A12]' : option.total > 0 ? 'text-success' : 'text-text-muted'}`}
+                                        className={`text-[12px] leading-4 ${missing > 0 ? 'text-warning-text' : option.total > 0 ? 'text-success' : 'text-text-muted'}`}
                                     >
                                         {option.total === 0
                                             ? t('No students yet')
@@ -212,7 +213,7 @@ function Overview({
                                                         (item, position) => (
                                                             <li
                                                                 key={item.id}
-                                                                className={`flex h-[42px] shrink-0 items-center gap-[10px] border-b border-solid border-border px-[14px] last:border-b-0 ${position % 2 === 1 ? 'bg-row-alt' : ''}`}
+                                                                className={`flex h-[42px] shrink-0 items-center gap-[10px] border-b border-solid border-border px-[14px] last:border-b-0 ${tableRowClass({ index: position })}`}
                                                             >
                                                                 <StreamChip
                                                                     stream={
@@ -230,7 +231,7 @@ function Overview({
                                                                         )}
                                                                     </span>
                                                                 ) : (
-                                                                    <span className="flex flex-1 items-center gap-[6px] text-[13px] leading-4 text-[#8A5A12]">
+                                                                    <span className="flex flex-1 items-center gap-[6px] text-[13px] leading-4 text-warning-text">
                                                                         <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                                                                         {t(
                                                                             'Needs setup',
@@ -337,7 +338,7 @@ function Overview({
                                     key={subject.id}
                                     className="flex flex-col gap-2 rounded-lg border border-solid border-warning bg-warning-tint p-4"
                                 >
-                                    <p className="text-[14px] leading-[18px] font-semibold text-[#8A5A12]">
+                                    <p className="text-[14px] leading-[18px] font-semibold text-warning-text">
                                         {t(':subject has no teacher', {
                                             subject: subject.name,
                                         })}

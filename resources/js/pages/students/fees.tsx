@@ -182,7 +182,7 @@ function ExemptionCard({
                             }
                             className={`flex h-[30px] flex-1 items-center justify-center rounded-[6px] text-[13px] leading-4 ${
                                 form.data.kind === option.key
-                                    ? 'bg-white font-semibold text-text shadow-[0_1px_2px_#10191514]'
+                                    ? 'bg-white font-semibold text-text shadow-[0_1px_2px_color-mix(in_srgb,var(--color-text)_7.84%,transparent)]'
                                     : 'font-medium text-text-muted hover:text-text'
                             }`}
                         >
