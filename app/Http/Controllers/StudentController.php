@@ -26,7 +26,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -37,68 +36,11 @@ class StudentController extends Controller
 {
     use ListsTables;
 
-    /**
-     * The bound school, for a signed-in user allowed to manage students.
-     */
-    public static function schoolFor(Request $request): School
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        Gate::authorize('manage-students');
-
-        return $school;
-    }
-
-    public static function currentTerm(School $school): ?Term
-    {
-        return Term::where('school_id', $school->id)->where('is_current', true)->first();
-    }
-
-    /**
-     * The students either side of this one, in the order the roster
-     * lists them: by class, then by name. Stepping past the last
-     * student of a class moves on to the next class.
-     *
-     * @return array{previous: array{id: string, name: string, class: string|null}|null, next: array{id: string, name: string, class: string|null}|null, position: int, total: int}
-     */
-    public static function neighbours(School $school, Student $student): array
-    {
-        $list = static::rosterQuery($school, StructureController::currentYear($school))
-            ->orderByRaw('school_classes.name IS NULL')
-            ->orderBy('school_classes.name')
-            ->orderBy('students.full_name')
-            ->orderBy('students.id')
-            ->get(['students.id', 'students.full_name', 'school_classes.name as class_name'])
-            ->values();
-        $at = $list->search(fn (Student $other) => $other->id === $student->id);
-        $at = $at === false ? 0 : (int) $at;
-        $step = function (?Student $other): ?array {
-            if (! $other) {
-                return null;
-            }
-
-            $class = $other->getAttribute('class_name');
-
-            return ['id' => $other->id, 'name' => $other->full_name, 'class' => is_string($class) ? $class : null];
-        };
-
-        return [
-            'previous' => $step($list->get($at - 1)),
-            'next' => $step($list->get($at + 1)),
-            'position' => $at + 1,
-            'total' => $list->count(),
-        ];
-    }
-
     public function index(Request $request): Response
     {
-        $school = static::schoolFor($request);
-        $year = StructureController::currentYear($school);
-        $term = static::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $seriesLevels = Level::where('school_id', $school->id)->where('uses_series', true)->pluck('id');
         [$query, $filters] = $this->roster($request, $school, $year, $term, $seriesLevels->all());
 
@@ -112,7 +54,7 @@ class StudentController extends Controller
             ->withQueryString();
 
         $classes = $this->classes($school, $year);
-        $base = fn () => static::rosterQuery($school, $year);
+        $base = fn () => Student::rosterQuery($school, $year);
 
         return Inertia::render('students/roster', [
             'yearLabel' => $year?->label,
@@ -149,9 +91,9 @@ class StudentController extends Controller
      */
     public function export(Request $request): StreamedResponse|Response
     {
-        $school = static::schoolFor($request);
-        $year = StructureController::currentYear($school);
-        $term = static::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $seriesLevels = Level::where('school_id', $school->id)->where('uses_series', true)->pluck('id')->all();
         [$query, , $applied] = $this->roster($request, $school, $year, $term, $seriesLevels);
         $ids = $this->exportIds($request);
@@ -216,7 +158,7 @@ class StudentController extends Controller
         $to = $this->day($request->query('to'));
         [$sort, $direction] = $this->sorting($request, ['class', 'name', 'matricule', 'admitted'], 'class');
 
-        $query = static::rosterQuery($school, $year)
+        $query = Student::rosterQuery($school, $year)
             ->select('students.*', 'school_classes.name as class_name', 'school_classes.level_id as class_level_id')
             ->when($fees !== [], fn (Builder $query) => $query->where(fn (Builder $inner) => $this->feeState($inner, $fees)))
             ->when($series !== [], fn (Builder $query) => $query->where(function (Builder $inner) use ($series, $seriesLevels, $term) {
@@ -307,22 +249,22 @@ class StudentController extends Controller
 
     public function create(Request $request): Response
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
 
         return $this->form($request, $school, null);
     }
 
     public function edit(Request $request, string $student): Response
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
 
         return $this->form($request, $school, $this->student($school, $student));
     }
 
     public function store(SaveStudentRequest $request): RedirectResponse
     {
-        $school = static::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
 
         if (! $year) {
             throw ValidationException::withMessages([
@@ -338,7 +280,7 @@ class StudentController extends Controller
             $student = Student::admit(
                 $school,
                 $year,
-                static::currentTerm($school),
+                $this->schoolContext->term(),
                 $class,
                 $this->profile($request, $data),
                 $this->guardians($data),
@@ -363,8 +305,8 @@ class StudentController extends Controller
 
     public function update(SaveStudentRequest $request, string $student): RedirectResponse
     {
-        $school = static::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $target = $this->student($school, $student);
         $data = $this->validated($request, $school, $target);
 
@@ -379,7 +321,7 @@ class StudentController extends Controller
                 );
             }
 
-            if ($term = static::currentTerm($school)) {
+            if ($term = $this->schoolContext->term()) {
                 if ($data['series_id']) {
                     StudentSeries::updateOrCreate(
                         ['student_id' => $target->id, 'term_id' => $term->id],
@@ -401,9 +343,9 @@ class StudentController extends Controller
 
     public function show(Request $request, string $student): Response
     {
-        $school = static::schoolFor($request);
-        $year = StructureController::currentYear($school);
-        $term = static::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $target = $this->student($school, $student)->load(['guardians', 'invoices.payments', 'invoices.exemption']);
         $private = (bool) $request->user()?->can('see-private-student-details');
 
@@ -420,7 +362,7 @@ class StudentController extends Controller
         $fees = $this->fees($target->invoices);
 
         return Inertia::render('students/record', [
-            'neighbours' => static::neighbours($school, $target),
+            'neighbours' => Student::neighbours($school, $target, $this->schoolContext->year()),
             'yearLabel' => $year?->label,
             'currency' => $school->currency,
             'canSeePrivate' => $private,
@@ -474,7 +416,7 @@ class StudentController extends Controller
      */
     public function siblingCheck(Request $request): JsonResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $digits = preg_replace('/\D+/', '', (string) $request->query('phone', '')) ?? '';
 
         if (strlen($digits) < 9) {
@@ -497,22 +439,6 @@ class StudentController extends Controller
                 'relation' => $guardian->relation,
             ] : null,
         ]);
-    }
-
-    /**
-     * Students joined to their class for the year, so the roster can
-     * sort and filter by it.
-     *
-     * @return Builder<Student>
-     */
-    protected static function rosterQuery(School $school, ?AcademicYear $year): Builder
-    {
-        return Student::query()
-            ->where('students.school_id', $school->id)
-            ->leftJoin('enrolments', fn ($join) => $join
-                ->on('enrolments.student_id', '=', 'students.id')
-                ->where('enrolments.academic_year_id', '=', $year?->id))
-            ->leftJoin('school_classes', 'school_classes.id', '=', 'enrolments.school_class_id');
     }
 
     /**
@@ -548,8 +474,8 @@ class StudentController extends Controller
 
     protected function form(Request $request, School $school, ?Student $student): Response
     {
-        $year = StructureController::currentYear($school);
-        $term = static::currentTerm($school);
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $private = (bool) $request->user()?->can('see-private-student-details');
         $classes = $this->classes($school, $year);
         $counts = Enrolment::whereIn('school_class_id', $classes->modelKeys())

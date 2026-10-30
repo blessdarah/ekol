@@ -28,9 +28,9 @@ class StudentAcademicsController extends Controller
 
     public function show(Request $request, string $student): Response
     {
-        $school = StudentController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = Student::where('school_id', $school->id)->where('id', $student)->firstOrFail();
-        $year = StructureController::currentYear($school);
+        $year = $this->schoolContext->year();
         $terms = $year ? Term::where('academic_year_id', $year->id)->orderBy('sequence')->get() : new Collection;
         $term = $terms->firstWhere('id', (string) $request->query('term', '')) ?? $terms->firstWhere('is_current', true) ?? $terms->first();
         $enrolment = $year
@@ -38,7 +38,7 @@ class StudentAcademicsController extends Controller
             : null;
         $class = $enrolment?->schoolClass;
         $plans = $term && $class
-            ? AssessmentController::plans($school, $year)
+            ? AssessmentPlan::forYear($school, $year)
                 ->filter(fn (AssessmentPlan $plan) => $plan->term_id === $term->id && $plan->state !== AssessmentState::Draft)
                 ->values()
             : new Collection;
@@ -88,11 +88,11 @@ class StudentAcademicsController extends Controller
 
         $shown = $focus !== null ? $columns[$focus] : null;
         $band = GradeBand::forScore($school->id, $shown['average'] ?? null);
-        $termRows = $class ? TermResultController::termRows($plans, $class) : [];
+        $termRows = $class ? AssessmentPlan::termRows($plans, $class) : [];
         $allPublished = $plans->isNotEmpty() && $plans->every(fn (AssessmentPlan $plan) => $plan->state === AssessmentState::Published);
 
         return Inertia::render('students/academics', [
-            'neighbours' => StudentController::neighbours($school, $target),
+            'neighbours' => Student::neighbours($school, $target, $this->schoolContext->year()),
             'canOpenReports' => (bool) $request->user()?->can('manage-assessments'),
             'student' => [
                 'id' => $target->id,

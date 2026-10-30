@@ -83,7 +83,8 @@ Route::post('/demo', [LandingController::class, 'storeDemo'])->middleware([SetLo
  * correct because login happens on the school host itself.
  */
 
-Route::post('/locale', [LocaleController::class, 'update'])->middleware([ResolveSchool::class, SetLocale::class])->name('locale.update');
+Route::post('/locale', [LocaleController::class, 'update'])
+    ->middleware([ResolveSchool::class, SetLocale::class])->name('locale.update');
 
 Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
     Route::get('/login', [LoginController::class, 'show'])->name('login');
@@ -142,7 +143,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::patch('/schoolday', [SetupController::class, 'updateSchoolday'])->name('setup.schoolday');
         });
 
-        Route::group(['prefix' => 'staff'], function () {
+        Route::group(['prefix' => 'staff', 'middleware' => 'can:manage-staff'], function () {
             Route::get('/', [StaffController::class, 'index'])->name('staff');
             Route::get('/register', [StaffController::class, 'create'])->name('staff.create');
             Route::get('/export', [StaffController::class, 'export'])->name('staff.export');
@@ -157,50 +158,52 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
         });
 
         Route::group(['prefix' => 'classes'], function () {
-            Route::get('/', [StructureController::class, 'index'])->name('classes');
-            Route::get('/levels/new', [StructureController::class, 'createLevel'])->name('classes.levels.create');
-            Route::post('/levels', [StructureController::class, 'storeLevel'])->name('classes.levels.store');
-            Route::get('/levels/templates', [StructureController::class, 'levelTemplates'])->name('classes.levels.templates');
-            Route::post('/levels/templates', [StructureController::class, 'storeLevelTemplates'])->name('classes.levels.templates.store');
-            Route::patch('/levels/{level}', [StructureController::class, 'updateLevel'])->name('classes.levels.update');
-            Route::post('/levels/{level}/classes', [StructureController::class, 'storeClass'])->name('classes.classes.store');
-            Route::patch('/classes/{class}', [StructureController::class, 'updateClass'])->name('classes.classes.update');
-            Route::delete('/classes/{class}', [StructureController::class, 'destroyClass'])->name('classes.classes.destroy');
-            Route::post('/rooms', [StructureController::class, 'storeRoom'])->name('classes.rooms.store');
-            Route::get('/series', [SeriesController::class, 'index'])->name('classes.series');
-            Route::get('/series/new', [SeriesController::class, 'create'])->name('classes.series.create');
-            Route::post('/series', [SeriesController::class, 'store'])->name('classes.series.store');
-            Route::get('/series/{series}', [SeriesController::class, 'edit'])->name('classes.series.edit');
-            Route::patch('/series/{series}', [SeriesController::class, 'update'])->name('classes.series.update');
+            Route::get('/', [StructureController::class, 'index'])->middleware('can:manage-structure')->name('classes');
+            Route::get('/levels/new', [StructureController::class, 'createLevel'])->middleware('can:manage-structure')->name('classes.levels.create');
+            Route::post('/levels', [StructureController::class, 'storeLevel'])->middleware('can:manage-structure')->name('classes.levels.store');
+            Route::get('/levels/templates', [StructureController::class, 'levelTemplates'])->middleware('can:manage-structure')->name('classes.levels.templates');
+            Route::post('/levels/templates', [StructureController::class, 'storeLevelTemplates'])->middleware('can:manage-structure')->name('classes.levels.templates.store');
+            Route::patch('/levels/{level}', [StructureController::class, 'updateLevel'])->middleware('can:manage-structure')->name('classes.levels.update');
+            Route::post('/levels/{level}/classes', [StructureController::class, 'storeClass'])->middleware('can:manage-structure')->name('classes.classes.store');
+            Route::patch('/classes/{class}', [StructureController::class, 'updateClass'])->middleware('can:manage-structure')->name('classes.classes.update');
+            Route::delete('/classes/{class}', [StructureController::class, 'destroyClass'])->middleware('can:manage-structure')->name('classes.classes.destroy');
+            Route::post('/rooms', [StructureController::class, 'storeRoom'])->middleware('can:manage-structure')->name('classes.rooms.store');
+            Route::get('/series', [SeriesController::class, 'index'])->middleware('can:manage-structure')->name('classes.series');
+            Route::get('/series/new', [SeriesController::class, 'create'])->middleware('can:manage-structure')->name('classes.series.create');
+            Route::post('/series', [SeriesController::class, 'store'])->middleware('can:manage-structure')->name('classes.series.store');
+            Route::get('/series/{series}', [SeriesController::class, 'edit'])->middleware('can:manage-structure')->name('classes.series.edit');
+            Route::patch('/series/{series}', [SeriesController::class, 'update'])->middleware('can:manage-structure')->name('classes.series.update');
             Route::group(['prefix' => 'schemes'], function () {
-                Route::get('/', [SchemeController::class, 'index'])->name('schemes');
-                Route::get('/export', [SchemeController::class, 'export'])->name('schemes.export');
-                Route::get('/syllabus', [SyllabusController::class, 'show'])->name('schemes.syllabus');
-                Route::post('/syllabus/topics', [SyllabusController::class, 'store'])->name('schemes.syllabus.store');
-                Route::patch('/syllabus/topics/{topic}', [SyllabusController::class, 'update'])->name('schemes.syllabus.update');
-                Route::delete('/syllabus/topics/{topic}', [SyllabusController::class, 'destroy'])->name('schemes.syllabus.destroy');
-                Route::patch('/syllabus/topics/{topic}/move', [SyllabusController::class, 'move'])->name('schemes.syllabus.move');
-                Route::get('/open', [SchemeController::class, 'opening'])->name('schemes.open');
-                Route::post('/open', [SchemeController::class, 'open'])->name('schemes.open.store');
-                Route::get('/close', [SchemeController::class, 'closing'])->name('schemes.close');
-                Route::post('/close', [SchemeController::class, 'close'])->name('schemes.close.store');
-                Route::get('/close/report', [SchemeController::class, 'report'])->name('schemes.report');
-                Route::get('/{scheme}', [SchemeController::class, 'show'])->name('schemes.show');
-                Route::post('/{scheme}/review', [SchemeController::class, 'review'])->name('schemes.review');
-                Route::post('/{scheme}/notes', [SchemeController::class, 'note'])->name('schemes.note');
+                Route::get('/', [SchemeController::class, 'index'])->middleware('can:follow-schemes')->name('schemes');
+                Route::get('/export', [SchemeController::class, 'export'])->middleware('can:follow-schemes')->name('schemes.export');
+                Route::get('/syllabus', [SyllabusController::class, 'show'])->middleware('can:manage-schemes')->name('schemes.syllabus');
+                Route::post('/syllabus/topics', [SyllabusController::class, 'store'])->middleware('can:manage-schemes')->name('schemes.syllabus.store');
+                Route::patch('/syllabus/topics/{topic}', [SyllabusController::class, 'update'])->middleware('can:manage-schemes')->name('schemes.syllabus.update');
+                Route::delete('/syllabus/topics/{topic}', [SyllabusController::class, 'destroy'])->middleware('can:manage-schemes')->name('schemes.syllabus.destroy');
+                Route::patch('/syllabus/topics/{topic}/move', [SyllabusController::class, 'move'])->middleware('can:manage-schemes')->name('schemes.syllabus.move');
+                Route::get('/open', [SchemeController::class, 'opening'])->middleware('can:manage-schemes')->name('schemes.open');
+                Route::post('/open', [SchemeController::class, 'open'])->middleware('can:manage-schemes')->name('schemes.open.store');
+                Route::get('/close', [SchemeController::class, 'closing'])->middleware('can:manage-schemes')->name('schemes.close');
+                Route::post('/close', [SchemeController::class, 'close'])->middleware('can:manage-schemes')->name('schemes.close.store');
+                Route::get('/close/report', [SchemeController::class, 'report'])->middleware('can:manage-schemes')->name('schemes.report');
+                Route::get('/{scheme}', [SchemeController::class, 'show'])->middleware('can:follow-schemes')->name('schemes.show');
+                Route::post('/{scheme}/review', [SchemeController::class, 'review'])->middleware('can:follow-schemes')->name('schemes.review');
+                Route::post('/{scheme}/notes', [SchemeController::class, 'note'])->middleware('can:follow-schemes')->name('schemes.note');
             });
-            Route::get('/subjects', [SubjectController::class, 'index'])->name('classes.subjects');
-            Route::get('/subjects/export', [SubjectController::class, 'export'])->name('classes.subjects.export');
-            Route::get('/subjects/new', [SubjectController::class, 'create'])->name('classes.subjects.create');
-            Route::post('/subjects', [SubjectController::class, 'store'])->name('classes.subjects.store');
-            Route::get('/subjects/templates', [SubjectController::class, 'templates'])->name('classes.subjects.templates');
-            Route::post('/subjects/templates', [SubjectController::class, 'storeTemplates'])->name('classes.subjects.templates.store');
-            Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('classes.subjects.show');
-            Route::get('/subjects/{subject}/edit', [SubjectController::class, 'edit'])->name('classes.subjects.edit');
-            Route::patch('/subjects/{subject}', [SubjectController::class, 'update'])->name('classes.subjects.update');
+            Route::get('/subjects', [SubjectController::class, 'index'])->middleware('can:manage-structure')->name('classes.subjects');
+            Route::get('/subjects/export', [SubjectController::class, 'export'])->middleware('can:manage-structure')->name('classes.subjects.export');
+            Route::get('/subjects/new', [SubjectController::class, 'create'])->middleware('can:manage-structure')->name('classes.subjects.create');
+            Route::post('/subjects', [SubjectController::class, 'store'])->middleware('can:manage-structure')->name('classes.subjects.store');
+            Route::get('/subjects/templates', [SubjectController::class, 'templates'])->middleware('can:manage-structure')->name('classes.subjects.templates');
+            Route::post('/subjects/templates', [SubjectController::class, 'storeTemplates'])->middleware('can:manage-structure')->name('classes.subjects.templates.store');
+            Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->middleware('can:manage-structure')->name('classes.subjects.show');
+            Route::get('/subjects/{subject}/edit', [SubjectController::class, 'edit'])->middleware('can:manage-structure')->name('classes.subjects.edit');
+            Route::patch('/subjects/{subject}', [SubjectController::class, 'update'])->middleware('can:manage-structure')->name('classes.subjects.update');
         });
 
-        Route::group(['prefix' => 'students'], function () {
+        Route::get('/students/{student}/fees', [FeeController::class, 'studentTab'])->middleware('can:read-student-fees')->name('students.fees');
+
+        Route::group(['prefix' => 'students', 'middleware' => 'can:manage-students'], function () {
             Route::get('/', [StudentController::class, 'index'])->name('students');
             Route::get('/export', [StudentController::class, 'export'])->name('students.export');
             Route::get('/new', [StudentController::class, 'create'])->name('students.create');
@@ -216,14 +219,13 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::get('/import/template', [StudentImportController::class, 'template'])->name('students.import.template');
             Route::get('/{student}', [StudentController::class, 'show'])->name('students.show');
             Route::get('/{student}/academics', [StudentAcademicsController::class, 'show'])->name('students.academics');
-            Route::get('/{student}/fees', [FeeController::class, 'studentTab'])->name('students.fees');
             Route::get('/{student}/attendance', [StudentAttendanceController::class, 'show'])->name('students.attendance');
             Route::post('/{student}/attendance/{attendance}/excuse', [StudentAttendanceController::class, 'excuse'])->name('students.attendance.excuse');
             Route::get('/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
             Route::patch('/{student}', [StudentController::class, 'update'])->name('students.update');
         });
 
-        Route::group(['prefix' => 'series'], function () {
+        Route::group(['prefix' => 'series', 'middleware' => 'can:manage-students'], function () {
             Route::get('/', [SeriesRegistrationController::class, 'index'])->name('series');
             Route::get('/register', [SeriesRegistrationController::class, 'one'])->name('series.one');
             Route::post('/register', [SeriesRegistrationController::class, 'register'])->name('series.register');
@@ -233,7 +235,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::post('/students/{student}/change', [SeriesRegistrationController::class, 'changeStore'])->name('series.change.store');
         });
 
-        Route::group(['prefix' => 'enrolment'], function () {
+        Route::group(['prefix' => 'enrolment', 'middleware' => 'can:manage-students'], function () {
             Route::get('/', [EnrolmentController::class, 'index'])->name('enrolment');
             Route::post('/classes', [EnrolmentController::class, 'copyClasses'])->name('enrolment.classes.copy');
             Route::post('/levels/{level}/classes', [EnrolmentController::class, 'storeClass'])->name('enrolment.classes.store');
@@ -255,7 +257,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::post('/confirm', [EnrolmentController::class, 'storeConfirmation'])->name('enrolment.confirm.store');
         });
 
-        Route::group(['prefix' => 'timetable'], function () {
+        Route::group(['prefix' => 'timetable', 'middleware' => 'can:manage-structure'], function () {
             Route::get('/', [TimetableController::class, 'index'])->name('timetable');
             Route::get('/setup', [TimetableController::class, 'setup'])->name('timetable.setup');
             Route::get('/rooms', [TimetableRoomController::class, 'index'])->name('timetable.rooms');
@@ -275,7 +277,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::post('/changes', [TimetableChangeController::class, 'store'])->name('timetable.changes.store');
         });
 
-        Route::group(['prefix' => 'fees'], function () {
+        Route::group(['prefix' => 'fees', 'middleware' => 'can:manage-fees'], function () {
             Route::get('/', [FeeController::class, 'index'])->name('fees');
             Route::get('/export', [FeeController::class, 'export'])->name('fees.export');
             Route::get('/structure', [FeeController::class, 'structure'])->name('fees.structure');
@@ -291,32 +293,32 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
         });
 
         Route::group(['prefix' => 'assessments'], function () {
-            Route::get('/', [AssessmentController::class, 'index'])->name('assessments');
-            Route::get('/new', [AssessmentController::class, 'create'])->name('assessments.create');
-            Route::post('', [AssessmentController::class, 'store'])->name('assessments.store');
-            Route::post('/terms/{term}/usual', [AssessmentController::class, 'usual'])->name('assessments.usual');
-            Route::get('/schedule', [ExamScheduleController::class, 'show'])->name('assessments.schedule');
-            Route::post('/schedule/{plan}/papers', [ExamScheduleController::class, 'save'])->name('assessments.schedule.save');
-            Route::delete('/schedule/{plan}/papers/{paper}', [ExamScheduleController::class, 'destroy'])->name('assessments.schedule.destroy');
-            Route::post('/schedule/{plan}/publish', [ExamScheduleController::class, 'publish'])->name('assessments.schedule.publish');
-            Route::get('/progress', [AssessmentController::class, 'progress'])->name('assessments.progress');
-            Route::get('/results', [AssessmentController::class, 'results'])->name('assessments.results');
-            Route::get('/term', [TermResultController::class, 'term'])->name('assessments.term');
-            Route::get('/reports', [TermResultController::class, 'reports'])->name('assessments.reports');
-            Route::get('/reports/print', [TermResultController::class, 'print'])->name('assessments.reports.print');
-            Route::get('/corrections', [CorrectionController::class, 'index'])->name('assessments.corrections');
+            Route::get('/', [AssessmentController::class, 'index'])->middleware('can:open-assessments')->name('assessments');
+            Route::get('/new', [AssessmentController::class, 'create'])->middleware('can:manage-assessments')->name('assessments.create');
+            Route::post('', [AssessmentController::class, 'store'])->middleware('can:manage-assessments')->name('assessments.store');
+            Route::post('/terms/{term}/usual', [AssessmentController::class, 'usual'])->middleware('can:manage-assessments')->name('assessments.usual');
+            Route::get('/schedule', [ExamScheduleController::class, 'show'])->middleware('can:manage-assessments')->name('assessments.schedule');
+            Route::post('/schedule/{plan}/papers', [ExamScheduleController::class, 'save'])->middleware('can:manage-assessments')->name('assessments.schedule.save');
+            Route::delete('/schedule/{plan}/papers/{paper}', [ExamScheduleController::class, 'destroy'])->middleware('can:manage-assessments')->name('assessments.schedule.destroy');
+            Route::post('/schedule/{plan}/publish', [ExamScheduleController::class, 'publish'])->middleware('can:manage-assessments')->name('assessments.schedule.publish');
+            Route::get('/progress', [AssessmentController::class, 'progress'])->middleware('can:manage-assessments')->name('assessments.progress');
+            Route::get('/results', [AssessmentController::class, 'results'])->middleware('can:manage-assessments')->name('assessments.results');
+            Route::get('/term', [TermResultController::class, 'term'])->middleware('can:manage-assessments')->name('assessments.term');
+            Route::get('/reports', [TermResultController::class, 'reports'])->middleware('can:manage-assessments')->name('assessments.reports');
+            Route::get('/reports/print', [TermResultController::class, 'print'])->middleware('can:manage-assessments')->name('assessments.reports.print');
+            Route::get('/corrections', [CorrectionController::class, 'index'])->middleware('can:manage-assessments')->name('assessments.corrections');
             Route::post('/corrections', [CorrectionController::class, 'store'])->name('assessments.corrections.store');
-            Route::post('/corrections/{correction}/decision', [CorrectionController::class, 'decide'])->name('assessments.corrections.decide');
-            Route::get('/grading', [GradingController::class, 'show'])->name('assessments.grading');
-            Route::put('/grading', [GradingController::class, 'update'])->name('assessments.grading.update');
+            Route::post('/corrections/{correction}/decision', [CorrectionController::class, 'decide'])->middleware(['can:manage-assessments', 'can:manage-staff'])->name('assessments.corrections.decide');
+            Route::get('/grading', [GradingController::class, 'show'])->middleware('can:manage-assessments')->name('assessments.grading');
+            Route::put('/grading', [GradingController::class, 'update'])->middleware(['can:manage-assessments', 'can:manage-staff'])->name('assessments.grading.update');
             Route::get('/sheets', [MarkSheetController::class, 'index'])->name('assessments.sheets');
             Route::get('/sheets/{sheet}', [MarkSheetController::class, 'show'])->name('assessments.sheets.show');
             Route::patch('/sheets/{sheet}', [MarkSheetController::class, 'update'])->name('assessments.sheets.update');
-            Route::get('/{plan}/edit', [AssessmentController::class, 'edit'])->name('assessments.edit');
-            Route::patch('/{plan}', [AssessmentController::class, 'update'])->name('assessments.update');
-            Route::post('/{plan}/close', [AssessmentController::class, 'close'])->name('assessments.close');
-            Route::post('/{plan}/window', [AssessmentController::class, 'window'])->name('assessments.window');
-            Route::post('/{plan}/publish', [AssessmentController::class, 'publish'])->name('assessments.publish');
+            Route::get('/{plan}/edit', [AssessmentController::class, 'edit'])->middleware('can:manage-assessments')->name('assessments.edit');
+            Route::patch('/{plan}', [AssessmentController::class, 'update'])->middleware('can:manage-assessments')->name('assessments.update');
+            Route::post('/{plan}/close', [AssessmentController::class, 'close'])->middleware('can:manage-assessments')->name('assessments.close');
+            Route::post('/{plan}/window', [AssessmentController::class, 'window'])->middleware('can:manage-assessments')->name('assessments.window');
+            Route::post('/{plan}/publish', [AssessmentController::class, 'publish'])->middleware('can:manage-assessments')->name('assessments.publish');
         });
 
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');

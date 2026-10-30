@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 /**
  * Single auth table absorbing ERD `staff` (Option A merge).
@@ -134,5 +135,36 @@ class User extends Authenticatable
         return $this->belongsToMany(Subject::class, 'class_subjects', 'staff_id', 'subject_id')
             ->distinct()
             ->orderBy('name');
+    }
+
+    /**
+     * Every school on Campus that has a staff account with this person's
+     * email, with their role there and where to sign in to it.
+     *
+     * @return array<int, array{name: string, code: string, role: string, current: bool, login_url: string}>
+     */
+    public function schoolsOf(): array
+    {
+        if ($this->is_platform_admin || ! $this->email) {
+            return [];
+        }
+
+        $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
+
+        return User::where('email', $this->email)
+            ->whereNotNull('school_id')
+            ->with('school:id,name,code,slug')
+            ->get()
+            ->filter(fn (User $account) => $account->school instanceof School)
+            ->sortBy(fn (User $account) => [$account->id !== $this->id, $account->school?->name])
+            ->map(fn (User $account) => [
+                'name' => (string) $account->school?->name,
+                'code' => (string) $account->school?->code,
+                'role' => Str::headline($account->role->value),
+                'current' => $account->id === $this->id,
+                'login_url' => '//'.$account->school?->slug.'.'.$host.'/login',
+            ])
+            ->values()
+            ->all();
     }
 }

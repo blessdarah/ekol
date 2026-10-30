@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,6 +47,16 @@ class Term extends Model
             'ends_on' => 'date',
             'is_current' => 'boolean',
         ];
+    }
+
+    /**
+     * The term the school is in now.
+     *
+     * @param  Builder<static>  $query
+     */
+    public function scopeCurrent(Builder $query): void
+    {
+        $query->where('is_current', true);
     }
 
     /**

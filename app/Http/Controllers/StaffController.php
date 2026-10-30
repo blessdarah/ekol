@@ -22,7 +22,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -38,22 +37,6 @@ class StaffController extends Controller
 
     public const int INVITATION_DAYS = 7;
 
-    /**
-     * The bound school, for a signed-in user allowed to manage staff.
-     */
-    protected function school(Request $request): School
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        Gate::authorize('manage-staff');
-
-        return $school;
-    }
-
     protected function member(School $school, string $id): User
     {
         return User::where('school_id', $school->id)->where('id', $id)->firstOrFail();
@@ -61,7 +44,7 @@ class StaffController extends Controller
 
     public function index(Request $request): Response
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         [$query, $filters] = $this->roster($request, $school);
 
         $staff = $query->with('subjects:id,name')
@@ -98,7 +81,7 @@ class StaffController extends Controller
      */
     public function export(Request $request): StreamedResponse|Response
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         [$query, , $applied] = $this->roster($request, $school);
         $ids = $this->exportIds($request);
 
@@ -185,7 +168,7 @@ class StaffController extends Controller
 
     public function create(Request $request): Response
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
 
         return Inertia::render('staff/register', [
             'yearLabel' => $this->yearLabel($school),
@@ -195,7 +178,7 @@ class StaffController extends Controller
 
     public function store(SaveStaffRequest $request): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $data = $request->validated();
 
         $member = DB::transaction(function () use ($request, $school, $data) {
@@ -220,7 +203,7 @@ class StaffController extends Controller
 
     public function show(Request $request, string $staff): Response
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $member = $this->member($school, $staff)->load('subjects:id,name');
 
         $term = Term::where('school_id', $school->id)->where('is_current', true)->first();
@@ -260,7 +243,7 @@ class StaffController extends Controller
 
     public function edit(Request $request, string $staff): Response
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $member = $this->member($school, $staff);
 
         return Inertia::render('staff/register', [
@@ -275,7 +258,7 @@ class StaffController extends Controller
 
     public function update(SaveStaffRequest $request, string $staff): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $member = $this->member($school, $staff);
         $data = $request->validated();
 
@@ -297,7 +280,7 @@ class StaffController extends Controller
 
     public function access(Request $request, string $staff): Response
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $member = $this->member($school, $staff);
         $term = Term::where('school_id', $school->id)->where('is_current', true)->first();
 
@@ -322,7 +305,7 @@ class StaffController extends Controller
 
     public function saveAccess(SaveStaffAccessRequest $request, string $staff): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $member = $this->member($school, $staff);
 
         $data = $request->validated();
@@ -352,7 +335,7 @@ class StaffController extends Controller
 
     public function remind(Request $request, string $staff): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $member = $this->member($school, $staff);
 
         if (! $member->hasPortalAccount()) {
@@ -369,7 +352,7 @@ class StaffController extends Controller
 
     public function updateHours(UpdateStaffHoursRequest $request, string $staff): RedirectResponse
     {
-        $school = $this->school($request);
+        $school = $this->schoolContext->school();
         $member = $this->member($school, $staff);
 
         $data = $request->validated();

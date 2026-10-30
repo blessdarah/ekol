@@ -25,14 +25,14 @@ class TeacherTimetableController extends Controller
 {
     public function show(Request $request): Response
     {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
+        $school = $this->schoolContext->school();
         $teacher = $request->user();
 
-        if (! $school instanceof School || ! $teacher) {
+        if (! $teacher) {
             abort(404);
         }
 
-        $term = StudentController::currentTerm($school);
+        $term = $this->schoolContext->term();
         $live = $term ? TimetableVersion::liveFor($term) : null;
 
         if (! $term || ! $live) {

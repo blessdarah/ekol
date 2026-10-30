@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Enums\UserRole;
+use App\Http\SchoolContext;
 use App\Livewire\Pulse\SchoolExceptions;
 use App\Models\AuditEvent;
 use App\Models\School;
@@ -28,6 +29,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(SchoolContext::class, fn (): SchoolContext => new SchoolContext);
         $this->app->singleton(Campay::class, fn (): Campay => new Campay(
             (string) config('services.campay.username'),
             (string) config('services.campay.password'),
@@ -69,6 +71,8 @@ class AppServiceProvider extends ServiceProvider
         foreach (UserRole::ABILITIES as $ability) {
             Gate::define($ability, fn (User $user): bool => $user->role->allows($ability));
         }
+
+        Gate::define('open-assessments', fn (User $user): bool => $user->role->teaches() || $user->can('manage-assessments'));
     }
 
     /**

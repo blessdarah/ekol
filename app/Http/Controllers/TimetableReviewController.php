@@ -33,7 +33,8 @@ class TimetableReviewController extends Controller
 
     public function show(Request $request): Response|RedirectResponse
     {
-        [$school, $term] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
 
         if (! $term) {
             return redirect()->route('timetable');
@@ -92,7 +93,7 @@ class TimetableReviewController extends Controller
         }
 
         return Inertia::render('timetable/review', [
-            'phase' => TimetableController::phase($school, $term),
+            'phase' => TimetableVersion::phase($school, $term),
             'version' => ['number' => $version->number, 'live' => $readOnly],
             'view' => $view,
             'picker' => $picker->values(),
@@ -139,7 +140,8 @@ class TimetableReviewController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-        [$school, $term] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         $draft = $this->draft($term);
         $world = $draft->world();
 
@@ -187,7 +189,8 @@ class TimetableReviewController extends Controller
      */
     public function update(Request $request, string $slot): RedirectResponse
     {
-        [$school, $term] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         $draft = $this->draft($term);
         $world = $draft->world();
         $target = $draft->slots->firstWhere('id', $slot) ?? abort(404);
@@ -231,7 +234,8 @@ class TimetableReviewController extends Controller
      */
     public function destroy(Request $request, string $slot): RedirectResponse
     {
-        [$school, $term] = TimetableController::context($request);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         $draft = $this->draft($term);
         $target = $draft->slots->firstWhere('id', $slot) ?? abort(404);
 

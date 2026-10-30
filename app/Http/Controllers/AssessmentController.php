@@ -14,7 +14,6 @@ use App\Models\AuditEvent;
 use App\Models\ClassSubject;
 use App\Models\Enrolment;
 use App\Models\Level;
-use App\Models\MarkCorrection;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Term;
@@ -22,7 +21,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,110 +31,20 @@ use Inertia\Response;
  */
 class AssessmentController extends Controller
 {
-    /**
-     * The school and its current year, for a role that runs assessments.
-     *
-     * @return array{0: School, 1: AcademicYear|null}
-     */
-    public static function context(Request $request): array
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        Gate::authorize('manage-assessments');
-
-        return [$school, StructureController::currentYear($school)];
-    }
-
-    /**
-     * The year's plans, oldest first, each moved to marks-open when its
-     * window has started.
-     *
-     * @return Collection<int, AssessmentPlan>
-     */
-    public static function plans(School $school, ?AcademicYear $year): Collection
-    {
-        if (! $year) {
-            return new Collection;
-        }
-
-        return AssessmentPlan::where('school_id', $school->id)
-            ->whereIn('term_id', Term::where('academic_year_id', $year->id)->select('id'))
-            ->with('term:id,label,sequence,is_current')
-            ->get()
-            ->each(fn (AssessmentPlan $plan) => $plan->refreshState())
-            ->sortBy(fn (AssessmentPlan $plan) => [
-                $plan->term?->sequence,
-                $plan->held_from?->toDateString() ?? '9999',
-                $plan->kind === AssessmentKind::Exam ? 1 : 0,
-                $plan->name,
-            ])
-            ->values();
-    }
-
-    /**
-     * The badges on the tab bar every assessment screen shares.
-     *
-     * @return array{missing: int, clashes: int, pending: int}
-     */
-    public static function tabs(School $school, ?AcademicYear $year): array
-    {
-        $plans = static::plans($school, $year);
-        $open = $plans->where('state', AssessmentState::MarksOpen);
-
-        return [
-            'missing' => $open->isEmpty() ? 0 : AssessmentSubject::whereNull('submitted_at')
-                ->whereHas('assessment', fn ($query) => $query->whereIn('assessment_plan_id', $open->modelKeys()))
-                ->count(),
-            'clashes' => (int) $plans
-                ->filter(fn (AssessmentPlan $plan) => $plan->kind === AssessmentKind::Exam && $plan->schedule_published_at === null)
-                ->sum(fn (AssessmentPlan $plan) => count(ExamScheduleController::clashes($plan))),
-            'pending' => MarkCorrection::where('school_id', $school->id)->where('status', 'pending')->count(),
-        ];
-    }
-
-    /**
-     * A plan as the lists and pickers show it.
-     *
-     * @return array<string, mixed>
-     */
-    public static function summary(AssessmentPlan $plan): array
-    {
-        return [
-            'id' => $plan->id,
-            'name' => $plan->name,
-            'kind' => $plan->kind->value,
-            'state' => $plan->state->value,
-            'term' => $plan->term?->label,
-            'held_from' => $plan->held_from?->toDateString(),
-            'held_until' => $plan->held_until?->toDateString(),
-            'window_starts_on' => $plan->window_starts_on?->toDateString(),
-            'window_ends_on' => $plan->window_ends_on?->toDateString(),
-            'days_left' => $plan->state === AssessmentState::MarksOpen && $plan->window_ends_on
-                ? (int) today()->diffInDays($plan->window_ends_on, false)
-                : null,
-            'has_schedule' => $plan->schedule_published_at !== null,
-            'closed_on' => $plan->closed_at?->toDateString(),
-            'published_on' => $plan->published_at?->toDateString(),
-        ];
-    }
-
     public function index(Request $request): Response|RedirectResponse
     {
         if ($request->user() && ! $request->user()->can('manage-assessments')) {
             return redirect()->route('assessments.sheets');
         }
 
-        [$school, $year] = static::context($request);
-        $plans = static::plans($school, $year);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $plans = AssessmentPlan::forYear($school, $year);
         $terms = $year ? Term::where('academic_year_id', $year->id)->orderBy('sequence')->get() : new Collection;
 
         return Inertia::render('assessments/calendar', [
             'yearLabel' => $year?->label,
-            'tabs' => static::tabs($school, $year),
+            'tabs' => AssessmentPlan::tabs($school, $year),
             'counts' => collect(AssessmentState::cases())->mapWithKeys(fn (AssessmentState $state) => [
                 $state->value => $plans->where('state', $state)->count(),
             ]),
@@ -144,28 +52,30 @@ class AssessmentController extends Controller
                 'id' => $term->id,
                 'label' => $term->label,
                 'current' => $term->is_current,
-                'plans' => $plans->where('term_id', $term->id)->map(fn (AssessmentPlan $plan) => static::summary($plan))->values(),
+                'plans' => $plans->where('term_id', $term->id)->map(fn (AssessmentPlan $plan) => $plan->summary())->values(),
             ]),
         ]);
     }
 
     public function create(Request $request): Response|RedirectResponse
     {
-        [$school, $year] = static::context($request);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
 
         return $year ? $this->form($request, $school, $year, null) : redirect()->route('assessments');
     }
 
     public function edit(Request $request, string $plan): Response|RedirectResponse
     {
-        [$school, $year] = static::context($request);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
 
         return $year ? $this->form($request, $school, $year, $this->plan($school, $plan)) : redirect()->route('assessments');
     }
 
     public function store(SaveAssessmentPlanRequest $request): RedirectResponse
     {
-        [$school] = static::context($request);
+        $school = $this->schoolContext->school();
         $data = $this->validated($request);
 
         DB::transaction(function () use ($request, $school, $data) {
@@ -181,7 +91,7 @@ class AssessmentController extends Controller
 
     public function update(SaveAssessmentPlanRequest $request, string $plan): RedirectResponse
     {
-        [$school] = static::context($request);
+        $school = $this->schoolContext->school();
         $target = $this->plan($school, $plan);
 
         if (! in_array($target->state, [AssessmentState::Draft, AssessmentState::Scheduled], true)) {
@@ -208,7 +118,8 @@ class AssessmentController extends Controller
      */
     public function usual(Request $request, string $term): RedirectResponse
     {
-        [$school, $year] = static::context($request);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $target = Term::where('school_id', $school->id)->where('academic_year_id', $year?->id)->where('id', $term)->firstOrFail();
 
         if (AssessmentPlan::where('term_id', $target->id)->exists()) {
@@ -239,8 +150,9 @@ class AssessmentController extends Controller
 
     public function progress(Request $request): Response
     {
-        [$school, $year] = static::context($request);
-        $plans = static::plans($school, $year)->filter(fn (AssessmentPlan $plan) => $plan->state !== AssessmentState::Draft)->values();
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $plans = AssessmentPlan::forYear($school, $year)->filter(fn (AssessmentPlan $plan) => $plan->state !== AssessmentState::Draft)->values();
         $plan = $plans->firstWhere('id', (string) $request->query('plan', ''))
             ?? $plans->firstWhere('state', AssessmentState::MarksOpen)
             ?? $plans->last(fn (AssessmentPlan $option) => in_array($option->state, [AssessmentState::MarksClosed, AssessmentState::Published], true))
@@ -269,9 +181,9 @@ class AssessmentController extends Controller
         ];
 
         return Inertia::render('assessments/progress', [
-            'tabs' => static::tabs($school, $year),
-            'plans' => $plans->map(fn (AssessmentPlan $option) => static::summary($option)),
-            'plan' => $plan ? static::summary($plan) : null,
+            'tabs' => AssessmentPlan::tabs($school, $year),
+            'plans' => $plans->map(fn (AssessmentPlan $option) => $option->summary()),
+            'plan' => $plan ? $plan->summary() : null,
             'acceptsMarks' => (bool) $plan?->acceptsMarks(),
             'termEnds' => $plan?->term()->value('ends_on')?->toDateString(),
             'stats' => [
@@ -324,7 +236,7 @@ class AssessmentController extends Controller
      */
     public function close(Request $request, string $plan): RedirectResponse
     {
-        [$school] = static::context($request);
+        $school = $this->schoolContext->school();
         $target = $this->plan($school, $plan)->refreshState();
 
         if ($target->state !== AssessmentState::MarksOpen) {
@@ -345,7 +257,7 @@ class AssessmentController extends Controller
      */
     public function window(ExtendMarksWindowRequest $request, string $plan): RedirectResponse
     {
-        [$school] = static::context($request);
+        $school = $this->schoolContext->school();
         $target = $this->plan($school, $plan)->refreshState();
 
         if (! in_array($target->state, [AssessmentState::Scheduled, AssessmentState::MarksOpen, AssessmentState::MarksClosed], true)) {
@@ -377,8 +289,9 @@ class AssessmentController extends Controller
 
     public function results(Request $request): Response
     {
-        [$school, $year] = static::context($request);
-        $plans = static::plans($school, $year)
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
+        $plans = AssessmentPlan::forYear($school, $year)
             ->filter(fn (AssessmentPlan $plan) => in_array($plan->state, [AssessmentState::MarksOpen, AssessmentState::MarksClosed, AssessmentState::Published], true))
             ->values();
         $plan = $plans->firstWhere('id', (string) $request->query('plan', ''))
@@ -407,9 +320,9 @@ class AssessmentController extends Controller
         $missing = (int) collect($rows)->sum(fn (array $row) => count($row['missing']));
 
         return Inertia::render('assessments/results', [
-            'tabs' => static::tabs($school, $year),
-            'plans' => $plans->map(fn (AssessmentPlan $option) => static::summary($option)),
-            'plan' => $plan ? static::summary($plan) : null,
+            'tabs' => AssessmentPlan::tabs($school, $year),
+            'plans' => $plans->map(fn (AssessmentPlan $option) => $option->summary()),
+            'plan' => $plan ? $plan->summary() : null,
             'classes' => $classes->map(fn (SchoolClass $class) => ['id' => $class->id, 'name' => $class->name]),
             'class' => $classId === 'all' ? 'all' : $shown->first()?->id,
             'passMark' => $pass,
@@ -437,7 +350,7 @@ class AssessmentController extends Controller
      */
     public function publish(Request $request, string $plan): RedirectResponse
     {
-        [$school] = static::context($request);
+        $school = $this->schoolContext->school();
         $target = $this->plan($school, $plan);
 
         if ($target->state !== AssessmentState::MarksClosed) {
@@ -468,7 +381,7 @@ class AssessmentController extends Controller
 
         return Inertia::render('assessments/form', [
             'yearLabel' => $year->label,
-            'tabs' => static::tabs($school, $year),
+            'tabs' => AssessmentPlan::tabs($school, $year),
             'outOf' => AssessmentPlan::OUT_OF,
             'terms' => $terms->map(fn (Term $term) => [
                 'id' => $term->id,
@@ -486,7 +399,7 @@ class AssessmentController extends Controller
                 'text' => "{$lesson->subject?->name} has no teacher in {$lesson->schoolClass?->name}, so its marks cannot be entered.",
             ])->values(),
             'plan' => $plan ? [
-                ...static::summary($plan),
+                ...$plan->summary(),
                 'term_id' => $plan->term_id,
                 'level_ids' => $plan->level_ids,
             ] : null,

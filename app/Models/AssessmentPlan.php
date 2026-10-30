@@ -313,4 +313,141 @@ class AssessmentPlan extends Model
     {
         return $this->belongsTo(Term::class);
     }
+
+    /**
+     * The year's plans, oldest first, each moved to marks-open when its
+     * window has started.
+     *
+     * @return Collection<int, AssessmentPlan>
+     */
+    public static function forYear(School $school, ?AcademicYear $year): Collection
+    {
+        if (! $year) {
+            return new Collection;
+        }
+
+        return AssessmentPlan::where('school_id', $school->id)
+            ->whereIn('term_id', Term::where('academic_year_id', $year->id)->select('id'))
+            ->with('term:id,label,sequence,is_current')
+            ->get()
+            ->each(fn (AssessmentPlan $plan) => $plan->refreshState())
+            ->sortBy(fn (AssessmentPlan $plan) => [
+                $plan->term?->sequence,
+                $plan->held_from?->toDateString() ?? '9999',
+                $plan->kind === AssessmentKind::Exam ? 1 : 0,
+                $plan->name,
+            ])
+            ->values();
+    }
+
+    /**
+     * The badges on the tab bar every assessment screen shares.
+     *
+     * @return array{missing: int, clashes: int, pending: int}
+     */
+    public static function tabs(School $school, ?AcademicYear $year): array
+    {
+        $plans = static::forYear($school, $year);
+        $open = $plans->where('state', AssessmentState::MarksOpen);
+
+        return [
+            'missing' => $open->isEmpty() ? 0 : AssessmentSubject::whereNull('submitted_at')
+                ->whereHas('assessment', fn ($query) => $query->whereIn('assessment_plan_id', $open->modelKeys()))
+                ->count(),
+            'clashes' => (int) $plans
+                ->filter(fn (AssessmentPlan $plan) => $plan->kind === AssessmentKind::Exam && $plan->schedule_published_at === null)
+                ->sum(fn (AssessmentPlan $plan) => count($plan->clashes())),
+            'pending' => MarkCorrection::where('school_id', $school->id)->where('status', 'pending')->count(),
+        ];
+    }
+
+    /**
+     * A plan as the lists and pickers show it.
+     *
+     * @return array<string, mixed>
+     */
+    public function summary(): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'kind' => $this->kind->value,
+            'state' => $this->state->value,
+            'term' => $this->term?->label,
+            'held_from' => $this->held_from?->toDateString(),
+            'held_until' => $this->held_until?->toDateString(),
+            'window_starts_on' => $this->window_starts_on?->toDateString(),
+            'window_ends_on' => $this->window_ends_on?->toDateString(),
+            'days_left' => $this->state === AssessmentState::MarksOpen && $this->window_ends_on
+                ? (int) today()->diffInDays($this->window_ends_on, false)
+                : null,
+            'has_schedule' => $this->schedule_published_at !== null,
+            'closed_on' => $this->closed_at?->toDateString(),
+            'published_on' => $this->published_at?->toDateString(),
+        ];
+    }
+
+    /**
+     * Rooms and invigilators booked for two papers at the same time.
+     *
+     * @return list<array{paper_ids: list<string>, text: string}>
+     */
+    public function clashes(): array
+    {
+        $papers = $this->papers()->with(['subject:id,name', 'level:id,name', 'room:id,code'])->get()->values();
+        $names = User::whereIn('id', $papers->flatMap(fn (ExamPaper $paper) => $paper->invigilator_ids)->unique()->values())->pluck('full_name', 'id');
+        $clashes = [];
+
+        foreach ($papers as $position => $paper) {
+            foreach ($papers->slice($position + 1) as $other) {
+                if (! $paper->overlaps($other)) {
+                    continue;
+                }
+
+                $when = $paper->held_on->translatedFormat('D j M').' at '.substr($paper->starts_at, 0, 5);
+                $pair = "{$paper->level?->name} {$paper->subject?->name} and {$other->level?->name} {$other->subject?->name}";
+
+                if ($paper->room_id && $paper->room_id === $other->room_id) {
+                    $clashes[] = ['paper_ids' => [$paper->id, $other->id], 'text' => "{$paper->room?->code} is used by {$pair} on {$when}"];
+                }
+
+                foreach (array_intersect($paper->invigilator_ids, $other->invigilator_ids) as $staffId) {
+                    $clashes[] = ['paper_ids' => [$paper->id, $other->id], 'text' => "{$names->get($staffId)} invigilates {$pair} on {$when}"];
+                }
+            }
+        }
+
+        return $clashes;
+    }
+
+    /**
+     * Each student of a class across a term's assessments. Only
+     * published assessments count. The term average is the mean of
+     * the assessment averages, and exists once the student has one in
+     * every published assessment.
+     *
+     * @param  Collection<int, AssessmentPlan>  $plans
+     * @return array<string, array{name: string, matricule: string, values: array<string, float|null>, average: float|null}>
+     */
+    public static function termRows(Collection $plans, SchoolClass $class): array
+    {
+        $published = $plans->where('state', AssessmentState::Published);
+        $rows = [];
+
+        foreach ($published as $plan) {
+            foreach ($plan->standings($class) as $studentId => $row) {
+                $rows[$studentId] ??= ['name' => $row['name'], 'matricule' => $row['matricule'], 'values' => [], 'average' => null];
+                $rows[$studentId]['values'][$plan->id] = $row['complete'] ? $row['average'] : null;
+            }
+        }
+
+        foreach ($rows as $studentId => $row) {
+            $values = array_filter($row['values'], fn (?float $value) => $value !== null);
+            $rows[$studentId]['average'] = $values !== [] && count($values) === $published->count()
+                ? round(array_sum($values) / count($values), 2)
+                : null;
+        }
+
+        return $rows;
+    }
 }

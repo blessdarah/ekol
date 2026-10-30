@@ -8,9 +8,6 @@ use App\Enums\AttendanceStatus;
 use App\Enums\EnrolmentStatus;
 use App\Enums\Gender;
 use App\Enums\SchemeStatus;
-use App\Http\Controllers\EnrolmentController;
-use App\Http\Controllers\StructureController;
-use App\Http\Controllers\StudentController;
 use App\Models\AcademicYear;
 use App\Models\Application;
 use App\Models\AssessmentPlan;
@@ -46,8 +43,8 @@ trait BuildsSchoolDashboard
     protected function schoolDashboard(User $user, School $school, string $range): array
     {
         $now = now($school->timezone);
-        $year = StructureController::currentYear($school);
-        $term = StudentController::currentTerm($school);
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $week = $term ? Scheme::currentWeek($term) : null;
 
         $fees = $user->can('manage-fees') && $year ? $this->dashboardFees($school, $year, $term, $range) : null;
@@ -368,7 +365,7 @@ trait BuildsSchoolDashboard
      */
     protected function dashboardAdmissions(School $school): ?array
     {
-        $year = EnrolmentController::nextYear($school);
+        $year = $this->schoolContext->nextYear();
 
         if (! $year) {
             return null;

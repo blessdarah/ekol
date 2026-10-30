@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Schemes\SaveSyllabusTopicRequest;
 use App\Models\ClassSubject;
 use App\Models\Level;
+use App\Models\Scheme;
 use App\Models\School;
 use App\Models\Subject;
 use App\Models\SyllabusTopic;
@@ -25,8 +26,8 @@ class SyllabusController extends Controller
 {
     public function show(Request $request): Response
     {
-        $school = SchemeController::schoolFor($request, manage: true);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $levels = Level::where('school_id', $school->id)
             ->when($year, fn ($query) => $query->whereHas('schoolClasses', fn ($inner) => $inner->where('academic_year_id', $year->id)))
             ->orderBy('ordinal')
@@ -42,7 +43,7 @@ class SyllabusController extends Controller
             : collect();
 
         return Inertia::render('schemes/syllabus', [
-            'steps' => SchemeController::steps($school),
+            'steps' => Scheme::steps($school, $this->schoolContext->term()),
             'levels' => $levels->map(fn (Level $option) => ['id' => $option->id, 'name' => $option->name])->values(),
             'level' => $level ? ['id' => $level->id, 'name' => $level->name] : null,
             'subjects' => $subjects->map(fn (Subject $option) => [
@@ -69,7 +70,7 @@ class SyllabusController extends Controller
 
     public function store(SaveSyllabusTopicRequest $request): RedirectResponse
     {
-        $school = SchemeController::schoolFor($request, manage: true);
+        $school = $this->schoolContext->school();
         $data = $request->validated();
 
         DB::transaction(function () use ($school, $data) {
@@ -91,7 +92,7 @@ class SyllabusController extends Controller
 
     public function update(SaveSyllabusTopicRequest $request, string $topic): RedirectResponse
     {
-        $school = SchemeController::schoolFor($request, manage: true);
+        $school = $this->schoolContext->school();
         $target = SyllabusTopic::where('school_id', $school->id)->whereKey($topic)->firstOrFail();
         $data = $request->validated();
 
@@ -107,7 +108,7 @@ class SyllabusController extends Controller
 
     public function destroy(Request $request, string $topic): RedirectResponse
     {
-        $school = SchemeController::schoolFor($request, manage: true);
+        $school = $this->schoolContext->school();
         SyllabusTopic::where('school_id', $school->id)->whereKey($topic)->firstOrFail()->delete();
 
         $this->notify('Topic removed. Schemes already opened keep it.');
@@ -120,7 +121,7 @@ class SyllabusController extends Controller
      */
     public function move(Request $request, string $topic): RedirectResponse
     {
-        $school = SchemeController::schoolFor($request, manage: true);
+        $school = $this->schoolContext->school();
         $target = SyllabusTopic::where('school_id', $school->id)->whereKey($topic)->firstOrFail();
         $earlier = $request->input('direction') === 'up';
         $neighbour = SyllabusTopic::where('level_id', $target->level_id)

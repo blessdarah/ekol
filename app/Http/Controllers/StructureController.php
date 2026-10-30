@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AcademicYearStatus;
 use App\Enums\RoomKind;
 use App\Enums\SchoolCycle;
 use App\Http\Requests\Structure\StoreLevelRequest;
@@ -10,7 +9,6 @@ use App\Http\Requests\Structure\StoreLevelTemplatesRequest;
 use App\Http\Requests\Structure\StoreRoomRequest;
 use App\Http\Requests\Structure\UpdateClassRequest;
 use App\Http\Requests\Structure\UpdateLevelRequest;
-use App\Models\AcademicYear;
 use App\Models\Assessment;
 use App\Models\AuditEvent;
 use App\Models\Enrolment;
@@ -27,40 +25,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class StructureController extends Controller
 {
-    public const int DEFAULT_SEATS = 45;
-
-    public const array SUBSYSTEMS = ['anglophone', 'francophone'];
-
-    /**
-     * The bound school, for a signed-in user allowed to change structure.
-     */
-    public static function schoolFor(Request $request): School
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        Gate::authorize('manage-structure');
-
-        return $school;
-    }
-
-    public static function currentYear(School $school): ?AcademicYear
-    {
-        return AcademicYear::where('school_id', $school->id)
-            ->where('status', AcademicYearStatus::Current)
-            ->first();
-    }
-
     /**
      * Series are a GCE high school idea; nothing else may turn them on.
      */
@@ -73,8 +43,8 @@ class StructureController extends Controller
 
     public function index(Request $request): Response
     {
-        $school = static::schoolFor($request);
-        $year = static::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
 
         $levels = Level::where('school_id', $school->id)
             ->with(['series' => fn ($query) => $query->orderBy('code')])
@@ -141,19 +111,19 @@ class StructureController extends Controller
 
     public function createLevel(Request $request): Response
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
 
         return Inertia::render('structure/level-create', [
-            'yearLabel' => static::currentYear($school)?->label,
-            'hasYear' => static::currentYear($school) !== null,
+            'yearLabel' => $this->schoolContext->year()?->label,
+            'hasYear' => $this->schoolContext->year() !== null,
             'defaultSubsystem' => $school->subsystem === 'francophone' ? 'francophone' : 'anglophone',
         ]);
     }
 
     public function storeLevel(StoreLevelRequest $request): RedirectResponse
     {
-        $school = static::schoolFor($request);
-        $year = static::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
 
         $data = $request->validated();
 
@@ -188,7 +158,7 @@ class StructureController extends Controller
                     'academic_year_id' => $year->id,
                     'level_id' => $level->id,
                     'name' => SchoolClass::nameFor($level->name, $letter),
-                    'capacity' => static::DEFAULT_SEATS,
+                    'capacity' => SchoolClass::DEFAULT_SEATS,
                 ]);
             }
 
@@ -207,14 +177,14 @@ class StructureController extends Controller
 
     public function levelTemplates(Request $request): Response
     {
-        $school = static::schoolFor($request);
-        $year = static::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $existing = Level::withTrashed()->where('school_id', $school->id)->get(['name', 'code']);
 
         return Inertia::render('structure/level-templates', [
             'yearLabel' => $year?->label,
             'hasYear' => $year !== null,
-            'defaultSeats' => static::DEFAULT_SEATS,
+            'defaultSeats' => SchoolClass::DEFAULT_SEATS,
             'sets' => collect($this->levelTemplateSets())->map(fn (array $set, string $key) => [
                 'key' => $key,
                 'name' => $set['name'],
@@ -232,8 +202,8 @@ class StructureController extends Controller
 
     public function storeLevelTemplates(StoreLevelTemplatesRequest $request): RedirectResponse
     {
-        $school = static::schoolFor($request);
-        $year = static::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $set = $this->levelTemplateSets()[$request->string('set')->toString()] ?? null;
 
         abort_unless($set !== null, 404);
@@ -278,7 +248,7 @@ class StructureController extends Controller
                         'academic_year_id' => $year?->id,
                         'level_id' => $level->id,
                         'name' => SchoolClass::nameFor($name, $letter),
-                        'capacity' => static::DEFAULT_SEATS,
+                        'capacity' => SchoolClass::DEFAULT_SEATS,
                     ]);
                 }
 
@@ -305,7 +275,7 @@ class StructureController extends Controller
 
     public function updateLevel(UpdateLevelRequest $request, string $level): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = Level::where('school_id', $school->id)->where('id', $level)->firstOrFail();
 
         $data = $request->validated();
@@ -326,9 +296,9 @@ class StructureController extends Controller
 
     public function storeClass(Request $request, string $level): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = Level::where('school_id', $school->id)->where('id', $level)->firstOrFail();
-        $year = static::currentYear($school);
+        $year = $this->schoolContext->year();
 
         if (! $year) {
             throw ValidationException::withMessages([
@@ -357,7 +327,7 @@ class StructureController extends Controller
             'academic_year_id' => $year->id,
             'level_id' => $target->id,
             'name' => $name,
-            'capacity' => static::DEFAULT_SEATS,
+            'capacity' => SchoolClass::DEFAULT_SEATS,
         ]);
 
         $this->audit($request, $school, 'school_class', $class->id, 'created', ['name' => $name]);
@@ -369,7 +339,7 @@ class StructureController extends Controller
 
     public function updateClass(UpdateClassRequest $request, string $class): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = SchoolClass::where('school_id', $school->id)->where('id', $class)->firstOrFail();
 
         $data = $request->validated();
@@ -393,7 +363,7 @@ class StructureController extends Controller
 
     public function destroyClass(Request $request, string $class): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = SchoolClass::where('school_id', $school->id)->where('id', $class)->firstOrFail();
 
         $inUse = Enrolment::where('school_class_id', $target->id)->exists()
@@ -426,7 +396,7 @@ class StructureController extends Controller
      */
     public function storeRoom(StoreRoomRequest $request): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
 
         $data = $request->validated();
 

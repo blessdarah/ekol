@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\SchoolContext;
 use App\Models\AuditEvent;
 use App\Models\School;
 use App\Models\SchoolVisit;
@@ -12,6 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PlatformContext
 {
+    public function __construct(protected SchoolContext $schoolContext) {}
+
     public static function host(): string
     {
         return 'admin.'.parse_url((string) config('app.url'), PHP_URL_HOST);
@@ -55,6 +58,7 @@ class PlatformContext
         abort_if($request->is('login*', 'logout', 'register*', 'invitation/*', 'forgot-password', 'parents*', 'pay*', 'demo*'), 403);
         abort_if($request->is('staff/*/access', 'staff/*/reminder'), 403, 'Platform visits cannot manage sign-in credentials.');
         app()->instance('currentSchool', $school);
+        $this->schoolContext->bind($school);
         app()->instance('currentPlatformVisit', $visit);
         $request->session()->put('school_id', $school->id);
         Auth::guard('web')->setUser($admin);
@@ -63,6 +67,7 @@ class PlatformContext
             $response = $next($request);
         } finally {
             app()->forgetInstance('currentSchool');
+            $this->schoolContext->clear();
             app()->forgetInstance('currentPlatformVisit');
         }
 

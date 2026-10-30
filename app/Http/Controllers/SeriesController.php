@@ -37,8 +37,8 @@ class SeriesController extends Controller
 
     public function index(Request $request): Response
     {
-        $school = StructureController::schoolFor($request);
-        $year = StructureController::currentYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->year();
         $levels = $this->seriesLevels($school);
         $level = $levels->firstWhere('id', $request->query('level')) ?? $levels->first();
         $term = Term::where('school_id', $school->id)->where('is_current', true)->first();
@@ -85,7 +85,7 @@ class SeriesController extends Controller
 
     public function create(Request $request): Response
     {
-        $school = StructureController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $levels = $this->seriesLevels($school);
         $level = $levels->firstWhere('id', $request->query('level')) ?? $levels->first();
 
@@ -96,7 +96,7 @@ class SeriesController extends Controller
 
     public function edit(Request $request, string $series): Response
     {
-        $school = StructureController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = Series::where('school_id', $school->id)->where('id', $series)->firstOrFail();
         $level = Level::where('school_id', $school->id)->where('id', $target->level_id)->firstOrFail();
 
@@ -105,7 +105,7 @@ class SeriesController extends Controller
 
     public function store(SaveSeriesRequest $request): RedirectResponse
     {
-        $school = StructureController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $level = $this->seriesLevels($school)->firstWhere('id', $request->input('level_id'));
 
         abort_unless($level !== null, 404);
@@ -131,7 +131,7 @@ class SeriesController extends Controller
 
     public function update(SaveSeriesRequest $request, string $series): RedirectResponse
     {
-        $school = StructureController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = Series::where('school_id', $school->id)->where('id', $series)->firstOrFail();
         $level = Level::where('school_id', $school->id)->where('id', $target->level_id)->firstOrFail();
         $data = $request->validated();
@@ -164,7 +164,7 @@ class SeriesController extends Controller
             : [$level->id];
 
         return Inertia::render('structure/series-edit', [
-            'yearLabel' => StructureController::currentYear($school)?->label,
+            'yearLabel' => $this->schoolContext->year()?->label,
             'level' => $level->only(['id', 'name']),
             'levels' => $levels->map(fn (Level $option) => $option->only(['id', 'name'])),
             'series' => $series ? [

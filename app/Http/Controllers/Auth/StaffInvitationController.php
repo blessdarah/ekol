@@ -13,17 +13,6 @@ use Inertia\Response;
 
 class StaffInvitationController extends Controller
 {
-    protected function school(): School
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        return $school;
-    }
-
     /**
      * The invited person behind a link that is still open: right school,
      * not expired, and no password chosen yet.
@@ -39,7 +28,7 @@ class StaffInvitationController extends Controller
 
     public function show(string $token): Response
     {
-        $school = $this->school();
+        $school = $this->schoolContext->school();
         $member = $this->invited($school, $token)?->load('subjects:id,name');
 
         return Inertia::render('auth/set-password', [
@@ -55,7 +44,7 @@ class StaffInvitationController extends Controller
 
     public function store(AcceptInvitationRequest $request, string $token): RedirectResponse
     {
-        $school = $this->school();
+        $school = $this->schoolContext->school();
         $member = $this->invited($school, $token);
 
         if (! $member) {

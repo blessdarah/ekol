@@ -52,49 +52,13 @@ class SchemeController extends Controller
     ];
 
     /**
-     * The bound school, for a signed-in user who follows schemes, or
-     * manages them when asked.
-     */
-    public static function schoolFor(Request $request, bool $manage = false): School
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        Gate::authorize($manage ? 'manage-schemes' : 'follow-schemes');
-
-        return $school;
-    }
-
-    /**
-     * Where the school is in the five steps, for the step bar.
-     *
-     * @return array{term: array{id: string, label: string, week: int|null, weeks: int}|null, syllabus: bool, opened: bool, to_approve: int, closed: bool}
-     */
-    public static function steps(School $school): array
-    {
-        $term = StudentController::currentTerm($school);
-        $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
-
-        return [
-            'term' => $term ? ['id' => $term->id, 'label' => $term->label, 'week' => Scheme::currentWeek($term), 'weeks' => $term->week_count, 'ends_on' => $term->ends_on->toDateString()] : null,
-            'syllabus' => SyllabusTopic::where('school_id', $school->id)->exists(),
-            'opened' => $opening !== null,
-            'to_approve' => $term ? Scheme::where('term_id', $term->id)->where('status', SchemeStatus::Submitted)->count() : 0,
-            'closed' => $opening?->closed_at !== null,
-        ];
-    }
-
-    /**
      * Step 4, and the home of schemes of work: every scheme of the term,
      * how far it has got, and the one picked in the side panel.
      */
     public function index(Request $request): Response|RedirectResponse
     {
-        $school = static::schoolFor($request);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
 
         if (! $term || ! $opening) {
@@ -111,7 +75,7 @@ class SchemeController extends Controller
         $picked = $schemes->firstWhere('id', $request->query('scheme'));
 
         return Inertia::render('schemes/index', [
-            'steps' => static::steps($school),
+            'steps' => Scheme::steps($school, $this->schoolContext->term()),
             'week' => $week,
             'dueOn' => $opening->due_on->toDateString(),
             'daysLate' => $opening->due_on->isPast() ? (int) $opening->due_on->diffInDays(today()) : 0,
@@ -160,8 +124,8 @@ class SchemeController extends Controller
      */
     public function export(Request $request): StreamedResponse|Response|RedirectResponse
     {
-        $school = static::schoolFor($request);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
 
         if (! $term || ! $opening) {
@@ -256,8 +220,8 @@ class SchemeController extends Controller
      */
     public function opening(Request $request): Response|RedirectResponse
     {
-        $school = static::schoolFor($request, manage: true);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
 
         if (! $term) {
             return redirect()->route('setup');
@@ -282,7 +246,7 @@ class SchemeController extends Controller
             ->values();
 
         return Inertia::render('schemes/open', [
-            'steps' => static::steps($school),
+            'steps' => Scheme::steps($school, $this->schoolContext->term()),
             'term' => [
                 'id' => $term->id,
                 'label' => $term->label,
@@ -309,8 +273,8 @@ class SchemeController extends Controller
 
     public function open(OpenSchemesRequest $request): RedirectResponse
     {
-        $school = static::schoolFor($request, manage: true);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
 
         if (! $term) {
             return redirect()->route('setup');
@@ -342,7 +306,7 @@ class SchemeController extends Controller
      */
     public function show(Request $request, string $scheme): Response
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = $this->find($school, $scheme);
         $term = $target->term;
         $opening = SchemeOpening::where('term_id', $target->term_id)->first();
@@ -358,7 +322,7 @@ class SchemeController extends Controller
             ->first(fn (Scheme $candidate) => $request->user()->can('approve', [$candidate, $opening]));
 
         return Inertia::render('schemes/show', [
-            'steps' => static::steps($school),
+            'steps' => Scheme::steps($school, $this->schoolContext->term()),
             'scheme' => [
                 ...$this->summary($target),
                 'weekly_periods' => (int) $target->classSubject?->weekly_periods,
@@ -366,7 +330,7 @@ class SchemeController extends Controller
                 'approved_at' => $target->approved_at?->toDateString(),
             ],
             'weeks' => $term ? Scheme::weeks($term, $target->classSubject?->schoolClass?->level_id) : [],
-            'items' => $target->items->map(fn (SchemeItem $item) => $this->item($item))->values(),
+            'items' => $target->items->map(fn (SchemeItem $item) => $item->summary())->values(),
             'checks' => $target->checks(),
             'history' => $target->events->map(fn (SchemeEvent $event) => [
                 'on' => $event->created_at->toDateString(),
@@ -381,7 +345,7 @@ class SchemeController extends Controller
 
     public function review(ReviewSchemeRequest $request, string $scheme): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = $this->find($school, $scheme);
         $opening = SchemeOpening::where('term_id', $target->term_id)->first();
         Gate::authorize('approve', [$target, $opening]);
@@ -418,7 +382,7 @@ class SchemeController extends Controller
      */
     public function note(SchemeNoteRequest $request, string $scheme): RedirectResponse
     {
-        $school = static::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = $this->find($school, $scheme);
         $target->record('note', $request->user(), trim((string) $request->validated('note')));
 
@@ -432,8 +396,8 @@ class SchemeController extends Controller
      */
     public function closing(Request $request): Response|RedirectResponse
     {
-        $school = static::schoolFor($request, manage: true);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
 
         if (! $term || ! $opening) {
@@ -457,7 +421,7 @@ class SchemeController extends Controller
         $lastWeek = collect(Scheme::weeks($term))->last();
 
         return Inertia::render('schemes/close', [
-            'steps' => static::steps($school),
+            'steps' => Scheme::steps($school, $this->schoolContext->term()),
             'closed' => $opening->closed_at !== null,
             'canClose' => $lastWeek !== null && today()->gte($lastWeek['starts_on']),
             'lastWeekStarts' => $lastWeek['starts_on'] ?? null,
@@ -480,8 +444,8 @@ class SchemeController extends Controller
      */
     public function close(CloseSchemesRequest $request): RedirectResponse
     {
-        $school = static::schoolFor($request, manage: true);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
         $lastWeek = $term ? collect(Scheme::weeks($term))->last() : null;
 
@@ -530,8 +494,8 @@ class SchemeController extends Controller
      */
     public function report(Request $request): StreamedResponse
     {
-        $school = static::schoolFor($request, manage: true);
-        $term = StudentController::currentTerm($school);
+        $school = $this->schoolContext->school();
+        $term = $this->schoolContext->term();
         abort_unless($term !== null, 404);
         $schemes = $this->schemesOf($term);
 
@@ -597,24 +561,6 @@ class SchemeController extends Controller
             'teacher' => $scheme->classSubject?->staff?->full_name,
             'status' => $scheme->status->value,
             'topics' => $scheme->items->count(),
-        ];
-    }
-
-    /**
-     * @return array{id: string, topic: string, name: string|null, week: int|null, periods: int, from_syllabus: bool, added: bool, carried: bool, taught_on: string|null}
-     */
-    public static function item(SchemeItem $item): array
-    {
-        return [
-            'id' => $item->id,
-            'topic' => $item->topic,
-            'name' => $item->name,
-            'week' => $item->week,
-            'periods' => $item->periods,
-            'from_syllabus' => $item->syllabus_topic_id !== null,
-            'added' => $item->added_by_teacher,
-            'carried' => $item->carried_over,
-            'taught_on' => $item->taught_on?->toDateString(),
         ];
     }
 

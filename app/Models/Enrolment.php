@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\EnrolmentDecision;
 use App\Enums\EnrolmentStatus;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -79,5 +81,25 @@ class Enrolment extends Model
     public function schoolClass(): BelongsTo
     {
         return $this->belongsTo(SchoolClass::class, 'school_class_id');
+    }
+
+    /**
+     * This year's students who sit in a class, with that class.
+     *
+     * @return Collection<int, Enrolment>
+     */
+    public static function continuingFor(School $school, ?AcademicYear $current): Collection
+    {
+
+        if (! $current) {
+            return new Collection;
+        }
+
+        return Enrolment::where('academic_year_id', $current->id)
+            ->whereNotNull('school_class_id')
+            ->where('status', '!=', EnrolmentStatus::Left)
+            ->whereHas('student', fn (Builder $query) => $query->where('school_id', $school->id))
+            ->with('schoolClass:id,name,level_id')
+            ->get();
     }
 }

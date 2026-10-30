@@ -43,7 +43,7 @@ class PasswordResetController extends Controller
 
     public function show(Request $request): Response|RedirectResponse
     {
-        $school = $this->school();
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
 
         if (! $school) {
             return redirect()->route('login');
@@ -57,7 +57,7 @@ class PasswordResetController extends Controller
 
     public function send(ForgotPasswordRequest $request): RedirectResponse
     {
-        $school = $this->school();
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
 
         if (! $school) {
             return redirect()->route('login');
@@ -88,7 +88,7 @@ class PasswordResetController extends Controller
      */
     public function code(Request $request): Response|RedirectResponse
     {
-        $school = $this->school();
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
         $pending = $request->session()->get('password_reset');
 
         if (! $school || ! is_array($pending)) {
@@ -105,7 +105,7 @@ class PasswordResetController extends Controller
 
     public function checkCode(ResetCodeRequest $request): RedirectResponse
     {
-        $school = $this->school();
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
         $pending = $request->session()->get('password_reset');
 
         if (! $school || ! is_array($pending)) {
@@ -140,7 +140,7 @@ class PasswordResetController extends Controller
      */
     public function edit(string $token): Response|RedirectResponse
     {
-        $school = $this->school();
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
 
         if (! $school) {
             return redirect()->route('login');
@@ -157,7 +157,7 @@ class PasswordResetController extends Controller
 
     public function update(AcceptInvitationRequest $request, string $token): RedirectResponse
     {
-        $school = $this->school();
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
         $user = $school ? $this->holder($school, $token) : null;
 
         if (! $school || ! $user) {
@@ -192,13 +192,6 @@ class PasswordResetController extends Controller
     protected function identity(School $school): array
     {
         return ['name' => $school->name, 'address' => $school->slug.'.'.parse_url((string) config('app.url'), PHP_URL_HOST)];
-    }
-
-    protected function school(): ?School
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        return $school instanceof School ? $school : null;
     }
 
     /**

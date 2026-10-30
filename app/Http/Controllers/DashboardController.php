@@ -35,7 +35,7 @@ class DashboardController extends Controller
     public function show(Request $request): Response
     {
         $user = $request->user();
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
 
         if ($school instanceof School && app()->bound('currentPlatformVisit')) {
             return $this->schoolOverview($school);
@@ -56,8 +56,8 @@ class DashboardController extends Controller
 
     protected function schoolOverview(School $school): Response
     {
-        $year = StructureController::currentYear($school);
-        $term = StudentController::currentTerm($school);
+        $year = $this->schoolContext->year();
+        $term = $this->schoolContext->term();
         $enrolments = $year ? Enrolment::where('academic_year_id', $year->id)->where('status', EnrolmentStatus::Enrolled)->count() : 0;
         $invoices = Invoice::whereHas('student', fn ($q) => $q->where('school_id', $school->id))
             ->when($term, fn ($q) => $q->where('term_id', $term->id))->with('student')->with('payments')->with('exemption')->get();
@@ -86,7 +86,7 @@ class DashboardController extends Controller
     protected function today(User $teacher, School $school): Response
     {
         $now = now($school->timezone);
-        $term = StudentController::currentTerm($school);
+        $term = $this->schoolContext->term();
         $live = $term ? TimetableVersion::liveFor($term) : null;
         $lessons = $live ? $this->lessons($teacher, $school, $live, $now) : [];
         $next = collect($lessons)->first(fn (array $lesson) => $lesson['state'] === 'now')

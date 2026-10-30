@@ -3,7 +3,6 @@
 namespace App\Http\Requests\Students;
 
 use App\Enums\Gender;
-use App\Http\Controllers\StructureController;
 use App\Http\Requests\SchoolRequest;
 use App\Models\Student;
 use App\Models\StudentGuardian;
@@ -25,7 +24,7 @@ class SaveStudentRequest extends SchoolRequest
     public function rules(): array
     {
         $school = $this->school();
-        $year = StructureController::currentYear($school);
+        $year = $this->schoolContext()->year();
 
         return [
             'surname' => ['required', 'string', 'max:100'],

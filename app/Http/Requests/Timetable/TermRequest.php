@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Timetable;
 
-use App\Http\Controllers\StudentController;
 use App\Http\Requests\SchoolRequest;
 
 /**
@@ -24,7 +23,7 @@ abstract class TermRequest extends SchoolRequest
      */
     protected function insideTerm(): array
     {
-        $term = StudentController::currentTerm($this->school());
+        $term = $this->schoolContext()->term();
 
         return $term
             ? ['after_or_equal:'.$term->starts_on->toDateString(), 'before_or_equal:'.$term->ends_on->toDateString()]

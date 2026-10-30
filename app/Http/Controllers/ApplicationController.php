@@ -46,8 +46,8 @@ class ApplicationController extends Controller
 
     public function index(Request $request): Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = EnrolmentController::nextYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->nextYear();
 
         if (! $year) {
             return redirect()->route('enrolment');
@@ -61,7 +61,7 @@ class ApplicationController extends Controller
             ->withQueryString();
 
         return Inertia::render('enrolment/applications', [
-            'enrolment' => EnrolmentController::progress($school, $year),
+            'enrolment' => $year->enrolmentProgress($school, $this->schoolContext->year()),
             'counts' => [
                 'all' => $stages->count(),
                 ...collect(ApplicationStage::cases())->mapWithKeys(fn (ApplicationStage $case) => [
@@ -100,8 +100,8 @@ class ApplicationController extends Controller
      */
     public function export(Request $request): StreamedResponse|Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = EnrolmentController::nextYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->nextYear();
 
         if (! $year) {
             return redirect()->route('enrolment');
@@ -203,15 +203,15 @@ class ApplicationController extends Controller
 
     public function create(Request $request): Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = EnrolmentController::nextYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->nextYear();
 
         if (! $year) {
             return redirect()->route('enrolment');
         }
 
         return Inertia::render('enrolment/application-new', [
-            'enrolment' => EnrolmentController::progress($school, $year),
+            'enrolment' => $year->enrolmentProgress($school, $this->schoolContext->year()),
             'levels' => Level::where('school_id', $school->id)->orderBy('ordinal')->get(['id', 'name']),
             'religions' => Student::RELIGIONS,
             'documents' => Application::DOCUMENTS,
@@ -221,7 +221,7 @@ class ApplicationController extends Controller
 
     public function store(StoreApplicationRequest $request): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $year = $this->requireYear($school);
 
         $data = $request->validated();
@@ -274,8 +274,8 @@ class ApplicationController extends Controller
 
     public function show(Request $request, string $application): Response|RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
-        $year = EnrolmentController::nextYear($school);
+        $school = $this->schoolContext->school();
+        $year = $this->schoolContext->nextYear();
 
         if (! $year) {
             return redirect()->route('enrolment');
@@ -284,11 +284,11 @@ class ApplicationController extends Controller
         $target = $this->application($school, $application);
         $private = (bool) $request->user()?->can('see-private-student-details');
         $sibling = $this->sibling($school, $target);
-        $level = collect(EnrolmentController::capacity($school, $year))->firstWhere('id', $target->level_id);
+        $level = collect($year->enrolmentCapacity($school))->firstWhere('id', $target->level_id);
         $required = $target->requiredDocuments();
 
         return Inertia::render('enrolment/application-review', [
-            'enrolment' => EnrolmentController::progress($school, $year),
+            'enrolment' => $year->enrolmentProgress($school, $this->schoolContext->year()),
             'application' => [
                 'id' => $target->id,
                 'name' => $target->full_name,
@@ -334,7 +334,7 @@ class ApplicationController extends Controller
      */
     public function documents(UpdateApplicationDocumentsRequest $request, string $application): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $target = $this->application($school, $application);
 
         $data = $request->validated();
@@ -349,7 +349,7 @@ class ApplicationController extends Controller
 
     public function decide(DecideApplicationRequest $request, string $application): RedirectResponse
     {
-        $school = StudentController::schoolFor($request);
+        $school = $this->schoolContext->school();
         $year = $this->requireYear($school);
         $target = $this->application($school, $application);
 
@@ -463,7 +463,7 @@ class ApplicationController extends Controller
 
     protected function currentClass(School $school, Student $student): ?string
     {
-        $year = StructureController::currentYear($school);
+        $year = $this->schoolContext->year();
 
         return $year
             ? Enrolment::where('student_id', $student->id)
@@ -493,7 +493,7 @@ class ApplicationController extends Controller
 
     protected function requireYear(School $school): AcademicYear
     {
-        return EnrolmentController::nextYear($school) ?? throw ValidationException::withMessages([
+        return $this->schoolContext->nextYear() ?? throw ValidationException::withMessages([
             'year' => __('Enrolment needs a planned academic year. Add next year in School Setup first.'),
         ]);
     }

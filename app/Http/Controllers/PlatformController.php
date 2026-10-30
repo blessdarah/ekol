@@ -11,7 +11,6 @@ use App\Models\PendingRegistration;
 use App\Models\School;
 use App\Models\SchoolVisit;
 use App\Models\Student;
-use App\Models\Term;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,7 +49,7 @@ class PlatformController extends Controller
         $counts = ['all' => $schools->count(), 'active' => $schools->where('status', 'active')->count(),
             'quiet' => $schools->where('status', 'quiet')->count(), 'suspended' => $schools->where('status', 'suspended')->count()];
         $selected = isset($data['school']) ? School::where('is_demo', false)->whereKey($request->string('school')->toString())->firstOrFail() : null;
-        $term = $selected ? Term::where('school_id', $selected->id)->where('is_current', true)->first() : null;
+        $term = $selected ? $selected->terms()->current()->first() : null;
         $activeVisit = SchoolVisit::whereKey($request->session()->get('platform_visit'))
             ->where('user_id', Auth::guard('platform')->id())->whereNull('ended_at')->where('expires_at', '>', now())
             ->with('school:id,name')->first();
@@ -135,7 +134,7 @@ class PlatformController extends Controller
             'counts' => $counts, 'status' => $data['status'] ?? 'new',
             'requests' => DemoRequest::where('status', $data['status'] ?? 'new')->latest()->get(),
             'selected' => $selected ? [...$selected->toArray(), 'school' => $school?->only(['slug', 'demo_expires_at']),
-                'link' => $school && $school->demo_expires_at?->isFuture() ? DemoSchoolController::link($selected, $school) : null] : null,
+                'link' => $school && $school->demo_expires_at?->isFuture() ? $selected->accessLink($school) : null] : null,
         ]);
     }
 
@@ -186,7 +185,7 @@ class PlatformController extends Controller
         abort_unless($demo->email && $demo->demo_school_id && $demo->status === 'trying', 409);
         $school = School::findOrFail($demo->demo_school_id);
         abort_unless($school->demo_expires_at?->isFuture(), 410);
-        $link = DemoSchoolController::link($demo, $school);
+        $link = $demo->accessLink($school);
         Mail::raw(__('Your Campus demo school is ready.').' '.$link, fn ($message) => $message->to($demo->email)->subject(__('Your Campus demo school')));
         $this->notify('Demo link emailed.');
 

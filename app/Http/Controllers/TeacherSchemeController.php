@@ -10,7 +10,6 @@ use App\Models\Scheme;
 use App\Models\SchemeEvent;
 use App\Models\SchemeItem;
 use App\Models\SchemeOpening;
-use App\Models\School;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -27,9 +26,9 @@ class TeacherSchemeController extends Controller
 {
     public function show(Request $request): Response
     {
-        $school = $this->school();
+        $school = $this->schoolContext->school();
         $user = $this->user($request);
-        $term = StudentController::currentTerm($school);
+        $term = $this->schoolContext->term();
         $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
         $schemes = $term
             ? Scheme::where('term_id', $term->id)
@@ -64,7 +63,7 @@ class TeacherSchemeController extends Controller
                 'status' => $picked->status->value,
                 'weekly_periods' => (int) $picked->classSubject?->weekly_periods,
                 'weeks' => Scheme::weeks($term, $picked->classSubject?->schoolClass?->level_id),
-                'items' => $picked->items->map(fn (SchemeItem $item) => SchemeController::item($item))->values(),
+                'items' => $picked->items->map(fn (SchemeItem $item) => $item->summary())->values(),
                 'last_note' => $picked->events->whereIn('action', ['changes_requested', 'note', 'approved'])->whereNotNull('note')->sortByDesc('created_at')->map(fn (SchemeEvent $event) => [
                     'action' => $event->action,
                     'by' => $event->user?->full_name,
@@ -169,17 +168,6 @@ class TeacherSchemeController extends Controller
         return back();
     }
 
-    protected function school(): School
-    {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
-
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        return $school;
-    }
-
     protected function user(Request $request): User
     {
         $user = $request->user();
@@ -195,7 +183,7 @@ class TeacherSchemeController extends Controller
     {
         $user = $this->user($request);
 
-        return Scheme::where('school_id', $this->school()->id)
+        return Scheme::where('school_id', $this->schoolContext->school()->id)
             ->whereKey($scheme)
             ->whereHas('classSubject', fn ($query) => $query->where('staff_id', $user->id))
             ->firstOrFail();

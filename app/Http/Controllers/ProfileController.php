@@ -9,7 +9,6 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -35,7 +34,7 @@ class ProfileController extends Controller
                 'photo_url' => $user->photo_path ? "/storage/{$user->photo_path}" : null,
                 'password_changed_on' => $user->password_changed_at?->toDateString(),
             ],
-            'schools' => static::schoolsOf($user),
+            'schools' => $user->schoolsOf(),
         ]);
     }
 
@@ -74,37 +73,6 @@ class ProfileController extends Controller
         $this->notify('Password changed.');
 
         return back();
-    }
-
-    /**
-     * Every school on Campus that has a staff account with this person's
-     * email, with their role there and where to sign in to it.
-     *
-     * @return array<int, array{name: string, code: string, role: string, current: bool, login_url: string}>
-     */
-    public static function schoolsOf(User $user): array
-    {
-        if ($user->is_platform_admin || ! $user->email) {
-            return [];
-        }
-
-        $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
-
-        return User::where('email', $user->email)
-            ->whereNotNull('school_id')
-            ->with('school:id,name,code,slug')
-            ->get()
-            ->filter(fn (User $account) => $account->school instanceof School)
-            ->sortBy(fn (User $account) => [$account->id !== $user->id, $account->school?->name])
-            ->map(fn (User $account) => [
-                'name' => (string) $account->school?->name,
-                'code' => (string) $account->school?->code,
-                'role' => Str::headline($account->role->value),
-                'current' => $account->id === $user->id,
-                'login_url' => '//'.$account->school?->slug.'.'.$host.'/login',
-            ])
-            ->values()
-            ->all();
     }
 
     protected function user(Request $request): User

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\SchoolContext;
 use App\Models\School;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -13,12 +14,11 @@ abstract class SchoolRequest extends FormRequest
 {
     public function school(): School
     {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
+        return $this->schoolContext()->school();
+    }
 
-        if (! $school instanceof School) {
-            abort(404);
-        }
-
-        return $school;
+    protected function schoolContext(): SchoolContext
+    {
+        return $this->container->make(SchoolContext::class);
     }
 }

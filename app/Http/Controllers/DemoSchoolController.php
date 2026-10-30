@@ -15,20 +15,10 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class DemoSchoolController extends Controller
 {
-    public static function link(DemoRequest $demo, School $school): string
-    {
-        abort_unless($school->is_demo && $school->demo_expires_at !== null, 404);
-        $path = URL::temporarySignedRoute('demo-school.show', $school->demo_expires_at, ['demo' => $demo->id], absolute: false);
-        $parent = parse_url((string) config('app.url'));
-        abort_unless(is_array($parent) && isset($parent['host']), 500);
-
-        return ($parent['scheme'] ?? 'https').'://'.$school->slug.'.'.$parent['host'].(isset($parent['port']) ? ':'.$parent['port'] : '').$path;
-    }
-
     protected function school(DemoRequest $demo): School
     {
         $school = School::whereKey($demo->demo_school_id)->where('is_demo', true)->firstOrFail();
-        abort_unless(app()->bound('currentSchool') && app('currentSchool')->id === $school->id, 404);
+        abort_unless($this->schoolContext->hasSchool() && $this->schoolContext->school()->id === $school->id, 404);
         abort_unless($demo->status === 'trying' && $school->demo_expires_at?->isFuture(), 410);
 
         return $school;
@@ -58,7 +48,7 @@ class DemoSchoolController extends Controller
 
     public function start(Request $request): HttpResponse
     {
-        $school = app()->bound('currentSchool') ? app('currentSchool') : null;
+        $school = ($this->schoolContext->hasSchool() ? $this->schoolContext->school() : null);
         abort_unless($school instanceof School && $school->is_demo && $request->user()?->school_id === $school->id, 403);
         $demo = DemoRequest::where('demo_school_id', $school->id)->firstOrFail();
         $path = URL::temporarySignedRoute('demo-school.register', now()->addHour(), ['demo' => $demo->id], absolute: false);

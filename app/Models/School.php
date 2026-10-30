@@ -157,4 +157,35 @@ class School extends Model
     {
         return $this->hasMany(Student::class);
     }
+
+    /**
+     * The level each level leads to: the next one up in the same
+     * subsystem. A level missing from the map is a final year.
+     *
+     * @return array<string, string>
+     */
+    public function successorLevels(): array
+    {
+        $levels = Level::where('school_id', $this->id)->orderBy('ordinal')->get()->values();
+        $map = [];
+
+        foreach ($levels as $position => $level) {
+            $next = $levels->slice($position + 1)
+                ->first(fn (Level $candidate) => $candidate->subsystem === $level->subsystem && $candidate->ordinal > $level->ordinal);
+
+            if ($next) {
+                $map[$level->id] = $next->id;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * @return array{name: string, code: string}
+     */
+    public function issuer(): array
+    {
+        return ['name' => $this->name, 'code' => $this->code];
+    }
 }
