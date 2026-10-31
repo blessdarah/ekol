@@ -194,6 +194,7 @@ class SubjectPageData
             'name' => $subject->name,
             'code' => $subject->code,
             'department' => $subject->department,
+            'domain' => $subject->domain?->value,
             'kind' => match (true) {
                 $core !== null => 'Series core',
                 $elective !== null => Str::ucfirst($elective->stream ?? 'series').' elective',

@@ -1,3 +1,4 @@
+import { ManagementTabs } from '../../components/structure/ui';
 import {
     TableRowMenu,
     TableEmptyState,
@@ -45,6 +46,7 @@ interface SubjectRow {
     name: string;
     code: string;
     department: string;
+    domain: string | null;
     kind: string;
     levels: string[];
     coefficient: number | null;
@@ -200,11 +202,11 @@ function SubjectRoster({
 
     return (
         <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
-            <Head title={t('The subject roster')} />
+            <Head title={t('Rooms and subjects')} />
             <StructureHeader
                 section="subjects"
                 trail={[{ label: t('Subjects') }]}
-                title={t('The subject roster')}
+                title={t('Rooms and subjects')}
                 tag={t('Subjects:year_label', {
                     year_label: yearLabel ? ` · ${yearLabel}` : '',
                 })}
@@ -228,6 +230,7 @@ function SubjectRoster({
                     </Link>
                 }
             />
+            <ManagementTabs group="resources" active="subjects" />
 
             {counts.total === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">
@@ -380,7 +383,25 @@ function SubjectRoster({
                                             {row.name}
                                         </Link>
                                         <span className="text-[13px] leading-4 text-text-muted">
-                                            {row.kind}
+                                            {row.kind} ·{' '}
+                                            <span
+                                                className={
+                                                    row.domain
+                                                        ? ''
+                                                        : 'font-medium text-warning-text'
+                                                }
+                                            >
+                                                {row.domain
+                                                    ? t(
+                                                          row.domain
+                                                              .charAt(0)
+                                                              .toUpperCase() +
+                                                              row.domain.slice(
+                                                                  1,
+                                                              ),
+                                                      )
+                                                    : t('Needs classification')}
+                                            </span>
                                         </span>
                                     </span>
                                     <span className="w-[72px] shrink-0 font-mono text-[13px] leading-4 text-text">

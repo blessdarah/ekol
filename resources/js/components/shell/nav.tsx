@@ -79,6 +79,7 @@ export interface NavLink {
     icon: keyof typeof Icons;
     badge?: number | null;
     activePaths?: string[];
+    fallback?: { ability: string; href: string };
 }
 
 export interface NavSection {
@@ -94,16 +95,19 @@ export const NAV_SECTIONS: NavSection[] = [
             { href: '/students', label: 'Students', icon: 'students' },
             {
                 href: levelsIndex.url(),
-                label: 'Levels',
+                label: 'Levels and series',
                 icon: 'levels',
+                activePaths: [seriesRegistration.url(), seriesSetup.url()],
+                fallback: {
+                    ability: 'manage-structure',
+                    href: seriesRegistration.url(),
+                },
             },
-            { href: subjectsIndex.url(), label: 'Subjects', icon: 'classes' },
-            { href: roomsIndex.url(), label: 'Rooms', icon: 'rooms' },
             {
-                href: seriesRegistration.url(),
-                label: 'Series',
-                icon: 'series',
-                activePaths: [seriesSetup.url()],
+                href: roomsIndex.url(),
+                label: 'Rooms and subjects',
+                icon: 'rooms',
+                activePaths: [subjectsIndex.url()],
             },
             {
                 href: schemesIndex.url(),

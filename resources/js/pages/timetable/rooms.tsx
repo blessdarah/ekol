@@ -1,3 +1,4 @@
+import { ManagementTabs } from '../../components/structure/ui';
 import PageHeader from '../../components/shell/page-header';
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
@@ -473,10 +474,10 @@ function Rooms({ rooms, booking, ...shared }: RoomsProps) {
 
     return (
         <div className="flex flex-col gap-5 lg:min-h-[calc(100vh-56px)]">
-            <Head title={t('Rooms')} />
+            <Head title={t('Rooms and subjects')} />
             <PageHeader
-                root={{ label: t('Rooms'), href: index.url() }}
-                title={t('Rooms')}
+                root={{ label: t('Rooms and subjects'), href: index.url() }}
+                title={t('Rooms and subjects')}
                 meta={t(
                     ':rooms :rooms_a. The timetable books lessons from this list.',
                     {
@@ -499,6 +500,7 @@ function Rooms({ rooms, booking, ...shared }: RoomsProps) {
                     </>
                 }
             />
+            <ManagementTabs group="resources" active="rooms" />
 
             <div className="flex flex-1 flex-col gap-7 lg:flex-row">
                 <div className="flex min-w-0 flex-1 flex-col gap-3">

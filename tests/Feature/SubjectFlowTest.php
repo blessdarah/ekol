@@ -2,6 +2,7 @@
 
 use App\Enums\AcademicYearStatus;
 use App\Enums\SchoolCycle;
+use App\Enums\SubjectDomain;
 use App\Enums\UserRole;
 use App\Models\AcademicYear;
 use App\Models\ClassSubject;
@@ -67,6 +68,7 @@ function subjectPayload(array $classes, array $overrides = []): array
         'code' => 'math-101',
         'coefficient' => 4,
         'department' => 'Sciences',
+        'domain' => 'general',
         'note' => null,
         'mode' => 'register',
         'classes' => $classes,
@@ -89,6 +91,7 @@ test('registering a subject stores each class with its teacher and periods', fun
     $subject = Subject::where('code', 'MATH-101')->firstOrFail();
 
     expect((float) $subject->coefficient)->toBe(4.0)
+        ->and($subject->domain)->toBe(SubjectDomain::General)
         ->and($subject->classSubjects()->count())->toBe(2)
         ->and((int) $subject->classSubjects()->sum('weekly_periods'))->toBe(11)
         ->and(ClassSubject::where('school_class_id', $form1b->id)->exists())->toBeFalse()
@@ -165,6 +168,7 @@ test('the roster counts, filters by needs teacher and searches by teacher', func
         ->post('http://subjecta.ekol.test/classes/subjects', subjectPayload([
             ['class_id' => $form1a->id, 'staff_id' => null, 'weekly_periods' => 2],
         ], ['name' => 'Civic Education', 'code' => 'CIV-140', 'department' => 'General', 'mode' => 'draft']));
+    Subject::where('code', 'CIV-140')->firstOrFail()->update(['domain' => null]);
 
     $this->actingAs($world['admin'])
         ->get('http://subjecta.ekol.test/classes/subjects')
@@ -174,6 +178,8 @@ test('the roster counts, filters by needs teacher and searches by teacher', func
             ->where('counts.departments', 2)
             ->where('counts.needs_teacher', 1)
             ->where('subjects.rows.0.code', 'CIV-140')
+            ->where('subjects.rows.0.domain', null)
+            ->where('subjects.rows.1.domain', 'general')
             ->where('subjects.rows.1.levels', ['F1'])
             ->where('subjects.rows.1.periods', 5));
 
@@ -242,6 +248,7 @@ test('a template creates the chosen subjects and skips ones already registered',
     expect(Subject::orderBy('code')->pluck('code')->all())->toBe(['ENG-102', 'HIS-205', 'MATH-101'])
         ->and((float) Subject::where('code', 'ENG-102')->value('coefficient'))->toBe(4.0)
         ->and(ClassSubject::whereNull('staff_id')->count())->toBe(1);
+    expect(Subject::whereNotNull('domain')->count())->toBe(0);
 });
 
 test('subjects cannot use another school classes or staff, and teachers are kept out', function () {
@@ -311,4 +318,39 @@ test('a series subject a class of its level does not take counts as needing a te
         ->assertInertia(fn (Assert $page) => $page->where('counts.needs_teacher', 0)->has('subjects.rows', 0));
 
     expect($form1b->id)->not->toBe($form2a->id);
+});
+
+test('manual subject saves require an explicit valid domain', function (mixed $domain) {
+    $world = subjectWorld();
+
+    $this->actingAs($world['admin'])->post('http://subjecta.ekol.test/classes/subjects', subjectPayload([], [
+        'domain' => $domain, 'mode' => 'draft',
+    ]))->assertSessionHasErrors('domain');
+
+    expect(Subject::count())->toBe(0);
+})->with(['unclassified' => [null], 'unknown' => ['technical']]);
+
+test('subject forms preserve unclassified records and manual saves classify without changing their department', function () {
+    $world = subjectWorld();
+    $subject = Subject::create([
+        'school_id' => $world['school']->id, 'code' => 'OLD-101', 'name' => 'Existing subject',
+        'department' => 'Technical', 'weekly_periods' => 1, 'coefficient' => 1,
+    ]);
+
+    $this->actingAs($world['admin'])->get('http://subjecta.ekol.test/classes/subjects/'.$subject->id.'/edit')
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->where('subject.domain', null)
+        ->where('domains', [
+            ['value' => 'general', 'label' => 'General'], ['value' => 'science', 'label' => 'Science'],
+            ['value' => 'arts', 'label' => 'Arts'], ['value' => 'commercial', 'label' => 'Commercial'],
+        ]));
+    expect($subject->fresh()->domain)->toBeNull();
+
+    $this->patch('http://subjecta.ekol.test/classes/subjects/'.$subject->id, subjectPayload([], [
+        'name' => 'Existing subject', 'code' => 'OLD-101', 'department' => 'Technical',
+        'domain' => 'science', 'mode' => 'draft',
+    ]))->assertSessionHasNoErrors();
+
+    expect($subject->fresh()->domain)->toBe(SubjectDomain::Science);
+    expect($subject->fresh()->department)->toBe('Technical');
 });

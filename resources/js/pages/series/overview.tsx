@@ -1,3 +1,4 @@
+import { ManagementTabs } from '../../components/structure/ui';
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link } from '@inertiajs/react';
 import {
@@ -10,7 +11,7 @@ import {
     one,
 } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
 import { edit as editSubject } from '@/actions/App/Http/Controllers/SubjectRegistrationController';
-import { SeriesHeader, SeriesTabs, STREAMS } from '../../components/series/ui';
+import { SeriesHeader, STREAMS } from '../../components/series/ui';
 import {
     StreamChip,
     capsLabelClass,
@@ -57,9 +58,9 @@ function Overview({
 
     return (
         <div className="flex flex-col gap-5 lg:min-h-[calc(100vh-56px)]">
-            <Head title={t('Series Registration')} />
+            <Head title={t('Levels and series')} />
             <SeriesHeader
-                title={t('Series Registration')}
+                title={t('Levels and series')}
                 tag={yearLabel ?? undefined}
                 meta={t(
                     'put each student of a series level into a series, with their electives',
@@ -83,7 +84,11 @@ function Overview({
                     )
                 }
             />
-            <SeriesTabs active="registration" levelId={level?.id} />
+            <ManagementTabs
+                group="structure"
+                active="registration"
+                levelId={level?.id}
+            />
 
             {!hasTerm && (
                 <p className="rounded-md border border-solid border-warning bg-warning-tint p-4 text-[13px] leading-[19px] text-text">

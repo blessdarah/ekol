@@ -286,10 +286,22 @@ export default function Sidebar({
     /** Whether the menu is slid in, on screens too narrow to keep it in view. */
     open?: boolean;
 }) {
-    const { url } = usePage();
+    const { url, props } = usePage<{ can: Record<string, boolean> }>();
     const t = useT();
-    const sections =
-        user?.portal === 'teacher' ? TEACHER_NAV_SECTIONS : NAV_SECTIONS;
+    const sections = (
+        user?.portal === 'teacher' ? TEACHER_NAV_SECTIONS : NAV_SECTIONS
+    ).map((section) => ({
+        ...section,
+        links: section.links.map((link) =>
+            link.fallback && !props.can[link.fallback.ability]
+                ? {
+                      ...link,
+                      href: link.fallback.href,
+                      activePaths: [link.href, ...(link.activePaths ?? [])],
+                  }
+                : link,
+        ),
+    }));
     const path = url.split('?')[0];
     const covers = (href: string) =>
         path === href || path.startsWith(`${href}/`);

@@ -1,7 +1,7 @@
-import { Link, usePage } from '@inertiajs/react';
-import { index as setup } from '@/actions/App/Http/Controllers/SeriesController';
+import { usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { index } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
+import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 import { t } from '../../lib/i18n';
 
@@ -34,6 +34,12 @@ export const STREAMS = [
         label: 'Arts',
         text: 'text-arts',
         on: 'border-arts bg-arts-tint text-arts',
+    },
+    {
+        value: 'commercial',
+        label: 'Commercial',
+        text: 'text-primary',
+        on: 'border-primary bg-primary-tint text-primary',
     },
 ];
 
@@ -96,6 +102,8 @@ export function SeriesHeader({
     meta?: string;
     action?: ReactNode;
 }) {
+    const { can } = usePage<{ can: Record<string, boolean> }>().props;
+    const rootHref = can['manage-structure'] ? levelsIndex.url() : index.url();
     return (
         <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="flex min-w-0 flex-col gap-[6px]">
@@ -104,12 +112,12 @@ export function SeriesHeader({
                         trail.length > 0
                             ? [
                                   {
-                                      label: t('Series'),
-                                      href: index.url(),
+                                      label: t('Levels and series'),
+                                      href: rootHref,
                                   },
                                   ...trail,
                               ]
-                            : [{ label: t('Series') }]
+                            : [{ label: t('Levels and series') }]
                     }
                 />
                 <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
@@ -131,51 +139,6 @@ export function SeriesHeader({
             </div>
             {action}
         </div>
-    );
-}
-
-export function SeriesTabs({
-    active,
-    levelId,
-}: {
-    active: 'registration' | 'setup';
-    levelId?: string;
-}) {
-    const { can } = usePage<{ can: Record<string, boolean> }>().props;
-    const options = levelId ? { query: { level: levelId } } : undefined;
-    const tabs = [
-        {
-            key: 'registration',
-            label: 'Registration',
-            href: index.url(options),
-            allowed: can['manage-students'],
-        },
-        {
-            key: 'setup',
-            label: 'Series setup',
-            href: setup.url(options),
-            allowed: can['manage-structure'],
-        },
-    ];
-
-    return (
-        <nav
-            aria-label={t('Series')}
-            className="flex gap-6 overflow-x-auto border-b border-solid border-border whitespace-nowrap"
-        >
-            {tabs
-                .filter((tab) => tab.allowed)
-                .map((tab) => (
-                    <Link
-                        key={tab.key}
-                        href={tab.href}
-                        aria-current={tab.key === active ? 'page' : undefined}
-                        className={`-mb-px border-b-2 border-solid pb-[10px] text-[14px] leading-[18px] ${tab.key === active ? 'border-primary font-semibold text-text' : 'border-transparent font-medium text-text-muted hover:text-text'}`}
-                    >
-                        {t(tab.label)}
-                    </Link>
-                ))}
-        </nav>
     );
 }
 
