@@ -1,3 +1,5 @@
+import { index as subjectsIndex } from '@/actions/App/Http/Controllers/SubjectController';
+import { STREAMS } from '../../components/series/ui';
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
@@ -8,6 +10,7 @@ import {
 } from '@/actions/App/Http/Controllers/SeriesController';
 import {
     ChipPicker,
+    SearchPicker,
     ErrorText,
     LockIcon,
     RemoveIcon,
@@ -26,6 +29,7 @@ interface SubjectProp {
     code: string;
     name: string;
     teachers: number;
+    domain: string;
 }
 
 interface SeriesEditProps {
@@ -44,6 +48,7 @@ interface SeriesEditProps {
         level_ids: string[];
     } | null;
     subjects: SubjectProp[];
+    unavailableSubjects: string[];
     others: {
         id: string;
         label: string;
@@ -75,6 +80,7 @@ function SeriesEdit({
     levels,
     series,
     subjects,
+    unavailableSubjects,
     others,
 }: SeriesEditProps) {
     const form = useForm({
@@ -89,10 +95,27 @@ function SeriesEdit({
         electives: series?.electives ?? [],
     });
     const { data, setData, errors, processing } = form;
+    const fieldError = (field: 'core' | 'electives' | 'level_ids') =>
+        Object.entries(errors).find(
+            ([key]) => key === field || key.startsWith(`${field}.`),
+        )?.[1];
+
     const code = data.code.trim() || 'this series';
-    const byId = new Map(subjects.map((subject) => [subject.id, subject]));
+    const eligibleSubjects = subjects.filter(
+        (subject) =>
+            subject.domain === 'general' || subject.domain === data.stream,
+    );
+    const eligibleIds = new Set(eligibleSubjects.map((subject) => subject.id));
+    const copySources = others.filter((other) =>
+        [...other.core, ...other.electives].some((id) => eligibleIds.has(id)),
+    );
+    const byId = new Map(
+        eligibleSubjects.map((subject) => [subject.id, subject]),
+    );
     const core = data.core.flatMap((id) => byId.get(id) ?? []);
-    const pool = subjects.filter((subject) => !data.core.includes(subject.id));
+    const pool = eligibleSubjects.filter(
+        (subject) => !data.core.includes(subject.id),
+    );
     const inPool = pool.filter((subject) =>
         data.electives.includes(subject.id),
     );
@@ -119,10 +142,48 @@ function SeriesEdit({
         if (source) {
             setData({
                 ...data,
-                core: source.core,
-                electives: source.electives,
+                core: source.core.filter((subjectId) =>
+                    eligibleIds.has(subjectId),
+                ),
+                electives: source.electives.filter((subjectId) =>
+                    eligibleIds.has(subjectId),
+                ),
             });
         }
+    }
+
+    function changeDomain(stream: string) {
+        const allowedIds = new Set(
+            subjects
+                .filter(
+                    (subject) =>
+                        subject.domain === 'general' ||
+                        subject.domain === stream,
+                )
+                .map((subject) => subject.id),
+        );
+        const removed = [...data.core, ...data.electives]
+            .filter((id) => !allowedIds.has(id))
+            .flatMap((id) => byId.get(id)?.name ?? []);
+
+        if (
+            removed.length > 0 &&
+            !window.confirm(
+                t(
+                    'Changing the domain will remove these selected subjects: :subjects. Continue?',
+                    { subjects: removed.join(', ') },
+                ),
+            )
+        ) {
+            return;
+        }
+
+        setData({
+            ...data,
+            stream,
+            core: data.core.filter((id) => allowedIds.has(id)),
+            electives: data.electives.filter((id) => allowedIds.has(id)),
+        });
     }
 
     function submit(event: FormEvent) {
@@ -205,23 +266,12 @@ function SeriesEdit({
                             </label>
                             <div
                                 role="radiogroup"
-                                aria-label={t('Stream')}
-                                className={`flex flex-col gap-2 sm:w-[220px] ${fieldLabelClass}`}
+                                aria-label={t('Series domain')}
+                                className={`flex flex-col gap-2 sm:w-[320px] ${fieldLabelClass}`}
                             >
-                                {t('Stream')}
+                                {t('Series domain')}
                                 <div className="flex gap-2">
-                                    {[
-                                        {
-                                            value: 'science',
-                                            label: t('Science'),
-                                            on: 'border-science bg-science-tint text-science',
-                                        },
-                                        {
-                                            value: 'arts',
-                                            label: t('Arts'),
-                                            on: 'border-arts bg-arts-tint text-arts',
-                                        },
-                                    ].map((option) => (
+                                    {STREAMS.map((option) => (
                                         <button
                                             key={option.value}
                                             type="button"
@@ -230,7 +280,7 @@ function SeriesEdit({
                                                 data.stream === option.value
                                             }
                                             onClick={() =>
-                                                setData('stream', option.value)
+                                                changeDomain(option.value)
                                             }
                                             className={`flex h-10 flex-1 items-center justify-center rounded-md border border-solid text-[14px] leading-[18px] ${
                                                 data.stream === option.value
@@ -350,7 +400,7 @@ function SeriesEdit({
                             message={
                                 errors.min_subjects ??
                                 errors.max_subjects ??
-                                errors.level_ids
+                                fieldError('level_ids')
                             }
                         />
                         {data.level_ids.length > 1 && (
@@ -362,11 +412,48 @@ function SeriesEdit({
                         )}
                     </section>
 
-                    {subjects.length === 0 ? (
+                    {unavailableSubjects.length > 0 && (
+                        <p
+                            role="status"
+                            className="rounded-md bg-warning-tint p-3 text-[13px] leading-5 text-warning-text"
+                        >
+                            {t(
+                                'These subjects do not match this level, year or domain and will be removed when you save: :subjects',
+                                { subjects: unavailableSubjects.join(', ') },
+                            )}
+                        </p>
+                    )}
+                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-solid border-border bg-surface px-3 py-3 text-[13px]">
+                        <span className="font-semibold text-primary">
+                            {t('General + :domain only', {
+                                domain: t(
+                                    STREAMS.find(
+                                        (stream) =>
+                                            stream.value === data.stream,
+                                    )?.label ?? data.stream,
+                                ),
+                            })}
+                        </span>
+                        <span className="text-text-muted">
+                            {level.name} · {yearLabel}
+                        </span>
+                        <p className="w-full text-text-muted">
+                            {t(
+                                'Subjects must be assigned to this level in the current year. Unclassified subjects are excluded.',
+                            )}
+                        </p>
+                    </div>
+                    {eligibleSubjects.length === 0 ? (
                         <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
                             {t(
-                                'No subjects are registered yet, so there is nothing to choose as core or elective. You can save the series now and come back once subjects exist.',
-                            )}
+                                'Classify subjects and assign them to this level’s classes to choose core and elective subjects. You can save the series and finish later.',
+                            )}{' '}
+                            <Link
+                                href={subjectsIndex.url()}
+                                className="font-medium text-primary hover:underline"
+                            >
+                                {t('Manage subjects')}
+                            </Link>
                         </p>
                     ) : (
                         <>
@@ -410,6 +497,14 @@ function SeriesEdit({
                                                 tone="var(--color-text)"
                                             />
                                             {subject.name}
+                                            <span className="text-[11px] font-normal text-text-muted">
+                                                {t(
+                                                    subject.domain
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                        subject.domain.slice(1),
+                                                )}
+                                            </span>
                                             <button
                                                 type="button"
                                                 aria-label={t(
@@ -432,7 +527,7 @@ function SeriesEdit({
                                         </span>
                                     ))}
                                 </ChipPicker>
-                                <ErrorText message={errors.core} />
+                                <ErrorText message={fieldError('core')} />
                             </section>
 
                             <section className="flex flex-col gap-3">
@@ -486,6 +581,16 @@ function SeriesEdit({
                                                     className={`flex-1 truncate text-[14px] leading-[18px] font-medium ${muted}`}
                                                 >
                                                     {subject.name}
+                                                    <span className="ml-2 text-[11px] font-normal text-text-muted">
+                                                        {t(
+                                                            subject.domain
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                                subject.domain.slice(
+                                                                    1,
+                                                                ),
+                                                        )}
+                                                    </span>
                                                 </span>
                                                 <span
                                                     className={`w-[84px] shrink-0 font-mono text-[12px] leading-4 ${muted}`}
@@ -546,7 +651,7 @@ function SeriesEdit({
                                         </span>
                                     </div>
                                 </div>
-                                <ErrorText message={errors.electives} />
+                                <ErrorText message={fieldError('electives')} />
                             </section>
                         </>
                     )}
@@ -673,31 +778,25 @@ function SeriesEdit({
                         </ul>
                     </div>
 
-                    {others.length > 0 && (
+                    {copySources.length > 0 && (
                         <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border bg-white p-4">
                             <p className="text-[13px] leading-4 font-semibold text-text">
                                 {t('Similar to another series?')}
                             </p>
                             <p className="text-[13px] leading-[18px] text-text-muted">
                                 {t(
-                                    'Copy core subjects and the pool, then adjust.',
+                                    'Copy eligible core subjects and electives, then adjust.',
                                 )}
                             </p>
-                            <select
-                                aria-label={t('Copy from a series')}
-                                value=""
-                                onChange={(e) => copyFrom(e.target.value)}
-                                className="h-8 w-full rounded-md border border-solid border-border bg-white px-2 text-[13px] font-medium text-text outline-none focus:border-primary"
-                            >
-                                <option value="">
-                                    {t('Copy from a series')}
-                                </option>
-                                {others.map((other) => (
-                                    <option key={other.id} value={other.id}>
-                                        {t(other.label)}
-                                    </option>
-                                ))}
-                            </select>
+                            <SearchPicker
+                                label={t('Copy from a series')}
+                                placeholder={t('Copy from a series')}
+                                options={copySources.map((other) => ({
+                                    id: other.id,
+                                    name: other.label,
+                                }))}
+                                onSelect={copyFrom}
+                            />
                         </div>
                     )}
                 </aside>

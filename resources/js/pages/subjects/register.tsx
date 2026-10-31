@@ -32,6 +32,7 @@ import { t } from '../../lib/i18n';
 interface RegisterProps {
     yearLabel: string | null;
     departments: string[];
+    domains: { value: string; label: string }[];
     levels: LevelOption[];
     classes: ClassOption[];
     staff: StaffOption[];
@@ -41,6 +42,7 @@ interface RegisterProps {
         code: string;
         coefficient: number;
         department: string;
+        domain: string | null;
         note: string | null;
         classes: {
             class_id: string;
@@ -61,6 +63,7 @@ function Dot({ done }: { done: boolean }) {
 function Register({
     yearLabel,
     departments,
+    domains,
     levels,
     classes,
     staff,
@@ -81,6 +84,7 @@ function Register({
         coefficient: subject ? String(subject.coefficient) : '',
         department: subject?.department ?? departments[0] ?? '',
         note: subject?.note ?? '',
+        domain: subject?.domain ?? '',
     });
     const { data, setData, processing } = form;
     const errors = form.errors as Record<string, string>;
@@ -245,6 +249,46 @@ function Register({
                                 <ErrorText message={errors.coefficient} />
                             </label>
                         </div>
+                        <fieldset className="flex flex-col gap-2">
+                            <legend className={`${fieldLabelClass} pb-2`}>
+                                {t('Subject domain')}{' '}
+                                <span aria-hidden="true">*</span>
+                            </legend>
+                            <div className="flex flex-wrap gap-2">
+                                {domains.map((domain) => (
+                                    <label
+                                        key={domain.value}
+                                        className={`flex h-10 cursor-pointer items-center gap-2 rounded-md border border-solid px-3 text-[14px] ${data.domain === domain.value ? 'border-primary bg-primary-tint font-semibold text-primary' : 'border-border text-text hover:bg-surface'}`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="domain"
+                                            value={domain.value}
+                                            required
+                                            checked={
+                                                data.domain === domain.value
+                                            }
+                                            onChange={() =>
+                                                setData('domain', domain.value)
+                                            }
+                                            className="accent-primary"
+                                        />
+                                        {t(domain.label)}
+                                    </label>
+                                ))}
+                            </div>
+                            <p className="text-[12px] leading-4 text-text-muted">
+                                {t(
+                                    'General subjects are available to all series. Other subjects are available only to their matching series domain.',
+                                )}
+                            </p>
+                            {!data.domain && subject && (
+                                <p className="text-[12px] text-warning-text">
+                                    {t('Needs classification')}
+                                </p>
+                            )}
+                            <ErrorText message={errors.domain} />
+                        </fieldset>
                         <div className="flex flex-col gap-3 sm:flex-row">
                             <label
                                 className={`flex flex-col gap-2 sm:w-[300px] ${fieldLabelClass}`}

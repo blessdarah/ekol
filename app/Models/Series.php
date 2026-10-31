@@ -38,7 +38,7 @@ class Series extends Model
         'max_subjects',
     ];
 
-    public const array STREAMS = ['science', 'arts'];
+    public const array STREAMS = ['science', 'arts', 'commercial'];
 
     /**
      * @return array<string, string>

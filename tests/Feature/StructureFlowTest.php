@@ -3,8 +3,10 @@
 use App\Enums\AcademicYearStatus;
 use App\Enums\RoomKind;
 use App\Enums\SchoolCycle;
+use App\Enums\SubjectDomain;
 use App\Enums\UserRole;
 use App\Models\AcademicYear;
+use App\Models\ClassSubject;
 use App\Models\Enrolment;
 use App\Models\Level;
 use App\Models\Room;
@@ -72,7 +74,7 @@ function structureSubject(School $school, string $code, string $name): Subject
 {
     return Subject::create([
         'school_id' => $school->id, 'code' => $code, 'name' => $name,
-        'department' => 'Sciences', 'weekly_periods' => 4,
+        'department' => 'Sciences', 'domain' => SubjectDomain::General, 'weekly_periods' => 4,
     ]);
 }
 
@@ -253,12 +255,14 @@ test('the levels page lists classes with student counts and series ranges', func
 test('configuring a series saves core and electives and spreads to other levels', function () {
     $school = structureSchool();
     $admin = structureAdmin($school);
-    structureYear($school);
+    $year = structureYear($school);
     $form4 = structureLevel($school);
     $form5 = structureLevel($school, ['name' => 'Form 5', 'code' => 'F5', 'ordinal' => 5]);
     $physics = structureSubject($school, 'PHY', 'Physics');
     $chemistry = structureSubject($school, 'CHE', 'Chemistry');
     $biology = structureSubject($school, 'BIO', 'Biology');
+    structureOfferSubjects($school, $year, $form4, [$physics, $chemistry, $biology]);
+    structureOfferSubjects($school, $year, $form5, [$physics, $chemistry, $biology]);
 
     $this->actingAs($admin)
         ->post('http://structa.ekol.test/classes/series', [
@@ -384,10 +388,11 @@ test('a standard structure needs an active year before it can create classes', f
 test('the series form receives core and elective ids as plain lists', function () {
     $school = structureSchool();
     $admin = structureAdmin($school);
-    structureYear($school);
+    $year = structureYear($school);
     $level = structureLevel($school);
     $biology = structureSubject($school, 'BIO', 'Biology');
     $physics = structureSubject($school, 'PHY', 'Physics');
+    structureOfferSubjects($school, $year, $level, [$physics, $biology]);
     $series = Series::create([
         'school_id' => $school->id, 'level_id' => $level->id,
         'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science',
@@ -421,4 +426,176 @@ test('existing class names join the letter to the level number, word levels keep
         ->and($worded->fresh()->name)->toBe('Lower Sixth A')
         ->and(SchoolClass::nameFor('Form 2', 'C'))->toBe('Form 2C')
         ->and(SchoolClass::nameFor('Upper Sixth', 'B'))->toBe('Upper Sixth B');
+});
+
+/** @param list<Subject> $subjects */
+function structureOfferSubjects(School $school, AcademicYear $year, Level $level, array $subjects): void
+{
+    $class = structureClass($school, $year, $level, $level->name.' A');
+    foreach ($subjects as $subject) {
+        ClassSubject::create(['school_id' => $school->id, 'school_class_id' => $class->id, 'subject_id' => $subject->id, 'weekly_periods' => 3]);
+    }
+}
+
+test('series forms only offer subjects assigned to the current level and year', function () {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+    $year = structureYear($school);
+    $level = structureLevel($school);
+    $other = structureLevel($school, ['name' => 'Form 5', 'code' => 'F5', 'ordinal' => 5]);
+    $physics = structureSubject($school, 'PHY', 'Physics');
+    $biology = structureSubject($school, 'BIO', 'Biology');
+    structureOfferSubjects($school, $year, $level, [$physics]);
+    structureOfferSubjects($school, $year, $other, [$biology]);
+    structureSubject($school, 'CHE', 'Unassigned chemistry');
+    $old = AcademicYear::create(['school_id' => $school->id, 'label' => '2024/25', 'starts_on' => '2024-09-01', 'ends_on' => '2025-07-31', 'status' => 'closed']);
+    structureOfferSubjects($school, $old, $level, [structureSubject($school, 'HIS', 'Old history')]);
+    $this->actingAs($admin)->get('http://structa.ekol.test/classes/series/new?level='.$level->id)
+        ->assertOk()->assertInertia(fn (Assert $page) => $page->has('subjects', 1)->where('subjects.0.id', $physics->id)->where('subjects.0.teachers', 0));
+
+    $series = Series::create(['school_id' => $school->id, 'level_id' => $level->id, 'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science']);
+    $series->subjects()->sync([$physics->id => ['kind' => 'core'], $biology->id => ['kind' => 'elective']]);
+    $this->get('http://structa.ekol.test/classes/series/'.$series->id)->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->has('subjects', 1)->where('series.core', [$physics->id])->where('series.electives', [])->where('unavailableSubjects', ['Biology']));
+    expect($series->subjects()->count())->toBe(2);
+    $payload = ['code' => 'S1', 'name' => 'Science 1', 'stream' => 'science', 'min_subjects' => 1, 'max_subjects' => 5, 'level_ids' => [$level->id], 'core' => [$biology->id], 'electives' => [], 'level_id' => $other->id];
+    $this->patch('http://structa.ekol.test/classes/series/'.$series->id, $payload)->assertSessionHasErrors('core.0');
+    expect($series->subjects()->count())->toBe(2);
+    $payload['core'] = [$physics->id];
+    $this->patch('http://structa.ekol.test/classes/series/'.$series->id, $payload)->assertSessionHasNoErrors();
+    expect($series->subjects()->pluck('subjects.id')->all())->toBe([$physics->id]);
+});
+
+test('series saves reject subjects outside the selected level', function (string $field, string $assignment) {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+    $year = structureYear($school);
+    $level = structureLevel($school);
+    $subjectSchool = $assignment === 'foreign school' ? structureSchool(['name' => 'Other Academy', 'slug' => 'foreign', 'code' => 'OTHER']) : $school;
+    $subject = structureSubject($subjectSchool, 'PHY', 'Physics');
+    if ($assignment === 'other level') {
+        $other = structureLevel($school, ['name' => 'Form 5', 'code' => 'F5', 'ordinal' => 5]);
+        structureOfferSubjects($school, $year, $other, [$subject]);
+    } elseif ($assignment === 'previous year') {
+        $old = AcademicYear::create(['school_id' => $school->id, 'label' => '2024/25', 'starts_on' => '2024-09-01', 'ends_on' => '2025-07-31', 'status' => 'closed']);
+        structureOfferSubjects($school, $old, $level, [$subject]);
+    }
+    $data = ['level_id' => $level->id, 'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science', 'min_subjects' => 1, 'max_subjects' => 5, 'level_ids' => [$level->id], 'core' => [], 'electives' => []];
+    $data[$field] = [$subject->id];
+    $this->actingAs($admin)->post('http://structa.ekol.test/classes/series', $data)->assertSessionHasErrors($field.'.0');
+    expect(Series::count())->toBe(0);
+})->with(['core', 'electives'])->with(['other level', 'previous year', 'unassigned', 'foreign school']);
+
+test('spreading a series rejects a level that does not offer its subjects', function () {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+    $year = structureYear($school);
+    $level = structureLevel($school);
+    $other = structureLevel($school, ['name' => 'Form 5', 'code' => 'F5', 'ordinal' => 5]);
+    $subject = structureSubject($school, 'PHY', 'Physics');
+    structureOfferSubjects($school, $year, $level, [$subject]);
+    $this->actingAs($admin)->post('http://structa.ekol.test/classes/series', ['level_id' => $level->id, 'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science', 'min_subjects' => 1, 'max_subjects' => 5, 'level_ids' => [$level->id, $other->id], 'core' => [$subject->id], 'electives' => []])->assertSessionHasErrors('level_ids');
+    expect(Series::count())->toBe(0);
+});
+
+test('series accept general subjects and their own domain', function (string $stream, string $domain) {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+    $year = structureYear($school);
+    $level = structureLevel($school);
+    $subject = structureSubject($school, 'ELIG', 'Eligible subject');
+    $subject->update(['domain' => $domain]);
+    structureOfferSubjects($school, $year, $level, [$subject]);
+
+    $this->actingAs($admin)->post('http://structa.ekol.test/classes/series', [
+        'level_id' => $level->id, 'code' => 'S1', 'name' => 'Series 1', 'stream' => $stream,
+        'min_subjects' => 1, 'max_subjects' => 5, 'level_ids' => [$level->id],
+        'core' => [$subject->id], 'electives' => [],
+    ])->assertSessionHasNoErrors()->assertRedirect();
+
+    expect(Series::sole()->stream)->toBe($stream);
+    expect(Series::sole()->subjects()->pluck('subjects.id')->all())->toBe([$subject->id]);
+})->with([
+    'science general' => ['science', 'general'],
+    'science own' => ['science', 'science'],
+    'arts general' => ['arts', 'general'],
+    'arts own' => ['arts', 'arts'],
+    'commercial general' => ['commercial', 'general'],
+    'commercial own' => ['commercial', 'commercial'],
+]);
+
+test('science series reject other domains and unclassified subjects', function (string $field, ?string $domain) {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+    $year = structureYear($school);
+    $level = structureLevel($school);
+    $subject = structureSubject($school, 'WRONG', 'Ineligible subject');
+    $subject->update(['domain' => $domain]);
+    structureOfferSubjects($school, $year, $level, [$subject]);
+    $data = [
+        'level_id' => $level->id, 'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science',
+        'min_subjects' => 1, 'max_subjects' => 5, 'level_ids' => [$level->id], 'core' => [], 'electives' => [],
+    ];
+    $data[$field] = [$subject->id];
+
+    $this->actingAs($admin)->post('http://structa.ekol.test/classes/series', $data)
+        ->assertSessionHasErrors([$field.'.0' => 'Choose a subject assigned to this level for the current academic year.']);
+
+    expect(Series::count())->toBe(0);
+})->with(['core', 'electives'])->with(['arts' => ['arts'], 'commercial' => ['commercial'], 'unclassified' => [null]]);
+
+test('series editing exposes all classified domains but excludes incompatible initial selections', function () {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+    $year = structureYear($school);
+    $level = structureLevel($school);
+    $general = structureSubject($school, 'GEN', 'General subject');
+    $science = structureSubject($school, 'SCI', 'Science subject');
+    $science->update(['domain' => SubjectDomain::Science]);
+    $arts = structureSubject($school, 'ART', 'Arts subject');
+    $arts->update(['domain' => SubjectDomain::Arts]);
+    $commercial = structureSubject($school, 'COM', 'Commercial subject');
+    $commercial->update(['domain' => SubjectDomain::Commercial]);
+    $unclassified = structureSubject($school, 'OLD', 'Unclassified subject');
+    $unclassified->update(['domain' => null]);
+    structureOfferSubjects($school, $year, $level, [$general, $science, $arts, $commercial, $unclassified]);
+    $series = Series::create(['school_id' => $school->id, 'level_id' => $level->id, 'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science']);
+    $series->subjects()->sync([
+        $general->id => ['kind' => 'core'], $science->id => ['kind' => 'elective'],
+        $arts->id => ['kind' => 'core'], $unclassified->id => ['kind' => 'elective'],
+    ]);
+
+    $this->actingAs($admin)->get('http://structa.ekol.test/classes/series/'.$series->id)
+        ->assertOk()->assertInertia(fn (Assert $page) => $page
+        ->has('subjects', 4)
+        ->where('subjects.0.domain', 'arts')
+        ->where('subjects.1.domain', 'commercial')
+        ->where('subjects.2.domain', 'general')
+        ->where('subjects.3.domain', 'science')
+        ->where('series.core', [$general->id])
+        ->where('series.electives', [$science->id])
+        ->where('unavailableSubjects', fn ($names) => collect($names)->sort()->values()->all() === ['Arts subject', 'Unclassified subject']));
+
+    expect($series->subjects()->count())->toBe(4);
+});
+
+test('changing a series stream rejects subjects left over from the previous domain', function () {
+    $school = structureSchool();
+    $admin = structureAdmin($school);
+    $year = structureYear($school);
+    $level = structureLevel($school);
+    $subject = structureSubject($school, 'PHY', 'Physics');
+    $subject->update(['domain' => SubjectDomain::Science]);
+    structureOfferSubjects($school, $year, $level, [$subject]);
+    $series = Series::create(['school_id' => $school->id, 'level_id' => $level->id, 'code' => 'S1', 'name' => 'Science 1', 'stream' => 'science']);
+    $series->subjects()->sync([$subject->id => ['kind' => 'core']]);
+
+    $this->actingAs($admin)->patch('http://structa.ekol.test/classes/series/'.$series->id, [
+        'code' => 'S1', 'name' => 'Science 1', 'stream' => 'arts',
+        'min_subjects' => 1, 'max_subjects' => 5, 'level_ids' => [$level->id],
+        'core' => [$subject->id], 'electives' => [],
+    ])->assertSessionHasErrors('core.0');
+
+    expect($series->fresh()->stream)->toBe('science');
+    expect($series->subjects()->pluck('subjects.id')->all())->toBe([$subject->id]);
 });

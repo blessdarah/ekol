@@ -1,4 +1,13 @@
-import { SeriesTabs } from '../../components/series/ui';
+import {
+    ManagementTabs,
+    StreamChip,
+    SearchPicker,
+} from '../../components/structure/ui';
+import { tableRowClass } from '../../components/table/ui';
+import { useState } from 'react';
+import { router } from '@inertiajs/react';
+import { index as registration } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
+import { STREAMS } from '../../components/series/ui';
 import { Head, Link } from '@inertiajs/react';
 import {
     create,
@@ -15,7 +24,7 @@ import {
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
-interface SeriesCard {
+interface SeriesRow {
     id: string;
     code: string;
     name: string;
@@ -31,80 +40,7 @@ interface SeriesProps {
     level: { id: string; name: string } | null;
     enrolled: number;
     registered: number;
-    series: SeriesCard[];
-}
-
-const STREAMS = [
-    {
-        value: 'science',
-        label: 'Science',
-        tone: 'text-science',
-        tint: 'bg-science-tint',
-    },
-    { value: 'arts', label: 'Arts', tone: 'text-arts', tint: 'bg-arts-tint' },
-];
-
-function Card({
-    item,
-    tone,
-    tint,
-}: {
-    item: SeriesCard;
-    tone: string;
-    tint: string;
-}) {
-    const complete = item.core.length > 0;
-
-    return (
-        <Link
-            href={edit.url(item.id)}
-            className={`flex flex-col gap-3 rounded-lg border border-solid bg-white p-4 hover:border-primary ${
-                complete ? 'border-border' : 'border-warning'
-            }`}
-        >
-            <span className="flex items-center justify-between">
-                <span
-                    className={`flex h-8 min-w-10 shrink-0 items-center justify-center rounded-md px-2 font-mono text-[15px] leading-5 ${tint} ${tone}`}
-                >
-                    {item.code}
-                </span>
-                {complete ? (
-                    <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-success-tint px-2 text-[12px] leading-4 font-medium text-success">
-                        <span className="h-[6px] w-[6px] rounded-full bg-success" />
-                        {t('Complete')}
-                    </span>
-                ) : (
-                    <span className="flex h-[22px] items-center gap-[6px] rounded-full bg-warning-tint px-2 text-[12px] leading-4 font-medium text-warning-text">
-                        <span className="h-[6px] w-[6px] rounded-full bg-warning" />
-                        {t('Needs setup')}
-                    </span>
-                )}
-            </span>
-            <span className="flex flex-1 flex-col gap-1">
-                <span className="text-[15px] leading-5 font-semibold text-text">
-                    {item.name}
-                </span>
-                <span
-                    className={`text-[13px] leading-[18px] ${complete ? 'text-text-muted' : 'text-warning-text'}`}
-                >
-                    {complete
-                        ? item.core.join(', ')
-                        : t('No core subjects set yet')}
-                </span>
-            </span>
-            <span className="flex items-center justify-between border-t border-solid border-border pt-[10px]">
-                <span className="font-mono text-[12px] leading-4 text-text">
-                    {t(':core core · :electives electives', {
-                        core: item.core.length,
-                        electives: item.electives,
-                    })}
-                </span>
-                <span className="text-[12px] leading-4 text-text-muted">
-                    {t(':students students', { students: item.students })}
-                </span>
-            </span>
-        </Link>
-    );
+    series: SeriesRow[];
 }
 
 function SeriesByLevel({
@@ -116,14 +52,20 @@ function SeriesByLevel({
     series,
 }: SeriesProps) {
     const unassigned = Math.max(0, enrolled - registered);
+    const [search, setSearch] = useState('');
+    const shown = series.filter((item) =>
+        `${item.code} ${item.name}`
+            .toLowerCase()
+            .includes(search.trim().toLowerCase()),
+    );
 
     return (
         <div className="flex flex-col gap-7">
-            <Head title={t('Series setup')} />
+            <Head title={t('Levels and series')} />
             <StructureHeader
                 section="series"
                 trail={[{ label: t('Series setup') }]}
-                title={t('Series setup')}
+                title={t('Levels and series')}
                 tag={t('Structure:year_label', {
                     year_label: yearLabel ? ` · ${yearLabel}` : '',
                 })}
@@ -152,7 +94,11 @@ function SeriesByLevel({
                     )
                 }
             />
-            <SeriesTabs active="setup" levelId={level?.id} />
+            <ManagementTabs
+                group="structure"
+                active="setup"
+                levelId={level?.id}
+            />
 
             {!level ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">
@@ -173,30 +119,30 @@ function SeriesByLevel({
                         <span className="text-[13px] leading-4 font-medium text-text">
                             {t('Level')}
                         </span>
-                        <div className="flex flex-wrap gap-2">
-                            {levels.map((option) => {
-                                const selected = option.id === level.id;
-
-                                return (
-                                    <Link
-                                        key={option.id}
-                                        href={index.url({
-                                            query: { level: option.id },
-                                        })}
-                                        aria-current={
-                                            selected ? 'page' : undefined
-                                        }
-                                        className={`flex h-8 items-center rounded-full border border-solid px-[14px] text-[13px] leading-4 ${
-                                            selected
-                                                ? 'border-primary bg-primary-tint font-semibold text-primary'
-                                                : 'border-border bg-white font-medium text-text hover:bg-surface'
-                                        }`}
-                                    >
-                                        {option.name}
-                                    </Link>
-                                );
-                            })}
+                        <div className="w-[220px]">
+                            <SearchPicker
+                                label={t('Level')}
+                                placeholder={level.name}
+                                options={levels}
+                                onSelect={(id) =>
+                                    router.get(
+                                        index.url({ query: { level: id } }),
+                                    )
+                                }
+                            />
                         </div>
+                        <label className="flex h-9 items-center gap-2 text-[13px] text-text-muted">
+                            {t('Search series')}
+                            <input
+                                type="search"
+                                value={search}
+                                onChange={(event) =>
+                                    setSearch(event.target.value)
+                                }
+                                placeholder={t('Code or name')}
+                                className="h-9 w-[200px] rounded-md border border-solid border-border bg-white px-3 text-[14px] text-text outline-none focus:border-primary"
+                            />
+                        </label>
                         <span className="flex-1" />
                         <span className="flex items-center gap-[6px] text-[13px] leading-4 text-text-muted">
                             <LockIcon />
@@ -213,45 +159,95 @@ function SeriesByLevel({
                         </p>
                     )}
 
-                    {STREAMS.map((stream) => {
-                        const group = series.filter(
-                            (item) => item.stream === stream.value,
-                        );
-
-                        if (group.length === 0) {
-                            return null;
-                        }
-
-                        return (
-                            <section
-                                key={stream.value}
-                                className="flex flex-col gap-3"
-                            >
-                                <p className="flex items-baseline gap-3">
-                                    <span
-                                        className={`text-[12px] leading-4 font-semibold tracking-[0.06em] uppercase ${stream.tone}`}
-                                    >
-                                        {t(stream.label)}
-                                    </span>
-                                    <span className="text-[13px] leading-4 text-text-muted">
-                                        {t(':group series', {
-                                            group: group.length,
-                                        })}
-                                    </span>
-                                </p>
-                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                                    {group.map((item) => (
-                                        <Card
+                    {series.length > 0 && (
+                        <div className="overflow-x-auto border-y border-solid border-border">
+                            <table className="w-full min-w-[720px] border-collapse text-left text-[13px] text-text">
+                                <thead className="h-10 bg-surface text-[12px] font-semibold text-text-muted">
+                                    <tr>
+                                        {[
+                                            'Code',
+                                            'Name',
+                                            'Domain',
+                                            'Core',
+                                            'Electives',
+                                            'Registered',
+                                            'Action',
+                                        ].map((heading) => (
+                                            <th
+                                                key={heading}
+                                                scope="col"
+                                                className="px-3 py-2 font-semibold"
+                                            >
+                                                {t(heading)}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {shown.map((item, rowIndex) => (
+                                        <tr
                                             key={item.id}
-                                            item={item}
-                                            tone={stream.tone}
-                                            tint={stream.tint}
-                                        />
+                                            className={`h-12 border-t border-solid border-border ${tableRowClass({ index: rowIndex, interactive: true })}`}
+                                        >
+                                            <td className="px-3 py-2 font-mono font-medium">
+                                                {item.code}
+                                            </td>
+                                            <td className="px-3 py-2 font-medium">
+                                                {item.name}
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <span className="inline-flex">
+                                                    <StreamChip
+                                                        stream={item.stream}
+                                                    >
+                                                        {t(
+                                                            STREAMS.find(
+                                                                (stream) =>
+                                                                    stream.value ===
+                                                                    item.stream,
+                                                            )?.label ??
+                                                                item.stream,
+                                                        )}
+                                                    </StreamChip>
+                                                </span>
+                                            </td>
+                                            <td className="px-3 py-2 font-mono">
+                                                {item.core.length}
+                                            </td>
+                                            <td className="px-3 py-2 font-mono">
+                                                {item.electives}
+                                            </td>
+                                            <td className="px-3 py-2 font-mono">
+                                                {item.students}
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <Link
+                                                    href={edit.url(item.id)}
+                                                    aria-label={t(
+                                                        'Configure series :code',
+                                                        { code: item.code },
+                                                    )}
+                                                    className="font-medium text-primary hover:underline"
+                                                >
+                                                    {t('Configure')}
+                                                </Link>
+                                            </td>
+                                        </tr>
                                     ))}
-                                </div>
-                            </section>
-                        );
-                    })}
+                                    {shown.length === 0 && (
+                                        <tr>
+                                            <td
+                                                colSpan={7}
+                                                className="px-3 py-8 text-center text-text-muted"
+                                            >
+                                                {t('No matching series')}
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
 
                     {unassigned > 0 && (
                         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-surface px-4 py-3">
@@ -262,7 +258,9 @@ function SeriesByLevel({
                                 )}
                             </p>
                             <Link
-                                href="/series"
+                                href={registration.url({
+                                    query: { level: level.id },
+                                })}
                                 className="text-[13px] leading-4 font-medium text-primary hover:underline"
                             >
                                 {t('Open Series Registration')}

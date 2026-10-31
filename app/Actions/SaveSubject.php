@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Enums\CoefficientStatus;
+use App\Enums\SubjectDomain;
 use App\Models\AuditEvent;
 use App\Models\ClassSubject;
 use App\Models\Coefficient;
@@ -11,6 +12,7 @@ use App\Models\SchoolClass;
 use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SaveSubject
 {
@@ -18,24 +20,33 @@ class SaveSubject
      * Write the subject, its per-class teaching rows, and the per-level
      * coefficient rows that marks are weighted with.
      *
-     * @param  array{name: string, code: string, department: string, coefficient: int|float|string, note?: string|null, classes: list<array{class_id: string, staff_id: string|null, weekly_periods: int}>}  $data
+     * @param  array{name: string, code: string, department: string, domain?: SubjectDomain|string|null, coefficient: int|float|string, note?: string|null, classes: list<array{class_id: string, staff_id: string|null, weekly_periods: int}>}  $data
      */
     public function handle(School $school, ?User $actor, Subject $subject, array $data, ?int $defaultPeriods = null, bool $template = false): Subject
     {
+        if (! $template && ! isset($data['domain'])) {
+            throw ValidationException::withMessages(['domain' => __('The domain field is required.')]);
+        }
+
+        if (isset($data['domain']) && is_string($data['domain'])) {
+            $data['domain'] = SubjectDomain::tryFrom($data['domain'])
+                ?? throw ValidationException::withMessages(['domain' => __('The selected domain is invalid.')]);
+        }
+
         return DB::transaction(function () use ($school, $actor, $subject, $data, $defaultPeriods, $template) {
             $registered = ! $subject->exists;
-            $before = $subject->only(['name', 'code', 'department', 'coefficient']);
+            $before = $subject->only(['name', 'code', 'department', 'domain', 'coefficient']);
             $this->save($school, $subject, $data, $defaultPeriods);
             AuditEvent::record($school, $actor, 'subject', $subject->id, $registered ? 'registered' : 'updated', $registered
                 ? ['code' => $subject->code, ...($template ? ['template' => true] : [])]
-                : ['before' => $before, 'after' => $subject->only(['name', 'code', 'department', 'coefficient']), 'classes' => count($data['classes'])]);
+                : ['before' => $before, 'after' => $subject->only(['name', 'code', 'department', 'domain', 'coefficient']), 'classes' => count($data['classes'])]);
 
             return $subject;
         });
     }
 
     /**
-     * @param  array{name: string, code: string, department: string, coefficient: int|float|string, note?: string|null, classes: list<array{class_id: string, staff_id: string|null, weekly_periods: int}>}  $data
+     * @param  array{name: string, code: string, department: string, domain?: SubjectDomain|string|null, coefficient: int|float|string, note?: string|null, classes: list<array{class_id: string, staff_id: string|null, weekly_periods: int}>}  $data
      */
     protected function save(School $school, Subject $subject, array $data, ?int $defaultPeriods = null): Subject
     {
@@ -45,6 +56,7 @@ class SaveSubject
             'name' => trim((string) $data['name']),
             'code' => mb_strtoupper(trim((string) $data['code'])),
             'department' => trim((string) $data['department']),
+            'domain' => $data['domain'] ?? $subject->domain,
             'coefficient' => $data['coefficient'],
             'note' => $data['note'] ?? null,
             'weekly_periods' => (int) ($periods->max() ?? $defaultPeriods ?? $subject->weekly_periods ?? 0),

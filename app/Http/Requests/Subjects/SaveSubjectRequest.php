@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Subjects;
 
+use App\Enums\SubjectDomain;
 use App\Http\Requests\SchoolRequest;
 use App\Models\AcademicYear;
 use App\Models\School;
@@ -33,7 +34,7 @@ class SaveSubjectRequest extends SchoolRequest
     }
 
     /**
-     * @return array{name: string, code: string, department: string, coefficient: string, note: string|null, classes: list<array{class_id: string, staff_id: string|null, weekly_periods: int}>}
+     * @return array{name: string, code: string, department: string, domain: SubjectDomain, coefficient: string, note: string|null, classes: list<array{class_id: string, staff_id: string|null, weekly_periods: int}>}
      */
     public function subjectData(): array
     {
@@ -52,6 +53,7 @@ class SaveSubjectRequest extends SchoolRequest
             'name' => $this->string('name')->toString(),
             'code' => $this->string('code')->toString(),
             'department' => $this->string('department')->toString(),
+            'domain' => SubjectDomain::from($this->string('domain')->toString()),
             'coefficient' => $this->string('coefficient')->toString(),
             'note' => $this->input('note') === null ? null : $this->string('note')->toString(),
             'classes' => $classes,
@@ -78,6 +80,7 @@ class SaveSubjectRequest extends SchoolRequest
             ],
             'coefficient' => ['required', 'numeric', 'min:0.5', 'max:10'],
             'department' => ['required', 'string', 'max:60'],
+            'domain' => ['required', Rule::enum(SubjectDomain::class)],
             'note' => ['nullable', 'string', 'max:255'],
             'mode' => ['required', Rule::in(['draft', 'register'])],
             'classes' => ['present', 'array'],

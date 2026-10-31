@@ -1,3 +1,4 @@
+import { ManagementTabs } from '../../components/structure/ui';
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
@@ -521,10 +522,10 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
 
     return (
         <div className="flex flex-col gap-7">
-            <Head title={t('Levels')} />
+            <Head title={t('Levels and series')} />
             <StructureHeader
                 trail={[{ label: t('Levels') }]}
-                title={t('Levels')}
+                title={t('Levels and series')}
                 tag={t('Structure:year_label', {
                     year_label: yearLabel ? ` · ${yearLabel}` : '',
                 })}
@@ -555,6 +556,11 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
                         </Link>
                     </div>
                 }
+            />
+            <ManagementTabs
+                group="structure"
+                active="levels"
+                levelId={level?.id}
             />
 
             {levels.length === 0 ? (

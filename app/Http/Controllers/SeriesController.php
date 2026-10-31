@@ -150,10 +150,15 @@ class SeriesController extends Controller
 
     protected function form(School $school, Level $level, ?Series $series): Response
     {
-        $series?->load('subjects:id');
+        $series?->load('subjects:id,name');
+        $year = $this->schoolContext->year();
+        $subjects = Subject::forSeriesLevel($school, $level->id, $year)->orderBy('name')->get();
+        $availableIds = $subjects->modelKeys();
+        $eligibleIds = Subject::forSeriesLevel($school, $level->id, $year, $series->stream ?? 'science')->pluck('id')->all();
         $levels = $this->seriesLevels($school);
 
         $teachers = ClassSubject::where('school_id', $school->id)
+            ->whereHas('schoolClass', fn ($query) => $query->where('level_id', $level->id)->where('academic_year_id', $year?->id))
             ->whereNotNull('staff_id')
             ->selectRaw('subject_id, COUNT(DISTINCT staff_id) as total')
             ->groupBy('subject_id')
@@ -174,19 +179,18 @@ class SeriesController extends Controller
                 'stream' => $series->stream ?? 'science',
                 'min_subjects' => $series->min_subjects,
                 'max_subjects' => $series->max_subjects,
-                'core' => $this->subjectIds($series, 'core'),
-                'electives' => $this->subjectIds($series, 'elective'),
+                'core' => array_values(array_intersect($this->subjectIds($series, 'core'), $eligibleIds)),
+                'electives' => array_values(array_intersect($this->subjectIds($series, 'elective'), $eligibleIds)),
                 'level_ids' => $siblings,
             ] : null,
-            'subjects' => Subject::where('school_id', $school->id)
-                ->orderBy('name')
-                ->get()
-                ->map(fn (Subject $subject) => [
-                    'id' => $subject->id,
-                    'code' => $subject->code,
-                    'name' => $subject->name,
-                    'teachers' => (int) ($teachers[$subject->id] ?? 0),
-                ]),
+            'unavailableSubjects' => $series?->subjects->whereNotIn('id', $eligibleIds)->pluck('name')->values()->all() ?? [],
+            'subjects' => $subjects->map(fn (Subject $subject) => [
+                'id' => $subject->id,
+                'code' => $subject->code,
+                'name' => $subject->name,
+                'teachers' => (int) ($teachers[$subject->id] ?? 0),
+                'domain' => $subject->domain?->value,
+            ]),
             'others' => Series::where('school_id', $school->id)
                 ->when($series, fn ($query) => $query->where('id', '!=', $series->id))
                 ->with(['subjects:id', 'level:id,name'])
@@ -196,9 +200,10 @@ class SeriesController extends Controller
                 ->map(fn (Series $other) => [
                     'id' => $other->id,
                     'label' => "{$other->code} · {$other->name} · {$other->level?->name}",
-                    'core' => $this->subjectIds($other, 'core'),
-                    'electives' => $this->subjectIds($other, 'elective'),
+                    'core' => array_values(array_intersect($this->subjectIds($other, 'core'), $availableIds)),
+                    'electives' => array_values(array_intersect($this->subjectIds($other, 'elective'), $availableIds)),
                 ])
+                ->filter(fn (array $other) => $other['core'] !== [] || $other['electives'] !== [])
                 ->values(),
         ]);
     }

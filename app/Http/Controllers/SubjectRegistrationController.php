@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Actions\SaveSubject;
+use App\Enums\SubjectDomain;
 use App\Http\Requests\Subjects\SaveSubjectRequest;
 use App\Http\SchoolContext;
 use App\Http\SubjectPageData;
@@ -76,6 +77,7 @@ class SubjectRegistrationController extends Controller
 
         return Inertia::render('subjects/register', [
             'yearLabel' => $year?->label,
+            'domains' => array_map(fn (SubjectDomain $domain) => ['value' => $domain->value, 'label' => $domain->label()], SubjectDomain::cases()),
             'departments' => collect(self::DEPARTMENTS)
                 ->merge(Subject::where('school_id', $school->id)->distinct()->pluck('department'))
                 ->unique()
@@ -86,6 +88,7 @@ class SubjectRegistrationController extends Controller
                 'code' => $subject->code,
                 'coefficient' => (float) $subject->coefficient,
                 'department' => $subject->department,
+                'domain' => $subject->domain?->value,
                 'note' => $subject->note,
                 'classes' => $subject->classSubjects->map(fn (ClassSubject $row) => [
                     'class_id' => $row->school_class_id,
@@ -98,7 +101,7 @@ class SubjectRegistrationController extends Controller
     }
 
     /**
-     * @return array{name: string, code: string, department: string, coefficient: string, note: string|null, classes: list<array{class_id: string, staff_id: string|null, weekly_periods: int}>}
+     * @return array{name: string, code: string, department: string, domain: SubjectDomain, coefficient: string, note: string|null, classes: list<array{class_id: string, staff_id: string|null, weekly_periods: int}>}
      */
     protected function validated(SaveSubjectRequest $request): array
     {
