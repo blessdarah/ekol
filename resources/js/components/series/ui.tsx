@@ -1,3 +1,5 @@
+import { Link, usePage } from '@inertiajs/react';
+import { index as setup } from '@/actions/App/Http/Controllers/SeriesController';
 import type { ReactNode } from 'react';
 import { index } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
@@ -87,7 +89,7 @@ export function SeriesHeader({
     meta,
     action,
 }: {
-    /** Steps after Series Registration; the last one is this page. */
+    /** Steps within Series; the last one is this page. */
     trail?: Crumb[];
     title: string;
     tag?: string;
@@ -102,12 +104,12 @@ export function SeriesHeader({
                         trail.length > 0
                             ? [
                                   {
-                                      label: t('Series Registration'),
+                                      label: t('Series'),
                                       href: index.url(),
                                   },
                                   ...trail,
                               ]
-                            : [{ label: t('Series Registration') }]
+                            : [{ label: t('Series') }]
                     }
                 />
                 <h1 className="font-display text-[28px] leading-8 font-extrabold tracking-[-0.02em] text-text sm:text-[40px] sm:leading-[44px]">
@@ -129,6 +131,51 @@ export function SeriesHeader({
             </div>
             {action}
         </div>
+    );
+}
+
+export function SeriesTabs({
+    active,
+    levelId,
+}: {
+    active: 'registration' | 'setup';
+    levelId?: string;
+}) {
+    const { can } = usePage<{ can: Record<string, boolean> }>().props;
+    const options = levelId ? { query: { level: levelId } } : undefined;
+    const tabs = [
+        {
+            key: 'registration',
+            label: 'Registration',
+            href: index.url(options),
+            allowed: can['manage-students'],
+        },
+        {
+            key: 'setup',
+            label: 'Series setup',
+            href: setup.url(options),
+            allowed: can['manage-structure'],
+        },
+    ];
+
+    return (
+        <nav
+            aria-label={t('Series')}
+            className="flex gap-6 overflow-x-auto border-b border-solid border-border whitespace-nowrap"
+        >
+            {tabs
+                .filter((tab) => tab.allowed)
+                .map((tab) => (
+                    <Link
+                        key={tab.key}
+                        href={tab.href}
+                        aria-current={tab.key === active ? 'page' : undefined}
+                        className={`-mb-px border-b-2 border-solid pb-[10px] text-[14px] leading-[18px] ${tab.key === active ? 'border-primary font-semibold text-text' : 'border-transparent font-medium text-text-muted hover:text-text'}`}
+                    >
+                        {t(tab.label)}
+                    </Link>
+                ))}
+        </nav>
     );
 }
 

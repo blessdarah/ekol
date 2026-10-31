@@ -20,7 +20,6 @@ import {
     PlusIcon,
     StreamChip,
     StructureHeader,
-    StructureTabs,
     SUBSYSTEM_LABELS,
     Toggle,
     capsLabelClass,
@@ -522,10 +521,10 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
 
     return (
         <div className="flex flex-col gap-7">
-            <Head title={t('Levels and series')} />
+            <Head title={t('Levels')} />
             <StructureHeader
-                trail={[{ label: t('Levels and series') }]}
-                title={t('Levels and series')}
+                trail={[{ label: t('Levels') }]}
+                title={t('Levels')}
                 tag={t('Structure:year_label', {
                     year_label: yearLabel ? ` · ${yearLabel}` : '',
                 })}
@@ -557,7 +556,6 @@ function Levels({ yearLabel, selected, levels, staff, rooms }: LevelsProps) {
                     </div>
                 }
             />
-            <StructureTabs active="levels" />
 
             {levels.length === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">

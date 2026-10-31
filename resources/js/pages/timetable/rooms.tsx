@@ -1,3 +1,4 @@
+import PageHeader from '../../components/shell/page-header';
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -16,8 +17,6 @@ import {
     fieldLabelClass,
 } from '../../components/structure/ui';
 import {
-    TimetableHeader,
-    type TimetablePhase,
     WEEKDAYS,
     amberText,
     linkClass,
@@ -44,7 +43,7 @@ interface RoomRow {
 }
 
 interface RoomsProps {
-    phase: TimetablePhase;
+    booking: 'draft' | 'live' | null;
     slotsAWeek: number;
     schoolDays: number;
     periods: { id: string; label: string }[];
@@ -83,7 +82,7 @@ function RoomPanel({
     periods,
     kinds,
     subjects,
-}: Omit<RoomsProps, 'phase' | 'rooms'> & { room: RoomRow | null }) {
+}: Omit<RoomsProps, 'rooms' | 'booking'> & { room: RoomRow | null }) {
     const form = useForm({
         code: room?.code ?? '',
         kind: room?.kind ?? 'classroom',
@@ -459,7 +458,7 @@ function RoomPanel({
     );
 }
 
-function Rooms({ phase, rooms, ...shared }: RoomsProps) {
+function Rooms({ rooms, booking, ...shared }: RoomsProps) {
     const params = new URLSearchParams(usePage().url.split('?')[1] ?? '');
     const [group, setGroup] = useState('all');
     const adding = params.get('new') === '1';
@@ -475,13 +474,8 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
     return (
         <div className="flex flex-col gap-5 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('Rooms')} />
-            <TimetableHeader
-                page="setup"
-                phase={phase}
-                trail={[
-                    { label: t('Setup'), href: setup.url() },
-                    { label: t('Rooms') },
-                ]}
+            <PageHeader
+                root={{ label: t('Rooms'), href: index.url() }}
                 title={t('Rooms')}
                 meta={t(
                     ':rooms :rooms_a. The timetable books lessons from this list.',
@@ -493,7 +487,7 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
                 action={
                     <>
                         <Link href={setup.url()} className={quietActionClass}>
-                            {t('← Back to Setup')}
+                            {t('Timetable')}
                         </Link>
                         <Link
                             href={index.url({ query: { new: '1' } })}
@@ -630,9 +624,9 @@ function Rooms({ phase, rooms, ...shared }: RoomsProps) {
                     <p className="text-[13px] leading-[19px] text-text-muted">
                         {t('Booked a week counts slots out of')}{' '}
                         {shared.slotsAWeek} {t('that lessons use')}
-                        {phase.has_draft
+                        {booking === 'draft'
                             ? t(' in the draft')
-                            : phase.live !== null
+                            : booking === 'live'
                               ? t(' in the live timetable')
                               : ''}
                         {t(

@@ -17,7 +17,6 @@ import {
     fieldLabelClass,
     outlineButtonClass,
     solidButtonClass,
-    levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
@@ -146,8 +145,8 @@ function SeriesEdit({
                 }
             />
             <StructureHeader
+                section="series"
                 trail={[
-                    levelsCrumb,
                     {
                         label: level.name,
                         href: index.url({ query: { level: level.id } }),

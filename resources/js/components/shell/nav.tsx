@@ -1,3 +1,10 @@
+import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
+import { index as subjectsIndex } from '@/actions/App/Http/Controllers/SubjectController';
+import { index as seriesRegistration } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
+import { index as seriesSetup } from '@/actions/App/Http/Controllers/SeriesController';
+import { index as schemesIndex } from '@/actions/App/Http/Controllers/SchemeController';
+import { index as roomsIndex } from '@/actions/App/Http/Controllers/TimetableRoomController';
+
 function Icon({ d }: { d: string }) {
     return (
         <svg
@@ -17,6 +24,8 @@ function Icon({ d }: { d: string }) {
 }
 
 export const Icons = {
+    levels: <Icon d="M4 20v-5h5v-5h5V4h6v16H4" />,
+    rooms: <Icon d="M3 21h18M6 21V3h12v18M14 12h.01" />,
     dashboard: <Icon d="M4 4h7v7H4zM13 4h7v4h-7zM13 11h7v9h-7zM4 14h7v6H4z" />,
     students: (
         <Icon d="M16 19v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1M9.5 10a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM21 19v-1a4 4 0 0 0-3-3.87M15 3.13a4 4 0 0 1 0 7.75" />
@@ -69,6 +78,7 @@ export interface NavLink {
     label: string;
     icon: keyof typeof Icons;
     badge?: number | null;
+    activePaths?: string[];
 }
 
 export interface NavSection {
@@ -83,14 +93,22 @@ export const NAV_SECTIONS: NavSection[] = [
             { href: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
             { href: '/students', label: 'Students', icon: 'students' },
             {
-                href: '/classes',
-                label: 'Classes & Subjects',
-                icon: 'classes',
+                href: levelsIndex.url(),
+                label: 'Levels',
+                icon: 'levels',
+            },
+            { href: subjectsIndex.url(), label: 'Subjects', icon: 'classes' },
+            { href: roomsIndex.url(), label: 'Rooms', icon: 'rooms' },
+            {
+                href: seriesRegistration.url(),
+                label: 'Series',
+                icon: 'series',
+                activePaths: [seriesSetup.url()],
             },
             {
-                href: '/series',
-                label: 'Series Registration',
-                icon: 'series',
+                href: schemesIndex.url(),
+                label: 'Schemes of work',
+                icon: 'scheme',
             },
             {
                 href: '/assessments',

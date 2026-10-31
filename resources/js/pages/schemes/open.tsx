@@ -8,7 +8,7 @@ import {
     StepBar,
     type Steps,
 } from '../../components/schemes/ui';
-import { StructureTabs, capsLabelClass } from '../../components/structure/ui';
+import { capsLabelClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
 
@@ -88,7 +88,6 @@ function OpenSchemes({
                     'Creates one scheme for each subject and class, given to the teacher who teaches it there.',
                 )}
             />
-            <StructureTabs active="schemes" />
             <StepBar steps={steps} active="open" />
 
             <Form

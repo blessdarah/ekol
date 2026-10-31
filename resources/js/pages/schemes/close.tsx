@@ -13,7 +13,6 @@ import {
     type Steps,
 } from '../../components/schemes/ui';
 import {
-    StructureTabs,
     capsLabelClass,
     outlineButtonClass,
 } from '../../components/structure/ui';
@@ -97,7 +96,6 @@ function CloseTerm({
                     'How much of each plan was taught. Sub-topics not taught move to the start of the next term’s schemes.',
                 )}
             />
-            <StructureTabs active="schemes" />
             <StepBar steps={steps} active="close" />
 
             <div className="flex flex-wrap border-y border-solid border-border">

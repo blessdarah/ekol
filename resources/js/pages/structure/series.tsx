@@ -1,3 +1,4 @@
+import { SeriesTabs } from '../../components/series/ui';
 import { Head, Link } from '@inertiajs/react';
 import {
     create,
@@ -9,9 +10,7 @@ import {
     LockIcon,
     PlusIcon,
     StructureHeader,
-    StructureTabs,
     solidButtonClass,
-    levelsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
@@ -122,8 +121,9 @@ function SeriesByLevel({
         <div className="flex flex-col gap-7">
             <Head title={t('Series setup')} />
             <StructureHeader
-                trail={[levelsCrumb, { label: t('Series setup') }]}
-                title={t('Levels and series')}
+                section="series"
+                trail={[{ label: t('Series setup') }]}
+                title={t('Series setup')}
                 tag={t('Structure:year_label', {
                     year_label: yearLabel ? ` · ${yearLabel}` : '',
                 })}
@@ -152,7 +152,7 @@ function SeriesByLevel({
                     )
                 }
             />
-            <StructureTabs active="series" />
+            <SeriesTabs active="setup" levelId={level?.id} />
 
             {!level ? (
                 <p className="rounded-md bg-surface p-4 text-[13px] leading-[19px] text-text">

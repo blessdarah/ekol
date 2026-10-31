@@ -21,6 +21,7 @@ function Templates(props: TemplatesProps) {
         <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={t(TITLES[step])} />
             <StructureHeader
+                section="subjects"
                 trail={[subjectsCrumb, { label: t('Templates') }]}
                 title={t(TITLES[step])}
                 tag={t('Subject setup:year_label', {

@@ -63,6 +63,7 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
         <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={subject.name} />
             <StructureHeader
+                section="subjects"
                 trail={[subjectsCrumb, { label: subject.name }]}
                 title={t('One subject record')}
                 tag={t('Record:year_label', {

@@ -18,7 +18,6 @@ import { templates } from '@/actions/App/Http/Controllers/SubjectTemplateControl
 import {
     PlusIcon,
     StructureHeader,
-    StructureTabs,
     outlineButtonClass,
     solidButtonClass,
 } from '../../components/structure/ui';
@@ -203,6 +202,7 @@ function SubjectRoster({
         <div className="flex flex-col gap-7 lg:min-h-[calc(100vh-56px)]">
             <Head title={t('The subject roster')} />
             <StructureHeader
+                section="subjects"
                 trail={[{ label: t('Subjects') }]}
                 title={t('The subject roster')}
                 tag={t('Subjects:year_label', {
@@ -228,7 +228,6 @@ function SubjectRoster({
                     </Link>
                 }
             />
-            <StructureTabs active="subjects" />
 
             {counts.total === 0 ? (
                 <div className="flex flex-col items-start gap-3 rounded-md bg-surface p-4">

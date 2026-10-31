@@ -13,7 +13,6 @@ import {
     type Week,
 } from '../../components/schemes/ui';
 import {
-    StructureTabs,
     capsLabelClass,
     outlineButtonClass,
     solidButtonClass,
@@ -134,7 +133,6 @@ function ShowScheme({
                     </Link>
                 }
             />
-            <StructureTabs active="schemes" />
             <StepBar steps={steps} active="review" />
 
             <div className="flex flex-col gap-6 xl:flex-row">

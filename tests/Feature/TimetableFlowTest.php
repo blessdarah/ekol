@@ -505,3 +505,23 @@ test('a room change and a swap are recorded for a day or a week', function () {
         ->get("http://timea.ekol.test/timetable/changes?mode=swap&class={$class->id}")
         ->assertInertia(fn (Assert $page) => $page->where('mode', 'swap')->has('slots', 11)->has('recent', 2));
 });
+
+test('rooms can be managed before an academic calendar is configured', function () {
+    $school = School::create(['name' => 'New school', 'code' => 'NEW', 'slug' => 'newrooms', 'cycle' => SchoolCycle::Secondary, 'currency' => 'XAF', 'timezone' => 'Africa/Douala']);
+    $admin = User::factory()->create(['school_id' => $school->id, 'role' => UserRole::Admin]);
+    $other = School::create(['name' => 'Other school', 'code' => 'OTHER', 'slug' => 'otherrooms', 'cycle' => SchoolCycle::Secondary, 'currency' => 'XAF', 'timezone' => 'Africa/Douala']);
+    Room::create(['school_id' => $other->id, 'code' => 'Private', 'name' => 'Private', 'kind' => RoomKind::Classroom, 'capacity' => 30]);
+    $this->actingAs($admin)->get('http://newrooms.ekol.test/timetable/rooms')
+        ->assertOk()->assertInertia(fn (Assert $page) => $page->component('timetable/rooms')->has('rooms', 0)->has('periods', 0)->where('slotsAWeek', 0));
+
+    $this->post('http://newrooms.ekol.test/timetable/rooms', ['code' => 'A1', 'kind' => 'classroom', 'capacity' => 40, 'unavailable' => []])
+        ->assertSessionHasNoErrors()->assertRedirect();
+    $room = Room::where('school_id', $school->id)->sole();
+    expect($room->capacity)->toBe(40);
+    $this->patch("http://newrooms.ekol.test/timetable/rooms/{$room->id}", ['code' => 'A1', 'kind' => 'classroom', 'capacity' => 45, 'unavailable' => []])->assertSessionHasNoErrors();
+    expect($room->fresh()->capacity)->toBe(45);
+    $this->delete("http://newrooms.ekol.test/timetable/rooms/{$room->id}")->assertRedirect(route('timetable.rooms'));
+    expect(Room::whereKey($room->id)->exists())->toBeFalse();
+    $teacher = User::factory()->create(['school_id' => $school->id, 'role' => UserRole::Teacher]);
+    $this->actingAs($teacher)->get('http://newrooms.ekol.test/timetable/rooms')->assertForbidden();
+});
