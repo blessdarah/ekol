@@ -5,7 +5,6 @@ import { closing } from '@/actions/App/Http/Controllers/SchemeClosingController'
 import { index } from '@/actions/App/Http/Controllers/SchemeController';
 import { opening } from '@/actions/App/Http/Controllers/SchemeOpeningController';
 import { show as syllabus } from '@/actions/App/Http/Controllers/SyllabusController';
-import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
 import { type Crumb } from '../shell/breadcrumbs';
 import { dayMonth } from '../fees/ui';
 import { t } from '../../lib/i18n';
@@ -76,7 +75,7 @@ export function SchemesHeader({
     /** Steps after Schemes of work; the last is the page you are on. */
     trail?: Crumb[];
     title: string;
-    /** The mono line under the title, e.g. "Schemes · Term 1", as on the other Classes & Subjects tabs. */
+    /** The mono line under the title, e.g. "Schemes · Term 1", as on other management pages. */
     tag: string;
     /** Short facts after the tag. */
     meta?: string;
@@ -88,8 +87,8 @@ export function SchemesHeader({
 }) {
     return (
         <SharedPageHeader
-            root={{ label: t('Classes & Subjects'), href: levelsIndex.url() }}
-            trail={[schemesCrumb, ...(trail ?? [])]}
+            root={{ label: t('Schemes of work'), href: index.url() }}
+            trail={trail}
             title={title}
             tag={tag}
             meta={meta}

@@ -1,10 +1,8 @@
+import { index as seriesRegistration } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
 import SharedPageHeader from '../shell/page-header';
-import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { type Crumb } from '../shell/breadcrumbs';
-import { index as seriesIndex } from '@/actions/App/Http/Controllers/SeriesController';
 import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
-import { index as schemesIndex } from '@/actions/App/Http/Controllers/SchemeController';
 import { index as subjectsIndex } from '@/actions/App/Http/Controllers/SubjectController';
 import { t } from '../../lib/i18n';
 
@@ -120,63 +118,39 @@ export function Toggle({
 
 export function StructureHeader({
     trail = [],
+    section = 'levels',
     title,
     tag,
     meta,
     action,
 }: {
-    /** Steps after Classes & Subjects; the last one is the page you are on. */
+    section?: 'levels' | 'subjects' | 'series';
+    /** Steps within the selected management area. */
     trail?: Crumb[];
     title: string;
     tag: string;
     meta?: string;
     action?: ReactNode;
 }) {
+    const root = {
+        levels: { label: t('Levels'), href: levelsIndex.url() },
+        subjects: { label: t('Subjects'), href: subjectsIndex.url() },
+        series: { label: t('Series'), href: seriesRegistration.url() },
+    }[section];
+
     return (
         <SharedPageHeader
-            root={{ label: t('Classes & Subjects'), href: levelsIndex.url() }}
-            trail={trail}
+            root={root}
+            trail={trail.filter(
+                (crumb, index) =>
+                    index !== 0 ||
+                    (crumb.href !== root.href && crumb.label !== root.label),
+            )}
             title={title}
             tag={tag}
             meta={meta}
             action={action}
         />
-    );
-}
-
-export function StructureTabs({
-    active,
-}: {
-    active: 'subjects' | 'levels' | 'series' | 'schemes';
-}) {
-    const tabs = [
-        { key: 'subjects', label: t('Subjects'), href: subjectsIndex.url() },
-        { key: 'levels', label: t('Levels'), href: levelsIndex.url() },
-        { key: 'series', label: t('Series setup'), href: seriesIndex.url() },
-        {
-            key: 'schemes',
-            label: t('Schemes of work'),
-            href: schemesIndex.url(),
-        },
-    ];
-
-    return (
-        <nav className="flex gap-6 overflow-x-auto border-b border-solid border-border whitespace-nowrap">
-            {tabs.map((tab) => (
-                <Link
-                    key={tab.key}
-                    href={tab.href}
-                    aria-current={tab.key === active ? 'page' : undefined}
-                    className={`-mb-px border-b-2 border-solid pb-[10px] text-[14px] leading-[18px] ${
-                        tab.key === active
-                            ? 'border-primary font-semibold text-text'
-                            : 'border-transparent font-medium text-text-muted hover:text-text'
-                    }`}
-                >
-                    {t(tab.label)}
-                </Link>
-            ))}
-        </nav>
     );
 }
 

@@ -5,7 +5,7 @@ import {
 } from '@/actions/App/Http/Controllers/SchemeController';
 import { dayMonth } from '../../components/fees/ui';
 import { SchemesHeader } from '../../components/schemes/ui';
-import { StructureTabs, solidButtonClass } from '../../components/structure/ui';
+import { solidButtonClass } from '../../components/structure/ui';
 import { ExportDialog, toQuery } from '../../components/table/ui';
 import { withAppShell } from '../../layouts/app-layout';
 import { t } from '../../lib/i18n';
@@ -21,7 +21,6 @@ function SchemesIndex(props: IndexProps) {
     const {
         steps,
         dueOn,
-        canManage,
         totals,
         paged,
         picked,
@@ -58,7 +57,6 @@ function SchemesIndex(props: IndexProps) {
                     ) : undefined
                 }
             />
-            {canManage && <StructureTabs active="schemes" />}
 
             <SchemeOverview {...model} />
 

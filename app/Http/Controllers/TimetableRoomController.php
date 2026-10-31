@@ -28,23 +28,23 @@ class TimetableRoomController extends Controller
         $school = $this->schoolContext->school();
         $term = $this->schoolContext->term();
 
-        if (! $term) {
-            return redirect()->route('timetable');
-        }
-
-        $world = TimetableVersion::worldFor($school, $term);
-        $version = TimetableVersion::draftFor($term) ?? TimetableVersion::liveFor($term);
+        $yearId = $term ? $term->academic_year_id : $this->schoolContext->year()?->id;
+        $periods = Period::where('school_id', $school->id)->where('is_break', false)->orderBy('ordinal')->get();
+        $classes = SchoolClass::where('school_id', $school->id)->where('academic_year_id', $yearId)->get();
+        $rooms = Room::where('school_id', $school->id)->orderBy('code')->get();
+        $days = array_filter(range(0, 6), fn (int $day) => ($school->school_days & (1 << $day)) !== 0);
+        $version = $term ? (TimetableVersion::draftFor($term) ?? TimetableVersion::liveFor($term)) : null;
         $booked = $version
             ? TimetableSlot::where('timetable_version_id', $version->id)->whereNotNull('room_id')->get(['room_id'])->countBy('room_id')
             : collect();
-        $homes = $world['classes']->filter(fn (SchoolClass $class) => $class->home_room_id !== null)->keyBy('home_room_id');
+        $homes = $classes->filter(fn (SchoolClass $class) => $class->home_room_id !== null)->keyBy('home_room_id');
         $subjects = Subject::where('school_id', $school->id)->orderBy('name')->get(['id', 'name', 'room_kind']);
 
         return Inertia::render('timetable/rooms', [
-            'phase' => TimetableVersion::phase($school, $term),
-            'slotsAWeek' => count($world['days']) * $world['periods']->count(),
+            'booking' => $version === null ? null : ($version->status->value === 'draft' ? 'draft' : 'live'),
+            'slotsAWeek' => count($days) * $periods->count(),
             'schoolDays' => $school->school_days,
-            'periods' => $world['periods']->map(fn (Period $period) => ['id' => $period->id, 'label' => $period->label])->values(),
+            'periods' => $periods->map(fn (Period $period) => ['id' => $period->id, 'label' => $period->label])->values(),
             'kinds' => collect(RoomKind::cases())->map(fn (RoomKind $kind) => [
                 'value' => $kind->value,
                 'label' => $kind->label(),
@@ -55,7 +55,7 @@ class TimetableRoomController extends Controller
                 'name' => $subject->name,
                 'room_kind' => $subject->room_kind?->value,
             ]),
-            'rooms' => $world['rooms']->map(fn (Room $room) => [
+            'rooms' => $rooms->map(fn (Room $room) => [
                 'id' => $room->id,
                 'code' => $room->code,
                 'kind' => $room->kind->value,

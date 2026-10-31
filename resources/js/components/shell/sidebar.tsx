@@ -297,8 +297,12 @@ export default function Sidebar({
     // also light up Overview.
     const current = sections
         .flatMap((section) => section.links)
-        .filter((link) => covers(link.href))
-        .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+        .flatMap((link) =>
+            [link.href, ...(link.activePaths ?? [])]
+                .filter(covers)
+                .map((path) => ({ href: link.href, length: path.length })),
+        )
+        .sort((a, b) => b.length - a.length)[0]?.href;
 
     return (
         <aside
@@ -326,6 +330,7 @@ export default function Sidebar({
                                 <Link
                                     key={link.href}
                                     href={link.href}
+                                    aria-current={active ? 'page' : undefined}
                                     className={`flex h-[34px] items-center gap-3 rounded-lg px-2 text-[14px] ${
                                         active
                                             ? 'bg-primary-tint font-semibold text-primary'

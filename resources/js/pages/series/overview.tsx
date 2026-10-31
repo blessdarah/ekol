@@ -10,7 +10,7 @@ import {
     one,
 } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
 import { edit as editSubject } from '@/actions/App/Http/Controllers/SubjectRegistrationController';
-import { SeriesHeader, STREAMS } from '../../components/series/ui';
+import { SeriesHeader, SeriesTabs, STREAMS } from '../../components/series/ui';
 import {
     StreamChip,
     capsLabelClass,
@@ -83,6 +83,7 @@ function Overview({
                     )
                 }
             />
+            <SeriesTabs active="registration" levelId={level?.id} />
 
             {!hasTerm && (
                 <p className="rounded-md border border-solid border-warning bg-warning-tint p-4 text-[13px] leading-[19px] text-text">

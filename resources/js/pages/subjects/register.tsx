@@ -150,6 +150,7 @@ function Register({
                 }
             />
             <StructureHeader
+                section="subjects"
                 trail={
                     subject
                         ? [

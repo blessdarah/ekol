@@ -14,7 +14,6 @@ import {
     type Steps,
 } from '../../components/schemes/ui';
 import {
-    StructureTabs,
     capsLabelClass,
     outlineButtonClass,
     solidButtonClass,
@@ -358,7 +357,6 @@ function Syllabus({
                     </Link>
                 }
             />
-            <StructureTabs active="schemes" />
             <StepBar steps={steps} active="syllabus" />
 
             {levels.length === 0 ? (
