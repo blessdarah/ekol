@@ -1,7 +1,10 @@
 <?php
 
 use App\Http\Controllers\ApplicationController;
+use App\Http\Controllers\ApplicationRosterController;
 use App\Http\Controllers\AssessmentController;
+use App\Http\Controllers\AssessmentProgressController;
+use App\Http\Controllers\AssessmentResultController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\PasswordResetController;
@@ -10,11 +13,16 @@ use App\Http\Controllers\Auth\StaffInvitationController;
 use App\Http\Controllers\CorrectionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DemoSchoolController;
+use App\Http\Controllers\EnrolmentConfirmationController;
 use App\Http\Controllers\EnrolmentController;
 use App\Http\Controllers\ExamScheduleController;
 use App\Http\Controllers\FeeController;
+use App\Http\Controllers\FeeExemptionController;
+use App\Http\Controllers\FeePaymentController;
+use App\Http\Controllers\FeeStructureController;
 use App\Http\Controllers\GradingController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\LevelController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MarkSheetController;
 use App\Http\Controllers\MobilePaymentController;
@@ -23,25 +31,43 @@ use App\Http\Controllers\PayController;
 use App\Http\Controllers\PlatformAuthController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReEnrolmentController;
+use App\Http\Controllers\SchemeClosingController;
 use App\Http\Controllers\SchemeController;
+use App\Http\Controllers\SchemeOpeningController;
+use App\Http\Controllers\SchemeReviewController;
+use App\Http\Controllers\SchoolClassController;
+use App\Http\Controllers\SchoolScheduleController;
+use App\Http\Controllers\SeriesBulkRegistrationController;
+use App\Http\Controllers\SeriesChangeController;
 use App\Http\Controllers\SeriesController;
 use App\Http\Controllers\SeriesRegistrationController;
 use App\Http\Controllers\SetupController;
+use App\Http\Controllers\StaffAccessController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\StaffRosterController;
 use App\Http\Controllers\StructureController;
 use App\Http\Controllers\StudentAcademicsController;
 use App\Http\Controllers\StudentAttendanceController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentFeeController;
 use App\Http\Controllers\StudentImportController;
+use App\Http\Controllers\StudentPlacementController;
+use App\Http\Controllers\StudentRegistrationController;
+use App\Http\Controllers\StudentRosterController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\SubjectRegistrationController;
+use App\Http\Controllers\SubjectTemplateController;
 use App\Http\Controllers\SyllabusController;
 use App\Http\Controllers\TeacherSchemeController;
 use App\Http\Controllers\TeacherTimetableController;
+use App\Http\Controllers\TermReportController;
 use App\Http\Controllers\TermResultController;
 use App\Http\Controllers\TimetableChangeController;
 use App\Http\Controllers\TimetableController;
 use App\Http\Controllers\TimetableReviewController;
 use App\Http\Controllers\TimetableRoomController;
+use App\Http\Controllers\TimetableSlotController;
 use App\Http\Middleware\ResolveSchool;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Support\Facades\Route;
@@ -138,35 +164,35 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::patch('/years/{year}/active', [SetupController::class, 'activateYear'])->name('setup.years.activate');
             Route::patch('/terms', [SetupController::class, 'updateTerms'])->name('setup.terms');
             Route::patch('/terms/{term}/active', [SetupController::class, 'activateTerm'])->name('setup.terms.activate');
-            Route::patch('/installments', [SetupController::class, 'updateInstallments'])->name('setup.installments');
-            Route::patch('/windows', [SetupController::class, 'updateWindows'])->name('setup.windows');
-            Route::patch('/schoolday', [SetupController::class, 'updateSchoolday'])->name('setup.schoolday');
+            Route::patch('/installments', [SchoolScheduleController::class, 'updateInstallments'])->name('setup.installments');
+            Route::patch('/windows', [SchoolScheduleController::class, 'updateWindows'])->name('setup.windows');
+            Route::patch('/schoolday', [SchoolScheduleController::class, 'updateSchoolday'])->name('setup.schoolday');
         });
 
         Route::group(['prefix' => 'staff', 'middleware' => 'can:manage-staff'], function () {
-            Route::get('/', [StaffController::class, 'index'])->name('staff');
+            Route::get('/', [StaffRosterController::class, 'index'])->name('staff');
             Route::get('/register', [StaffController::class, 'create'])->name('staff.create');
-            Route::get('/export', [StaffController::class, 'export'])->name('staff.export');
+            Route::get('/export', [StaffRosterController::class, 'export'])->name('staff.export');
             Route::post('', [StaffController::class, 'store'])->name('staff.store');
             Route::get('/{staff}', [StaffController::class, 'show'])->name('staff.show');
             Route::get('/{staff}/edit', [StaffController::class, 'edit'])->name('staff.edit');
             Route::patch('/{staff}', [StaffController::class, 'update'])->name('staff.update');
-            Route::get('/{staff}/access', [StaffController::class, 'access'])->name('staff.access');
-            Route::post('/{staff}/access', [StaffController::class, 'saveAccess'])->name('staff.access.save');
-            Route::post('/{staff}/reminder', [StaffController::class, 'remind'])->name('staff.remind');
+            Route::get('/{staff}/access', [StaffAccessController::class, 'access'])->name('staff.access');
+            Route::post('/{staff}/access', [StaffAccessController::class, 'saveAccess'])->name('staff.access.save');
+            Route::post('/{staff}/reminder', [StaffAccessController::class, 'remind'])->name('staff.remind');
             Route::patch('/{staff}/hours', [StaffController::class, 'updateHours'])->name('staff.hours');
         });
 
         Route::group(['prefix' => 'classes'], function () {
             Route::get('/', [StructureController::class, 'index'])->middleware('can:manage-structure')->name('classes');
-            Route::get('/levels/new', [StructureController::class, 'createLevel'])->middleware('can:manage-structure')->name('classes.levels.create');
-            Route::post('/levels', [StructureController::class, 'storeLevel'])->middleware('can:manage-structure')->name('classes.levels.store');
-            Route::get('/levels/templates', [StructureController::class, 'levelTemplates'])->middleware('can:manage-structure')->name('classes.levels.templates');
-            Route::post('/levels/templates', [StructureController::class, 'storeLevelTemplates'])->middleware('can:manage-structure')->name('classes.levels.templates.store');
-            Route::patch('/levels/{level}', [StructureController::class, 'updateLevel'])->middleware('can:manage-structure')->name('classes.levels.update');
-            Route::post('/levels/{level}/classes', [StructureController::class, 'storeClass'])->middleware('can:manage-structure')->name('classes.classes.store');
-            Route::patch('/classes/{class}', [StructureController::class, 'updateClass'])->middleware('can:manage-structure')->name('classes.classes.update');
-            Route::delete('/classes/{class}', [StructureController::class, 'destroyClass'])->middleware('can:manage-structure')->name('classes.classes.destroy');
+            Route::get('/levels/new', [LevelController::class, 'createLevel'])->middleware('can:manage-structure')->name('classes.levels.create');
+            Route::post('/levels', [LevelController::class, 'storeLevel'])->middleware('can:manage-structure')->name('classes.levels.store');
+            Route::get('/levels/templates', [LevelController::class, 'levelTemplates'])->middleware('can:manage-structure')->name('classes.levels.templates');
+            Route::post('/levels/templates', [LevelController::class, 'storeLevelTemplates'])->middleware('can:manage-structure')->name('classes.levels.templates.store');
+            Route::patch('/levels/{level}', [LevelController::class, 'updateLevel'])->middleware('can:manage-structure')->name('classes.levels.update');
+            Route::post('/levels/{level}/classes', [SchoolClassController::class, 'storeClass'])->middleware('can:manage-structure')->name('classes.classes.store');
+            Route::patch('/classes/{class}', [SchoolClassController::class, 'updateClass'])->middleware('can:manage-structure')->name('classes.classes.update');
+            Route::delete('/classes/{class}', [SchoolClassController::class, 'destroyClass'])->middleware('can:manage-structure')->name('classes.classes.destroy');
             Route::post('/rooms', [StructureController::class, 'storeRoom'])->middleware('can:manage-structure')->name('classes.rooms.store');
             Route::get('/series', [SeriesController::class, 'index'])->middleware('can:manage-structure')->name('classes.series');
             Route::get('/series/new', [SeriesController::class, 'create'])->middleware('can:manage-structure')->name('classes.series.create');
@@ -181,34 +207,34 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
                 Route::patch('/syllabus/topics/{topic}', [SyllabusController::class, 'update'])->middleware('can:manage-schemes')->name('schemes.syllabus.update');
                 Route::delete('/syllabus/topics/{topic}', [SyllabusController::class, 'destroy'])->middleware('can:manage-schemes')->name('schemes.syllabus.destroy');
                 Route::patch('/syllabus/topics/{topic}/move', [SyllabusController::class, 'move'])->middleware('can:manage-schemes')->name('schemes.syllabus.move');
-                Route::get('/open', [SchemeController::class, 'opening'])->middleware('can:manage-schemes')->name('schemes.open');
-                Route::post('/open', [SchemeController::class, 'open'])->middleware('can:manage-schemes')->name('schemes.open.store');
-                Route::get('/close', [SchemeController::class, 'closing'])->middleware('can:manage-schemes')->name('schemes.close');
-                Route::post('/close', [SchemeController::class, 'close'])->middleware('can:manage-schemes')->name('schemes.close.store');
-                Route::get('/close/report', [SchemeController::class, 'report'])->middleware('can:manage-schemes')->name('schemes.report');
-                Route::get('/{scheme}', [SchemeController::class, 'show'])->middleware('can:follow-schemes')->name('schemes.show');
-                Route::post('/{scheme}/review', [SchemeController::class, 'review'])->middleware('can:follow-schemes')->name('schemes.review');
-                Route::post('/{scheme}/notes', [SchemeController::class, 'note'])->middleware('can:follow-schemes')->name('schemes.note');
+                Route::get('/open', [SchemeOpeningController::class, 'opening'])->middleware('can:manage-schemes')->name('schemes.open');
+                Route::post('/open', [SchemeOpeningController::class, 'open'])->middleware('can:manage-schemes')->name('schemes.open.store');
+                Route::get('/close', [SchemeClosingController::class, 'closing'])->middleware('can:manage-schemes')->name('schemes.close');
+                Route::post('/close', [SchemeClosingController::class, 'close'])->middleware('can:manage-schemes')->name('schemes.close.store');
+                Route::get('/close/report', [SchemeClosingController::class, 'report'])->middleware('can:manage-schemes')->name('schemes.report');
+                Route::get('/{scheme}', [SchemeReviewController::class, 'show'])->middleware('can:follow-schemes')->name('schemes.show');
+                Route::post('/{scheme}/review', [SchemeReviewController::class, 'review'])->middleware('can:follow-schemes')->name('schemes.review');
+                Route::post('/{scheme}/notes', [SchemeReviewController::class, 'note'])->middleware('can:follow-schemes')->name('schemes.note');
             });
             Route::get('/subjects', [SubjectController::class, 'index'])->middleware('can:manage-structure')->name('classes.subjects');
             Route::get('/subjects/export', [SubjectController::class, 'export'])->middleware('can:manage-structure')->name('classes.subjects.export');
-            Route::get('/subjects/new', [SubjectController::class, 'create'])->middleware('can:manage-structure')->name('classes.subjects.create');
-            Route::post('/subjects', [SubjectController::class, 'store'])->middleware('can:manage-structure')->name('classes.subjects.store');
-            Route::get('/subjects/templates', [SubjectController::class, 'templates'])->middleware('can:manage-structure')->name('classes.subjects.templates');
-            Route::post('/subjects/templates', [SubjectController::class, 'storeTemplates'])->middleware('can:manage-structure')->name('classes.subjects.templates.store');
+            Route::get('/subjects/new', [SubjectRegistrationController::class, 'create'])->middleware('can:manage-structure')->name('classes.subjects.create');
+            Route::post('/subjects', [SubjectRegistrationController::class, 'store'])->middleware('can:manage-structure')->name('classes.subjects.store');
+            Route::get('/subjects/templates', [SubjectTemplateController::class, 'templates'])->middleware('can:manage-structure')->name('classes.subjects.templates');
+            Route::post('/subjects/templates', [SubjectTemplateController::class, 'storeTemplates'])->middleware('can:manage-structure')->name('classes.subjects.templates.store');
             Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->middleware('can:manage-structure')->name('classes.subjects.show');
-            Route::get('/subjects/{subject}/edit', [SubjectController::class, 'edit'])->middleware('can:manage-structure')->name('classes.subjects.edit');
-            Route::patch('/subjects/{subject}', [SubjectController::class, 'update'])->middleware('can:manage-structure')->name('classes.subjects.update');
+            Route::get('/subjects/{subject}/edit', [SubjectRegistrationController::class, 'edit'])->middleware('can:manage-structure')->name('classes.subjects.edit');
+            Route::patch('/subjects/{subject}', [SubjectRegistrationController::class, 'update'])->middleware('can:manage-structure')->name('classes.subjects.update');
         });
 
-        Route::get('/students/{student}/fees', [FeeController::class, 'studentTab'])->middleware('can:read-student-fees')->name('students.fees');
+        Route::get('/students/{student}/fees', [StudentFeeController::class, 'studentTab'])->middleware('can:read-student-fees')->name('students.fees');
 
         Route::group(['prefix' => 'students', 'middleware' => 'can:manage-students'], function () {
-            Route::get('/', [StudentController::class, 'index'])->name('students');
-            Route::get('/export', [StudentController::class, 'export'])->name('students.export');
-            Route::get('/new', [StudentController::class, 'create'])->name('students.create');
-            Route::post('', [StudentController::class, 'store'])->name('students.store');
-            Route::get('/sibling-check', [StudentController::class, 'siblingCheck'])->name('students.sibling-check');
+            Route::get('/', [StudentRosterController::class, 'index'])->name('students');
+            Route::get('/export', [StudentRosterController::class, 'export'])->name('students.export');
+            Route::get('/new', [StudentRegistrationController::class, 'create'])->name('students.create');
+            Route::post('', [StudentRegistrationController::class, 'store'])->name('students.store');
+            Route::get('/sibling-check', [StudentRegistrationController::class, 'siblingCheck'])->name('students.sibling-check');
             Route::get('/import', [StudentImportController::class, 'show'])->name('students.import');
             Route::post('/import', [StudentImportController::class, 'upload'])->name('students.import.upload');
             Route::delete('/import', [StudentImportController::class, 'destroy'])->name('students.import.destroy');
@@ -221,40 +247,40 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::get('/{student}/academics', [StudentAcademicsController::class, 'show'])->name('students.academics');
             Route::get('/{student}/attendance', [StudentAttendanceController::class, 'show'])->name('students.attendance');
             Route::post('/{student}/attendance/{attendance}/excuse', [StudentAttendanceController::class, 'excuse'])->name('students.attendance.excuse');
-            Route::get('/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
-            Route::patch('/{student}', [StudentController::class, 'update'])->name('students.update');
+            Route::get('/{student}/edit', [StudentRegistrationController::class, 'edit'])->name('students.edit');
+            Route::patch('/{student}', [StudentRegistrationController::class, 'update'])->name('students.update');
         });
 
         Route::group(['prefix' => 'series', 'middleware' => 'can:manage-students'], function () {
             Route::get('/', [SeriesRegistrationController::class, 'index'])->name('series');
             Route::get('/register', [SeriesRegistrationController::class, 'one'])->name('series.one');
             Route::post('/register', [SeriesRegistrationController::class, 'register'])->name('series.register');
-            Route::get('/bulk', [SeriesRegistrationController::class, 'bulk'])->name('series.bulk');
-            Route::post('/bulk', [SeriesRegistrationController::class, 'bulkStore'])->name('series.bulk.store');
-            Route::get('/students/{student}/change', [SeriesRegistrationController::class, 'change'])->name('series.change');
-            Route::post('/students/{student}/change', [SeriesRegistrationController::class, 'changeStore'])->name('series.change.store');
+            Route::get('/bulk', [SeriesBulkRegistrationController::class, 'bulk'])->name('series.bulk');
+            Route::post('/bulk', [SeriesBulkRegistrationController::class, 'bulkStore'])->name('series.bulk.store');
+            Route::get('/students/{student}/change', [SeriesChangeController::class, 'change'])->name('series.change');
+            Route::post('/students/{student}/change', [SeriesChangeController::class, 'changeStore'])->name('series.change.store');
         });
 
         Route::group(['prefix' => 'enrolment', 'middleware' => 'can:manage-students'], function () {
             Route::get('/', [EnrolmentController::class, 'index'])->name('enrolment');
             Route::post('/classes', [EnrolmentController::class, 'copyClasses'])->name('enrolment.classes.copy');
             Route::post('/levels/{level}/classes', [EnrolmentController::class, 'storeClass'])->name('enrolment.classes.store');
-            Route::get('/applications', [ApplicationController::class, 'index'])->name('enrolment.applications');
-            Route::get('/applications/export', [ApplicationController::class, 'export'])->name('enrolment.applications.export');
+            Route::get('/applications', [ApplicationRosterController::class, 'index'])->name('enrolment.applications');
+            Route::get('/applications/export', [ApplicationRosterController::class, 'export'])->name('enrolment.applications.export');
             Route::get('/applications/new', [ApplicationController::class, 'create'])->name('enrolment.applications.create');
             Route::post('/applications', [ApplicationController::class, 'store'])->name('enrolment.applications.store');
             Route::get('/applications/{application}', [ApplicationController::class, 'show'])->name('enrolment.applications.show');
             Route::patch('/applications/{application}/documents', [ApplicationController::class, 'documents'])->name('enrolment.applications.documents');
             Route::post('/applications/{application}/decision', [ApplicationController::class, 'decide'])->name('enrolment.applications.decide');
-            Route::get('/re-enrolment', [EnrolmentController::class, 'reEnrolment'])->name('enrolment.re-enrolment');
-            Route::post('/re-enrolment', [EnrolmentController::class, 'decide'])->name('enrolment.re-enrolment.decide');
-            Route::post('/re-enrolment/promote', [EnrolmentController::class, 'promoteClass'])->name('enrolment.re-enrolment.promote');
-            Route::get('/placement', [EnrolmentController::class, 'placement'])->name('enrolment.placement');
-            Route::post('/placement', [EnrolmentController::class, 'place'])->name('enrolment.placement.place');
-            Route::post('/placement/all', [EnrolmentController::class, 'placeAll'])->name('enrolment.placement.all');
-            Route::post('/placement/clear', [EnrolmentController::class, 'clearClass'])->name('enrolment.placement.clear');
-            Route::get('/confirm', [EnrolmentController::class, 'confirm'])->name('enrolment.confirm');
-            Route::post('/confirm', [EnrolmentController::class, 'storeConfirmation'])->name('enrolment.confirm.store');
+            Route::get('/re-enrolment', [ReEnrolmentController::class, 'reEnrolment'])->name('enrolment.re-enrolment');
+            Route::post('/re-enrolment', [ReEnrolmentController::class, 'decide'])->name('enrolment.re-enrolment.decide');
+            Route::post('/re-enrolment/promote', [ReEnrolmentController::class, 'promoteClass'])->name('enrolment.re-enrolment.promote');
+            Route::get('/placement', [StudentPlacementController::class, 'placement'])->name('enrolment.placement');
+            Route::post('/placement', [StudentPlacementController::class, 'place'])->name('enrolment.placement.place');
+            Route::post('/placement/all', [StudentPlacementController::class, 'placeAll'])->name('enrolment.placement.all');
+            Route::post('/placement/clear', [StudentPlacementController::class, 'clearClass'])->name('enrolment.placement.clear');
+            Route::get('/confirm', [EnrolmentConfirmationController::class, 'confirm'])->name('enrolment.confirm');
+            Route::post('/confirm', [EnrolmentConfirmationController::class, 'storeConfirmation'])->name('enrolment.confirm.store');
         });
 
         Route::group(['prefix' => 'timetable', 'middleware' => 'can:manage-structure'], function () {
@@ -268,9 +294,9 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::get('/generate', [TimetableController::class, 'generator'])->name('timetable.generate');
             Route::post('/generate', [TimetableController::class, 'generate'])->name('timetable.generate.run');
             Route::get('/review', [TimetableReviewController::class, 'show'])->name('timetable.review');
-            Route::post('/slots', [TimetableReviewController::class, 'store'])->name('timetable.slots.store');
-            Route::patch('/slots/{slot}', [TimetableReviewController::class, 'update'])->name('timetable.slots.update');
-            Route::delete('/slots/{slot}', [TimetableReviewController::class, 'destroy'])->name('timetable.slots.destroy');
+            Route::post('/slots', [TimetableSlotController::class, 'store'])->name('timetable.slots.store');
+            Route::patch('/slots/{slot}', [TimetableSlotController::class, 'update'])->name('timetable.slots.update');
+            Route::delete('/slots/{slot}', [TimetableSlotController::class, 'destroy'])->name('timetable.slots.destroy');
             Route::get('/publish', [TimetableController::class, 'publishing'])->name('timetable.publish');
             Route::post('/publish', [TimetableController::class, 'publish'])->name('timetable.publish.store');
             Route::get('/changes', [TimetableChangeController::class, 'index'])->name('timetable.changes');
@@ -280,14 +306,14 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
         Route::group(['prefix' => 'fees', 'middleware' => 'can:manage-fees'], function () {
             Route::get('/', [FeeController::class, 'index'])->name('fees');
             Route::get('/export', [FeeController::class, 'export'])->name('fees.export');
-            Route::get('/structure', [FeeController::class, 'structure'])->name('fees.structure');
-            Route::patch('/structure', [FeeController::class, 'updateStructure'])->name('fees.structure.update');
-            Route::post('/structure/bill', [FeeController::class, 'bill'])->name('fees.structure.bill');
-            Route::get('/students/{student}', [FeeController::class, 'student'])->name('fees.student');
-            Route::post('/students/{student}/payments', [FeeController::class, 'pay'])->name('fees.pay');
-            Route::post('/invoices/{invoice}/exemption', [FeeController::class, 'exempt'])->name('fees.exemption');
-            Route::delete('/invoices/{invoice}/exemption', [FeeController::class, 'removeExemption'])->name('fees.exemption.remove');
-            Route::get('/payments/{payment}/receipt', [FeeController::class, 'receipt'])->name('fees.receipt');
+            Route::get('/structure', [FeeStructureController::class, 'structure'])->name('fees.structure');
+            Route::patch('/structure', [FeeStructureController::class, 'updateStructure'])->name('fees.structure.update');
+            Route::post('/structure/bill', [FeeStructureController::class, 'bill'])->name('fees.structure.bill');
+            Route::get('/students/{student}', [FeePaymentController::class, 'student'])->name('fees.student');
+            Route::post('/students/{student}/payments', [FeePaymentController::class, 'pay'])->name('fees.pay');
+            Route::post('/invoices/{invoice}/exemption', [FeeExemptionController::class, 'exempt'])->name('fees.exemption');
+            Route::delete('/invoices/{invoice}/exemption', [FeeExemptionController::class, 'removeExemption'])->name('fees.exemption.remove');
+            Route::get('/payments/{payment}/receipt', [FeePaymentController::class, 'receipt'])->name('fees.receipt');
             Route::get('/mobile-money', [MobilePaymentController::class, 'index'])->name('fees.mobile');
             Route::post('/mobile-money/{payment}/check', [MobilePaymentController::class, 'check'])->name('fees.mobile.check');
         });
@@ -301,11 +327,11 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::post('/schedule/{plan}/papers', [ExamScheduleController::class, 'save'])->middleware('can:manage-assessments')->name('assessments.schedule.save');
             Route::delete('/schedule/{plan}/papers/{paper}', [ExamScheduleController::class, 'destroy'])->middleware('can:manage-assessments')->name('assessments.schedule.destroy');
             Route::post('/schedule/{plan}/publish', [ExamScheduleController::class, 'publish'])->middleware('can:manage-assessments')->name('assessments.schedule.publish');
-            Route::get('/progress', [AssessmentController::class, 'progress'])->middleware('can:manage-assessments')->name('assessments.progress');
-            Route::get('/results', [AssessmentController::class, 'results'])->middleware('can:manage-assessments')->name('assessments.results');
+            Route::get('/progress', [AssessmentProgressController::class, 'progress'])->middleware('can:manage-assessments')->name('assessments.progress');
+            Route::get('/results', [AssessmentResultController::class, 'results'])->middleware('can:manage-assessments')->name('assessments.results');
             Route::get('/term', [TermResultController::class, 'term'])->middleware('can:manage-assessments')->name('assessments.term');
-            Route::get('/reports', [TermResultController::class, 'reports'])->middleware('can:manage-assessments')->name('assessments.reports');
-            Route::get('/reports/print', [TermResultController::class, 'print'])->middleware('can:manage-assessments')->name('assessments.reports.print');
+            Route::get('/reports', [TermReportController::class, 'reports'])->middleware('can:manage-assessments')->name('assessments.reports');
+            Route::get('/reports/print', [TermReportController::class, 'print'])->middleware('can:manage-assessments')->name('assessments.reports.print');
             Route::get('/corrections', [CorrectionController::class, 'index'])->middleware('can:manage-assessments')->name('assessments.corrections');
             Route::post('/corrections', [CorrectionController::class, 'store'])->name('assessments.corrections.store');
             Route::post('/corrections/{correction}/decision', [CorrectionController::class, 'decide'])->middleware(['can:manage-assessments', 'can:manage-staff'])->name('assessments.corrections.decide');
@@ -316,9 +342,9 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
             Route::patch('/sheets/{sheet}', [MarkSheetController::class, 'update'])->name('assessments.sheets.update');
             Route::get('/{plan}/edit', [AssessmentController::class, 'edit'])->middleware('can:manage-assessments')->name('assessments.edit');
             Route::patch('/{plan}', [AssessmentController::class, 'update'])->middleware('can:manage-assessments')->name('assessments.update');
-            Route::post('/{plan}/close', [AssessmentController::class, 'close'])->middleware('can:manage-assessments')->name('assessments.close');
-            Route::post('/{plan}/window', [AssessmentController::class, 'window'])->middleware('can:manage-assessments')->name('assessments.window');
-            Route::post('/{plan}/publish', [AssessmentController::class, 'publish'])->middleware('can:manage-assessments')->name('assessments.publish');
+            Route::post('/{plan}/close', [AssessmentProgressController::class, 'close'])->middleware('can:manage-assessments')->name('assessments.close');
+            Route::post('/{plan}/window', [AssessmentProgressController::class, 'window'])->middleware('can:manage-assessments')->name('assessments.window');
+            Route::post('/{plan}/publish', [AssessmentResultController::class, 'publish'])->middleware('can:manage-assessments')->name('assessments.publish');
         });
 
         Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
@@ -330,7 +356,7 @@ Route::middleware([ResolveSchool::class, SetLocale::class])->group(function () {
  * school's subdomain. They find the school, then prove the child is
  * theirs with the matricule, the phone the school has and an SMS code.
  */
-Route::get('/receipts/{payment}/verify', [FeeController::class, 'verifyReceipt'])->middleware(['signed', 'throttle:60,1', SetLocale::class])->name('receipts.verify');
+Route::get('/receipts/{payment}/verify', [FeePaymentController::class, 'verifyReceipt'])->middleware(['signed', 'throttle:60,1', SetLocale::class])->name('receipts.verify');
 
 Route::group(['prefix' => 'parents', 'middleware' => SetLocale::class], function () {
     Route::get('/', [ParentController::class, 'show'])->name('parents');

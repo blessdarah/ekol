@@ -1,10 +1,10 @@
 import { router, usePage } from '@inertiajs/react';
 import { type DragEvent, useState } from 'react';
+import { show as review } from '@/actions/App/Http/Controllers/TimetableReviewController';
 import {
-    show as review,
     store as placeLesson,
     update as updateSlot,
-} from '@/actions/App/Http/Controllers/TimetableReviewController';
+} from '@/actions/App/Http/Controllers/TimetableSlotController';
 import { type TimetablePhase } from '../ui';
 import { t } from '../../../lib/i18n';
 

@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
-import { index, show } from '@/actions/App/Http/Controllers/StudentController';
+import { index } from '@/actions/App/Http/Controllers/StudentRosterController';
+import { show } from '@/actions/App/Http/Controllers/StudentController';
 import {
     capsLabelClass,
     outlineButtonClass,

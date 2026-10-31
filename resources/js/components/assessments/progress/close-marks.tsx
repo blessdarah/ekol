@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { close } from '@/actions/App/Http/Controllers/AssessmentController';
+import { close } from '@/actions/App/Http/Controllers/AssessmentProgressController';
 import { linkClass, primaryClass, quietClass } from '../ui';
 import { t } from '../../../lib/i18n';
 import { type MarksProgressModel } from './model';

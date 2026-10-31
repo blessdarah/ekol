@@ -120,7 +120,7 @@ class ExamScheduleController extends Controller
             ],
         );
 
-        $this->audit($request, $school, $target, 'paper_saved', $paper->only(['level_id', 'subject_id', 'held_on', 'starts_at', 'room_id']));
+        AuditEvent::record($school, $request->user(), 'assessment_plan', $target->id, 'paper_saved', $paper->only(['level_id', 'subject_id', 'held_on', 'starts_at', 'room_id']));
 
         $this->notify('Paper saved.');
 
@@ -133,7 +133,7 @@ class ExamScheduleController extends Controller
         $target = $this->exam($school, $plan);
 
         $target->papers()->whereKey($paper)->delete();
-        $this->audit($request, $school, $target, 'paper_removed', ['paper' => $paper]);
+        AuditEvent::record($school, $request->user(), 'assessment_plan', $target->id, 'paper_removed', ['paper' => $paper]);
 
         $this->notify('Paper removed.');
 
@@ -164,7 +164,7 @@ class ExamScheduleController extends Controller
         }
 
         $target->update(['schedule_published_at' => now()]);
-        $this->audit($request, $school, $target, 'schedule_published', ['papers' => $papers->count()]);
+        AuditEvent::record($school, $request->user(), 'assessment_plan', $target->id, 'schedule_published', ['papers' => $papers->count()]);
 
         $this->notify('Exam schedule published.');
 
@@ -201,17 +201,5 @@ class ExamScheduleController extends Controller
     protected function exam(School $school, string $id): AssessmentPlan
     {
         return AssessmentPlan::where('school_id', $school->id)->where('kind', AssessmentKind::Exam)->where('id', $id)->firstOrFail();
-    }
-
-    protected function audit(Request $request, School $school, AssessmentPlan $plan, string $action, mixed $diff): void
-    {
-        AuditEvent::create([
-            'school_id' => $school->id,
-            'actor_id' => $request->user()?->id,
-            'entity' => 'assessment_plan',
-            'entity_id' => $plan->id,
-            'action' => $action,
-            'diff' => $diff,
-        ]);
     }
 }

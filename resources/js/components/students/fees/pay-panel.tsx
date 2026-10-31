@@ -1,4 +1,4 @@
-import { student as ledger } from '@/actions/App/Http/Controllers/FeeController';
+import { student as ledger } from '@/actions/App/Http/Controllers/FeePaymentController';
 import { Link } from '@inertiajs/react';
 import { t } from '../../../lib/i18n';
 import { figure } from '../../fees/ui';

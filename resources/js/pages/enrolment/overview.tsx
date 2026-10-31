@@ -1,13 +1,13 @@
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
-import { index as applicationsIndex } from '@/actions/App/Http/Controllers/ApplicationController';
+import { index as applicationsIndex } from '@/actions/App/Http/Controllers/ApplicationRosterController';
+import { confirm as confirmPage } from '@/actions/App/Http/Controllers/EnrolmentConfirmationController';
 import {
-    confirm as confirmPage,
     copyClasses,
-    placement as placementPage,
-    reEnrolment,
     storeClass,
 } from '@/actions/App/Http/Controllers/EnrolmentController';
+import { placement as placementPage } from '@/actions/App/Http/Controllers/StudentPlacementController';
+import { reEnrolment } from '@/actions/App/Http/Controllers/ReEnrolmentController';
 import { show as setup } from '@/actions/App/Http/Controllers/SetupController';
 import {
     EnrolmentHeader,

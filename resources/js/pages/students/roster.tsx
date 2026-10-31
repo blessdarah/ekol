@@ -8,10 +8,10 @@ import { useState } from 'react';
 import {
     create,
     edit,
-    exportMethod,
-    index,
-    show,
-} from '@/actions/App/Http/Controllers/StudentController';
+} from '@/actions/App/Http/Controllers/StudentRegistrationController';
+import { exportMethod } from '@/actions/App/Http/Controllers/StudentRosterController';
+import { show } from '@/actions/App/Http/Controllers/StudentController';
+import { index } from '@/actions/App/Http/Controllers/StudentRosterController';
 import { show as importPage } from '@/actions/App/Http/Controllers/StudentImportController';
 import {
     PlusIcon,

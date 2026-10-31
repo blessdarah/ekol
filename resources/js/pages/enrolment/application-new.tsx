@@ -1,9 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
-import {
-    index,
-    store,
-} from '@/actions/App/Http/Controllers/ApplicationController';
+import { index } from '@/actions/App/Http/Controllers/ApplicationRosterController';
+import { store } from '@/actions/App/Http/Controllers/ApplicationController';
 import {
     EnrolmentHeader,
     type EnrolmentProgress,

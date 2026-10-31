@@ -1,10 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { changeStore } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
-import {
-    index as students,
-    show,
-} from '@/actions/App/Http/Controllers/StudentController';
+import { changeStore } from '@/actions/App/Http/Controllers/SeriesChangeController';
+import { index as students } from '@/actions/App/Http/Controllers/StudentRosterController';
+import { show } from '@/actions/App/Http/Controllers/StudentController';
 import {
     SeriesChips,
     coreOf,

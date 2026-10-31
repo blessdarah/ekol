@@ -1,11 +1,11 @@
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { progress } from '@/actions/App/Http/Controllers/AssessmentProgressController';
 import {
-    progress,
     publish,
     results,
-} from '@/actions/App/Http/Controllers/AssessmentController';
-import { reports } from '@/actions/App/Http/Controllers/TermResultController';
+} from '@/actions/App/Http/Controllers/AssessmentResultController';
+import { reports } from '@/actions/App/Http/Controllers/TermReportController';
 import {
     AssessmentHeader,
     type AssessmentTabs,

@@ -121,7 +121,7 @@ class SeriesController extends Controller
 
             $this->saveSubjects($series, $data);
             $this->spread($school, $series, $data);
-            $this->audit($request, $school, $series, 'created', $data);
+            AuditEvent::record($school, $request->user(), 'series', $series->id, 'created', $data);
         });
 
         $this->notify('Series added.');
@@ -140,7 +140,7 @@ class SeriesController extends Controller
             $target->update($this->attributes($data));
             $this->saveSubjects($target, $data);
             $this->spread($school, $target, $data);
-            $this->audit($request, $school, $target, 'configured', $data);
+            AuditEvent::record($school, $request->user(), 'series', $target->id, 'configured', $data);
         });
 
         $this->notify('Series saved.');
@@ -266,17 +266,5 @@ class SeriesController extends Controller
             $copy->fill($this->attributes($data))->save();
             $this->saveSubjects($copy, $data);
         }
-    }
-
-    protected function audit(Request $request, School $school, Series $series, string $action, mixed $diff): void
-    {
-        AuditEvent::create([
-            'school_id' => $school->id,
-            'actor_id' => $request->user()?->id,
-            'entity' => 'series',
-            'entity_id' => $series->id,
-            'action' => $action,
-            'diff' => $diff,
-        ]);
     }
 }

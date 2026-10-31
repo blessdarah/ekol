@@ -1,4 +1,4 @@
-import { receipt } from '@/actions/App/Http/Controllers/FeeController';
+import { receipt } from '@/actions/App/Http/Controllers/FeePaymentController';
 import { Link } from '@inertiajs/react';
 import { t } from '../../../lib/i18n';
 import { dayMonth, figure } from '../../fees/ui';

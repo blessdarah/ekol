@@ -1,6 +1,6 @@
 import SharedPageHeader from '../shell/page-header';
 import type { ReactNode } from 'react';
-import { index as staffIndex } from '@/actions/App/Http/Controllers/StaffController';
+import { index as staffIndex } from '@/actions/App/Http/Controllers/StaffRosterController';
 import { t } from '../../lib/i18n';
 import { type Crumb } from '../shell/breadcrumbs';
 

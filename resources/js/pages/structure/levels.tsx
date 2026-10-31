@@ -4,13 +4,15 @@ import { useState, type FormEvent } from 'react';
 import { index as seriesIndex } from '@/actions/App/Http/Controllers/SeriesController';
 import {
     createLevel,
-    destroyClass,
     levelTemplates,
-    storeClass,
-    storeRoom,
-    updateClass,
     updateLevel,
-} from '@/actions/App/Http/Controllers/StructureController';
+} from '@/actions/App/Http/Controllers/LevelController';
+import {
+    destroyClass,
+    storeClass,
+    updateClass,
+} from '@/actions/App/Http/Controllers/SchoolClassController';
+import { storeRoom } from '@/actions/App/Http/Controllers/StructureController';
 import {
     CYCLE_LABELS,
     ErrorText,

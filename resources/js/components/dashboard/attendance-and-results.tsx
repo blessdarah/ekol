@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { useState } from 'react';
-import { results as resultsPage } from '@/actions/App/Http/Controllers/AssessmentController';
+import { results as resultsPage } from '@/actions/App/Http/Controllers/AssessmentResultController';
 import { t } from '../../lib/i18n';
 import { dayMonth } from '../fees/ui';
 import { AttendanceChart, ResultsChart } from './charts';

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { updateWindows } from '@/actions/App/Http/Controllers/SetupController';
+import { updateWindows } from '@/actions/App/Http/Controllers/SchoolScheduleController';
 import { t } from '../../lib/i18n';
 import {
     type AssessmentProp,

@@ -191,14 +191,7 @@ class AttendanceController extends Controller
                 }
             }
 
-            AuditEvent::create([
-                'school_id' => $school->id,
-                'actor_id' => $request->user()?->id,
-                'entity' => 'timetable_slot',
-                'entity_id' => $target->id,
-                'action' => $existing->isEmpty() ? 'register_saved' : 'register_changed',
-                'diff' => ['date' => $date, 'counts' => array_count_values(array_column($rows, 'status'))],
-            ]);
+            AuditEvent::record($school, $request->user(), 'timetable_slot', $target->id, $existing->isEmpty() ? 'register_saved' : 'register_changed', ['date' => $date, 'counts' => array_count_values(array_column($rows, 'status'))]);
         });
 
         $this->notify('Register saved.');

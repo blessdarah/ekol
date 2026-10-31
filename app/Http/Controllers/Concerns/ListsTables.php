@@ -111,14 +111,7 @@ trait ListsTables
         $made = now()->timezone($school->timezone ?: config('app.timezone'));
         $by = $request->user()?->full_name;
 
-        AuditEvent::create([
-            'school_id' => $school->id,
-            'actor_id' => $request->user()?->id,
-            'entity' => 'export',
-            'entity_id' => $school->id,
-            'action' => 'exported',
-            'diff' => ['list' => $title, 'format' => $format, 'rows' => $count, 'filters' => $applied, 'columns' => array_keys($columns)],
-        ]);
+        AuditEvent::record($school, $request->user(), 'export', $school->id, 'exported', ['list' => $title, 'format' => $format, 'rows' => $count, 'filters' => $applied, 'columns' => array_keys($columns)]);
 
         if ($format === 'print') {
             return Inertia::render('tables/print', [

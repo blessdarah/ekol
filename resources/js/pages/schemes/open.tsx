@@ -1,6 +1,6 @@
 import { Form, Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
-import { open } from '@/actions/App/Http/Controllers/SchemeController';
+import { open } from '@/actions/App/Http/Controllers/SchemeOpeningController';
 import { show as syllabus } from '@/actions/App/Http/Controllers/SyllabusController';
 import { dayMonth } from '../../components/fees/ui';
 import {

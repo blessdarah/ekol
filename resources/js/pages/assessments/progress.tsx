@@ -1,8 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
-import {
-    index,
-    results,
-} from '@/actions/App/Http/Controllers/AssessmentController';
+import { index } from '@/actions/App/Http/Controllers/AssessmentController';
+import { results } from '@/actions/App/Http/Controllers/AssessmentResultController';
 import {
     AssessmentHeader,
     Empty,

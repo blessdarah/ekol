@@ -1,9 +1,7 @@
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
-import {
-    reports,
-    term as termPage,
-} from '@/actions/App/Http/Controllers/TermResultController';
+import { reports } from '@/actions/App/Http/Controllers/TermReportController';
+import { term as termPage } from '@/actions/App/Http/Controllers/TermResultController';
 import {
     AssessmentHeader,
     type AssessmentTabs,

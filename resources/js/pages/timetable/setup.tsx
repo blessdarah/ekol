@@ -1,10 +1,8 @@
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link } from '@inertiajs/react';
 import { show as schoolSetup } from '@/actions/App/Http/Controllers/SetupController';
-import {
-    index as staffRoster,
-    show as staffRecord,
-} from '@/actions/App/Http/Controllers/StaffController';
+import { index as staffRoster } from '@/actions/App/Http/Controllers/StaffRosterController';
+import { show as staffRecord } from '@/actions/App/Http/Controllers/StaffController';
 import { checks } from '@/actions/App/Http/Controllers/TimetableController';
 import { index as roomsIndex } from '@/actions/App/Http/Controllers/TimetableRoomController';
 import { capsLabelClass } from '../../components/structure/ui';

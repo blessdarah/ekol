@@ -1,5 +1,5 @@
-import { structure } from '@/actions/App/Http/Controllers/FeeController';
-import { edit } from '@/actions/App/Http/Controllers/StudentController';
+import { structure } from '@/actions/App/Http/Controllers/FeeStructureController';
+import { edit } from '@/actions/App/Http/Controllers/StudentRegistrationController';
 import { Head, Link } from '@inertiajs/react';
 import { outlineButtonClass } from '../../components/structure/ui';
 import {

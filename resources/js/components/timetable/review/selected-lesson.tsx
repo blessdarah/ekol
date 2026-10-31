@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { destroy as removeSlot } from '@/actions/App/Http/Controllers/TimetableReviewController';
+import { destroy as removeSlot } from '@/actions/App/Http/Controllers/TimetableSlotController';
 import { capsLabelClass } from '../../structure/ui';
 import { TickBox, amberText, linkClass, plural } from '../ui';
 import { t } from '../../../lib/i18n';

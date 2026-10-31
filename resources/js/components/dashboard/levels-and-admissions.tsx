@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { index as applications } from '@/actions/App/Http/Controllers/ApplicationController';
+import { index as applications } from '@/actions/App/Http/Controllers/ApplicationRosterController';
 import { t } from '../../lib/i18n';
 import { LevelsChart } from './charts';
 import type { DashboardProps } from './model';

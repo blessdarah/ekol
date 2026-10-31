@@ -2,9 +2,9 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     createLevel,
-    index,
     storeLevelTemplates,
-} from '@/actions/App/Http/Controllers/StructureController';
+} from '@/actions/App/Http/Controllers/LevelController';
+import { index } from '@/actions/App/Http/Controllers/StructureController';
 import {
     CYCLE_LABELS,
     ErrorText,

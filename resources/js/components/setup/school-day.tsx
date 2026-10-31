@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { updateSchoolday } from '@/actions/App/Http/Controllers/SetupController';
+import { updateSchoolday } from '@/actions/App/Http/Controllers/SchoolScheduleController';
 import { t } from '../../lib/i18n';
 import {
     type PeriodProp,

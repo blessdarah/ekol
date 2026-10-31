@@ -99,14 +99,7 @@ class GradingController extends Controller
 
             GradeBand::where('school_id', $school->id)->whereNotIn('id', $keep)->delete();
 
-            AuditEvent::create([
-                'school_id' => $school->id,
-                'actor_id' => $user->id,
-                'entity' => 'school',
-                'entity_id' => $school->id,
-                'action' => 'grading_saved',
-                'diff' => ['pass_mark' => $data['pass_mark'], 'bands' => $bands->pluck('letter')->all()],
-            ]);
+            AuditEvent::record($school, $user, 'school', $school->id, 'grading_saved', ['pass_mark' => $data['pass_mark'], 'bands' => $bands->pluck('letter')->all()]);
         });
 
         $this->notify('Grading saved.');

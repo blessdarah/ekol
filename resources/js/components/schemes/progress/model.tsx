@@ -1,6 +1,7 @@
 import { router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
-import { index, show } from '@/actions/App/Http/Controllers/SchemeController';
+import { index } from '@/actions/App/Http/Controllers/SchemeController';
+import { show } from '@/actions/App/Http/Controllers/SchemeReviewController';
 import { STATES, type Steps } from '../ui';
 import {
     type FilterField,

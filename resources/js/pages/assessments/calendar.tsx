@@ -4,10 +4,10 @@ import { Fragment } from 'react';
 import {
     create,
     edit,
-    progress,
-    results,
     usual,
 } from '@/actions/App/Http/Controllers/AssessmentController';
+import { progress } from '@/actions/App/Http/Controllers/AssessmentProgressController';
+import { results } from '@/actions/App/Http/Controllers/AssessmentResultController';
 import { show as schedule } from '@/actions/App/Http/Controllers/ExamScheduleController';
 import {
     AssessmentHeader,

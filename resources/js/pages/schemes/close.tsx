@@ -4,8 +4,8 @@ import {
     close,
     closing,
     report,
-    show,
-} from '@/actions/App/Http/Controllers/SchemeController';
+} from '@/actions/App/Http/Controllers/SchemeClosingController';
+import { show } from '@/actions/App/Http/Controllers/SchemeReviewController';
 import { dayMonth } from '../../components/fees/ui';
 import {
     SchemesHeader,

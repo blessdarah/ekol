@@ -1,10 +1,11 @@
 import SharedPageHeader from '../shell/page-header';
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { studentTab } from '@/actions/App/Http/Controllers/FeeController';
+import { studentTab } from '@/actions/App/Http/Controllers/StudentFeeController';
 import { show as academicsTab } from '@/actions/App/Http/Controllers/StudentAcademicsController';
 import { show as attendanceTab } from '@/actions/App/Http/Controllers/StudentAttendanceController';
-import { index, show } from '@/actions/App/Http/Controllers/StudentController';
+import { index } from '@/actions/App/Http/Controllers/StudentRosterController';
+import { show } from '@/actions/App/Http/Controllers/StudentController';
 import { type Crumb } from '../shell/breadcrumbs';
 import { numberLocale, t } from '../../lib/i18n';
 

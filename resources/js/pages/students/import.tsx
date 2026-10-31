@@ -1,7 +1,7 @@
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
-import { index } from '@/actions/App/Http/Controllers/StudentController';
+import { index } from '@/actions/App/Http/Controllers/StudentRosterController';
 import {
     clearMapping,
     destroy,

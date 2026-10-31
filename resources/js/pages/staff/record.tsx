@@ -2,11 +2,13 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import {
     access,
-    edit,
-    index,
     remind,
+} from '@/actions/App/Http/Controllers/StaffAccessController';
+import {
+    edit,
     updateHours,
 } from '@/actions/App/Http/Controllers/StaffController';
+import { index } from '@/actions/App/Http/Controllers/StaffRosterController';
 import {
     Avatar,
     EMPLOYMENT_LABELS,

@@ -1,11 +1,9 @@
 import SharedPageHeader from '../shell/page-header';
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import {
-    closing,
-    index,
-    opening,
-} from '@/actions/App/Http/Controllers/SchemeController';
+import { closing } from '@/actions/App/Http/Controllers/SchemeClosingController';
+import { index } from '@/actions/App/Http/Controllers/SchemeController';
+import { opening } from '@/actions/App/Http/Controllers/SchemeOpeningController';
 import { show as syllabus } from '@/actions/App/Http/Controllers/SyllabusController';
 import { index as levelsIndex } from '@/actions/App/Http/Controllers/StructureController';
 import { type Crumb } from '../shell/breadcrumbs';

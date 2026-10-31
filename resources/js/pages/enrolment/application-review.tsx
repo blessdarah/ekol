@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
 import {
     decide,
     documents as saveDocuments,
-    index,
 } from '@/actions/App/Http/Controllers/ApplicationController';
-import { placement } from '@/actions/App/Http/Controllers/EnrolmentController';
+import { index } from '@/actions/App/Http/Controllers/ApplicationRosterController';
+import { placement } from '@/actions/App/Http/Controllers/StudentPlacementController';
 import { show as studentRecord } from '@/actions/App/Http/Controllers/StudentController';
 import {
     EnrolmentHeader,

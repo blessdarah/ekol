@@ -1,7 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { show as sheetPage } from '@/actions/App/Http/Controllers/MarkSheetController';
-import { edit as editSubject } from '@/actions/App/Http/Controllers/SubjectController';
+import { edit as editSubject } from '@/actions/App/Http/Controllers/SubjectRegistrationController';
 import { type AssessmentTabs, type PlanSummary, day } from '../ui';
 import { t } from '../../../lib/i18n';
 

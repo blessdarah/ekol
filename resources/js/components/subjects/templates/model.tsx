@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { storeTemplates } from '@/actions/App/Http/Controllers/SubjectController';
+import { storeTemplates } from '@/actions/App/Http/Controllers/SubjectTemplateController';
 import { router } from '@inertiajs/react';
 import { t } from '../../../lib/i18n';
 import {

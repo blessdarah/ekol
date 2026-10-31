@@ -38,6 +38,16 @@ class Level extends Model
     ];
 
     /**
+     * Series are a GCE high school idea; nothing else may turn them on.
+     */
+    public static function seriesAllowed(SchoolCycle|string $cycle, ?string $subsystem): bool
+    {
+        $cycle = $cycle instanceof SchoolCycle ? $cycle : SchoolCycle::from($cycle);
+
+        return $cycle === SchoolCycle::HighSchool && $subsystem === 'anglophone';
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

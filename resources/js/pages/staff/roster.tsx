@@ -3,13 +3,15 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     access,
+    remind,
+} from '@/actions/App/Http/Controllers/StaffAccessController';
+import {
     create,
     edit,
-    exportMethod,
-    index,
-    remind,
     show,
 } from '@/actions/App/Http/Controllers/StaffController';
+import { exportMethod } from '@/actions/App/Http/Controllers/StaffRosterController';
+import { index } from '@/actions/App/Http/Controllers/StaffRosterController';
 import {
     Avatar,
     EMPLOYMENT_LABELS,

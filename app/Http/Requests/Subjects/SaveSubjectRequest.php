@@ -32,6 +32,32 @@ class SaveSubjectRequest extends SchoolRequest
         ];
     }
 
+    /**
+     * @return array{name: string, code: string, department: string, coefficient: string, note: string|null, classes: list<array{class_id: string, staff_id: string|null, weekly_periods: int}>}
+     */
+    public function subjectData(): array
+    {
+        $classes = [];
+
+        foreach ($this->array('classes') as $key => $row) {
+            $prefix = "classes.{$key}";
+            $classes[] = [
+                'class_id' => $this->string("{$prefix}.class_id")->toString(),
+                'staff_id' => $this->input("{$prefix}.staff_id") === null ? null : $this->string("{$prefix}.staff_id")->toString(),
+                'weekly_periods' => $this->integer("{$prefix}.weekly_periods"),
+            ];
+        }
+
+        return [
+            'name' => $this->string('name')->toString(),
+            'code' => $this->string('code')->toString(),
+            'department' => $this->string('department')->toString(),
+            'coefficient' => $this->string('coefficient')->toString(),
+            'note' => $this->input('note') === null ? null : $this->string('note')->toString(),
+            'classes' => $classes,
+        ];
+    }
+
     public function authorize(): bool
     {
         return (bool) $this->user()?->can('manage-structure');
