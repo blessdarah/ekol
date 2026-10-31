@@ -1,5 +1,5 @@
-import { index as applications } from '@/actions/App/Http/Controllers/ApplicationController';
-import { progress } from '@/actions/App/Http/Controllers/AssessmentController';
+import { index as applications } from '@/actions/App/Http/Controllers/ApplicationRosterController';
+import { progress } from '@/actions/App/Http/Controllers/AssessmentProgressController';
 import { index as fees } from '@/actions/App/Http/Controllers/FeeController';
 import { index as schemes } from '@/actions/App/Http/Controllers/SchemeController';
 import { dayMonth } from '../fees/ui';

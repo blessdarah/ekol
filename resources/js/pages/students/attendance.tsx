@@ -1,7 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { excuse } from '@/actions/App/Http/Controllers/StudentAttendanceController';
-import { edit } from '@/actions/App/Http/Controllers/StudentController';
+import { edit } from '@/actions/App/Http/Controllers/StudentRegistrationController';
 import {
     ErrorText,
     capsLabelClass,

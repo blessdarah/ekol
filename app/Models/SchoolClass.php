@@ -41,6 +41,37 @@ class SchoolClass extends Model
         'home_room_id',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (SchoolClass $class): void {
+            if ($class->isDirty(['form_master_id', 'school_id'])) {
+                static::syncFormMasterFlags([$class->form_master_id, (string) $class->getRawOriginal('form_master_id')]);
+            }
+        });
+
+        static::deleted(fn (SchoolClass $class) => static::syncFormMasterFlags([$class->form_master_id]));
+        static::restored(fn (SchoolClass $class) => static::syncFormMasterFlags([$class->form_master_id]));
+    }
+
+    /**
+     * A teacher remains a form master while any live class names them.
+     *
+     * @param  array<int, string|null>  $userIds
+     */
+    public static function syncFormMasterFlags(array $userIds): void
+    {
+        User::withoutGlobalScope('school')->whereKey(array_values(array_unique(array_filter($userIds))))
+            ->get(['id', 'school_id'])
+            ->each(function (User $user): void {
+                $user->update([
+                    'is_form_master' => static::withoutGlobalScope('school')
+                        ->where('school_id', $user->school_id)
+                        ->where('form_master_id', $user->id)
+                        ->exists(),
+                ]);
+            });
+    }
+
     /**
      * A class's name from its level and letter. A level that ends in a
      * number takes the letter straight after it ("Form 1A"); a level

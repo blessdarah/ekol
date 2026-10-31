@@ -1,6 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { opening } from '@/actions/App/Http/Controllers/SchemeController';
+import { opening } from '@/actions/App/Http/Controllers/SchemeOpeningController';
 import {
     destroy,
     move,

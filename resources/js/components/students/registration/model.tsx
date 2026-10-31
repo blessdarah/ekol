@@ -4,7 +4,7 @@ import {
     siblingCheck,
     store,
     update,
-} from '@/actions/App/Http/Controllers/StudentController';
+} from '@/actions/App/Http/Controllers/StudentRegistrationController';
 import { fieldLabelClass, segmentClass } from '../../structure/ui';
 import { t } from '../../../lib/i18n';
 

@@ -211,14 +211,7 @@ class MarkSheetController extends Controller
                 $target->update(['submitted_at' => now(), 'submitted_by' => $request->user()?->id]);
             }
 
-            AuditEvent::create([
-                'school_id' => $school->id,
-                'actor_id' => $request->user()?->id,
-                'entity' => 'assessment_subject',
-                'entity_id' => $target->id,
-                'action' => $submit ? 'marks_submitted' : 'marks_saved',
-                'diff' => ['marks' => count($data['marks'])],
-            ]);
+            AuditEvent::record($school, $request->user(), 'assessment_subject', $target->id, $submit ? 'marks_submitted' : 'marks_saved', ['marks' => count($data['marks'])]);
         });
 
         $this->notify('Marks saved.');

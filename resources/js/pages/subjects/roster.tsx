@@ -8,11 +8,13 @@ import { useState } from 'react';
 import {
     create,
     edit,
+} from '@/actions/App/Http/Controllers/SubjectRegistrationController';
+import {
     exportMethod,
     index,
     show,
-    templates,
 } from '@/actions/App/Http/Controllers/SubjectController';
+import { templates } from '@/actions/App/Http/Controllers/SubjectTemplateController';
 import {
     PlusIcon,
     StructureHeader,

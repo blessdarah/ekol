@@ -9,7 +9,6 @@ use App\Models\AssessmentPlan;
 use App\Models\AuditEvent;
 use App\Models\Mark;
 use App\Models\MarkCorrection;
-use App\Models\School;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -102,7 +101,7 @@ class CorrectionController extends Controller
             'requested_by' => $user->id,
         ]);
 
-        $this->audit($request, $school, $correction, 'requested');
+        AuditEvent::record($school, $request->user(), 'mark_correction', $correction->id, 'requested', $correction->only(['reference', 'old_score', 'new_score', 'status', 'note']));
 
         $this->notify('Correction requested.');
 
@@ -136,7 +135,7 @@ class CorrectionController extends Controller
                 $target->mark?->update(['score' => $target->new_score, 'is_absent' => false]);
             }
 
-            $this->audit($request, $school, $target, $approved ? 'approved' : 'declined');
+            AuditEvent::record($school, $request->user(), 'mark_correction', $target->id, $approved ? 'approved' : 'declined', $target->only(['reference', 'old_score', 'new_score', 'status', 'note']));
         });
 
         $this->notify('Decision recorded.');
@@ -211,17 +210,5 @@ class CorrectionController extends Controller
             'published_on' => $plan?->published_at?->toDateString(),
             'impact' => $impact,
         ];
-    }
-
-    protected function audit(Request $request, School $school, MarkCorrection $correction, string $action): void
-    {
-        AuditEvent::create([
-            'school_id' => $school->id,
-            'actor_id' => $request->user()?->id,
-            'entity' => 'mark_correction',
-            'entity_id' => $correction->id,
-            'action' => $action,
-            'diff' => $correction->only(['reference', 'old_score', 'new_score', 'status', 'note']),
-        ]);
     }
 }

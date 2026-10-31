@@ -1,10 +1,10 @@
 import { Head, Link, router } from '@inertiajs/react';
 import {
     decide,
-    placement,
     promoteClass,
     reEnrolment,
-} from '@/actions/App/Http/Controllers/EnrolmentController';
+} from '@/actions/App/Http/Controllers/ReEnrolmentController';
+import { placement } from '@/actions/App/Http/Controllers/StudentPlacementController';
 import {
     EnrolmentHeader,
     type EnrolmentProgress,

@@ -1,7 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState, type FormEvent } from 'react';
+import { index } from '@/actions/App/Http/Controllers/StaffRosterController';
 import {
-    index,
     show,
     store,
     update,

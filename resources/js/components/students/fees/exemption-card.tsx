@@ -2,7 +2,7 @@ import { moneyNumber, moneyUnits, percentageDiscount } from '@/lib/money';
 import {
     exempt,
     removeExemption,
-} from '@/actions/App/Http/Controllers/FeeController';
+} from '@/actions/App/Http/Controllers/FeeExemptionController';
 import { router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { t } from '../../../lib/i18n';

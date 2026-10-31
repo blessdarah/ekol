@@ -2,7 +2,7 @@ import { moneyNumber, moneyUnits } from '@/lib/money';
 import {
     bill,
     updateStructure,
-} from '@/actions/App/Http/Controllers/FeeController';
+} from '@/actions/App/Http/Controllers/FeeStructureController';
 import { router, useForm, usePage } from '@inertiajs/react';
 import { t } from '../../../lib/i18n';
 

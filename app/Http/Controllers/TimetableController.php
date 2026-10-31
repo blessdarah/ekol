@@ -9,7 +9,6 @@ use App\Models\AuditEvent;
 use App\Models\ClassSubject;
 use App\Models\Period;
 use App\Models\Room;
-use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\TimetableSlot;
 use App\Models\TimetableVersion;
@@ -186,7 +185,7 @@ class TimetableController extends Controller
         $draft = TimetableVersion::startDraft($term);
         $draft->generate(array_map(fn (mixed $value) => (bool) $value, $data['options']));
 
-        $this->audit($request, $school, $draft, 'generated', [
+        AuditEvent::record($school, $request->user(), 'timetable_version', $draft->id, 'generated', [
             'version' => $draft->number,
             'options' => $draft->options,
             'to_fix' => $draft->forget()->toFix(),
@@ -259,7 +258,7 @@ class TimetableController extends Controller
                 'published_by' => $request->user()?->id,
             ]);
 
-            $this->audit($request, $school, $draft, 'published', [
+            AuditEvent::record($school, $request->user(), 'timetable_version', $draft->id, 'published', [
                 'version' => $draft->number,
                 'effective_on' => $data['effective_on'],
             ]);
@@ -313,17 +312,5 @@ class TimetableController extends Controller
             'teachers' => $changed('staff_id'),
             'classes' => $changed('school_class_id'),
         ];
-    }
-
-    protected function audit(Request $request, School $school, TimetableVersion $version, string $action, mixed $diff): void
-    {
-        AuditEvent::create([
-            'school_id' => $school->id,
-            'actor_id' => $request->user()?->id,
-            'entity' => 'timetable_version',
-            'entity_id' => $version->id,
-            'action' => $action,
-            'diff' => $diff,
-        ]);
     }
 }

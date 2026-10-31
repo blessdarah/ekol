@@ -1,10 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import {
-    edit,
-    saveAccess,
-    show,
-} from '@/actions/App/Http/Controllers/StaffController';
+import { edit, show } from '@/actions/App/Http/Controllers/StaffController';
+import { saveAccess } from '@/actions/App/Http/Controllers/StaffAccessController';
 import {
     FieldError,
     FlowSteps,

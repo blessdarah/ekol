@@ -1,5 +1,8 @@
 import { Form, Link } from '@inertiajs/react';
-import { note, show } from '@/actions/App/Http/Controllers/SchemeController';
+import {
+    note,
+    show,
+} from '@/actions/App/Http/Controllers/SchemeReviewController';
 import { dayMonth } from '../../fees/ui';
 import { StateLabel } from '../ui';
 import { outlineButtonClass, solidButtonClass } from '../../structure/ui';

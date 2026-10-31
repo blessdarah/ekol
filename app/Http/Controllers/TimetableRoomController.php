@@ -7,7 +7,6 @@ use App\Http\Requests\Timetable\SaveRoomRequest;
 use App\Models\AuditEvent;
 use App\Models\Period;
 use App\Models\Room;
-use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Subject;
 use App\Models\TimetableSlot;
@@ -82,7 +81,7 @@ class TimetableRoomController extends Controller
             'unavailable' => $data['unavailable'],
         ]);
 
-        $this->audit($request, $school, $room, 'created', $room->only(['code', 'kind', 'capacity']));
+        AuditEvent::record($school, $request->user(), 'room', $room->id, 'created', $room->only(['code', 'kind', 'capacity']));
 
         $this->notify('Room added.');
 
@@ -116,7 +115,7 @@ class TimetableRoomController extends Controller
                     ->update(['room_kind' => $kind]);
             }
 
-            $this->audit($request, $school, $target, 'updated', [
+            AuditEvent::record($school, $request->user(), 'room', $target->id, 'updated', [
                 'before' => $before,
                 'after' => $target->only(['code', 'kind', 'capacity', 'unavailable']),
             ]);
@@ -146,7 +145,7 @@ class TimetableRoomController extends Controller
             SchoolClass::where('school_id', $school->id)->where('home_room_id', $target->id)->update(['home_room_id' => null]);
             $target->delete();
 
-            $this->audit($request, $school, $target, 'retired', ['code' => $target->code, 'lessons_without_room' => $moved]);
+            AuditEvent::record($school, $request->user(), 'room', $target->id, 'retired', ['code' => $target->code, 'lessons_without_room' => $moved]);
         });
 
         $this->notify('Room removed.');
@@ -176,17 +175,5 @@ class TimetableRoomController extends Controller
         }
 
         return $room;
-    }
-
-    protected function audit(Request $request, School $school, Room $room, string $action, mixed $diff): void
-    {
-        AuditEvent::create([
-            'school_id' => $school->id,
-            'actor_id' => $request->user()?->id,
-            'entity' => 'room',
-            'entity_id' => $room->id,
-            'action' => $action,
-            'diff' => $diff,
-        ]);
     }
 }

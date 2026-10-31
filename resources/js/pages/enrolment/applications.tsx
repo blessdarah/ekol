@@ -2,11 +2,11 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     create,
-    exportMethod,
-    index,
     show,
 } from '@/actions/App/Http/Controllers/ApplicationController';
-import { reEnrolment } from '@/actions/App/Http/Controllers/EnrolmentController';
+import { exportMethod } from '@/actions/App/Http/Controllers/ApplicationRosterController';
+import { index } from '@/actions/App/Http/Controllers/ApplicationRosterController';
+import { reEnrolment } from '@/actions/App/Http/Controllers/ReEnrolmentController';
 import {
     EnrolmentHeader,
     type EnrolmentProgress,

@@ -1,4 +1,4 @@
-import { studentTab } from '@/actions/App/Http/Controllers/FeeController';
+import { studentTab } from '@/actions/App/Http/Controllers/StudentFeeController';
 import { Link } from '@inertiajs/react';
 import { t } from '../../../lib/i18n';
 import { amberText, figure } from '../../fees/ui';

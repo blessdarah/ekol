@@ -78,14 +78,7 @@ class StudentAttendanceController extends Controller
 
         $record->update(['status' => AttendanceStatus::Excused, 'note' => trim($data['note'])]);
 
-        AuditEvent::create([
-            'school_id' => $school->id,
-            'actor_id' => $request->user()?->id,
-            'entity' => 'attendance',
-            'entity_id' => $record->id,
-            'action' => 'excused',
-            'diff' => ['date' => $record->date->toDateString(), 'note' => $record->note],
-        ]);
+        AuditEvent::record($school, $request->user(), 'attendance', $record->id, 'excused', ['date' => $record->date->toDateString(), 'note' => $record->note]);
 
         $this->notify('Absence excused.');
 

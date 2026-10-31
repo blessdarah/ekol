@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { useRef, useState } from 'react';
-import { progress } from '@/actions/App/Http/Controllers/AssessmentController';
+import { progress } from '@/actions/App/Http/Controllers/AssessmentProgressController';
 import {
     index as sheetsIndex,
     show,

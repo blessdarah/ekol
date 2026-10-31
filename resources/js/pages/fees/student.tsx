@@ -1,14 +1,14 @@
 import { moneyNumber, moneyUnits } from '@/lib/money';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { index as feesIndex } from '@/actions/App/Http/Controllers/FeeController';
 import {
-    index as feesIndex,
     pay,
     receipt,
-    structure,
     student as ledger,
-    studentTab as feesTab,
-} from '@/actions/App/Http/Controllers/FeeController';
+} from '@/actions/App/Http/Controllers/FeePaymentController';
+import { structure } from '@/actions/App/Http/Controllers/FeeStructureController';
+import { studentTab as feesTab } from '@/actions/App/Http/Controllers/StudentFeeController';
 import {
     StatePill,
     amberText,

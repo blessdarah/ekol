@@ -2,54 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\SchemeStatus;
 use App\Http\Controllers\Concerns\ListsTables;
-use App\Http\Requests\Schemes\CloseSchemesRequest;
-use App\Http\Requests\Schemes\OpenSchemesRequest;
-use App\Http\Requests\Schemes\ReviewSchemeRequest;
-use App\Http\Requests\Schemes\SchemeNoteRequest;
-use App\Models\ClassSubject;
+use App\Http\SchemePageData;
+use App\Http\SchoolContext;
 use App\Models\Level;
 use App\Models\Scheme;
-use App\Models\SchemeEvent;
-use App\Models\SchemeItem;
 use App\Models\SchemeOpening;
-use App\Models\School;
 use App\Models\SyllabusTopic;
 use App\Models\Term;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-/**
- * Schemes of work for the school: open them for a term, review what
- * teachers submit, follow what is taught against the plan, and close
- * the term with its coverage.
- */
 class SchemeController extends Controller
 {
     use ListsTables;
 
-    /**
-     * Where a scheme stands, most in need of attention first, and how
-     * the list names it.
-     */
-    protected const array STATES = [
-        'to_approve' => 'To approve',
-        'behind' => 'Behind',
-        'sent_back' => 'Sent back',
-        'not_submitted' => 'Not submitted',
-        'waiting' => 'No teacher yet',
-        'on_track' => 'On track',
-        'closed' => 'Closed',
-    ];
+    public function __construct(SchoolContext $schoolContext, protected SchemePageData $page)
+    {
+        parent::__construct($schoolContext);
+    }
 
     /**
      * Step 4, and the home of schemes of work: every scheme of the term,
@@ -68,7 +42,7 @@ class SchemeController extends Controller
         }
 
         $week = Scheme::currentWeek($term);
-        [$schemes, $states, $listed, $filters] = $this->list($request, $term, $opening, $week);
+        [$schemes, $states, $listed, $filters] = $this->page->list($request, $term, $opening, $week);
         $perPage = $this->perPage($request);
         $lastPage = max(1, (int) ceil($listed->count() / $perPage));
         $page = min($lastPage, max(1, (int) $request->query('page', 1)));
@@ -79,7 +53,7 @@ class SchemeController extends Controller
             'week' => $week,
             'dueOn' => $opening->due_on->toDateString(),
             'daysLate' => $opening->due_on->isPast() ? (int) $opening->due_on->diffInDays(today()) : 0,
-            'states' => collect(array_keys(static::STATES))->mapWithKeys(fn (string $state) => [
+            'states' => collect(array_keys(SchemePageData::STATES))->mapWithKeys(fn (string $state) => [
                 $state => $states->filter(fn (string $value) => $value === $state)->count(),
             ]),
             'canManage' => $request->user()->can('manage-schemes'),
@@ -98,11 +72,11 @@ class SchemeController extends Controller
             'departments' => $schemes->map(fn (Scheme $scheme) => $scheme->classSubject?->subject?->department)
                 ->filter()->unique()->sort()->values(),
             'rows' => $listed->forPage($page, $perPage)->map(fn (Scheme $scheme) => [
-                ...$this->summary($scheme),
+                ...$this->page->summary($scheme),
                 'state' => $states[$scheme->id],
                 'progress' => $scheme->progressTo($week),
                 'taught_total' => $scheme->items->whereNotNull('taught_on')->count(),
-                'late' => $this->lateItems($scheme, $week)->count(),
+                'late' => $this->page->lateItems($scheme, $week)->count(),
                 'initials' => $scheme->classSubject?->staff?->initials,
                 'subject_id' => $scheme->classSubject?->subject_id,
             ])->values(),
@@ -114,7 +88,7 @@ class SchemeController extends Controller
                 'from' => $listed->isEmpty() ? null : ($page - 1) * $perPage + 1,
                 'to' => $listed->isEmpty() ? null : min($page * $perPage, $listed->count()),
             ],
-            'picked' => $picked ? $this->panel($picked, $week, $states[$picked->id]) : null,
+            'picked' => $picked ? $this->page->panel($picked, $week, $states[$picked->id]) : null,
         ]);
     }
 
@@ -133,11 +107,11 @@ class SchemeController extends Controller
         }
 
         $week = Scheme::currentWeek($term);
-        [, $states, $listed, , $applied] = $this->list($request, $term, $opening, $week);
+        [, $states, $listed, , $applied] = $this->page->list($request, $term, $opening, $week);
         $ids = $this->exportIds($request);
         $rows = $listed
             ->filter(fn (Scheme $scheme) => $ids === [] || in_array($scheme->id, $ids, true))
-            ->map(function (Scheme $scheme) use ($states, $week) {
+            ->map(function (Scheme $scheme) use ($week) {
                 $progress = $scheme->progressTo($week);
 
                 return [
@@ -145,7 +119,7 @@ class SchemeController extends Controller
                     'class' => $scheme->classSubject?->schoolClass?->name,
                     'department' => $scheme->classSubject?->subject?->department,
                     'teacher' => $scheme->classSubject->staff->full_name ?? '',
-                    'state' => $this->say(static::STATES[$states[$scheme->id]]),
+                    'state' => $this->say(SchemePageData::STATES[$scheme->followState($week)]),
                     'taught' => $progress['taught'],
                     'planned' => $progress['planned'],
                     'topics' => $scheme->items->count(),
@@ -165,447 +139,5 @@ class SchemeController extends Controller
             'topics' => $this->say('Sub-topics'),
             'coverage' => $this->say('Coverage %'),
         ], $rows, $rows->count());
-    }
-
-    /**
-     * The term's schemes this person may follow, where each stands, and
-     * the ones the filters, search and sort from the page address keep,
-     * with the filters as the page shows them and in words.
-     *
-     * @return array{0: Collection<int, Scheme>, 1: Collection<string, string>, 2: Collection<int, Scheme>, 3: array<string, mixed>, 4: list<string>}
-     */
-    protected function list(Request $request, Term $term, SchemeOpening $opening, ?int $week): array
-    {
-        $schemes = $this->schemesOf($term)->filter(fn (Scheme $scheme) => $request->user()->can('view', [$scheme, $opening]))->values();
-        $states = $schemes->mapWithKeys(fn (Scheme $scheme) => [$scheme->id => $scheme->followState($week)]);
-        $search = trim((string) $request->query('q', ''));
-        $needle = mb_strtolower($search);
-        $wanted = $this->many($request, 'state', array_keys(static::STATES));
-        $levels = $this->many($request, 'level');
-        $departments = $this->many($request, 'department');
-        [$sort, $direction] = $this->sorting($request, ['attention', 'subject', 'class', 'teacher'], 'attention');
-        $order = array_keys(static::STATES);
-
-        $listed = $schemes
-            ->filter(fn (Scheme $scheme) => ($wanted === [] || in_array($states[$scheme->id], $wanted, true))
-                && ($levels === [] || in_array($scheme->classSubject?->schoolClass?->level_id, $levels, true))
-                && ($departments === [] || in_array($scheme->classSubject?->subject?->department, $departments, true))
-                && ($needle === '' || str_contains(mb_strtolower($this->title($scheme).' '.$scheme->classSubject?->staff?->full_name), $needle)))
-            ->sortBy(fn (Scheme $scheme) => match ($sort) {
-                'subject' => [$scheme->classSubject?->subject?->name, $scheme->classSubject?->schoolClass?->name],
-                'class' => [$scheme->classSubject?->schoolClass?->name, $scheme->classSubject?->subject?->name],
-                'teacher' => [$scheme->classSubject->staff->full_name ?? "\u{FFFF}", $this->title($scheme)],
-                default => [array_search($states[$scheme->id], $order, true), $this->title($scheme)],
-            }, descending: $direction === 'desc')
-            ->values();
-
-        $applied = array_values(array_filter([
-            $search !== '' ? $this->say('Search: :q', ['q' => $search]) : null,
-            $wanted !== [] ? $this->say('Status: :value', ['value' => implode(', ', array_map(fn (string $state) => $this->say(static::STATES[$state]), $wanted))]) : null,
-            $levels !== [] ? $this->say('Level: :value', ['value' => Level::whereIn('id', $levels)->orderBy('ordinal')->pluck('name')->join(', ')]) : null,
-            $departments !== [] ? $this->say('Department: :value', ['value' => implode(', ', $departments)]) : null,
-        ]));
-
-        return [$schemes, $states, $listed, [
-            'q' => $search,
-            'state' => $wanted,
-            'level' => $levels,
-            'department' => $departments,
-            'sort' => ($direction === 'desc' ? '-' : '').$sort,
-        ], $applied];
-    }
-
-    /**
-     * Step 2: what opening the term's schemes would create.
-     */
-    public function opening(Request $request): Response|RedirectResponse
-    {
-        $school = $this->schoolContext->school();
-        $term = $this->schoolContext->term();
-
-        if (! $term) {
-            return redirect()->route('setup');
-        }
-
-        $opening = SchemeOpening::where('term_id', $term->id)->first();
-        $existing = Scheme::where('term_id', $term->id)->pluck('class_subject_id');
-        $classSubjects = ClassSubject::where('school_id', $school->id)
-            ->whereHas('schoolClass', fn ($query) => $query->where('academic_year_id', $term->academic_year_id))
-            ->whereNotIn('id', $existing)
-            ->with(['schoolClass.level:id,name', 'subject:id,name'])
-            ->get();
-        $withSyllabus = SyllabusTopic::where('school_id', $school->id)
-            ->where('term_sequence', $term->sequence)
-            ->get(['level_id', 'subject_id'])
-            ->map(fn (SyllabusTopic $topic) => $topic->level_id.'|'.$topic->subject_id)
-            ->unique();
-        $empty = $classSubjects
-            ->reject(fn (ClassSubject $classSubject) => $withSyllabus->contains($classSubject->schoolClass?->level_id.'|'.$classSubject->subject_id))
-            ->map(fn (ClassSubject $classSubject) => $classSubject->subject?->name.' · '.$classSubject->schoolClass?->level?->name)
-            ->unique()
-            ->values();
-
-        return Inertia::render('schemes/open', [
-            'steps' => Scheme::steps($school, $this->schoolContext->term()),
-            'term' => [
-                'id' => $term->id,
-                'label' => $term->label,
-                'starts_on' => $term->starts_on->toDateString(),
-                'ends_on' => $term->ends_on->toDateString(),
-                'weeks' => $term->week_count,
-            ],
-            'opening' => $opening ? [
-                'due_on' => $opening->due_on->toDateString(),
-                'approval' => $opening->approval,
-                'starts_from' => $opening->starts_from,
-                'free_changes' => $opening->free_changes,
-            ] : null,
-            'suggestedDueOn' => $term->starts_on->copy()->addDays(18)->toDateString(),
-            'creates' => [
-                'schemes' => $classSubjects->count(),
-                'classes' => $classSubjects->pluck('school_class_id')->unique()->count(),
-                'with_teacher' => $classSubjects->whereNotNull('staff_id')->count(),
-                'without_teacher' => $classSubjects->whereNull('staff_id')->map(fn (ClassSubject $classSubject) => $classSubject->subject?->name.' · '.$classSubject->schoolClass?->name)->values(),
-                'empty_syllabus' => $empty,
-            ],
-        ]);
-    }
-
-    public function open(OpenSchemesRequest $request): RedirectResponse
-    {
-        $school = $this->schoolContext->school();
-        $term = $this->schoolContext->term();
-
-        if (! $term) {
-            return redirect()->route('setup');
-        }
-
-        $data = $request->validated();
-        $opening = SchemeOpening::updateOrCreate(['term_id' => $term->id], [
-            'school_id' => $school->id,
-            'due_on' => $data['due_on'],
-            'approval' => $data['approval'],
-            'starts_from' => $data['starts_from'],
-            'free_changes' => (bool) $data['free_changes'],
-            'opened_by' => $request->user()?->id,
-        ]);
-
-        if ($opening->closed_at !== null) {
-            throw ValidationException::withMessages(['due_on' => __(':term schemes are closed.', ['term' => __($term->label)])]);
-        }
-
-        $created = Scheme::openFor($opening, $request->user());
-        $this->notify(trans_choice('{0} Settings saved. No new schemes to open.|{1} :count scheme opened.|[2,*] :count schemes opened.', $created));
-
-        return redirect()->route('schemes');
-    }
-
-    /**
-     * Step 3, and the full page of any scheme: the plan week by week,
-     * what the reviewer should check, the history, and the decision.
-     */
-    public function show(Request $request, string $scheme): Response
-    {
-        $school = $this->schoolContext->school();
-        $target = $this->find($school, $scheme);
-        $term = $target->term;
-        $opening = SchemeOpening::where('term_id', $target->term_id)->first();
-        Gate::authorize('view', [$target, $opening]);
-        $canApprove = $request->user()->can('approve', [$target, $opening]);
-
-        $next = Scheme::where('term_id', $target->term_id)
-            ->where('status', SchemeStatus::Submitted)
-            ->whereKeyNot($target->id)
-            ->with(['classSubject.subject', 'classSubject.schoolClass'])
-            ->orderBy('submitted_at')
-            ->get()
-            ->first(fn (Scheme $candidate) => $request->user()->can('approve', [$candidate, $opening]));
-
-        return Inertia::render('schemes/show', [
-            'steps' => Scheme::steps($school, $this->schoolContext->term()),
-            'scheme' => [
-                ...$this->summary($target),
-                'weekly_periods' => (int) $target->classSubject?->weekly_periods,
-                'submitted_at' => $target->submitted_at?->toDateString(),
-                'approved_at' => $target->approved_at?->toDateString(),
-            ],
-            'weeks' => $term ? Scheme::weeks($term, $target->classSubject?->schoolClass?->level_id) : [],
-            'items' => $target->items->map(fn (SchemeItem $item) => $item->summary())->values(),
-            'checks' => $target->checks(),
-            'history' => $target->events->map(fn (SchemeEvent $event) => [
-                'on' => $event->created_at->toDateString(),
-                'action' => $event->action,
-                'by' => $event->user?->full_name,
-                'note' => $event->note,
-            ])->values(),
-            'canReview' => $canApprove && $target->status === SchemeStatus::Submitted,
-            'nextId' => $next?->id,
-        ]);
-    }
-
-    public function review(ReviewSchemeRequest $request, string $scheme): RedirectResponse
-    {
-        $school = $this->schoolContext->school();
-        $target = $this->find($school, $scheme);
-        $opening = SchemeOpening::where('term_id', $target->term_id)->first();
-        Gate::authorize('approve', [$target, $opening]);
-
-        if ($target->status !== SchemeStatus::Submitted) {
-            throw ValidationException::withMessages(['decision' => __('This scheme is not waiting for approval.')]);
-        }
-
-        $data = $request->validated();
-        $note = isset($data['note']) ? trim((string) $data['note']) : null;
-
-        if ($data['decision'] === 'approve') {
-            $target->approve($request->user(), $note ?: null);
-            $this->notify('Scheme approved.');
-        } else {
-            $target->sendBack($request->user(), (string) $note);
-            $this->notify('Sent back to the teacher with your note.');
-        }
-
-        $next = Scheme::where('term_id', $target->term_id)
-            ->where('status', SchemeStatus::Submitted)
-            ->with(['classSubject.subject', 'classSubject.schoolClass'])
-            ->orderBy('submitted_at')
-            ->get()
-            ->first(fn (Scheme $candidate) => $request->user()->can('approve', [$candidate, $opening]));
-
-        return $next
-            ? redirect()->route('schemes.show', $next->id)
-            : redirect()->route('schemes', ['state' => 'to_approve']);
-    }
-
-    /**
-     * A note from the school to the teacher, kept in the scheme's history.
-     */
-    public function note(SchemeNoteRequest $request, string $scheme): RedirectResponse
-    {
-        $school = $this->schoolContext->school();
-        $target = $this->find($school, $scheme);
-        $target->record('note', $request->user(), trim((string) $request->validated('note')));
-
-        $this->notify('Note sent.');
-
-        return back();
-    }
-
-    /**
-     * Step 5: how much of each plan was taught, before the term closes.
-     */
-    public function closing(Request $request): Response|RedirectResponse
-    {
-        $school = $this->schoolContext->school();
-        $term = $this->schoolContext->term();
-        $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
-
-        if (! $term || ! $opening) {
-            return redirect()->route('schemes');
-        }
-
-        $schemes = $this->schemesOf($term);
-        $below = in_array($request->query('show'), ['all', 'below'], true) ? (string) $request->query('show') : 'below';
-        $rows = $schemes
-            ->map(fn (Scheme $scheme) => [
-                ...$this->summary($scheme),
-                'taught' => $scheme->items->whereNotNull('taught_on')->count(),
-                'total' => $scheme->items->count(),
-                'coverage' => $scheme->coverage(),
-                'carries' => $scheme->untaughtLabels()->all(),
-            ])
-            ->sortBy('coverage')
-            ->values();
-        $items = $schemes->flatMap->items;
-        $nextTerm = Term::where('academic_year_id', $term->academic_year_id)->where('sequence', $term->sequence + 1)->first();
-        $lastWeek = collect(Scheme::weeks($term))->last();
-
-        return Inertia::render('schemes/close', [
-            'steps' => Scheme::steps($school, $this->schoolContext->term()),
-            'closed' => $opening->closed_at !== null,
-            'canClose' => $lastWeek !== null && today()->gte($lastWeek['starts_on']),
-            'lastWeekStarts' => $lastWeek['starts_on'] ?? null,
-            'nextTerm' => $nextTerm?->label,
-            'totals' => [
-                'taught_percent' => $items->isEmpty() ? 0 : (int) floor($items->whereNotNull('taught_on')->count() / $items->count() * 100),
-                'fully' => $rows->where('coverage', 100)->count(),
-                'schemes' => $rows->count(),
-                'below' => $rows->filter(fn (array $row) => $row['coverage'] < Scheme::COVERED_PERCENT)->count(),
-                'carry' => $items->whereNull('taught_on')->count(),
-            ],
-            'filters' => ['show' => $below],
-            'rows' => $below === 'below' ? $rows->filter(fn (array $row) => $row['coverage'] < Scheme::COVERED_PERCENT)->values() : $rows,
-        ]);
-    }
-
-    /**
-     * Lock the term's schemes. What was not taught starts the next
-     * term's schemes, opened now when asked.
-     */
-    public function close(CloseSchemesRequest $request): RedirectResponse
-    {
-        $school = $this->schoolContext->school();
-        $term = $this->schoolContext->term();
-        $opening = $term ? SchemeOpening::where('term_id', $term->id)->first() : null;
-        $lastWeek = $term ? collect(Scheme::weeks($term))->last() : null;
-
-        if (! $term || ! $opening || $opening->closed_at !== null) {
-            return redirect()->route('schemes');
-        }
-
-        if ($lastWeek === null || today()->lt($lastWeek['starts_on'])) {
-            throw ValidationException::withMessages(['open_next' => __('The term can close only in its last week.')]);
-        }
-
-        $opened = 0;
-
-        DB::transaction(function () use ($request, $term, $opening, &$opened) {
-            foreach (Scheme::where('term_id', $term->id)->where('status', '!=', SchemeStatus::Closed)->get() as $scheme) {
-                $scheme->update(['status' => SchemeStatus::Closed, 'closed_at' => now()]);
-                $scheme->record('closed', $request->user());
-            }
-
-            $opening->update(['closed_at' => now(), 'closed_by' => $request->user()?->id]);
-            $nextTerm = Term::where('academic_year_id', $term->academic_year_id)->where('sequence', $term->sequence + 1)->first();
-
-            if ($request->boolean('open_next') && $nextTerm) {
-                $next = SchemeOpening::firstOrCreate(['term_id' => $nextTerm->id], [
-                    'school_id' => $term->school_id,
-                    'due_on' => $nextTerm->starts_on->copy()->addDays(18),
-                    'approval' => $opening->approval,
-                    'starts_from' => SchemeOpening::FROM_SYLLABUS,
-                    'free_changes' => $opening->free_changes,
-                    'opened_by' => $request->user()?->id,
-                ]);
-                $opened = Scheme::openFor($next, $request->user());
-            }
-        });
-
-        $this->notify($opened > 0
-            ? trans_choice('{1} :term schemes closed. :count scheme opened for the next term.|[2,*] :term schemes closed. :count schemes opened for the next term.', $opened, ['term' => __($term->label)])
-            : __(':term schemes closed.', ['term' => __($term->label)]));
-
-        return redirect()->route('schemes.close');
-    }
-
-    /**
-     * Coverage by subject and class, for the inspectorate and the staff
-     * meeting, as a spreadsheet.
-     */
-    public function report(Request $request): StreamedResponse
-    {
-        $school = $this->schoolContext->school();
-        $term = $this->schoolContext->term();
-        abort_unless($term !== null, 404);
-        $schemes = $this->schemesOf($term);
-
-        return response()->streamDownload(function () use ($schemes) {
-            $out = fopen('php://output', 'w');
-
-            if ($out === false) {
-                return;
-            }
-
-            fputcsv($out, [__('Subject'), __('Class'), __('Teacher'), __('Taught'), __('Sub-topics'), __('Coverage %'), __('Not taught')], escape: '');
-
-            foreach ($schemes as $scheme) {
-                fputcsv($out, [
-                    $scheme->classSubject?->subject?->name,
-                    $scheme->classSubject?->schoolClass?->name,
-                    $scheme->classSubject?->staff?->full_name,
-                    $scheme->items->whereNotNull('taught_on')->count(),
-                    $scheme->items->count(),
-                    $scheme->coverage(),
-                    $scheme->untaughtLabels()->join('; '),
-                ], escape: '');
-            }
-
-            fclose($out);
-        }, 'coverage-'.str($term->label)->slug().'.csv', ['Content-Type' => 'text/csv']);
-    }
-
-    /**
-     * @return Collection<int, Scheme>
-     */
-    protected function schemesOf(Term $term): Collection
-    {
-        return Scheme::where('term_id', $term->id)
-            ->with(['items', 'classSubject.subject:id,name,department', 'classSubject.schoolClass:id,name,level_id', 'classSubject.schoolClass.level:id,name,ordinal', 'classSubject.staff:id,full_name'])
-            ->get()
-            ->sortBy(fn (Scheme $scheme) => $this->title($scheme))
-            ->values();
-    }
-
-    protected function find(School $school, string $id): Scheme
-    {
-        return Scheme::where('school_id', $school->id)
-            ->whereKey($id)
-            ->with(['items', 'term', 'events.user:id,full_name', 'classSubject.subject:id,name,department', 'classSubject.schoolClass:id,name,level_id', 'classSubject.staff:id,full_name'])
-            ->firstOrFail();
-    }
-
-    protected function title(Scheme $scheme): string
-    {
-        return $scheme->classSubject?->subject?->name.' · '.$scheme->classSubject?->schoolClass?->name;
-    }
-
-    /**
-     * @return array{id: string, subject: string|null, class: string|null, teacher: string|null, status: string, topics: int}
-     */
-    protected function summary(Scheme $scheme): array
-    {
-        return [
-            'id' => $scheme->id,
-            'subject' => $scheme->classSubject?->subject?->name,
-            'class' => $scheme->classSubject?->schoolClass?->name,
-            'teacher' => $scheme->classSubject?->staff?->full_name,
-            'status' => $scheme->status->value,
-            'topics' => $scheme->items->count(),
-        ];
-    }
-
-    /**
-     * Sub-topics planned for a week already gone and not taught yet.
-     *
-     * @return Collection<int, SchemeItem>
-     */
-    protected function lateItems(Scheme $scheme, ?int $week): Collection
-    {
-        return $week === null
-            ? new Collection
-            : $scheme->items->filter(fn (SchemeItem $item) => $item->week !== null && $item->week < $week && $item->taught_on === null)->values();
-    }
-
-    /**
-     * The drawer of the progress page: the plan week by week, each
-     * sub-topic taught, not yet, this week or planned.
-     *
-     * @return array<string, mixed>
-     */
-    protected function panel(Scheme $scheme, ?int $week, string $state): array
-    {
-        $approver = $scheme->approved_by ? User::whereKey($scheme->approved_by)->value('full_name') : null;
-        $late = $this->lateItems($scheme, $week);
-
-        return [
-            ...$this->summary($scheme),
-            'state' => $state,
-            'approved_on' => $scheme->approved_at?->toDateString(),
-            'approved_by' => $approver,
-            'late' => $late->count(),
-            'late_weeks' => $late->pluck('week')->unique()->sort()->values(),
-            'items' => $scheme->items->whereNotNull('week')->map(fn (SchemeItem $item) => [
-                'id' => $item->id,
-                'week' => $item->week,
-                'label' => $item->label(),
-                'taught_on' => $item->taught_on?->toDateString(),
-                'state' => match (true) {
-                    $item->taught_on !== null => 'taught',
-                    $week !== null && $item->week < $week => 'late',
-                    $week !== null && $item->week === $week => 'this_week',
-                    default => 'planned',
-                },
-            ])->values(),
-        ];
     }
 }

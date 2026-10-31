@@ -4,12 +4,12 @@ import {
     edit as editSeries,
     index as seriesSetup,
 } from '@/actions/App/Http/Controllers/SeriesController';
+import { bulk } from '@/actions/App/Http/Controllers/SeriesBulkRegistrationController';
 import {
-    bulk,
     index,
     one,
 } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
-import { edit as editSubject } from '@/actions/App/Http/Controllers/SubjectController';
+import { edit as editSubject } from '@/actions/App/Http/Controllers/SubjectRegistrationController';
 import { SeriesHeader, STREAMS } from '../../components/series/ui';
 import {
     StreamChip,

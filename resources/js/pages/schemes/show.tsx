@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { index, review } from '@/actions/App/Http/Controllers/SchemeController';
+import { index } from '@/actions/App/Http/Controllers/SchemeController';
+import { review } from '@/actions/App/Http/Controllers/SchemeReviewController';
 import { dayMonth } from '../../components/fees/ui';
 import {
     SchemesHeader,

@@ -1,4 +1,4 @@
-import { structure } from '@/actions/App/Http/Controllers/FeeController';
+import { structure } from '@/actions/App/Http/Controllers/FeeStructureController';
 import { Link } from '@inertiajs/react';
 import { t } from '../../../lib/i18n';
 import { type FeeStructure } from './model';

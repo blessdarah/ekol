@@ -4,9 +4,9 @@ import { useState } from 'react';
 import {
     exportMethod,
     index,
-    structure,
-    student,
 } from '@/actions/App/Http/Controllers/FeeController';
+import { structure } from '@/actions/App/Http/Controllers/FeeStructureController';
+import { student } from '@/actions/App/Http/Controllers/FeePaymentController';
 import {
     FeesHeader,
     StatePill,

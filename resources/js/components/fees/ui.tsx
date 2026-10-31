@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { index, structure } from '@/actions/App/Http/Controllers/FeeController';
+import { index } from '@/actions/App/Http/Controllers/FeeController';
+import { structure } from '@/actions/App/Http/Controllers/FeeStructureController';
 import { index as mobileMoney } from '@/actions/App/Http/Controllers/MobilePaymentController';
 import Breadcrumbs, { type Crumb } from '../shell/breadcrumbs';
 import { numberLocale, t } from '../../lib/i18n';

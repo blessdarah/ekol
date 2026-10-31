@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { student as ledger } from '@/actions/App/Http/Controllers/FeeController';
+import { student as ledger } from '@/actions/App/Http/Controllers/FeePaymentController';
 import {
     PhoneFeeReceipt,
     PrintedFeeReceipt,

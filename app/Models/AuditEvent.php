@@ -38,6 +38,23 @@ class AuditEvent extends Model
     ];
 
     /**
+     * Record an explicit business action in the caller's transaction.
+     *
+     * @param  array<string, mixed>  $diff
+     */
+    public static function record(School $school, ?User $actor, string $entity, string $entityId, string $action, array $diff): self
+    {
+        return static::create([
+            'school_id' => $school->id,
+            'actor_id' => $actor?->id,
+            'entity' => $entity,
+            'entity_id' => $entityId,
+            'action' => $action,
+            'diff' => $diff,
+        ]);
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

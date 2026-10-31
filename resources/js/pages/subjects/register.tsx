@@ -1,12 +1,11 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { index, show } from '@/actions/App/Http/Controllers/SubjectController';
 import {
-    index,
-    show,
     store,
-    templates,
     update,
-} from '@/actions/App/Http/Controllers/SubjectController';
+} from '@/actions/App/Http/Controllers/SubjectRegistrationController';
+import { templates } from '@/actions/App/Http/Controllers/SubjectTemplateController';
 import {
     ErrorText,
     StructureHeader,

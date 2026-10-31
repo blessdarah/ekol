@@ -1,4 +1,4 @@
-import { create } from '@/actions/App/Http/Controllers/SubjectController';
+import { create } from '@/actions/App/Http/Controllers/SubjectRegistrationController';
 import { Link } from '@inertiajs/react';
 import { t } from '../../../lib/i18n';
 import { capsLabelClass } from '../../structure/ui';

@@ -36,6 +36,17 @@ class FeeExemption extends Model
         'granted_by',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (FeeExemption $record): void {
+            Invoice::syncStatuses([$record->invoice_id, (string) $record->getRawOriginal('invoice_id')]);
+        });
+
+        static::deleted(function (FeeExemption $record): void {
+            Invoice::syncStatuses([$record->invoice_id]);
+        });
+    }
+
     /**
      * @return BelongsTo<Invoice, $this>
      */

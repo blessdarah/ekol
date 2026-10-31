@@ -1,15 +1,15 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { index as applications } from '@/actions/App/Http/Controllers/ApplicationController';
+import { index as applications } from '@/actions/App/Http/Controllers/ApplicationRosterController';
 import {
     clearClass,
-    confirm,
     place,
     placeAll,
     placement,
-    reEnrolment,
-    storeClass,
-} from '@/actions/App/Http/Controllers/EnrolmentController';
+} from '@/actions/App/Http/Controllers/StudentPlacementController';
+import { confirm } from '@/actions/App/Http/Controllers/EnrolmentConfirmationController';
+import { reEnrolment } from '@/actions/App/Http/Controllers/ReEnrolmentController';
+import { storeClass } from '@/actions/App/Http/Controllers/EnrolmentController';
 import {
     CheckLine,
     EnrolmentHeader,

@@ -1,9 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import {
-    bulkStore,
-    index,
-} from '@/actions/App/Http/Controllers/SeriesRegistrationController';
+import { bulkStore } from '@/actions/App/Http/Controllers/SeriesBulkRegistrationController';
+import { index } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
 import {
     SeriesChips,
     SeriesHeader,

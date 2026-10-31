@@ -1,18 +1,14 @@
 import SharedPageHeader from '../shell/page-header';
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import {
-    index,
-    progress,
-    results,
-} from '@/actions/App/Http/Controllers/AssessmentController';
+import { index } from '@/actions/App/Http/Controllers/AssessmentController';
+import { progress } from '@/actions/App/Http/Controllers/AssessmentProgressController';
+import { results } from '@/actions/App/Http/Controllers/AssessmentResultController';
 import { index as corrections } from '@/actions/App/Http/Controllers/CorrectionController';
 import { show as schedule } from '@/actions/App/Http/Controllers/ExamScheduleController';
 import { show as grading } from '@/actions/App/Http/Controllers/GradingController';
-import {
-    reports,
-    term,
-} from '@/actions/App/Http/Controllers/TermResultController';
+import { reports } from '@/actions/App/Http/Controllers/TermReportController';
+import { term } from '@/actions/App/Http/Controllers/TermResultController';
 import { type Crumb } from '../shell/breadcrumbs';
 import { ordinalOf, t } from '../../lib/i18n';
 

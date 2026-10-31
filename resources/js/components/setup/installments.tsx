@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { updateInstallments } from '@/actions/App/Http/Controllers/SetupController';
+import { updateInstallments } from '@/actions/App/Http/Controllers/SchoolScheduleController';
 import { t } from '../../lib/i18n';
 import {
     type YearProp,

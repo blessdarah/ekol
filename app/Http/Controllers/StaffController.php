@@ -2,168 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AcademicYearStatus;
-use App\Enums\EmploymentType;
-use App\Enums\Gender;
 use App\Enums\UserRole;
-use App\Http\Controllers\Concerns\ListsTables;
-use App\Http\Requests\Staff\SaveStaffAccessRequest;
 use App\Http\Requests\Staff\SaveStaffRequest;
 use App\Http\Requests\Staff\UpdateStaffHoursRequest;
-use App\Mail\StaffInvitationMail;
-use App\Models\AcademicYear;
+use App\Http\StaffPresentation;
 use App\Models\AuditEvent;
 use App\Models\Period;
 use App\Models\School;
 use App\Models\Term;
 use App\Models\TimetableSlot;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StaffController extends Controller
 {
-    use ListsTables;
-
-    public const int INVITATION_DAYS = 7;
-
     protected function member(School $school, string $id): User
     {
         return User::where('school_id', $school->id)->where('id', $id)->firstOrFail();
-    }
-
-    public function index(Request $request): Response
-    {
-        $school = $this->schoolContext->school();
-        [$query, $filters] = $this->roster($request, $school);
-
-        $staff = $query->with('subjects:id,name')
-            ->paginate($this->perPage($request))
-            ->withQueryString();
-
-        $everyone = User::where('school_id', $school->id);
-
-        return Inertia::render('staff/roster', [
-            'yearLabel' => $this->yearLabel($school),
-            'counts' => [
-                'total' => $everyone->clone()->count(),
-                'government' => $everyone->clone()->where('employment_type', EmploymentType::Government)->count(),
-                'school_paid' => $everyone->clone()->where('employment_type', EmploymentType::SchoolPaid)->count(),
-                'no_account' => $everyone->clone()->whereNull('password')->count(),
-            ],
-            'filters' => $filters,
-            'roles' => $this->roleOptions(UserRole::cases()),
-            'staff' => [
-                'rows' => collect($staff->items())->map(fn (User $member) => $this->summary($member)),
-                'page' => $staff->currentPage(),
-                'lastPage' => $staff->lastPage(),
-                'total' => $staff->total(),
-                'perPage' => $staff->perPage(),
-                'from' => $staff->firstItem(),
-                'to' => $staff->lastItem(),
-            ],
-        ]);
-    }
-
-    /**
-     * The roster as it is filtered on screen, as a CSV file or a list
-     * to print. Selected rows narrow it to those people only.
-     */
-    public function export(Request $request): StreamedResponse|Response
-    {
-        $school = $this->schoolContext->school();
-        [$query, , $applied] = $this->roster($request, $school);
-        $ids = $this->exportIds($request);
-
-        $staff = $query->with('subjects:id,name')
-            ->when($ids !== [], fn (Builder $query) => $query->whereIn('id', $ids))
-            ->get();
-
-        $rows = $staff->map(fn (User $member) => [
-            'name' => $member->full_name,
-            'staff_code' => $member->staff_code,
-            'role' => $member->role->label(),
-            'subjects' => $member->subjects->pluck('name')->join(', '),
-            'gender' => $member->gender ? $this->say(Str::headline($member->gender->value)) : '',
-            'employment' => $member->employment_type?->label() ?? '',
-            'email' => $member->email,
-            'phone' => $member->phone,
-            'portal' => $member->hasPortalAccount() ? $this->say('Portal on') : $this->say('No account yet'),
-            'joined_on' => $member->joined_on?->toDateString() ?? '',
-        ]);
-
-        return $this->sendExport($request, $school, $this->say('Staff'), $ids !== [] ? [...$applied, $this->say(':count selected', ['count' => count($ids)])] : $applied, [
-            'name' => $this->say('Name'),
-            'staff_code' => $this->say('Staff code'),
-            'role' => $this->say('Portal role'),
-            'subjects' => $this->say('Subjects'),
-            'gender' => $this->say('Gender'),
-            'employment' => $this->say('Employment'),
-            'email' => $this->say('Email'),
-            'phone' => $this->say('Phone'),
-            'portal' => $this->say('Portal'),
-            'joined_on' => $this->say('Joined'),
-        ], $rows, $rows->count());
-    }
-
-    /**
-     * The staff query with the filters, search and sort from the page
-     * address applied, the filters as the page shows them, and the same
-     * in words for an export.
-     *
-     * @return array{0: Builder<User>, 1: array<string, mixed>, 2: list<string>}
-     */
-    protected function roster(Request $request, School $school): array
-    {
-        $search = trim((string) $request->query('q', ''));
-        $employment = $this->many($request, 'employment', array_column(EmploymentType::cases(), 'value'));
-        $portal = $this->many($request, 'portal', ['on', 'none']);
-        $roles = $this->many($request, 'role', array_column(UserRole::cases(), 'value'));
-        $gender = Gender::tryFrom((string) $request->query('gender', ''));
-        [$sort, $direction] = $this->sorting($request, ['name', 'role', 'joined'], 'name');
-
-        $query = User::where('school_id', $school->id)
-            ->when($employment !== [], fn (Builder $query) => $query->whereIn('employment_type', $employment))
-            ->when(count($portal) === 1, fn (Builder $query) => $portal === ['on'] ? $query->whereNotNull('password') : $query->whereNull('password'))
-            ->when($roles !== [], fn (Builder $query) => $query->whereIn('role', $roles))
-            ->when($gender, fn (Builder $query) => $query->where('gender', $gender))
-            ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $inner) => $inner
-                ->whereLike('full_name', "%{$search}%")
-                ->orWhereLike('address', "%{$search}%")
-                ->orWhereHas('subjects', fn (Builder $subjects) => $subjects->whereLike('name', "%{$search}%"))));
-
-        match ($sort) {
-            'role' => $query->orderBy('role', $direction)->orderByRaw('COALESCE(family_name, full_name)'),
-            'joined' => $query->orderBy('joined_on', $direction)->orderBy('full_name'),
-            default => $query->orderByRaw('COALESCE(family_name, full_name) '.$direction)->orderBy('full_name', $direction),
-        };
-
-        $applied = array_values(array_filter([
-            $search !== '' ? $this->say('Search: :q', ['q' => $search]) : null,
-            $employment !== [] ? $this->say('Employment: :value', ['value' => implode(', ', array_map(fn (string $type) => EmploymentType::from($type)->label(), $employment))]) : null,
-            $portal !== [] ? $this->say('Portal: :value', ['value' => implode(', ', array_map(fn (string $state) => $state === 'on' ? $this->say('Portal on') : $this->say('No account yet'), $portal))]) : null,
-            $roles !== [] ? $this->say('Role: :value', ['value' => implode(', ', array_map(fn (string $role) => UserRole::from($role)->label(), $roles))]) : null,
-            $gender ? $this->say('Gender: :value', ['value' => $this->say(Str::headline($gender->value))]) : null,
-        ]));
-
-        return [$query, [
-            'q' => $search,
-            'employment' => $employment,
-            'portal' => $portal,
-            'role' => $roles,
-            'gender' => $gender->value ?? '',
-            'sort' => ($direction === 'desc' ? '-' : '').$sort,
-        ], $applied];
     }
 
     public function create(Request $request): Response
@@ -171,7 +32,7 @@ class StaffController extends Controller
         $school = $this->schoolContext->school();
 
         return Inertia::render('staff/register', [
-            'yearLabel' => $this->yearLabel($school),
+            'yearLabel' => StaffPresentation::yearLabel($school),
             'member' => null,
         ]);
     }
@@ -191,7 +52,7 @@ class StaffController extends Controller
             ]);
 
             $this->storePhoto($request, $school, $member);
-            $this->audit($request, $school, $member, 'registered', ['name' => $member->full_name]);
+            AuditEvent::record($school, $request->user(), 'staff', $member->id, 'registered', ['name' => $member->full_name]);
 
             return $member;
         });
@@ -214,10 +75,10 @@ class StaffController extends Controller
             ->first();
 
         return Inertia::render('staff/record', [
-            'yearLabel' => $this->yearLabel($school),
+            'yearLabel' => StaffPresentation::yearLabel($school),
             'member' => [
-                ...$this->summary($member),
-                ...$this->details($member),
+                ...StaffPresentation::summary($member),
+                ...StaffPresentation::details($member),
                 'joined_on' => $member->joined_on?->toDateString(),
                 'invitation_expired' => ! $member->hasPortalAccount()
                     && $member->invitation_expires_at?->isPast() === true,
@@ -247,11 +108,11 @@ class StaffController extends Controller
         $member = $this->member($school, $staff);
 
         return Inertia::render('staff/register', [
-            'yearLabel' => $this->yearLabel($school),
+            'yearLabel' => StaffPresentation::yearLabel($school),
             'member' => [
                 'id' => $member->id,
-                'photo_url' => $this->photoUrl($member),
-                ...$this->details($member),
+                'photo_url' => StaffPresentation::photoUrl($member),
+                ...StaffPresentation::details($member),
             ],
         ]);
     }
@@ -263,91 +124,19 @@ class StaffController extends Controller
         $data = $request->validated();
 
         DB::transaction(function () use ($request, $school, $member, $data) {
-            $before = $this->details($member);
+            $before = StaffPresentation::details($member);
             $member->update($this->detailAttributes($data));
             $this->storePhoto($request, $school, $member);
 
-            $this->audit($request, $school, $member, 'corrected', [
+            AuditEvent::record($school, $request->user(), 'staff', $member->id, 'corrected', [
                 'before' => $before,
-                'after' => $this->details($member),
+                'after' => StaffPresentation::details($member),
             ]);
         });
 
         $this->notify('Staff details saved.');
 
         return redirect()->route('staff.show', $member->id);
-    }
-
-    public function access(Request $request, string $staff): Response
-    {
-        $school = $this->schoolContext->school();
-        $member = $this->member($school, $staff);
-        $term = Term::where('school_id', $school->id)->where('is_current', true)->first();
-
-        return Inertia::render('staff/access', [
-            'yearLabel' => $this->yearLabel($school),
-            'member' => [
-                'id' => $member->id,
-                'formal_name' => $member->formalName(),
-                'salutation' => $this->salutation($member),
-                'gender' => $member->gender?->value,
-                'role' => $member->role->value,
-                'email' => $member->email,
-                'phone' => $member->phone,
-                'has_account' => $member->hasPortalAccount(),
-                'channel' => $member->invitation_channel ?? 'email',
-            ],
-            'roles' => $this->roleOptions(UserRole::assignable()),
-            'schoolName' => $school->name,
-            'termLabel' => $term?->label,
-        ]);
-    }
-
-    public function saveAccess(SaveStaffAccessRequest $request, string $staff): RedirectResponse
-    {
-        $school = $this->schoolContext->school();
-        $member = $this->member($school, $staff);
-
-        $data = $request->validated();
-
-        $before = $member->only(['role', 'email', 'phone']);
-        $member->update([
-            'role' => $data['role'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'invitation_channel' => $data['channel'],
-        ]);
-
-        $this->audit($request, $school, $member, 'access_saved', [
-            'before' => $before,
-            'after' => $member->only(['role', 'email', 'phone']),
-            'invited' => (bool) $data['create_now'],
-        ]);
-
-        if ($data['create_now'] && ! $member->hasPortalAccount()) {
-            $this->invite($request, $school, $member, $data['channel']);
-        }
-
-        $this->notify('Portal access saved.');
-
-        return redirect()->route('staff.show', $member->id);
-    }
-
-    public function remind(Request $request, string $staff): RedirectResponse
-    {
-        $school = $this->schoolContext->school();
-        $member = $this->member($school, $staff);
-
-        if (! $member->hasPortalAccount()) {
-            $this->invite($request, $school, $member, $member->invitation_channel ?? 'email');
-            $this->audit($request, $school, $member, 'invitation_sent', [
-                'channel' => $member->invitation_channel,
-            ]);
-        }
-
-        $this->notify('Invitation sent again.');
-
-        return back();
     }
 
     public function updateHours(UpdateStaffHoursRequest $request, string $staff): RedirectResponse
@@ -360,7 +149,7 @@ class StaffController extends Controller
         $before = $member->only(array_keys($data));
         $member->update($data);
 
-        $this->audit($request, $school, $member, 'hours_saved', [
+        AuditEvent::record($school, $request->user(), 'staff', $member->id, 'hours_saved', [
             'before' => $before,
             'after' => $member->only(array_keys($data)),
         ]);
@@ -368,48 +157,6 @@ class StaffController extends Controller
         $this->notify('Teaching hours saved.');
 
         return back();
-    }
-
-    /**
-     * Issue a fresh seven-day link and deliver it. The link replaces any
-     * earlier one; only its hash is stored.
-     */
-    protected function invite(Request $request, School $school, User $member, string $channel): void
-    {
-        $token = Str::random(64);
-
-        $member->update([
-            'invitation_token_hash' => hash('sha256', $token),
-            'invitation_channel' => $channel,
-            'invitation_expires_at' => now()->addDays(static::INVITATION_DAYS),
-            'invited_at' => now(),
-        ]);
-
-        if (in_array($channel, ['email', 'both'], true)) {
-            try {
-                Mail::to($member->email)->locale($member->locale ?? $school->locale)->send(new StaffInvitationMail(
-                    $school,
-                    $this->salutation($member),
-                    (string) $request->user()?->full_name,
-                    route('invitation.show', $token),
-                ));
-            } catch (\Throwable $exception) {
-                Log::warning('Staff invitation email failed.', [
-                    'staff_id' => $member->id,
-                    'error' => $exception->getMessage(),
-                ]);
-
-                throw ValidationException::withMessages([
-                    'invitation' => __('The invitation email could not be sent. Check the address and send it again.'),
-                ]);
-            }
-        }
-
-        if (in_array($channel, ['sms', 'both'], true)) {
-            Log::warning('Staff invitation SMS pending: no SMS provider is configured.', [
-                'staff_id' => $member->id,
-            ]);
-        }
     }
 
     /**
@@ -450,86 +197,6 @@ class StaffController extends Controller
         ]);
     }
 
-    /**
-     * The roster row: who she is at a glance.
-     *
-     * @return array<string, mixed>
-     */
-    protected function summary(User $member): array
-    {
-        return [
-            'id' => $member->id,
-            'name' => $member->full_name,
-            'formal_name' => $member->formalName(),
-            'initials' => $member->initials,
-            'photo_url' => $this->photoUrl($member),
-            'role' => $member->role->value,
-            'role_label' => $member->role->label(),
-            'subjects' => $member->subjects->pluck('name')->all(),
-            'gender' => $member->gender?->value,
-            'employment_type' => $member->employment_type?->value,
-            'email' => $member->email,
-            'phone' => $member->phone,
-            'has_account' => $member->hasPortalAccount(),
-            'invited_on' => $member->invited_at?->toDateString(),
-        ];
-    }
-
-    /**
-     * The seven registered fields, as the form edits them.
-     *
-     * @return array<string, mixed>
-     */
-    protected function details(User $member): array
-    {
-        return [
-            'given_name' => $member->given_name ?? Str::beforeLast($member->full_name, ' '),
-            'family_name' => $member->family_name ?? Str::afterLast($member->full_name, ' '),
-            'gender' => $member->gender?->value,
-            'email' => $member->email,
-            'phone' => $member->phone,
-            'address' => $member->address,
-            'qualification' => $member->qualification,
-            'employment_type' => $member->employment_type?->value,
-        ];
-    }
-
-    /**
-     * @param  array<int, UserRole>  $roles
-     * @return array<int, array{value: string, label: string, summary: string}>
-     */
-    protected function roleOptions(array $roles): array
-    {
-        return array_map(fn (UserRole $role) => [
-            'value' => $role->value,
-            'label' => $role->label(),
-            'summary' => $role->portalSummary(),
-        ], $roles);
-    }
-
-    protected function salutation(User $member): string
-    {
-        $title = match ($member->gender) {
-            Gender::Female => 'Mrs ',
-            Gender::Male => 'Mr ',
-            default => '',
-        };
-
-        return $title.($member->family_name ?? $member->full_name);
-    }
-
-    protected function photoUrl(User $member): ?string
-    {
-        return $member->photo_path ? "/storage/{$member->photo_path}" : null;
-    }
-
-    protected function yearLabel(School $school): ?string
-    {
-        return AcademicYear::where('school_id', $school->id)
-            ->where('status', AcademicYearStatus::Current)
-            ->value('label');
-    }
-
     protected function nextStaffCode(School $school): string
     {
         $number = User::withTrashed()->where('school_id', $school->id)->count();
@@ -539,17 +206,5 @@ class StaffController extends Controller
         } while (User::withTrashed()->where('school_id', $school->id)->where('staff_code', $code)->exists());
 
         return $code;
-    }
-
-    protected function audit(Request $request, School $school, User $member, string $action, mixed $diff): void
-    {
-        AuditEvent::create([
-            'school_id' => $school->id,
-            'actor_id' => $request->user()?->id,
-            'entity' => 'staff',
-            'entity_id' => $member->id,
-            'action' => $action,
-            'diff' => $diff,
-        ]);
     }
 }

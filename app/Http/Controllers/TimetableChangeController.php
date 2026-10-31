@@ -195,7 +195,7 @@ class TimetableChangeController extends Controller
                     'created_by' => $request->user()?->id,
                 ]);
 
-                $this->audit($request, $school, $change);
+                AuditEvent::record($school, $request->user(), 'timetable_change', $change->id, $change->kind, ['summary' => $change->summary, 'from' => $change->starts_on->toDateString(), 'until' => $change->ends_on->toDateString()]);
             }
         });
 
@@ -242,17 +242,5 @@ class TimetableChangeController extends Controller
         $date = rescue(fn () => $value !== '' ? Carbon::parse($value) : today(), today(), false);
 
         return $date->between($term->starts_on, $term->ends_on) ? $date : $term->starts_on->copy();
-    }
-
-    protected function audit(Request $request, School $school, TimetableChange $change): void
-    {
-        AuditEvent::create([
-            'school_id' => $school->id,
-            'actor_id' => $request->user()?->id,
-            'entity' => 'timetable_change',
-            'entity_id' => $change->id,
-            'action' => $change->kind,
-            'diff' => ['summary' => $change->summary, 'from' => $change->starts_on->toDateString(), 'until' => $change->ends_on->toDateString()],
-        ]);
     }
 }

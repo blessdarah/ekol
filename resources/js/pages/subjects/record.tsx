@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { edit, index } from '@/actions/App/Http/Controllers/SubjectController';
+import { edit } from '@/actions/App/Http/Controllers/SubjectRegistrationController';
+import { index } from '@/actions/App/Http/Controllers/SubjectController';
 import { Note, longDate } from '../../components/staff/ui';
 import {
     StructureHeader,

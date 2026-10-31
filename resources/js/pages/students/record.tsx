@@ -1,11 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import {
-    change as changeSeries,
-    one as chooseSeries,
-} from '@/actions/App/Http/Controllers/SeriesRegistrationController';
-import { studentTab as feesTab } from '@/actions/App/Http/Controllers/FeeController';
-import { edit } from '@/actions/App/Http/Controllers/StudentController';
+import { change as changeSeries } from '@/actions/App/Http/Controllers/SeriesChangeController';
+import { one as chooseSeries } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
+import { studentTab as feesTab } from '@/actions/App/Http/Controllers/StudentFeeController';
+import { edit } from '@/actions/App/Http/Controllers/StudentRegistrationController';
 import {
     StreamChip,
     capsLabelClass,

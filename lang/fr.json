@@ -3357,5 +3357,8 @@
     "School fee receipt": "Reçu de frais de scolarité",
     "Paid by": "Payé par",
     "Ref.": "Réf.",
-    "Payment method": "Mode de paiement"
+    "Payment method": "Mode de paiement",
+    "The term must belong to the selected school and academic year.": "Le trimestre doit appartenir à l’établissement et à l’année scolaire sélectionnés.",
+    "The registration must belong to the same school.": "L’inscription doit appartenir au même établissement.",
+    "The student import changed. Review the rows and try again.": "Les données des élèves à importer ont changé. Vérifiez les lignes et réessayez."
 }

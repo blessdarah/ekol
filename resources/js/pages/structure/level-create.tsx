@@ -1,9 +1,7 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import {
-    index,
-    storeLevel,
-} from '@/actions/App/Http/Controllers/StructureController';
+import { index } from '@/actions/App/Http/Controllers/StructureController';
+import { storeLevel } from '@/actions/App/Http/Controllers/LevelController';
 import {
     ErrorText,
     LockIcon,

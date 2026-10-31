@@ -1,6 +1,9 @@
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link, router } from '@inertiajs/react';
-import { receipt, student } from '@/actions/App/Http/Controllers/FeeController';
+import {
+    receipt,
+    student,
+} from '@/actions/App/Http/Controllers/FeePaymentController';
 import {
     check,
     index,

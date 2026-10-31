@@ -1,13 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
 import { withAppShell } from '@/layouts/app-layout';
 import { useT } from '@/lib/i18n';
-import {
-    index as fees,
-    student as studentFees,
-} from '@/actions/App/Http/Controllers/FeeController';
+import { index as fees } from '@/actions/App/Http/Controllers/FeeController';
+import { student as studentFees } from '@/actions/App/Http/Controllers/FeePaymentController';
 import { index as assessments } from '@/actions/App/Http/Controllers/AssessmentController';
 import { index as timetable } from '@/actions/App/Http/Controllers/TimetableController';
-import { index as staff } from '@/actions/App/Http/Controllers/StaffController';
+import { index as staff } from '@/actions/App/Http/Controllers/StaffRosterController';
 import {
     outlineButtonClass,
     solidButtonClass,

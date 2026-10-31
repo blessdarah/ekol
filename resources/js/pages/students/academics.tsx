@@ -1,8 +1,8 @@
 import { tableRowClass } from '../../components/table/ui';
 import { Head, Link } from '@inertiajs/react';
 import { show } from '@/actions/App/Http/Controllers/StudentAcademicsController';
-import { edit } from '@/actions/App/Http/Controllers/StudentController';
-import { reports } from '@/actions/App/Http/Controllers/TermResultController';
+import { edit } from '@/actions/App/Http/Controllers/StudentRegistrationController';
+import { reports } from '@/actions/App/Http/Controllers/TermReportController';
 import {
     capsLabelClass,
     outlineButtonClass,

@@ -1,9 +1,7 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import {
-    placement,
-    storeConfirmation,
-} from '@/actions/App/Http/Controllers/EnrolmentController';
+import { placement } from '@/actions/App/Http/Controllers/StudentPlacementController';
+import { storeConfirmation } from '@/actions/App/Http/Controllers/EnrolmentConfirmationController';
 import { index as seriesRegistration } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
 import {
     EnrolmentHeader,

@@ -47,8 +47,18 @@ class Payment extends Model
      */
     protected static function booted(): void
     {
-        static::creating(function (Payment $payment): void {
-            $payment->school_id ??= Invoice::withoutGlobalScopes()->whereKey($payment->invoice_id)->value('school_id');
+        static::saving(function (Payment $payment): void {
+            if ($payment->isDirty('invoice_id') || $payment->school_id === null) {
+                $payment->school_id = Invoice::withoutGlobalScope('school')->whereKey($payment->invoice_id)->value('school_id');
+            }
+        });
+
+        static::saved(function (Payment $record): void {
+            Invoice::syncStatuses([$record->invoice_id, (string) $record->getRawOriginal('invoice_id')]);
+        });
+
+        static::deleted(function (Payment $record): void {
+            Invoice::syncStatuses([$record->invoice_id]);
         });
     }
 

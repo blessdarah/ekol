@@ -240,7 +240,7 @@ class Invoice extends Model
                 'receipt_no' => Payment::nextReceipt($schoolId, $receivedAt),
             ]);
 
-            $this->unsetRelation('payments')->syncStatus();
+            $this->unsetRelation('payments')->refresh();
 
             return $payment;
         });
@@ -514,6 +514,19 @@ class Invoice extends Model
         }
 
         return $cells;
+    }
+
+    /**
+     * Reconcile records affected by a payment or exemption mutation.
+     *
+     * @param  array<int, string|null>  $invoiceIds
+     */
+    public static function syncStatuses(array $invoiceIds): void
+    {
+        static::withoutGlobalScope('school')
+            ->whereKey(array_values(array_unique(array_filter($invoiceIds))))
+            ->with(['payments' => fn ($query) => $query->withoutGlobalScope('school'), 'exemption', 'installments', 'lines'])
+            ->each(fn (Invoice $invoice) => $invoice->syncStatus());
     }
 
     /**

@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { reports } from '@/actions/App/Http/Controllers/TermResultController';
+import { reports } from '@/actions/App/Http/Controllers/TermReportController';
 import {
     ReportCard,
     type ReportCardData,

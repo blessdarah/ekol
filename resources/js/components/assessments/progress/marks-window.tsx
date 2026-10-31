@@ -2,7 +2,7 @@ import { Link, router } from '@inertiajs/react';
 import {
     progress,
     window as moveWindow,
-} from '@/actions/App/Http/Controllers/AssessmentController';
+} from '@/actions/App/Http/Controllers/AssessmentProgressController';
 import { show as schedule } from '@/actions/App/Http/Controllers/ExamScheduleController';
 import { amberText, primaryClass, quietClass } from '../ui';
 import { ErrorText, Toggle } from '../../structure/ui';

@@ -1,9 +1,9 @@
 import { Head, Link } from '@inertiajs/react';
-import { reEnrolment } from '@/actions/App/Http/Controllers/EnrolmentController';
+import { reEnrolment } from '@/actions/App/Http/Controllers/ReEnrolmentController';
 import {
     print as printCards,
     reports,
-} from '@/actions/App/Http/Controllers/TermResultController';
+} from '@/actions/App/Http/Controllers/TermReportController';
 import {
     ReportCardPreview,
     type ReportCardData,

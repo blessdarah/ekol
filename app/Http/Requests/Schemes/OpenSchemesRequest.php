@@ -8,6 +8,19 @@ use Illuminate\Validation\Rule;
 
 class OpenSchemesRequest extends SchoolRequest
 {
+    /**
+     * @return array{due_on: string, approval: string, starts_from: string, free_changes: bool}
+     */
+    public function openingData(): array
+    {
+        return [
+            'due_on' => $this->string('due_on')->toString(),
+            'approval' => $this->string('approval')->toString(),
+            'starts_from' => $this->string('starts_from')->toString(),
+            'free_changes' => $this->boolean('free_changes'),
+        ];
+    }
+
     public function authorize(): bool
     {
         return (bool) $this->user()?->can('manage-schemes');
