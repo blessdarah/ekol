@@ -10,6 +10,7 @@ use App\Models\School;
 use App\Models\User;
 use BlessDarah\PhpCampay\Campay;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Notifications\Events\NotificationSending;
 use Illuminate\Support\Facades\Auth;
@@ -119,6 +120,7 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+        Model::shouldBeStrict(! app()->isProduction());
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),

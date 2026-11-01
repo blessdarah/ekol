@@ -61,7 +61,7 @@ class SchoolClass extends Model
     public static function syncFormMasterFlags(array $userIds): void
     {
         User::withoutGlobalScope('school')->whereKey(array_values(array_unique(array_filter($userIds))))
-            ->get(['id', 'school_id'])
+            ->get(['id', 'school_id', 'is_platform_admin'])
             ->each(function (User $user): void {
                 $user->update([
                     'is_form_master' => static::withoutGlobalScope('school')

@@ -212,7 +212,7 @@ class PasswordResetController extends Controller
 
         return User::where('school_id', $school->id)
             ->whereNotNull('phone')
-            ->get(['id', 'school_id', 'phone', 'full_name', 'given_name', 'family_name', 'email', 'locale'])
+            ->get(['id', 'school_id', 'phone', 'full_name', 'given_name', 'family_name', 'email', 'locale', 'is_platform_admin'])
             ->first(fn (User $user) => str_ends_with((string) preg_replace('/\D/', '', (string) $user->phone), substr($digits, -9)));
     }
 

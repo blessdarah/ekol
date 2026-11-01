@@ -40,7 +40,7 @@ class ConfirmEnrolment
             $placed = Enrolment::where('academic_year_id', $next->id)
                 ->whereHas('student', fn ($query) => $query->where('school_id', $school->id))
                 ->where('status', EnrolmentStatus::Placed)
-                ->with('schoolClass:id,level_id')
+                ->with(['schoolClass:id,level_id', 'student'])
                 ->get();
 
             foreach ($placed as $enrolment) {

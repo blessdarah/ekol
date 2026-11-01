@@ -31,6 +31,16 @@ class InvoiceLine extends Model
         'amount',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (InvoiceLine $record): void {
+            Invoice::syncStatuses([$record->invoice_id, (string) $record->getRawOriginal('invoice_id')]);
+        });
+        static::deleted(function (InvoiceLine $record): void {
+            Invoice::syncStatuses([$record->invoice_id]);
+        });
+    }
+
     /**
      * @return array<string, string>
      */

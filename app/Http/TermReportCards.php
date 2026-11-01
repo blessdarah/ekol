@@ -31,6 +31,7 @@ class TermReportCards
      */
     public function cards(School $school, ?AcademicYear $year, Collection $plans, SchoolClass $class, array $scope, ?AcademicYear $nextYear): array
     {
+        $class->loadMissing('formMaster:id,full_name');
         $standings = $plans->mapWithKeys(fn (AssessmentPlan $plan) => [$plan->id => $plan->standings($class)]);
         $rows = AssessmentPlan::termRows($plans, $class);
         $ranks = static::ranks($rows);

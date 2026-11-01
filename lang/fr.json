@@ -3392,5 +3392,6 @@
     "The domain field is required.": "Le champ domaine est obligatoire.",
     "The selected domain is invalid.": "Le domaine sélectionné est invalide.",
     "Manage subjects": "Gérer les matières",
-    "Copy eligible core subjects and electives, then adjust.": "Copiez les matières admissibles du tronc commun et des options, puis ajustez."
+    "Copy eligible core subjects and electives, then adjust.": "Copiez les matières admissibles du tronc commun et des options, puis ajustez.",
+    "Fee balances are being prepared. Please try again shortly.": "Les soldes des frais sont en cours de préparation. Veuillez réessayer dans quelques instants."
 }

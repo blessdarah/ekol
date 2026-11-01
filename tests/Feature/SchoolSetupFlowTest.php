@@ -37,7 +37,7 @@ function setupSchool(array $overrides = []): School
 
 function setupAdmin(School $school): User
 {
-    return User::create([
+    return User::factory()->create([
         'school_id' => $school->id,
         'staff_code' => 'STF-0001',
         'full_name' => 'Setup Admin',

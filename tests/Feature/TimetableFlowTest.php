@@ -279,6 +279,7 @@ test('a lesson can be taken off, placed again and moved, but not into a clash', 
 
     $this->actingAs($world['admin'])
         ->delete("http://timea.ekol.test/timetable/slots/{$slot->id}")
+        ->assertRedirect()
         ->assertSessionHasNoErrors();
 
     $draft = $draft->fresh();
@@ -302,6 +303,7 @@ test('a lesson can be taken off, placed again and moved, but not into a clash', 
             'weekday' => $times[0]['weekday'],
             'period_id' => $times[0]['period_id'],
         ])
+        ->assertRedirect()
         ->assertSessionHasNoErrors();
 
     expect($draft->fresh()->toFix())->toBe(0);

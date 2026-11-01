@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\ListsTables;
 use App\Http\SchemePageData;
 use App\Http\SchoolContext;
-use App\Models\Level;
 use App\Models\Scheme;
 use App\Models\SchemeOpening;
 use App\Models\SyllabusTopic;
 use App\Models\Term;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use stdClass;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SchemeController extends Controller
@@ -42,11 +43,17 @@ class SchemeController extends Controller
         }
 
         $week = Scheme::currentWeek($term);
-        [$schemes, $states, $listed, $filters] = $this->page->list($request, $term, $opening, $week);
+        [$schemes, $listed, $filters] = $this->page->list($request, $term, $opening, $week);
+        $states = (clone $schemes)->select('state')->selectRaw('COUNT(*) as total')->groupBy('state')->pluck('total', 'state');
+        $submitted = (clone $schemes)->whereIn('status', ['submitted', 'approved', 'closed'])->count();
         $perPage = $this->perPage($request);
-        $lastPage = max(1, (int) ceil($listed->count() / $perPage));
+        $total = $listed->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
         $page = min($lastPage, max(1, (int) $request->query('page', 1)));
-        $picked = $schemes->firstWhere('id', $request->query('scheme'));
+        $paged = $listed->paginate($perPage, ['*'], 'page', $page, $total);
+        $pickedId = (string) $request->query('scheme', '');
+        $pickedRow = Str::isUuid($pickedId) ? (clone $schemes)->where('id', $pickedId)->first(['id', 'state']) : null;
+        $picked = $pickedRow ? $this->page->find($school, $pickedRow->id) : null;
 
         return Inertia::render('schemes/index', [
             'steps' => Scheme::steps($school, $this->schoolContext->term()),
@@ -54,41 +61,46 @@ class SchemeController extends Controller
             'dueOn' => $opening->due_on->toDateString(),
             'daysLate' => $opening->due_on->isPast() ? (int) $opening->due_on->diffInDays(today()) : 0,
             'states' => collect(array_keys(SchemePageData::STATES))->mapWithKeys(fn (string $state) => [
-                $state => $states->filter(fn (string $value) => $value === $state)->count(),
+                $state => (int) ($states[$state] ?? 0),
             ]),
             'canManage' => $request->user()->can('manage-schemes'),
             'totals' => [
-                'all' => $schemes->count(),
-                'submitted' => $schemes->filter(fn (Scheme $scheme) => $scheme->status->isSubmitted())->count(),
-                'to_approve' => $states->filter(fn (string $state) => $state === 'to_approve')->count(),
-                'behind' => $states->filter(fn (string $state) => $state === 'behind')->count(),
-                'not_submitted' => $states->filter(fn (string $state) => in_array($state, ['not_submitted', 'sent_back'], true))->count(),
-                'waiting' => $states->filter(fn (string $state) => $state === 'waiting')->count(),
+                'all' => (int) $states->sum(),
+                'submitted' => $submitted,
+                'to_approve' => (int) ($states['to_approve'] ?? 0),
+                'behind' => (int) ($states['behind'] ?? 0),
+                'not_submitted' => (int) ($states['not_submitted'] ?? 0) + (int) ($states['sent_back'] ?? 0),
+                'waiting' => (int) ($states['waiting'] ?? 0),
             ],
             'filters' => $filters,
-            'levels' => $schemes->map(fn (Scheme $scheme) => $scheme->classSubject?->schoolClass?->level)
-                ->filter()->unique('id')->sortBy('ordinal')
-                ->map(fn (Level $level) => ['id' => $level->id, 'name' => $level->name])->values(),
-            'departments' => $schemes->map(fn (Scheme $scheme) => $scheme->classSubject?->subject?->department)
-                ->filter()->unique()->sort()->values(),
-            'rows' => $listed->forPage($page, $perPage)->map(fn (Scheme $scheme) => [
-                ...$this->page->summary($scheme),
-                'state' => $states[$scheme->id],
-                'progress' => $scheme->progressTo($week),
-                'taught_total' => $scheme->items->whereNotNull('taught_on')->count(),
-                'late' => $this->page->lateItems($scheme, $week)->count(),
-                'initials' => $scheme->classSubject?->staff?->initials,
-                'subject_id' => $scheme->classSubject?->subject_id,
+            'levels' => (clone $schemes)->whereNotNull('level_id')->whereNotNull('level_name')
+                ->select(['level_id as id', 'level_name as name', 'level_ordinal'])->distinct()->orderBy('level_ordinal')
+                ->get()->map(fn (stdClass $row) => ['id' => $row->id, 'name' => $row->name]),
+            'departments' => (clone $schemes)->whereNotNull('department')->where('department', '!=', '')
+                ->distinct()->orderBy('department')->pluck('department'),
+            'rows' => collect($paged->items())->map(fn (stdClass $row) => [
+                'id' => $row->id,
+                'subject' => $row->subject,
+                'class' => $row->class,
+                'teacher' => $row->teacher,
+                'status' => $row->status,
+                'topics' => (int) $row->topics,
+                'state' => $row->state,
+                'progress' => ['planned' => (int) $row->planned, 'taught' => (int) $row->taught],
+                'taught_total' => (int) $row->taught_total,
+                'late' => (int) $row->late,
+                'initials' => $row->teacher_initials,
+                'subject_id' => $row->subject_id,
             ])->values(),
             'paged' => [
-                'page' => $page,
-                'lastPage' => $lastPage,
-                'total' => $listed->count(),
-                'perPage' => $perPage,
-                'from' => $listed->isEmpty() ? null : ($page - 1) * $perPage + 1,
-                'to' => $listed->isEmpty() ? null : min($page * $perPage, $listed->count()),
+                'page' => $paged->currentPage(),
+                'lastPage' => $paged->lastPage(),
+                'total' => $paged->total(),
+                'perPage' => $paged->perPage(),
+                'from' => $paged->firstItem(),
+                'to' => $paged->lastItem(),
             ],
-            'picked' => $picked ? $this->page->panel($picked, $week, $states[$picked->id]) : null,
+            'picked' => $picked ? $this->page->panel($picked, $week, $pickedRow->state) : null,
         ]);
     }
 
@@ -107,26 +119,21 @@ class SchemeController extends Controller
         }
 
         $week = Scheme::currentWeek($term);
-        [, $states, $listed, , $applied] = $this->page->list($request, $term, $opening, $week);
+        [, $listed, , $applied] = $this->page->list($request, $term, $opening, $week);
         $ids = $this->exportIds($request);
-        $rows = $listed
-            ->filter(fn (Scheme $scheme) => $ids === [] || in_array($scheme->id, $ids, true))
-            ->map(function (Scheme $scheme) use ($week) {
-                $progress = $scheme->progressTo($week);
-
-                return [
-                    'subject' => $scheme->classSubject?->subject?->name,
-                    'class' => $scheme->classSubject?->schoolClass?->name,
-                    'department' => $scheme->classSubject?->subject?->department,
-                    'teacher' => $scheme->classSubject->staff->full_name ?? '',
-                    'state' => $this->say(SchemePageData::STATES[$scheme->followState($week)]),
-                    'taught' => $progress['taught'],
-                    'planned' => $progress['planned'],
-                    'topics' => $scheme->items->count(),
-                    'coverage' => $scheme->coverage(),
-                ];
-            })
-            ->values();
+        $listed->when($ids !== [], fn ($query) => $query->whereIn('id', $ids));
+        $count = $listed->count();
+        $rows = $listed->cursor()->map(fn (stdClass $row) => [
+            'subject' => $row->subject,
+            'class' => $row->class,
+            'department' => $row->department,
+            'teacher' => $row->teacher ?? '',
+            'state' => $this->say(SchemePageData::STATES[$row->state]),
+            'taught' => (int) $row->taught,
+            'planned' => (int) $row->planned,
+            'topics' => (int) $row->topics,
+            'coverage' => (int) $row->topics > 0 ? (int) floor((int) $row->taught_total / (int) $row->topics * 100) : 0,
+        ]);
 
         return $this->sendExport($request, $school, $this->say('Schemes of work').' · '.$this->say($term->label), $ids !== [] ? [...$applied, $this->say(':count selected', ['count' => count($ids)])] : $applied, [
             'subject' => $this->say('Subject'),
@@ -138,6 +145,6 @@ class SchemeController extends Controller
             'planned' => $this->say('Planned so far'),
             'topics' => $this->say('Sub-topics'),
             'coverage' => $this->say('Coverage %'),
-        ], $rows, $rows->count());
+        ], $rows, $count);
     }
 }

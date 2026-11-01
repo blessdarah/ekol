@@ -69,6 +69,7 @@ Artisan::command('registrations:prune', function () {
 })->purpose('Delete expired, unconsumed school registrations');
 
 Schedule::command('registrations:prune')->daily();
+Schedule::command('fees:refresh-ledgers')->dailyAt('00:05')->withoutOverlapping();
 Schedule::command('platform:expire')->everyMinute()->withoutOverlapping();
 
 Artisan::command('payments:check-mobile', function () {

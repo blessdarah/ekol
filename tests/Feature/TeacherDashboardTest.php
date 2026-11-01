@@ -22,6 +22,7 @@ use App\Models\Term;
 use App\Models\TimetableSlot;
 use App\Models\TimetableVersion;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -306,6 +307,8 @@ test('a register is saved per lesson, for every student, once the lesson has sta
     $this->actingAs($world['teacher'])
         ->get('http://teacha.ekol.test/dashboard')
         ->assertInertia(fn (Assert $page) => $page->where('lessons.0.marked', true)->where('unmarked', 0));
+
+    Cache::flush();
 
     $this->actingAs($world['admin'])
         ->get('http://teacha.ekol.test/dashboard')

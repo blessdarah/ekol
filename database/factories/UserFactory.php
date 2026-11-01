@@ -18,6 +18,11 @@ class UserFactory extends Factory
      */
     protected static ?string $password;
 
+    public function configure(): static
+    {
+        return $this->afterCreating(fn (User $user) => $user->refresh());
+    }
+
     /**
      * Define the model's default state.
      *

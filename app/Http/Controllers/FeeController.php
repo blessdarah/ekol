@@ -3,19 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\ListsTables;
-use App\Http\FeeEnrolments;
-use App\Models\AcademicYear;
-use App\Models\Enrolment;
+use App\Http\FeeLedgerRows;
+use App\Http\SchoolContext;
 use App\Models\FeePlan;
-use App\Models\Invoice;
 use App\Models\Level;
 use App\Models\Money;
-use App\Models\School;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection as SupportCollection;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
+use stdClass;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -35,6 +33,11 @@ class FeeController extends Controller
         'unbilled' => 'Not billed',
     ];
 
+    public function __construct(SchoolContext $schoolContext, protected FeeLedgerRows $ledger)
+    {
+        parent::__construct($schoolContext);
+    }
+
     /**
      * Everyone enrolled this year with what they were billed and paid.
      */
@@ -42,42 +45,46 @@ class FeeController extends Controller
     {
         $school = $this->schoolContext->school();
         $year = $this->schoolContext->year();
-        $rows = $this->ledgerRows($school, $year);
-        [$listed, $filters] = $this->ledgerList($request, $rows);
+        $rows = $this->ledger->query($school, $year);
+        [$listed, $filters] = $this->ledgerList($request, $rows->clone());
         $perPage = $this->perPage($request);
-        $lastPage = max(1, (int) ceil($listed->count() / $perPage));
+        $total = $listed->clone()->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
         $page = min($lastPage, max(1, (int) $request->query('page', 1)));
-        $counts = ['all' => $rows->count(), ...$rows->countBy('state')->all()];
+        $students = $listed->paginate($perPage, page: $page, total: $total);
+        $totals = $rows->clone()->selectRaw("COUNT(*) as all_count, SUM(due) as billed, SUM(paid) as collected, SUM(balance) as outstanding, SUM(overdue) as overdue_amount,
+            COUNT(CASE WHEN state = 'overdue' THEN 1 END) as overdue_count,
+            COUNT(CASE WHEN state = 'owing' THEN 1 END) as owing_count,
+            COUNT(CASE WHEN state = 'paid' THEN 1 END) as paid_count,
+            COUNT(CASE WHEN state = 'unbilled' THEN 1 END) as unbilled_count")->first();
 
         return Inertia::render('fees/index', [
             'yearLabel' => $year?->label,
             'currency' => $school->currency,
             'totals' => [
-                'billed' => Money::number((int) $rows->sum('due')),
-                'collected' => Money::number((int) $rows->sum('paid')),
-                'outstanding' => Money::number((int) $rows->sum('balance')),
-                'overdue' => Money::number((int) $rows->sum('overdue')),
+                'billed' => Money::number((int) $totals->billed),
+                'collected' => Money::number((int) $totals->collected),
+                'outstanding' => Money::number((int) $totals->outstanding),
+                'overdue' => Money::number((int) $totals->overdue_amount),
             ],
             'counts' => [
-                'all' => $counts['all'],
-                'overdue' => $counts['overdue'] ?? 0,
-                'owing' => $counts['owing'] ?? 0,
-                'paid' => $counts['paid'] ?? 0,
-                'unbilled' => $counts['unbilled'] ?? 0,
+                'all' => (int) $totals->all_count,
+                'overdue' => (int) $totals->overdue_count,
+                'owing' => (int) $totals->owing_count,
+                'paid' => (int) $totals->paid_count,
+                'unbilled' => (int) $totals->unbilled_count,
             ],
             'filters' => $filters,
             'levels' => Level::where('school_id', $school->id)->orderBy('ordinal')->get(['id', 'name']),
-            'classes' => $rows->whereNotNull('class_id')->unique('class_id')->sortBy('class')
-                ->map(fn (array $row) => ['id' => $row['class_id'], 'name' => $row['class'], 'level_id' => $row['level_id']])
-                ->values(),
+            'classes' => $rows->clone()->whereNotNull('class_id')->select('class_id as id', 'class as name', 'level_id')->distinct()->orderBy('class')->get(),
             'students' => [
-                'rows' => $listed->forPage($page, $perPage)->map(fn (array $row) => [...$row, 'due' => Money::number($row['due']), 'paid' => Money::number($row['paid']), 'balance' => Money::number($row['balance']), 'overdue' => Money::number($row['overdue'])])->values(),
+                'rows' => $students->getCollection()->map(fn (stdClass $row) => $this->ledger->row($row)),
                 'page' => $page,
                 'lastPage' => $lastPage,
-                'total' => $listed->count(),
+                'total' => $total,
                 'perPage' => $perPage,
-                'from' => $listed->isEmpty() ? null : ($page - 1) * $perPage + 1,
-                'to' => $listed->isEmpty() ? null : min($page * $perPage, $listed->count()),
+                'from' => $students->firstItem(),
+                'to' => $students->lastItem(),
             ],
             'hasPlans' => $year !== null && FeePlan::where('school_id', $school->id)->where('academic_year_id', $year->id)->exists(),
         ]);
@@ -90,13 +97,14 @@ class FeeController extends Controller
     public function export(Request $request): StreamedResponse|Response
     {
         $school = $this->schoolContext->school();
-        [$listed, , $applied] = $this->ledgerList($request, $this->ledgerRows($school, $this->schoolContext->year()));
+        [$listed, , $applied] = $this->ledgerList($request, $this->ledger->query($school, $this->schoolContext->year()));
         $ids = $this->exportIds($request);
-        $rows = $listed
-            ->filter(fn (array $row) => $ids === [] || in_array($row['id'], $ids, true))
-            ->map(fn (array $row) => [...$row, 'due' => Money::number($row['due']), 'paid' => Money::number($row['paid']), 'balance' => Money::number($row['balance']), 'overdue' => Money::number($row['overdue'])])
-            ->map(fn (array $row) => [...$row, 'state' => $this->say(static::STATES[$row['state']])])
-            ->values();
+        $listed->when($ids !== [], fn (Builder $query) => $query->whereIn('id', $ids));
+        $count = $listed->clone()->count();
+        $rows = $listed->cursor()->map(fn (stdClass $row) => [
+            ...$this->ledger->row($row),
+            'state' => $this->say(static::STATES[$row->state]),
+        ]);
 
         return $this->sendExport($request, $school, $this->say('Fees'), $ids !== [] ? [...$applied, $this->say(':count selected', ['count' => count($ids)])] : $applied, [
             'name' => $this->say('Name'),
@@ -107,80 +115,45 @@ class FeeController extends Controller
             'balance' => $this->say('Balance'),
             'overdue' => $this->say('Overdue'),
             'state' => $this->say('Status'),
-        ], $rows, $rows->count());
-    }
-
-    /**
-     * One row per enrolled student, with what was billed, paid and owed.
-     *
-     * @return SupportCollection<int, LedgerRow>
-     */
-    protected function ledgerRows(School $school, ?AcademicYear $year): SupportCollection
-    {
-        return collect($year ? (new FeeEnrolments)->handle($school, $year) : [])->map(function (Enrolment $enrolment) {
-            $ledgers = ($enrolment->student->invoices ?? new Collection)
-                ->map(fn (Invoice $invoice) => $invoice->syncStatus()->ledgerMinor());
-            $balance = (int) $ledgers->sum('balance');
-            $overdue = (int) $ledgers->sum('overdue');
-
-            return [
-                'id' => $enrolment->student_id,
-                'name' => (string) $enrolment->student?->full_name,
-                'matricule' => (string) $enrolment->student?->admission_no,
-                'class' => $enrolment->schoolClass?->name,
-                'class_id' => $enrolment->schoolClass?->id,
-                'level_id' => $enrolment->level_id ?? $enrolment->schoolClass?->level_id,
-                'due' => (int) $ledgers->sum('due'),
-                'paid' => (int) $ledgers->sum('paid'),
-                'balance' => $balance,
-                'overdue' => $overdue,
-                'state' => match (true) {
-                    $ledgers->isEmpty() => 'unbilled',
-                    $balance <= 0 => 'paid',
-                    $overdue > 0 => 'overdue',
-                    default => 'owing',
-                },
-            ];
-        });
+        ], $rows, $count);
     }
 
     /**
      * The rows with the filters, search and sort from the page address
      * applied, the filters as the page shows them, and the same in words.
      *
-     * @param  SupportCollection<int, LedgerRow>  $rows
-     * @return array{0: SupportCollection<int, LedgerRow>, 1: array<string, mixed>, 2: list<string>}
+     * @return array{0: Builder, 1: array<string, mixed>, 2: list<string>}
      */
-    protected function ledgerList(Request $request, SupportCollection $rows): array
+    protected function ledgerList(Request $request, Builder $rows): array
     {
         $search = trim((string) $request->query('q', ''));
-        $needle = mb_strtolower($search);
+        $needle = '%'.Str::replace(['!', '%', '_'], ['!!', '!%', '!_'], Str::lower($search)).'%';
         $states = $this->many($request, 'state', array_keys(static::STATES));
         $levelId = (string) $request->query('level', '');
         $classes = $this->many($request, 'class');
         [$sort, $direction] = $this->sorting($request, ['owed', 'name', 'class', 'balance'], 'owed');
         $descending = $direction === 'desc';
 
-        $listed = $rows
-            ->filter(fn (array $row) => ($states === [] || in_array($row['state'], $states, true))
-                && ($levelId === '' || $row['level_id'] === $levelId)
-                && ($classes === [] || in_array($row['class_id'], $classes, true))
-                && ($needle === ''
-                    || str_contains(mb_strtolower($row['name']), $needle)
-                    || str_contains(mb_strtolower($row['matricule']), $needle)))
-            ->sortBy(match ($sort) {
-                'name' => [['name', $direction]],
-                'class' => [['class', $direction], ['name', 'asc']],
-                'balance' => [['balance', $direction], ['name', 'asc']],
-                default => [['overdue', $descending ? 'asc' : 'desc'], ['balance', $descending ? 'asc' : 'desc'], ['name', 'asc']],
-            })
-            ->values();
+        $listed = $rows->clone()
+            ->when($states !== [], fn (Builder $query) => $query->whereIn('state', $states))
+            ->when($levelId !== '', fn (Builder $query) => $query->where('level_id', $levelId))
+            ->when($classes !== [], fn (Builder $query) => $query->whereIn('class_id', $classes))
+            ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $names) => $names
+                ->whereRaw("LOWER(name) LIKE ? ESCAPE '!'", [$needle])
+                ->orWhereRaw("LOWER(matricule) LIKE ? ESCAPE '!'", [$needle])));
+        match ($sort) {
+            'name' => $listed->orderBy('name', $direction),
+            'class' => $listed->orderBy('class', $direction)->orderBy('name'),
+            'balance' => $listed->orderBy('balance', $direction)->orderBy('name'),
+            default => $listed->orderBy('overdue', $descending ? 'asc' : 'desc')->orderBy('balance', $descending ? 'asc' : 'desc')->orderBy('name'),
+        };
+        $listed->orderBy('id');
 
         $applied = array_values(array_filter([
             $search !== '' ? $this->say('Search: :q', ['q' => $search]) : null,
             $states !== [] ? $this->say('Status: :value', ['value' => implode(', ', array_map(fn (string $state) => $this->say(static::STATES[$state]), $states))]) : null,
             $levelId !== '' ? $this->say('Level: :value', ['value' => Level::whereKey($levelId)->value('name')]) : null,
-            $classes !== [] ? $this->say('Class: :value', ['value' => $rows->whereIn('class_id', $classes)->pluck('class')->unique()->sort()->join(', ')]) : null,
+            $classes !== [] ? $this->say('Class: :value', ['value' => $rows->clone()->whereIn('class_id', $classes)->distinct()->orderBy('class')->pluck('class')->join(', ')]) : null,
         ]));
 
         return [$listed, [

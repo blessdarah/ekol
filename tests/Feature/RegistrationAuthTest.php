@@ -235,7 +235,7 @@ test('cross-school requests are denied', function () {
         'cycle' => SchoolCycle::Secondary, 'currency' => 'XAF',
         'timezone' => 'Africa/Douala',
     ]);
-    $userA = User::create([
+    $userA = User::factory()->create([
         'school_id' => $schoolA->id, 'staff_code' => 'STF-0001',
         'full_name' => 'User A', 'initials' => 'UA',
         'email' => 'a@example.com', 'role' => UserRole::Teacher,
