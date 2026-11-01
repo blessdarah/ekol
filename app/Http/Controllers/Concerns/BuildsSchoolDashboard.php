@@ -3,18 +3,21 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Enums\ApplicationStage;
+use App\Enums\AssessmentKind;
 use App\Enums\AssessmentState;
 use App\Enums\AttendanceStatus;
 use App\Enums\EnrolmentStatus;
 use App\Enums\Gender;
 use App\Enums\SchemeStatus;
+use App\Http\FeeLedgerRows;
+use App\Http\SchemePageData;
 use App\Models\AcademicYear;
 use App\Models\Application;
 use App\Models\AssessmentPlan;
 use App\Models\AssessmentSubject;
 use App\Models\Attendance;
 use App\Models\Enrolment;
-use App\Models\Invoice;
+use App\Models\Installment;
 use App\Models\Level;
 use App\Models\Money;
 use App\Models\Payment;
@@ -28,8 +31,11 @@ use App\Models\TimetableSlot;
 use App\Models\TimetableVersion;
 use App\Models\User;
 use Carbon\CarbonInterface;
+use Closure;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * The school dashboard: the numbers a principal, administrator or
@@ -47,11 +53,11 @@ trait BuildsSchoolDashboard
         $term = $this->schoolContext->term();
         $week = $term ? Scheme::currentWeek($term) : null;
 
-        $fees = $user->can('manage-fees') && $year ? $this->dashboardFees($school, $year, $term, $range) : null;
-        $marks = $user->can('manage-assessments') && $year ? $this->dashboardMarks($school, $year) : null;
-        $schemes = $user->can('follow-schemes') && $term ? $this->dashboardSchemes($term, $week) : null;
-        $admissions = $user->can('manage-students') ? $this->dashboardAdmissions($school) : null;
-        $attendance = $this->dashboardAttendance($school, $year, $term, $range, $now);
+        $fees = $user->can('manage-fees') && $year ? $this->rememberDashboard($school, $year, $term, $range, 'fees', fn () => $this->dashboardFees($school, $year, $term, $range)) : null;
+        $marks = $user->can('manage-assessments') && $year ? $this->rememberDashboard($school, $year, $term, $range, 'marks', fn () => $this->dashboardMarks($school, $year)) : null;
+        $schemes = $user->can('follow-schemes') && $term ? $this->rememberDashboard($school, $year, $term, $range, 'schemes', fn () => $this->dashboardSchemes($term, $week)) : null;
+        $admissions = $user->can('manage-students') ? $this->rememberDashboard($school, $year, $term, $range, 'admissions', fn () => $this->dashboardAdmissions($school)) : null;
+        $attendance = $this->rememberDashboard($school, $year, $term, $range, 'attendance', fn () => $this->dashboardAttendance($school, $year, $term, $range, $now));
 
         return [
             'date' => $now->translatedFormat('l j F Y'),
@@ -75,8 +81,8 @@ trait BuildsSchoolDashboard
             'attendance' => $attendance,
             'marks' => $marks,
             'schemes' => $schemes,
-            'results' => $user->can('manage-assessments') && $year ? $this->dashboardResults($school, $year) : null,
-            'levels' => $year ? $this->dashboardLevels($school, $year) : [],
+            'results' => $user->can('manage-assessments') && $year ? $this->rememberDashboard($school, $year, $term, $range, 'results', fn () => $this->dashboardResults($school, $year)) : null,
+            'levels' => $year ? $this->rememberDashboard($school, $year, $term, $range, 'levels', fn () => $this->dashboardLevels($school, $year)) : [],
             'admissions' => $admissions,
             'attention' => array_values(array_filter([
                 $schemes && $schemes['to_approve'] > 0 ? ['key' => 'schemes', 'tone' => 'science', 'count' => $schemes['to_approve'], 'detail' => $schemes['waiting_names']] : null,
@@ -89,6 +95,19 @@ trait BuildsSchoolDashboard
     }
 
     /**
+     * @template TValue
+     *
+     * @param  Closure(): TValue  $build
+     * @return TValue
+     */
+    protected function rememberDashboard(School $school, ?AcademicYear $year, ?Term $term, string $range, string $section, Closure $build): mixed
+    {
+        $key = implode(':', ['school-dashboard-v1', $school->id, $year->id ?? '-', $term->id ?? '-', $range, app()->getLocale(), now($school->timezone)->toDateString(), $section]);
+
+        return Cache::remember($key, 120, $build);
+    }
+
+    /**
      * The year's fees: billed, collected and overdue, and how collection
      * grew against what the instalments made due, week by week across
      * the term or month by month across the year.
@@ -97,13 +116,18 @@ trait BuildsSchoolDashboard
      */
     protected function dashboardFees(School $school, AcademicYear $year, ?Term $term, string $range): array
     {
-        $invoices = Invoice::whereIn('term_id', Term::where('academic_year_id', $year->id)->select('id'))
-            ->whereHas('student', fn ($query) => $query->where('school_id', $school->id))
-            ->with(['installments', 'lines', 'payments', 'exemption'])
-            ->get();
-        $ledgers = $invoices->map(fn (Invoice $invoice) => ['student' => $invoice->student_id, 'ledger' => $invoice->ledgerMinor()]);
-        $parts = $ledgers->flatMap(fn (array $row) => $row['ledger']['installments']);
-        $payments = $invoices->flatMap(fn (Invoice $invoice) => $invoice->payments);
+        $invoices = (new FeeLedgerRows)->invoices($school, $year);
+        $totals = $invoices->clone()->toBase()
+            ->selectRaw('COALESCE(SUM(due_minor), 0) as due, COALESCE(SUM(paid_minor), 0) as paid, COALESCE(SUM(overdue_minor), 0) as overdue')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN overdue_minor > 0 THEN student_id END) as overdue_students')
+            ->first();
+        $parts = Installment::whereIn('invoice_id', $invoices->clone()->select('invoices.id'))
+            ->toBase()->selectRaw('due_on, SUM(net_due_minor) as amount')->groupBy('due_on')->get();
+        $fallback = $invoices->clone()->doesntHave('installments')->toBase()
+            ->selectRaw('issued_on as due_on, SUM(due_minor) as amount')->groupBy('issued_on')->get();
+        $parts = $parts->concat($fallback);
+        $payments = Payment::whereIn('invoice_id', $invoices->clone()->select('invoices.id'))
+            ->toBase()->selectRaw('DATE(received_at) as received_on, ROUND(SUM(amount), 2) as amount')->groupByRaw('DATE(received_at)')->get();
         $today = today();
 
         $series = $this->periods($range === 'year' || ! $term ? $year->starts_on : $term->starts_on, $range === 'year' || ! $term ? $year->ends_on : $term->ends_on, $range === 'year' || ! $term ? 'month' : 'week')
@@ -111,18 +135,17 @@ trait BuildsSchoolDashboard
                 'label' => $point['label'],
                 'starts_on' => $point['start']->toDateString(),
                 'ends_on' => $point['end']->toDateString(),
-                'due' => Money::number((int) $parts->filter(fn (array $part) => $part['due_on'] <= $point['end']->toDateString())->sum('amount')),
+                'due' => Money::number((int) $parts->filter(fn (object $part) => $part->due_on <= $point['end']->toDateString())->sum('amount')),
                 'collected' => $point['start']->gt($today)
                     ? null
-                    : Money::number(Money::sum($payments->filter(fn (Payment $payment) => $payment->received_at->lte(($point['end']->lt($today) ? $point['end'] : $today)->copy()->endOfDay()))->pluck('amount'))),
-            ])
-            ->values();
+                    : Money::number(Money::sum($payments->filter(fn (object $payment) => $payment->received_on <= ($point['end']->lt($today) ? $point['end'] : $today)->toDateString())->pluck('amount'))),
+            ])->values();
 
         return [
-            'due' => Money::number((int) $ledgers->sum(fn (array $row) => $row['ledger']['due'])),
-            'collected' => Money::number((int) $ledgers->sum(fn (array $row) => $row['ledger']['paid'])),
-            'overdue' => Money::number((int) $ledgers->sum(fn (array $row) => $row['ledger']['overdue'])),
-            'overdue_students' => $ledgers->filter(fn (array $row) => $row['ledger']['overdue'] > 0)->pluck('student')->unique()->count(),
+            'due' => Money::number((int) $totals->due),
+            'collected' => Money::number((int) $totals->paid),
+            'overdue' => Money::number((int) $totals->overdue),
+            'overdue_students' => (int) $totals->overdue_students,
             'series' => $series,
             'today' => $series->search(fn (array $point) => $point['starts_on'] <= $today->toDateString() && $point['ends_on'] >= $today->toDateString()),
         ];
@@ -167,38 +190,32 @@ trait BuildsSchoolDashboard
         $mine = fn () => Attendance::whereHas('student', fn ($query) => $query->where('school_id', $school->id));
         $from = $range === 'year' && $year ? $year->starts_on : ($term ? $term->starts_on : $now->copy()->subDays(30));
 
-        $days = $mine()
-            ->whereDate('date', '>=', $from)
-            ->whereDate('date', '<=', $now->toDateString())
-            ->get(['date', 'status'])
-            ->groupBy(fn (Attendance $row) => $range === 'year' ? $row->date->copy()->startOfWeek()->toDateString() : $row->date->toDateString())
+        $days = $mine()->whereDate('date', '>=', $from->toDateString())->whereDate('date', '<=', $now->toDateString())
+            ->toBase()->selectRaw('DATE(date) as day, COUNT(*) as total, SUM(CASE WHEN status IN (?, ?) THEN 1 ELSE 0 END) as here', $present)
+            ->groupByRaw('DATE(date)')->orderBy('day')->get()
+            ->groupBy(fn (object $row) => $range === 'year' ? Carbon::parse($row->day)->startOfWeek()->toDateString() : (string) $row->day)
             ->map(fn (Collection $rows, string $date) => [
                 'label' => Carbon::parse($date)->translatedFormat('j M'),
                 'date' => $date,
-                'rate' => round($rows->filter(fn (Attendance $row) => in_array($row->status->value, $present, true))->count() / max(1, $rows->count()) * 100, 1),
-            ])
-            ->sortBy('date')
-            ->values();
+                'rate' => round((int) $rows->sum('here') / max(1, (int) $rows->sum('total')) * 100, 1),
+            ])->values();
 
-        $todayRows = $mine()->whereDate('date', $now->toDateString())->get(['student_id', 'status']);
-        $marked = $todayRows->pluck('student_id')->unique()->count();
-        $here = $todayRows->filter(fn (Attendance $row) => in_array($row->status->value, $present, true))->pluck('student_id')->unique()->count();
-
-        $lowest = Attendance::query()
+        $todayCounts = $mine()->whereDate('date', $now->toDateString())->toBase()
+            ->selectRaw('COUNT(DISTINCT student_id) as marked, COUNT(DISTINCT CASE WHEN status IN (?, ?) THEN student_id END) as here', $present)->first();
+        $marked = (int) $todayCounts->marked;
+        $here = (int) $todayCounts->here;
+        $lowest = $mine()
             ->join('timetable_slots', 'timetable_slots.id', '=', 'attendance.timetable_slot_id')
-            ->whereHas('student', fn ($query) => $query->where('school_id', $school->id))
+            ->join('school_classes', 'school_classes.id', '=', 'timetable_slots.school_class_id')
+            ->where('school_classes.school_id', $school->id)->whereNull('school_classes.deleted_at')
             ->whereDate('attendance.date', '>=', $now->copy()->subDays(30)->toDateString())
-            ->selectRaw('timetable_slots.school_class_id as class_id, SUM(CASE WHEN attendance.status IN (?, ?) THEN 1 ELSE 0 END) as here, COUNT(*) as total', $present)
-            ->groupBy('timetable_slots.school_class_id')
-            ->get()
-            ->map(fn (Attendance $row) => ['class_id' => (string) $row->getAttribute('class_id'), 'rate' => round((int) $row->getAttribute('here') / max(1, (int) $row->getAttribute('total')) * 100, 1)])
-            ->sortBy('rate')
-            ->first();
+            ->toBase()->selectRaw('school_classes.name as class, SUM(CASE WHEN attendance.status IN (?, ?) THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as rate', $present)
+            ->groupBy('school_classes.id', 'school_classes.name')->orderBy('rate')->orderBy('school_classes.name')->first();
 
         return [
             'today' => ['rate' => $marked > 0 ? round($here / $marked * 100, 1) : null, 'present' => $here, 'marked' => $marked],
             'series' => array_values(($range === 'year' ? $days : $days->take(-20))->all()),
-            'lowest' => $lowest ? ['class' => (string) SchoolClass::whereKey($lowest['class_id'])->value('name'), 'rate' => $lowest['rate']] : null,
+            'lowest' => $lowest ? ['class' => (string) $lowest->class, 'rate' => round((float) $lowest->rate, 1)] : null,
             'unmarked' => $term ? $this->unmarkedRegisters($school, $term, $now) : [],
         ];
     }
@@ -252,15 +269,15 @@ trait BuildsSchoolDashboard
             return null;
         }
 
-        $sheets = AssessmentSubject::whereIn('assessment_id', $plan->assessments()->select('id'))->get(['id', 'submitted_at', 'examiner_id']);
-        $missing = $sheets->whereNull('submitted_at');
+        $counts = AssessmentSubject::whereIn('assessment_id', $plan->assessments()->select('id'))->toBase()
+            ->selectRaw('COUNT(*) as total, COUNT(submitted_at) as submitted, COUNT(DISTINCT CASE WHEN submitted_at IS NULL THEN examiner_id END) as teachers')->first();
 
         return [
             'plan' => $plan->name,
-            'submitted' => $sheets->count() - $missing->count(),
-            'total' => $sheets->count(),
-            'missing' => $missing->count(),
-            'teachers' => $missing->pluck('examiner_id')->filter()->unique()->count(),
+            'submitted' => (int) $counts->submitted,
+            'total' => (int) $counts->total,
+            'missing' => (int) $counts->total - (int) $counts->submitted,
+            'teachers' => (int) $counts->teachers,
             'closes_on' => $plan->window_ends_on?->toDateString(),
             'days_left' => $plan->window_ends_on ? (int) today()->diffInDays($plan->window_ends_on, false) : null,
         ];
@@ -277,20 +294,18 @@ trait BuildsSchoolDashboard
             return null;
         }
 
-        $schemes = Scheme::where('term_id', $term->id)->with(['items', 'classSubject.subject:id,name', 'classSubject.schoolClass:id,name'])->get();
-        $states = $schemes->map(fn (Scheme $scheme) => $scheme->followState($week));
+        $query = (new SchemePageData)->query($term, $week);
+        $counts = $query->clone()->selectRaw('state, COUNT(*) as total')->groupBy('state')->pluck('total', 'state');
 
         return [
-            'all' => $schemes->count(),
-            'on_track' => $states->filter(fn (string $state) => $state === 'on_track')->count(),
-            'behind' => $states->filter(fn (string $state) => $state === 'behind')->count(),
-            'to_approve' => $states->filter(fn (string $state) => $state === 'to_approve')->count(),
-            'not_submitted' => $states->filter(fn (string $state) => in_array($state, ['not_submitted', 'sent_back'], true))->count(),
-            'waiting_names' => array_values($schemes
-                ->filter(fn (Scheme $scheme) => $scheme->status === SchemeStatus::Submitted)
-                ->take(3)
-                ->map(fn (Scheme $scheme) => $scheme->classSubject?->subject?->name.' · '.$scheme->classSubject?->schoolClass?->name)
-                ->all()),
+            'all' => (int) $counts->sum(),
+            'on_track' => (int) $counts->get('on_track', 0),
+            'behind' => (int) $counts->get('behind', 0),
+            'to_approve' => (int) $counts->get('to_approve', 0),
+            'not_submitted' => (int) $counts->get('not_submitted', 0) + (int) $counts->get('sent_back', 0),
+            'waiting_names' => array_values($query->clone()->where('status', SchemeStatus::Submitted->value)
+                ->orderBy('subject')->orderBy('class')->limit(3)->get(['subject', 'class'])
+                ->map(fn (object $row) => $row->subject.' · '.$row->class)->all()),
         ];
     }
 
@@ -313,24 +328,41 @@ trait BuildsSchoolDashboard
         }
 
         $pass = (float) ($school->pass_mark ?: 10);
-        $classes = SchoolClass::whereIn('id', $plan->assessments()->select('school_class_id'))->orderBy('name')->get();
+        $coefficient = $plan->kind === AssessmentKind::Exam ? 'coefficients.exam_coeff' : 'coefficients.sequence_coeff';
+        $normalized = 'ROUND(marks.score * 20.0 / CASE WHEN assessment_subjects.max_score > 1 THEN assessment_subjects.max_score ELSE 1 END, 2)';
+        $averages = DB::table('marks')
+            ->join('assessment_subjects', 'assessment_subjects.id', '=', 'marks.assessment_subject_id')
+            ->join('assessments', 'assessments.id', '=', 'assessment_subjects.assessment_id')
+            ->join('school_classes', 'school_classes.id', '=', 'assessments.school_class_id')
+            ->join('enrolments', function ($join) {
+                $join->on('enrolments.student_id', '=', 'marks.student_id')->on('enrolments.school_class_id', '=', 'school_classes.id');
+            })
+            ->join('students', 'students.id', '=', 'marks.student_id')
+            ->leftJoin('coefficients', 'coefficients.id', '=', 'assessment_subjects.coefficient_id')
+            ->where('assessments.assessment_plan_id', $plan->id)->where('assessments.school_id', $school->id)
+            ->where('school_classes.school_id', $school->id)->whereNull('school_classes.deleted_at')
+            ->where('students.school_id', $school->id)->whereNull('students.deleted_at')
+            ->where('enrolments.academic_year_id', $year->id)->where('enrolments.status', '!=', EnrolmentStatus::Left->value)
+            ->where('marks.is_absent', false)->whereNotNull('marks.score')
+            ->select('assessments.school_class_id as class_id', 'school_classes.name as class', 'marks.student_id')
+            ->selectRaw("ROUND(SUM({$normalized} * COALESCE({$coefficient}, 0)) / NULLIF(SUM(COALESCE({$coefficient}, 0)), 0), 2) as average")
+            ->groupBy('assessments.school_class_id', 'school_classes.name', 'marks.student_id');
+        $classes = DB::query()->fromSub($averages, 'student_results')->whereNotNull('average')
+            ->select('class_id', 'class')->selectRaw('AVG(average) as average, COUNT(*) as students, SUM(CASE WHEN average >= CAST(? AS NUMERIC) THEN 1 ELSE 0 END) as passed', [$pass])
+            ->groupBy('class_id', 'class')->orderBy('class')->get();
 
         return [
             'plan_id' => $plan->id,
             'plan' => $plan->name,
             'published_on' => $plan->published_at?->toDateString(),
             'pass_mark' => $pass,
-            'classes' => array_values($classes->map(function (SchoolClass $class) use ($plan, $pass) {
-                $averages = collect($plan->standings($class))->pluck('average')->filter(fn (?float $average) => $average !== null);
-
-                return [
-                    'id' => $class->id,
-                    'name' => $class->name,
-                    'average' => round((float) $averages->avg(), 1),
-                    'passed' => $averages->filter(fn (float $average) => $average >= $pass)->count(),
-                    'students' => $averages->count(),
-                ];
-            })->filter(fn (array $row) => $row['students'] > 0)->values()->all()),
+            'classes' => array_values($classes->map(fn (object $row) => [
+                'id' => (string) $row->class_id,
+                'name' => (string) $row->class,
+                'average' => round((float) $row->average, 1),
+                'passed' => (int) $row->passed,
+                'students' => (int) $row->students,
+            ])->all()),
         ];
     }
 
@@ -341,21 +373,18 @@ trait BuildsSchoolDashboard
      */
     protected function dashboardLevels(School $school, AcademicYear $year): array
     {
-        $enrolments = Enrolment::where('academic_year_id', $year->id)
-            ->where('status', '!=', EnrolmentStatus::Left)
-            ->with(['student:id,gender', 'schoolClass:id,level_id'])
-            ->get();
-        $byLevel = $enrolments->groupBy(fn (Enrolment $enrolment) => (string) ($enrolment->level_id ?? $enrolment->schoolClass?->level_id));
-
-        return array_values(Level::where('school_id', $school->id)->orderBy('ordinal')->get()
-            ->map(fn (Level $level) => [
-                'name' => $level->name,
-                'girls' => $byLevel->get($level->id, collect())->filter(fn (Enrolment $enrolment) => $enrolment->student?->gender === Gender::Female)->count(),
-                'boys' => $byLevel->get($level->id, collect())->filter(fn (Enrolment $enrolment) => $enrolment->student?->gender === Gender::Male)->count(),
-            ])
-            ->filter(fn (array $row) => $row['girls'] + $row['boys'] > 0)
-            ->values()
-            ->all());
+        return array_values(DB::table('enrolments')
+            ->join('students', 'students.id', '=', 'enrolments.student_id')
+            ->leftJoin('school_classes', function ($join) {
+                $join->on('school_classes.id', '=', 'enrolments.school_class_id')->whereNull('school_classes.deleted_at');
+            })
+            ->join('levels', 'levels.id', '=', DB::raw('COALESCE(enrolments.level_id, school_classes.level_id)'))
+            ->where('enrolments.academic_year_id', $year->id)->where('enrolments.status', '!=', EnrolmentStatus::Left->value)
+            ->where('students.school_id', $school->id)->whereNull('students.deleted_at')->where('levels.school_id', $school->id)->whereNull('levels.deleted_at')
+            ->whereIn('students.gender', [Gender::Female->value, Gender::Male->value])
+            ->select('levels.name')->selectRaw('SUM(CASE WHEN students.gender = ? THEN 1 ELSE 0 END) as girls, SUM(CASE WHEN students.gender = ? THEN 1 ELSE 0 END) as boys', [Gender::Female->value, Gender::Male->value])
+            ->groupBy('levels.id', 'levels.name', 'levels.ordinal')->orderBy('levels.ordinal')->get()
+            ->map(fn (object $row) => ['name' => (string) $row->name, 'girls' => (int) $row->girls, 'boys' => (int) $row->boys])->all());
     }
 
     /**
@@ -371,22 +400,20 @@ trait BuildsSchoolDashboard
             return null;
         }
 
-        $applications = Application::where('academic_year_id', $year->id)->get(['id', 'stage', 'student_id', 'created_at']);
-        $waiting = $applications->filter(fn (Application $application) => $application->stage === ApplicationStage::ToReview);
-        $admitted = $applications->filter(fn (Application $application) => $application->stage === ApplicationStage::Admitted);
-        $oldest = $waiting->min('created_at');
+        $applications = Application::where('academic_year_id', $year->id)->where('school_id', $school->id);
+        $counts = $applications->clone()->toBase()
+            ->selectRaw('COUNT(*) as total, SUM(CASE WHEN stage = ? THEN 1 ELSE 0 END) as waiting, SUM(CASE WHEN stage = ? THEN 1 ELSE 0 END) as admitted, MIN(CASE WHEN stage = ? THEN created_at END) as oldest', [ApplicationStage::ToReview->value, ApplicationStage::Admitted->value, ApplicationStage::ToReview->value])->first();
 
         return [
             'year' => $year->label,
-            'applied' => $applications->count(),
-            'reviewed' => $applications->count() - $waiting->count(),
-            'admitted' => $admitted->count(),
+            'applied' => (int) $counts->total,
+            'reviewed' => (int) $counts->total - (int) $counts->waiting,
+            'admitted' => (int) $counts->admitted,
             'placed' => Enrolment::where('academic_year_id', $year->id)
-                ->whereIn('student_id', $admitted->pluck('student_id')->filter())
-                ->whereIn('status', [EnrolmentStatus::Placed, EnrolmentStatus::Enrolled])
-                ->count(),
-            'to_review' => $waiting->count(),
-            'oldest_days' => $oldest ? (int) Carbon::parse($oldest)->diffInDays(today()) : null,
+                ->whereIn('student_id', $applications->clone()->where('stage', ApplicationStage::Admitted)->whereNotNull('student_id')->select('student_id'))
+                ->whereIn('status', [EnrolmentStatus::Placed, EnrolmentStatus::Enrolled])->count(),
+            'to_review' => (int) $counts->waiting,
+            'oldest_days' => $counts->oldest ? (int) Carbon::parse($counts->oldest)->diffInDays(today()) : null,
         ];
     }
 }

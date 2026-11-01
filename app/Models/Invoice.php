@@ -49,6 +49,11 @@ class Invoice extends Model
         static::creating(function (Invoice $invoice): void {
             $invoice->school_id ??= Student::withoutGlobalScopes()->whereKey($invoice->student_id)->value('school_id');
         });
+        static::saved(function (Invoice $invoice): void {
+            if ($invoice->wasRecentlyCreated || $invoice->wasChanged(['amount_due', 'issued_on'])) {
+                static::syncStatuses([$invoice->id]);
+            }
+        });
     }
 
     /**
@@ -59,6 +64,11 @@ class Invoice extends Model
         return [
             'issued_on' => 'date',
             'status' => InvoiceStatus::class,
+            'due_minor' => 'integer',
+            'paid_minor' => 'integer',
+            'balance_minor' => 'integer',
+            'overdue_minor' => 'integer',
+            'ledger_updated_on' => 'date',
         ];
     }
 
@@ -179,7 +189,7 @@ class Invoice extends Model
                 ]);
             }
 
-            return $invoice;
+            return $invoice->syncStatus();
         });
     }
 
@@ -523,16 +533,33 @@ class Invoice extends Model
      */
     public static function syncStatuses(array $invoiceIds): void
     {
-        static::withoutGlobalScope('school')
-            ->whereKey(array_values(array_unique(array_filter($invoiceIds))))
-            ->with(['payments' => fn ($query) => $query->withoutGlobalScope('school'), 'exemption', 'installments', 'lines'])
-            ->each(fn (Invoice $invoice) => $invoice->syncStatus());
+        $ids = array_values(array_unique(array_filter($invoiceIds)));
+        sort($ids);
+
+        DB::transaction(function () use ($ids): void {
+            /** PostgreSQL FK checks take key-share locks while child rows are written. */
+            $lock = DB::getDriverName() === 'pgsql' ? 'for no key update' : true;
+            $invoices = static::withoutGlobalScope('school')->whereKey($ids)->orderBy('id')->lock($lock)->get();
+            $invoices->load(['payments' => fn ($query) => $query->withoutGlobalScope('school'), 'exemption', 'installments', 'lines']);
+
+            foreach ($invoices as $invoice) {
+                $invoice->persistLedgerSummary();
+            }
+        });
     }
 
     /**
      * Bring the stored status in line with the payments and today's date.
      */
     public function syncStatus(): static
+    {
+        $relations = $this->getQueueableRelations();
+        static::syncStatuses([$this->id]);
+
+        return $this->refresh()->load([...$relations, 'payments', 'exemption', 'installments', 'lines']);
+    }
+
+    protected function persistLedgerSummary(): void
     {
         $ledger = $this->ledgerMinor();
         $status = match (true) {
@@ -542,11 +569,18 @@ class Invoice extends Model
             default => InvoiceStatus::Pending,
         };
 
-        if ($this->status !== $status) {
-            $this->update(['status' => $status]);
-        }
+        $this->forceFill([
+            'status' => $status,
+            'due_minor' => $ledger['due'],
+            'paid_minor' => $ledger['paid'],
+            'balance_minor' => $ledger['balance'],
+            'overdue_minor' => $ledger['overdue'],
+            'ledger_updated_on' => today()->toDateString(),
+        ])->saveQuietly();
 
-        return $this;
+        foreach ($ledger['installments'] as $part) {
+            $this->installments()->where('seq', $part['seq'])->update(['net_due_minor' => $part['amount']]);
+        }
     }
 
     /**

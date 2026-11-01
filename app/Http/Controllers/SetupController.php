@@ -304,9 +304,11 @@ class SetupController extends Controller
         $data = $request->validated();
 
         foreach ($data['terms'] as $row) {
-            if (! empty($row['id'])) {
+            $termId = $row['id'] ?? null;
+            unset($row['id']);
+            if ($termId !== null) {
                 $term = Term::where('school_id', $school->id)
-                    ->where('id', $row['id'])
+                    ->where('id', $termId)
                     ->firstOrFail();
                 // Model guards enforce the marks-lock and year-bounds rules.
                 $term->update($row);

@@ -11,6 +11,7 @@ use App\Models\TimetableVersion;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -55,9 +56,10 @@ class TimetableSlotController extends Controller
             ]);
         }
 
-        $slot = TimetableSlot::create([
-            ...$draft->row($class->id, $lesson->subject_id, $lesson->staff_id, $room?->id, $weekday, $data['period_id']),
-        ]);
+        $slot = TimetableSlot::create(Arr::except(
+            $draft->row($class->id, $lesson->subject_id, $lesson->staff_id, $room?->id, $weekday, $data['period_id']),
+            ['id', 'created_at', 'updated_at'],
+        ));
 
         AuditEvent::record($school, $request->user(), 'timetable_slot', $slot->id, 'placed', ['weekday' => $weekday, 'period_id' => $data['period_id']]);
 

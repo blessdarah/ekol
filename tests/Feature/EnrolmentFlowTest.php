@@ -484,6 +484,7 @@ test('enrolment is confirmed only when every check passes', function () {
 
     $this->actingAs($world['admin'])
         ->post('http://enrola.ekol.test/enrolment/confirm')
+        ->assertRedirect()
         ->assertSessionHasNoErrors();
 
     expect($world['next']->refresh()->enrolment_confirmed_at)->not->toBeNull()
