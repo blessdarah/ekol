@@ -29,7 +29,7 @@ class SaveLessonRegister
     public const array MARKS = [AttendanceStatus::Present, AttendanceStatus::Absent, AttendanceStatus::Late];
 
     /**
-     * @param  list<array{student_id: string, status: string, note?: string|null}>  $marks
+     * @param  array<int, array<string, mixed>>  $marks
      * @return Collection<int, Attendance>
      */
     public function handle(School $school, User $teacher, TimetableSlot $lesson, CarbonInterface $date, array $marks): Collection
@@ -112,7 +112,7 @@ class SaveLessonRegister
     /**
      * One mark per student of the class, every student marked.
      *
-     * @param  list<array{student_id: string, status: string, note?: string|null}>  $marks
+     * @param  array<int, array<string, mixed>>  $marks
      * @return list<array{student_id: string, status: AttendanceStatus, note: string|null}>
      */
     protected function rows(TimetableSlot $lesson, array $marks): array
@@ -124,8 +124,8 @@ class SaveLessonRegister
         $rows = [];
 
         foreach (array_values($marks) as $index => $mark) {
-            $student = (string) ($mark['student_id'] ?? '');
-            $status = AttendanceStatus::tryFrom((string) ($mark['status'] ?? ''));
+            $student = is_string($mark['student_id'] ?? null) ? $mark['student_id'] : '';
+            $status = is_string($mark['status'] ?? null) ? AttendanceStatus::tryFrom($mark['status']) : null;
             $field = "marks.{$index}";
 
             if (isset($rows[$student])) {
@@ -140,7 +140,7 @@ class SaveLessonRegister
                 throw ValidationException::withMessages(["{$field}.status" => trans('validation.in', ['attribute' => "{$field}.status"])]);
             }
 
-            $note = trim((string) ($mark['note'] ?? ''));
+            $note = is_string($mark['note'] ?? null) ? trim($mark['note']) : '';
             $rows[$student] = ['student_id' => $student, 'status' => $status, 'note' => $note !== '' ? $note : null];
         }
 

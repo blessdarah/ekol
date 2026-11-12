@@ -63,7 +63,7 @@ class TimetableSlot extends Model
     {
         $periods = Period::where('school_id', $school->id)->pluck('starts_at', 'id');
 
-        return static::query()
+        return TimetableSlot::query()
             ->taughtBy($teacher, $live, $day)
             ->with(['schoolClass:id,name', 'subject:id,name', 'room:id,code', 'period'])
             ->get()
