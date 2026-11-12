@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\TimetableStatus;
+use App\Actions\Timetable\PublishTimetable;
 use App\Http\Requests\Timetable\GenerateTimetableRequest;
 use App\Http\Requests\Timetable\PublishTimetableRequest;
 use App\Models\AuditEvent;
@@ -15,7 +15,6 @@ use App\Models\TimetableVersion;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -228,41 +227,21 @@ class TimetableController extends Controller
         ]);
     }
 
-    public function publish(PublishTimetableRequest $request): RedirectResponse
+    public function publish(PublishTimetableRequest $request, PublishTimetable $publish): RedirectResponse
     {
-        $school = $this->schoolContext->school();
         $term = $this->schoolContext->term();
-        $draft = $term ? TimetableVersion::draftFor($term) : null;
 
-        if (! $term || ! $draft) {
+        if (! $term) {
             throw ValidationException::withMessages(['publish' => __('There is no draft timetable to publish.')]);
         }
 
-        $data = $request->validated();
-
-        if ($draft->slots->isEmpty() || $draft->toFix() > 0) {
-            throw ValidationException::withMessages([
-                'publish' => __('This version still has lessons to place or clashes to clear. Finish the review first.'),
-            ]);
-        }
-
-        DB::transaction(function () use ($request, $school, $term, $draft, $data) {
-            TimetableVersion::where('term_id', $term->id)
-                ->where('status', TimetableStatus::Live)
-                ->update(['status' => TimetableStatus::Archived]);
-
-            $draft->update([
-                'status' => TimetableStatus::Live,
-                'effective_on' => $data['effective_on'],
-                'published_at' => now(),
-                'published_by' => $request->user()?->id,
-            ]);
-
-            AuditEvent::record($school, $request->user(), 'timetable_version', $draft->id, 'published', [
-                'version' => $draft->number,
-                'effective_on' => $data['effective_on'],
-            ]);
-        });
+        $publish->handle(
+            $this->schoolContext->school(),
+            $term,
+            TimetableVersion::draftFor($term),
+            $request->user(),
+            $request->publicationData(),
+        );
 
         $this->notify('Timetable published.');
 

@@ -1,11 +1,13 @@
 <?php
 
+use App\Actions\Timetable\PublishTimetable;
 use App\Enums\AcademicYearStatus;
 use App\Enums\RoomKind;
 use App\Enums\SchoolCycle;
 use App\Enums\TimetableStatus;
 use App\Enums\UserRole;
 use App\Models\AcademicYear;
+use App\Models\AuditEvent;
 use App\Models\ClassSubject;
 use App\Models\Level;
 use App\Models\Period;
@@ -18,6 +20,7 @@ use App\Models\TimetableChange;
 use App\Models\TimetableSlot;
 use App\Models\TimetableVersion;
 use App\Models\User;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -526,4 +529,121 @@ test('rooms can be managed before an academic calendar is configured', function 
     expect(Room::whereKey($room->id)->exists())->toBeFalse();
     $teacher = User::factory()->create(['school_id' => $school->id, 'role' => UserRole::Teacher]);
     $this->actingAs($teacher)->get('http://newrooms.ekol.test/timetable/rooms')->assertForbidden();
+});
+
+/**
+ * A generated draft for the world's term, made without a request.
+ */
+function draftTimetable(array $world): TimetableVersion
+{
+    $draft = TimetableVersion::startDraft($world['term']);
+    $draft->generate(TimetableVersion::OPTIONS);
+
+    return $draft->forget();
+}
+
+test('publishing archives the live version and records who published which draft', function () {
+    $this->travelTo('2025-10-01 08:00:00');
+    $world = timetableWorld();
+    $first = draftTimetable($world);
+    app(PublishTimetable::class)->handle($world['school'], $world['term'], $first, $world['admin'], ['effective_on' => '2025-10-06']);
+
+    $second = draftTimetable($world);
+    $published = app(PublishTimetable::class)->handle($world['school'], $world['term'], $second, $world['admin'], ['effective_on' => '2025-10-13']);
+
+    expect($published->id)->toBe($second->id)
+        ->and($first->refresh()->status)->toBe(TimetableStatus::Archived)
+        ->and($second->refresh()->status)->toBe(TimetableStatus::Live)
+        ->and($second->effective_on->toDateString())->toBe('2025-10-13')
+        ->and($second->published_at->toDateTimeString())->toBe('2025-10-01 08:00:00')
+        ->and($second->published_by)->toBe($world['admin']->id)
+        ->and(TimetableVersion::where('status', TimetableStatus::Live)->count())->toBe(1);
+    $this->assertDatabaseHas('audit_events', [
+        'school_id' => $world['school']->id, 'actor_id' => $world['admin']->id,
+        'entity' => 'timetable_version', 'entity_id' => $second->id, 'action' => 'published',
+    ]);
+    expect(AuditEvent::where('entity_id', $second->id)->where('action', 'published')->sole()->diff)
+        ->toBe(['version' => 2, 'effective_on' => '2025-10-13']);
+});
+
+test('publishing rejects a draft that is not ready', function (string $problem) {
+    $world = timetableWorld();
+    $draft = draftTimetable($world);
+
+    match ($problem) {
+        'missing' => $draft = null,
+        'empty' => TimetableSlot::where('timetable_version_id', $draft->id)->delete(),
+        'unplaced' => TimetableSlot::where('timetable_version_id', $draft->id)->firstOrFail()->delete(),
+        'clash' => (function () use ($draft) {
+            $slots = TimetableSlot::where('timetable_version_id', $draft->id)->get();
+            [$one, $other] = $slots->groupBy(fn (TimetableSlot $slot) => "{$slot->weekday}|{$slot->period_id}")
+                ->first(fn ($together) => $together->count() > 1)
+                ->all();
+            $other->update(['staff_id' => $one->staff_id]);
+        })(),
+    };
+
+    expect(fn () => app(PublishTimetable::class)->handle($world['school'], $world['term'], $draft?->forget(), $world['admin'], ['effective_on' => '2025-10-13']))
+        ->toThrow(ValidationException::class);
+
+    expect(TimetableVersion::where('status', TimetableStatus::Live)->exists())->toBeFalse();
+    $this->assertDatabaseMissing('audit_events', ['action' => 'published']);
+})->with(['missing', 'empty', 'unplaced', 'clash']);
+
+test('a draft cannot be published twice', function () {
+    $world = timetableWorld();
+    $draft = draftTimetable($world);
+    $stale = TimetableVersion::findOrFail($draft->id);
+    app(PublishTimetable::class)->handle($world['school'], $world['term'], $draft, $world['admin'], ['effective_on' => '2025-10-13']);
+
+    expect(fn () => app(PublishTimetable::class)->handle($world['school'], $world['term'], $stale, $world['admin'], ['effective_on' => '2025-10-20']))
+        ->toThrow(ValidationException::class, 'There is no draft timetable to publish.');
+
+    expect(TimetableVersion::where('status', TimetableStatus::Live)->sole()->effective_on->toDateString())->toBe('2025-10-13')
+        ->and(AuditEvent::where('action', 'published')->count())->toBe(1);
+});
+
+test('a failed publication leaves the live version and the draft as they were', function () {
+    $world = timetableWorld();
+    $live = draftTimetable($world);
+    app(PublishTimetable::class)->handle($world['school'], $world['term'], $live, $world['admin'], ['effective_on' => '2025-10-06']);
+    $draft = draftTimetable($world);
+    AuditEvent::creating(fn () => throw new RuntimeException('Audit store unavailable.'));
+
+    expect(fn () => app(PublishTimetable::class)->handle($world['school'], $world['term'], $draft, $world['admin'], ['effective_on' => '2025-10-13']))
+        ->toThrow(RuntimeException::class);
+
+    expect($live->refresh()->status)->toBe(TimetableStatus::Live)
+        ->and($draft->refresh()->status)->toBe(TimetableStatus::Draft)
+        ->and($draft->published_at)->toBeNull()
+        ->and($draft->effective_on)->toBeNull();
+});
+
+test('publishing rejects a term or draft from another school', function (string $mismatch) {
+    $world = timetableWorld();
+    $other = timetableWorld('timeb');
+    $draft = draftTimetable($world);
+    $foreign = draftTimetable($other);
+
+    [$school, $term, $version] = match ($mismatch) {
+        'term' => [$world['school'], $other['term'], $foreign],
+        'draft' => [$world['school'], $world['term'], $foreign],
+        'school' => [$other['school'], $world['term'], $draft],
+    };
+
+    expect(fn () => app(PublishTimetable::class)->handle($school, $term, $version, $world['admin'], ['effective_on' => '2025-10-13']))
+        ->toThrow(ValidationException::class);
+
+    expect(TimetableVersion::where('status', TimetableStatus::Live)->exists())->toBeFalse();
+    $this->assertDatabaseMissing('audit_events', ['action' => 'published']);
+})->with(['term', 'draft', 'school']);
+
+test('publishing rejects an effective date outside the term', function () {
+    $world = timetableWorld();
+    $draft = draftTimetable($world);
+
+    expect(fn () => app(PublishTimetable::class)->handle($world['school'], $world['term'], $draft, $world['admin'], ['effective_on' => '2026-01-05']))
+        ->toThrow(ValidationException::class, 'Choose a date inside the term.');
+
+    expect($draft->refresh()->status)->toBe(TimetableStatus::Draft);
 });
