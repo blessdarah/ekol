@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { one } from '@/actions/App/Http/Controllers/SeriesRegistrationController';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { outlineButtonClass, solidButtonClass } from '../../structure/ui';
 import { type RegisterOne } from './model';
 
@@ -41,11 +41,10 @@ export function RegisterActions({
                                     'Core subjects are locked. Tick the electives this student takes.',
                                 )
                               : room > 0
-                                ? t('You can add :room more :electives.', {
+                                ? tChoice(
+                                      '{1} You can add :count more elective.|[2,*] You can add :count more electives.',
                                       room,
-                                      electives:
-                                          room === 1 ? 'elective' : 'electives',
-                                  })
+                                  )
                                 : t(
                                       'That is the most subjects this series allows.',
                                   )))}

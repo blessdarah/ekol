@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { t } from '../../../lib/i18n';
-import { monoCaps, plural, type TodayModel, wait } from './model';
+import { t, tChoice } from '../../../lib/i18n';
+import { monoCaps, type TodayModel, wait } from './model';
 
 /** The lesson on now or next, or why there is none. */
 export function NextLesson({ today }: { today: TodayModel }) {
@@ -24,7 +24,11 @@ export function NextLesson({ today }: { today: TodayModel }) {
                             {next.room
                                 ? t('Room :room', { room: next.room })
                                 : t('No room set')}{' '}
-                            · {plural(next.students, 'student')}
+                            ·{' '}
+                            {tChoice(
+                                '{1} :count student|[2,*] :count students',
+                                next.students,
+                            )}
                         </p>
                     </div>
                     <div className="flex gap-3">

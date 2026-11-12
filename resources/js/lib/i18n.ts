@@ -1,6 +1,7 @@
 import { usePage } from '@inertiajs/react';
 import { useCallback } from 'react';
 import fr from '../../../lang/fr.json';
+import { choosePlural } from './plural';
 
 /**
  * Text is written in English in the code and looked up here by that
@@ -26,7 +27,11 @@ export function translate(
     text: string,
     replace?: Replace,
 ): string {
-    let line = DICTIONARIES[locale]?.[text] ?? text;
+    return fill(DICTIONARIES[locale]?.[text] ?? text, replace);
+}
+
+function fill(text: string, replace?: Replace): string {
+    let line = text;
 
     // Longest names first, so ":count" never eats the start of ":count_b".
     for (const key of Object.keys(replace ?? {}).sort(
@@ -57,6 +62,26 @@ export function t<T>(
     return (
         typeof text === 'string' ? translate(current, text, replace) : text
     ) as T extends string ? string : T;
+}
+
+/**
+ * Translate a line that changes with a count, written the way Laravel's
+ * `trans_choice` reads it: `tChoice('{1} :count subject|[2,*] :count subjects', total)`.
+ * Each form is a whole sentence, so French can word it its own way.
+ * `:count` is the count unless `replace` gives it already formatted.
+ */
+export function tChoice(
+    text: string,
+    count: number,
+    replace?: Replace,
+): string {
+    const line = choosePlural(
+        DICTIONARIES[current]?.[text] ?? text,
+        count,
+        current,
+    );
+
+    return fill(line, { count, ...replace });
 }
 
 /** The locale to format numbers in: "60,000" in English, "60 000" in French. */

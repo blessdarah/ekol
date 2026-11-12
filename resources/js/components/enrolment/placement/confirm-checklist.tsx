@@ -2,7 +2,7 @@ import { Link } from '@inertiajs/react';
 import { index as applications } from '@/actions/App/Http/Controllers/ApplicationRosterController';
 import { confirm } from '@/actions/App/Http/Controllers/EnrolmentConfirmationController';
 import { reEnrolment } from '@/actions/App/Http/Controllers/ReEnrolmentController';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { CheckLine, count, linkClass, listed } from '../ui';
 import { type ClassPlacement } from './model';
 
@@ -91,24 +91,17 @@ export function ConfirmChecklist({
                     }
                 >
                     {enrolment.over_levels.length > 0
-                        ? t(
-                              ':over_levels :have more students than seats → Add a class',
-                              {
-                                  over_levels: listed(enrolment.over_levels),
-                                  have:
-                                      enrolment.over_levels.length === 1
-                                          ? 'has'
-                                          : 'have',
-                              },
+                        ? tChoice(
+                              '{1} :over_levels has more students than seats → Add a class|[2,*] :over_levels have more students than seats → Add a class',
+                              enrolment.over_levels.length,
+                              { over_levels: listed(enrolment.over_levels) },
                           )
                         : enrolment.unplaced > 0
-                          ? t(':unplaced :are still waiting for a class', {
-                                unplaced: count(enrolment.unplaced),
-                                are:
-                                    enrolment.unplaced === 1
-                                        ? 'student is'
-                                        : 'students are',
-                            })
+                          ? tChoice(
+                                '{1} :count student is still waiting for a class|[2,*] :count students are still waiting for a class',
+                                enrolment.unplaced,
+                                { count: count(enrolment.unplaced) },
+                            )
                           : enrolment.expected > 0
                             ? t('Every student has a class')
                             : t('Nobody is headed for next year yet')}

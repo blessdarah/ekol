@@ -5,7 +5,7 @@ import {
     outlineButtonClass,
     solidButtonClass,
 } from '../../structure/ui';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { FileBar } from './file-bar';
 import { MatchTable } from './match-table';
 import { type MatchStepProps, useMatchStep } from './model';
@@ -19,7 +19,10 @@ export function MatchStep(props: MatchStepProps) {
         <form onSubmit={submit} className="flex flex-col gap-5">
             <FileBar
                 file={file}
-                note={`${file.headers.length} columns found`}
+                note={tChoice(
+                    '{1} :count column found|[2,*] :count columns found',
+                    file.headers.length,
+                )}
             />
             <MatchTable match={match} />
             <ErrorText message={errors.mapping} />

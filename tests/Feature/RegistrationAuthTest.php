@@ -548,7 +548,7 @@ test('every line of text on a page has a French entry', function () {
             continue;
         }
 
-        preg_match_all("/(?<![A-Za-z0-9_.])t\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/", $file->getContents(), $found);
+        preg_match_all("/(?<![A-Za-z0-9_.])(?:t|tChoice)\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/", $file->getContents(), $found);
 
         foreach ($found[1] as $english) {
             $english = stripcslashes($english);
@@ -561,6 +561,30 @@ test('every line of text on a page has a French entry', function () {
     }
 
     expect(array_values(array_unique($missing)))->toBe([]);
+});
+
+test('every plural line on a page has a French entry with a form for each count', function () {
+    $lines = json_decode((string) file_get_contents(lang_path('fr.json')), true);
+    $problems = [];
+
+    foreach (File::allFiles(resource_path('js')) as $file) {
+        if (! in_array($file->getExtension(), ['ts', 'tsx'], true)) {
+            continue;
+        }
+
+        preg_match_all("/(?<![A-Za-z0-9_.])tChoice\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/", $file->getContents(), $found);
+
+        foreach ($found[1] as $english) {
+            $english = stripcslashes($english);
+            $french = $lines[$english] ?? null;
+
+            if (! is_string($french) || substr_count($french, '|') !== substr_count($english, '|')) {
+                $problems[] = $english;
+            }
+        }
+    }
+
+    expect(array_values(array_unique($problems)))->toBe([]);
 });
 
 test('find-school sends an in-app request to the school address with a full page load', function () {

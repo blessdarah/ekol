@@ -19,7 +19,7 @@ import {
 } from '../../components/assessments/ui';
 import { ErrorText, capsLabelClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface ResultsProps {
     tabs: AssessmentTabs;
@@ -289,24 +289,18 @@ function Results({
                                     className={`mt-[6px] h-[6px] w-[6px] shrink-0 rounded-full ${missing > 0 ? 'bg-warning' : 'bg-success'}`}
                                 />
                                 {missing > 0
-                                    ? t(
-                                          ':missing :are still missing :class. They show as dashes and are left out of averages.',
-                                          {
+                                    ? all
+                                        ? tChoice(
+                                              '{1} :count mark is still missing across the school. They show as dashes and are left out of averages.|[2,*] :count marks are still missing across the school. They show as dashes and are left out of averages.',
                                               missing,
-                                              are:
-                                                  missing === 1
-                                                      ? 'mark is'
-                                                      : 'marks are',
-                                              class: all
-                                                  ? 'across the school'
-                                                  : 'in this class',
-                                          },
-                                      )
-                                    : t('No mark is missing :class', {
-                                          class: all
-                                              ? 'in the school'
-                                              : 'in this class',
-                                      })}
+                                          )
+                                        : tChoice(
+                                              '{1} :count mark is still missing in this class. They show as dashes and are left out of averages.|[2,*] :count marks are still missing in this class. They show as dashes and are left out of averages.',
+                                              missing,
+                                          )
+                                    : all
+                                      ? t('No mark is missing in the school')
+                                      : t('No mark is missing in this class')}
                             </li>
                         </ul>
                         {plan.state === 'published' ? (

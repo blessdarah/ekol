@@ -1,6 +1,6 @@
 import { structure } from '@/actions/App/Http/Controllers/FeeStructureController';
 import { Link } from '@inertiajs/react';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { solidButtonClass } from '../../structure/ui';
 import { type FeesOverview } from './model';
 
@@ -16,14 +16,11 @@ export function BillingNotice({ fees }: { fees: FeesOverview }) {
                           'No level has a fee for :year_label yet, so nobody can be billed.',
                           { year_label: yearLabel },
                       )
-                    : t(':unbilled :have no invoice for :year_label.', {
-                          unbilled: counts.unbilled,
-                          have:
-                              counts.unbilled === 1
-                                  ? 'student has'
-                                  : 'students have',
-                          year_label: yearLabel,
-                      })}{' '}
+                    : tChoice(
+                          '{1} :count student has no invoice for :year_label.|[2,*] :count students have no invoice for :year_label.',
+                          counts.unbilled,
+                          { year_label: yearLabel },
+                      )}{' '}
                 {t('Set fees and bill students under Fee structure.')}
             </p>
             <Link href={structure.url()} className={solidButtonClass}>

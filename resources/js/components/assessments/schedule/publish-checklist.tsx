@@ -1,7 +1,7 @@
 import { Link, router } from '@inertiajs/react';
 import { index } from '@/actions/App/Http/Controllers/AssessmentController';
 import { publish } from '@/actions/App/Http/Controllers/ExamScheduleController';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { ErrorText, capsLabelClass } from '../../structure/ui';
 import { quietClass } from '../ui';
 import { type Schedule } from './model';
@@ -22,11 +22,10 @@ export function PublishChecklist({ schedule }: { schedule: Schedule }) {
                     />
                     {unset === 0
                         ? t('Every subject has a paper')
-                        : t(':unset :have no paper yet', {
+                        : tChoice(
+                              '{1} :count subject has no paper yet|[2,*] :count subjects have no paper yet',
                               unset,
-                              have:
-                                  unset === 1 ? 'subject has' : 'subjects have',
-                          })}
+                          )}
                 </li>
                 {clashes.length === 0 ? (
                     <li className="flex items-start gap-2 text-[13px] leading-[18px] text-text">

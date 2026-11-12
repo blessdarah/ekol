@@ -17,7 +17,7 @@ import {
     quietActionClass,
 } from '../../components/timetable/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { numberLocale, t } from '../../lib/i18n';
+import { numberLocale, t, tChoice } from '../../lib/i18n';
 
 interface GenerateProps {
     phase: TimetablePhase;
@@ -102,33 +102,33 @@ function Generate({
                 phase={phase}
                 trail={[{ label: t('Generate') }]}
                 title={t('Generate')}
-                meta={
-                    result
-                        ? t(
-                              'Draft version :draft · generated:seconds.:untouched',
-                              {
-                                  draft: phase.draft,
-                                  seconds:
-                                      result.seconds !== null
-                                          ? ` in ${result.seconds < 1 ? 'under a second' : `${result.seconds} seconds`}`
-                                          : '',
-                                  untouched:
-                                      phase.live !== null
-                                          ? ` Live version ${phase.live} is untouched.`
-                                          : '',
-                              },
-                          )
-                        : t(
-                              'Draft version :draft · not generated yet.:untouched',
-                              {
-                                  draft: phase.draft,
-                                  untouched:
-                                      phase.live !== null
-                                          ? ` Live version ${phase.live} is untouched.`
-                                          : '',
-                              },
-                          )
-                }
+                meta={[
+                    !result
+                        ? t('Draft version :draft · not generated yet.', {
+                              draft: phase.draft,
+                          })
+                        : result.seconds === null
+                          ? t('Draft version :draft · generated.', {
+                                draft: phase.draft,
+                            })
+                          : result.seconds < 1
+                            ? t(
+                                  'Draft version :draft · generated in under a second.',
+                                  { draft: phase.draft },
+                              )
+                            : tChoice(
+                                  '{1} Draft version :draft · generated in :count second.|[2,*] Draft version :draft · generated in :count seconds.',
+                                  result.seconds,
+                                  { draft: phase.draft },
+                              ),
+                    phase.live !== null
+                        ? t('Live version :live is untouched.', {
+                              live: phase.live,
+                          })
+                        : null,
+                ]
+                    .filter(Boolean)
+                    .join(' ')}
                 action={
                     result ? (
                         <>

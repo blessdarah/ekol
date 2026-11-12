@@ -11,7 +11,7 @@ import {
 } from '../../components/assessments/ui';
 import { capsLabelClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface TermProps {
     tabs: AssessmentTabs;
@@ -83,16 +83,10 @@ function TermAndYear({
                                   ? t(':label · every assessment published', {
                                         label: term.label,
                                     })
-                                  : t(
-                                        ':label · :pending :assessments not published yet',
-                                        {
-                                            label: term.label,
-                                            pending,
-                                            assessments:
-                                                pending === 1
-                                                    ? 'assessment'
-                                                    : 'assessments',
-                                        },
+                                  : tChoice(
+                                        '{1} :label · :count assessment not published yet|[2,*] :label · :count assessments not published yet',
+                                        pending,
+                                        { label: term.label },
                                     )
                               : t('No term')}
                     </span>

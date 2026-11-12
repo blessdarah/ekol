@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { placement as placementPage } from '@/actions/App/Http/Controllers/StudentPlacementController';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { capsLabelClass } from '../../structure/ui';
 import { FillBar, count, linkClass } from '../ui';
 import { BigNumber } from './figures';
@@ -39,16 +39,7 @@ export function PlacementCard({ overview }: { overview: EnrolmentOverview }) {
                     'Students can be placed as soon as they are decided. Confirm opens when everyone has a class.',
                 )}
                 {continuing.graduating > 0 &&
-                    t(
-                        ' :graduating final-year :are graduating and not re-enrolled.',
-                        {
-                            graduating: count(continuing.graduating),
-                            are:
-                                continuing.graduating === 1
-                                    ? 'student is'
-                                    : 'students are',
-                        },
-                    )}
+                    ` ${tChoice('{1} :count final-year student is graduating and not re-enrolled.|[2,*] :count final-year students are graduating and not re-enrolled.', continuing.graduating, { count: count(continuing.graduating) })}`}
             </p>
         </div>
     );

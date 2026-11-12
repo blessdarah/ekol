@@ -1,4 +1,4 @@
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 
 export interface Lesson {
     id: string;
@@ -61,7 +61,7 @@ export const outlineButton =
 
 export function day(iso: string | null): string {
     if (!iso) {
-        return 'soon';
+        return t('soon');
     }
 
     const [, month, date] = iso.split('-');
@@ -69,22 +69,21 @@ export function day(iso: string | null): string {
     return `${Number(date)} ${t(MONTHS[Number(month) - 1])}`;
 }
 
-export function plural(count: number, one: string, many = `${one}s`): string {
-    return `${count} ${count === 1 ? t(one) : t(many)}`;
-}
-
 export function wait(minutes: number): string {
     if (minutes < 60) {
-        return `In ${plural(minutes, 'minute')}`;
+        return tChoice('{1} In :count minute|[2,*] In :count minutes', minutes);
     }
 
     const hours = Math.floor(minutes / 60);
     const rest = minutes % 60;
 
-    return t('In :hour:rest', {
-        hour: plural(hours, 'hour'),
-        rest: rest > 0 ? ` ${rest} min` : '',
-    });
+    return rest > 0
+        ? tChoice(
+              '{1} In :count hour :rest min|[2,*] In :count hours :rest min',
+              hours,
+              { rest },
+          )
+        : tChoice('{1} In :count hour|[2,*] In :count hours', hours);
 }
 
 export const LESSON_PILLS: Record<
@@ -102,12 +101,18 @@ export function useToday(props: TodayProps) {
     const { hasTimetable, lessons, unmarked, sheets, openSheets } = props;
     const summary = [
         hasTimetable
-            ? plural(lessons.length, 'lesson') + ' today'
-            : 'no timetable published yet',
+            ? tChoice(
+                  '{1} :count lesson today|[2,*] :count lessons today',
+                  lessons.length,
+              )
+            : t('no timetable published yet'),
         ...(unmarked > 0
             ? [t(':unmarked attendance still to mark', { unmarked })]
             : []),
-        plural(openSheets, 'mark sheet') + ' open',
+        tChoice(
+            '{1} :count mark sheet open|[2,*] :count mark sheets open',
+            openSheets,
+        ),
     ].join(' · ');
     const upcoming = sheets.filter((sheet) => !sheet.open);
 

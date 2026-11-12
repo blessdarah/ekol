@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
 import { index as applicationsIndex } from '@/actions/App/Http/Controllers/ApplicationRosterController';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { capsLabelClass } from '../../structure/ui';
 import { amberText, count, linkClass } from '../ui';
 import { BigNumber, SplitBar, Stat } from './figures';
@@ -23,13 +23,11 @@ export function NewStudentsCard({ overview }: { overview: EnrolmentOverview }) {
                     className={linkClass}
                 >
                     {applications.to_review > 0
-                        ? t('Review :to_review :applications →', {
-                              to_review: count(applications.to_review),
-                              applications:
-                                  applications.to_review === 1
-                                      ? 'application'
-                                      : 'applications',
-                          })
+                        ? tChoice(
+                              '{1} Review :count application →|[2,*] Review :count applications →',
+                              applications.to_review,
+                              { count: count(applications.to_review) },
+                          )
                         : t('Open applications →')}
                 </Link>
             </div>

@@ -1,6 +1,6 @@
 import { capsLabelClass } from '../../structure/ui';
 import { money } from '../ui';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { CheckAside } from './check-aside';
 import { FileBar } from './file-bar';
 import { type CheckStepProps, useCheckStep } from './model';
@@ -16,7 +16,10 @@ export function CheckStep(props: CheckStepProps) {
             <div className="flex min-w-0 flex-1 flex-col gap-5">
                 <FileBar
                     file={file}
-                    note={`${mapping.length} columns matched`}
+                    note={tChoice(
+                        '{1} :count column matched|[2,*] :count columns matched',
+                        mapping.length,
+                    )}
                 />
                 <dl className="flex border-y border-solid border-border">
                     {stats.map(([label, value, tone], position) => (

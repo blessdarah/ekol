@@ -1,6 +1,6 @@
 import { show as schoolSetup } from '@/actions/App/Http/Controllers/SetupController';
 import { Link } from '@inertiajs/react';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { capsLabelClass, solidButtonClass } from '../../structure/ui';
 import { amberText, dayMonth } from '../ui';
 import { type FeeStructure, linkClass } from './model';
@@ -77,15 +77,9 @@ export function FeesAside({ fees }: { fees: FeeStructure }) {
                     <>
                         <p className="text-[13px] leading-[19px] text-text-muted">
                             {unbilled > 0
-                                ? t(
-                                      ':unbilled enrolled :have a fee set and no invoice yet.',
-                                      {
-                                          unbilled,
-                                          have:
-                                              unbilled === 1
-                                                  ? 'student has'
-                                                  : 'students have',
-                                      },
+                                ? tChoice(
+                                      '{1} :count enrolled student has a fee set and no invoice yet.|[2,*] :count enrolled students have a fee set and no invoice yet.',
+                                      unbilled,
                                   )
                                 : t(
                                       'Every enrolled student in a level with a fee has an invoice.',

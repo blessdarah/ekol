@@ -1,7 +1,7 @@
 import { Link } from '@inertiajs/react';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { Card, Pending } from './card';
-import { LESSON_PILLS, plural, type TodayModel } from './model';
+import { LESSON_PILLS, type TodayModel } from './model';
 
 /** The day's lessons, with whether attendance is marked. */
 export function LessonsCard({ today }: { today: TodayModel }) {
@@ -59,7 +59,11 @@ export function LessonsCard({ today }: { today: TodayModel }) {
                                               room: lesson.room,
                                           })
                                         : t('No room')}{' '}
-                                    · {plural(lesson.students, 'student')}
+                                    ·{' '}
+                                    {tChoice(
+                                        '{1} :count student|[2,*] :count students',
+                                        lesson.students,
+                                    )}
                                 </span>
                             </span>
                             <span

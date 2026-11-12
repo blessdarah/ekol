@@ -1,8 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { show as sheetPage } from '@/actions/App/Http/Controllers/MarkSheetController';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { Card, Pending } from './card';
-import { day, outlineButton, plural, type TodayModel } from './model';
+import { day, outlineButton, type TodayModel } from './model';
 
 /** The mark sheets the teacher owes, open or opening later. */
 export function MarksCard({ today }: { today: TodayModel }) {
@@ -13,7 +13,16 @@ export function MarksCard({ today }: { today: TodayModel }) {
             title={t('Marks to enter')}
             note={
                 openSheets > 0
-                    ? `${openSheets} open${closesOn ? ` · ${openSheets === 1 ? 'closes' : 'all close'} ${day(closesOn)}` : ''}`
+                    ? closesOn
+                        ? tChoice(
+                              '{1} :count open · closes :day|[2,*] :count open · all close :day',
+                              openSheets,
+                              { day: day(closesOn) },
+                          )
+                        : tChoice(
+                              '{1} :count open|[2,*] :count open',
+                              openSheets,
+                          )
                     : undefined
             }
             className="xl:flex-[1.75]"
@@ -44,7 +53,10 @@ export function MarksCard({ today }: { today: TodayModel }) {
                                 </p>
                                 <p className="text-[12px] leading-4 text-text-muted">
                                     {sheet.subject} ·{' '}
-                                    {plural(sheet.students, 'student')}
+                                    {tChoice(
+                                        '{1} :count student|[2,*] :count students',
+                                        sheet.students,
+                                    )}
                                 </p>
                             </div>
                             {sheet.open ? (
@@ -103,10 +115,10 @@ export function MarksCard({ today }: { today: TodayModel }) {
                         ? t('Nothing is owed right now.')
                         : upcoming.length === 0
                           ? t('Nothing else is coming up.')
-                          : t(':sheet :open later.', {
-                                sheet: plural(upcoming.length, 'more sheet'),
-                                open: upcoming.length === 1 ? 'opens' : 'open',
-                            })}
+                          : tChoice(
+                                '{1} :count more sheet opens later.|[2,*] :count more sheets open later.',
+                                upcoming.length,
+                            )}
                 </p>
             )}
         </Card>

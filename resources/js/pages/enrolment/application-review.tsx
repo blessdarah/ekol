@@ -127,7 +127,7 @@ function Review({
             ? 'documents'
             : application.stage;
     const they = application.gender === 'female' ? t('She') : t('He');
-    const them = application.gender === 'female' ? 'her' : 'him';
+    const female = application.gender === 'female';
     const over = capacity !== null && capacity.expected >= capacity.seats;
     const verb =
         DECISIONS.find((option) => option.key === data.decision)?.verb ??
@@ -420,10 +420,14 @@ function Review({
                                 className="flex h-10 shrink-0 items-center justify-center rounded-md bg-primary px-3 text-[14px] leading-[18px] font-semibold text-white hover:bg-primary-hover disabled:opacity-50"
                             >
                                 {hasNext
-                                    ? t(':verb and open the next application', {
-                                          verb,
-                                      })
-                                    : verb}
+                                    ? t(
+                                          verb === 'Waitlist'
+                                              ? 'Waitlist and open the next application'
+                                              : verb === 'Decline'
+                                                ? 'Decline and open the next application'
+                                                : 'Admit and open the next application',
+                                      )
+                                    : t(verb)}
                             </button>
                         </form>
                     )}
@@ -443,8 +447,10 @@ function Review({
                                 {sibling && (
                                     <Effect>
                                         {t(
-                                            'Links :them to :sibling as siblings',
-                                            { them, sibling: sibling.name },
+                                            female
+                                                ? 'Links her to :sibling as siblings'
+                                                : 'Links him to :sibling as siblings',
+                                            { sibling: sibling.name },
                                         )}
                                     </Effect>
                                 )}
@@ -475,11 +481,12 @@ function Review({
                             </p>
                             <p className="text-[13px] leading-[19px] text-text">
                                 {t(
-                                    ':expected expected for :seats seats. You can still admit :them. Add a class on the Overview, then place :them.',
+                                    female
+                                        ? ':expected expected for :seats seats. You can still admit her. Add a class on the Overview, then place her.'
+                                        : ':expected expected for :seats seats. You can still admit him. Add a class on the Overview, then place him.',
                                     {
                                         expected: count(capacity.expected),
                                         seats: count(capacity.seats),
-                                        them,
                                     },
                                 )}
                             </p>

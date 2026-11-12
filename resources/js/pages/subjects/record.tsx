@@ -9,7 +9,7 @@ import {
     subjectsCrumb,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface RecordProps {
     yearLabel: string | null;
@@ -73,7 +73,7 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
                     subject.code,
                     subject.department,
                     subject.levels_label !== '—' ? subject.levels_label : null,
-                    `coefficient ${coefficient}`,
+                    t('coefficient :coefficient', { coefficient }),
                     t(':periods periods a week', { periods: subject.periods }),
                 ]
                     .filter(Boolean)
@@ -94,7 +94,9 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
                                 {[
                                     subject.department,
                                     subject.kind,
-                                    `coefficient ${coefficient}`,
+                                    t('coefficient :coefficient', {
+                                        coefficient,
+                                    }),
                                 ].join(' · ')}
                             </p>
                         </div>
@@ -106,13 +108,10 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
                                 ? t('No classes yet')
                                 : staffed
                                   ? t('All classes staffed')
-                                  : t(':unstaffed :need a teacher', {
-                                        unstaffed: subject.unstaffed,
-                                        need:
-                                            subject.unstaffed === 1
-                                                ? 'class needs'
-                                                : 'classes need',
-                                    })}
+                                  : tChoice(
+                                        '{1} :count class needs a teacher|[2,*] :count classes need a teacher',
+                                        subject.unstaffed,
+                                    )}
                         </span>
                     </div>
 
@@ -248,12 +247,14 @@ function SubjectRecord({ yearLabel, subject, lastEdit }: RecordProps) {
                     <div className="mt-auto flex flex-col gap-2">
                         <p className="text-[12px] leading-[1.5] text-text-muted">
                             {lastEdit
-                                ? t('Last edited:by on :on. ', {
-                                      by: lastEdit.by
-                                          ? ` by the ${lastEdit.by}`
-                                          : '',
-                                      on: longDate(lastEdit.on, false),
-                                  })
+                                ? lastEdit.by
+                                    ? t('Last edited by the :by on :on. ', {
+                                          by: lastEdit.by,
+                                          on: longDate(lastEdit.on, false),
+                                      })
+                                    : t('Last edited on :on. ', {
+                                          on: longDate(lastEdit.on, false),
+                                      })
                                 : ''}
                             {t(
                                 'Every change is kept so a term’s averages can always be explained.',

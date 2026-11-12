@@ -9,7 +9,7 @@ import {
     quietActionClass,
 } from '../../components/timetable/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 import {
     type RoomsProps,
     useRooms,
@@ -28,12 +28,9 @@ function Rooms(props: RoomsProps) {
             <PageHeader
                 root={{ label: t('Rooms and subjects'), href: index.url() }}
                 title={t('Rooms and subjects')}
-                meta={t(
-                    ':rooms :rooms_a. The timetable books lessons from this list.',
-                    {
-                        rooms: rooms.length,
-                        rooms_a: rooms.length === 1 ? 'room' : 'rooms',
-                    },
+                meta={tChoice(
+                    '{1} :count room. The timetable books lessons from this list.|[2,*] :count rooms. The timetable books lessons from this list.',
+                    rooms.length,
                 )}
                 action={
                     <>

@@ -27,7 +27,7 @@ export function AttendanceHeader({
                               class: current.class,
                               subject: current.subject,
                               room: current.room
-                                  ? ` · Room ${current.room}`
+                                  ? t(' · Room :room', { room: current.room })
                                   : '',
                           },
                       )
