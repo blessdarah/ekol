@@ -21,7 +21,7 @@ class UpdateSchooldayRequest extends SchoolRequest
             'day_starts_at' => ['sometimes', 'date_format:H:i'],
             'period_minutes' => ['sometimes', 'integer', 'min:10', 'max:180'],
             'periods' => ['sometimes', 'array'],
-            'periods.*.id' => ['nullable', 'uuid'],
+            'periods.*.id' => ['nullable', 'uuid', 'distinct'],
             'periods.*.label' => ['required_with:periods', 'string', 'max:255'],
             'periods.*.is_break' => ['sometimes', 'boolean'],
             'periods.*.custom_minutes' => ['nullable', 'integer', 'min:5', 'max:240', 'required_if_accepted:periods.*.is_break'],

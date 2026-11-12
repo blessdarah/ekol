@@ -21,6 +21,7 @@ use App\Models\TimetableSlot;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 
 function setupSchool(array $overrides = []): School
@@ -352,6 +353,95 @@ test('schoolday refuses to delete a period on the timetable', function () {
         ->assertSessionHasErrors('periods');
 
     expect(Period::find($period->id))->not->toBeNull();
+});
+
+test('sending the same school day twice does not duplicate new periods', function () {
+    $school = setupSchool();
+    $admin = setupAdmin($school);
+    $day = ['periods' => [
+        ['id' => (string) Str::uuid(), 'label' => 'P1', 'custom_minutes' => null],
+        ['id' => (string) Str::uuid(), 'label' => 'BREAK', 'is_break' => true, 'custom_minutes' => 20],
+        ['id' => (string) Str::uuid(), 'label' => 'P2', 'custom_minutes' => null],
+    ]];
+
+    foreach ([1, 2] as $attempt) {
+        $this->actingAs($admin)
+            ->patch('http://setupa.ekol.test/setup/schoolday', $day)
+            ->assertSessionHasNoErrors();
+    }
+
+    expect(periodTimes($school))->toBe(['P1 07:30-08:25', 'BREAK 08:25-08:45', 'P2 08:45-09:40'])
+        ->and(Period::where('school_id', $school->id)->pluck('id')->sort()->values()->all())
+        ->toBe(collect($day['periods'])->pluck('id')->sort()->values()->all());
+});
+
+test('a delete sent again does not block adding periods and breaks', function () {
+    $school = setupSchool();
+    $admin = setupAdmin($school);
+    $p1 = (string) Str::uuid();
+    $p2 = (string) Str::uuid();
+
+    $this->actingAs($admin)->patch('http://setupa.ekol.test/setup/schoolday', ['periods' => [
+        ['id' => $p1, 'label' => 'P1', 'custom_minutes' => null],
+        ['id' => $p2, 'label' => 'P2', 'custom_minutes' => null],
+    ]])->assertSessionHasNoErrors();
+
+    $deleteP2 = ['periods' => [
+        ['id' => $p1, 'label' => 'P1', 'custom_minutes' => null],
+        ['id' => $p2, 'label' => 'P2', 'custom_minutes' => null, '_delete' => true],
+    ]];
+    $this->actingAs($admin)->patch('http://setupa.ekol.test/setup/schoolday', $deleteP2)->assertSessionHasNoErrors();
+    $this->actingAs($admin)->patch('http://setupa.ekol.test/setup/schoolday', $deleteP2)->assertSessionHasNoErrors();
+
+    $this->actingAs($admin)
+        ->patch('http://setupa.ekol.test/setup/schoolday', ['periods' => [
+            ...$deleteP2['periods'],
+            ['id' => (string) Str::uuid(), 'label' => 'BREAK', 'is_break' => true, 'custom_minutes' => 20],
+            ['id' => (string) Str::uuid(), 'label' => 'P2', 'custom_minutes' => null],
+        ]])
+        ->assertSessionHasNoErrors();
+
+    expect(periodTimes($school))->toBe(['P1 07:30-08:25', 'BREAK 08:25-08:45', 'P2 08:45-09:40']);
+});
+
+test('periods left out of the school day are removed', function () {
+    $school = setupSchool();
+    $admin = setupAdmin($school);
+    $this->actingAs($admin)->patch('http://setupa.ekol.test/setup/schoolday', ['periods' => [
+        ['label' => 'P1', 'custom_minutes' => null],
+        ['label' => 'P1', 'custom_minutes' => null],
+        ['label' => 'P2', 'custom_minutes' => null],
+    ]]);
+    [$first, , $second] = Period::where('school_id', $school->id)->orderBy('starts_at')->get()->all();
+
+    $this->actingAs($admin)
+        ->patch('http://setupa.ekol.test/setup/schoolday', ['periods' => [
+            ['id' => $first->id, 'label' => 'P1', 'custom_minutes' => null],
+            ['id' => $second->id, 'label' => 'P2', 'custom_minutes' => null],
+        ]])
+        ->assertSessionHasNoErrors();
+
+    expect(periodTimes($school))->toBe(['P1 07:30-08:25', 'P2 08:25-09:20']);
+});
+
+test('a school day cannot take over another school\'s period', function () {
+    $school = setupSchool();
+    $admin = setupAdmin($school);
+    $other = setupSchool(['name' => 'Other Academy', 'code' => 'OA', 'slug' => 'othera']);
+    $theirs = Period::create([
+        'school_id' => $other->id, 'label' => 'P1', 'ordinal' => 1,
+        'starts_at' => '07:30', 'ends_at' => '08:25',
+    ]);
+
+    $this->actingAs($admin)
+        ->patch('http://setupa.ekol.test/setup/schoolday', ['periods' => [
+            ['id' => $theirs->id, 'label' => 'Mine', 'custom_minutes' => null],
+        ]])
+        ->assertNotFound();
+
+    expect($theirs->fresh()->label)->toBe('P1')
+        ->and($theirs->fresh()->school_id)->toBe($other->id)
+        ->and(Period::where('school_id', $school->id)->count())->toBe(0);
 });
 
 test('setup page renders all zones with live data', function () {

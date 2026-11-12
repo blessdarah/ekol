@@ -24,6 +24,26 @@ export function addMinutes(time: string, minutes: number): string {
     return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
+/**
+ * A new period's id, made on the page so a save sent again finds the
+ * period it already made instead of adding it twice. `randomUUID` only
+ * exists on secure pages, so build a v4 id by hand elsewhere.
+ */
+export function newPeriodId(): string {
+    if (typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) =>
+        byte.toString(16).padStart(2, '0'),
+    ).join('');
+
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 /** The length a break gets when it is added. */
 export const BREAK_MINUTES = 20;
 
@@ -193,11 +213,9 @@ export function SchooldayZone({
     function removePeriod(target: PeriodProp) {
         save({
             ...data,
-            periods: target.id
-                ? data.periods.map((row) =>
-                      row === target ? { ...row, _delete: true } : row,
-                  )
-                : data.periods.filter((row) => row !== target),
+            periods: data.periods.map((row) =>
+                row === target ? { ...row, _delete: true } : row,
+            ),
         });
     }
 
@@ -223,6 +241,7 @@ export function SchooldayZone({
             periods: [
                 ...data.periods,
                 {
+                    id: newPeriodId(),
                     label: isBreak ? 'BREAK' : `P${lessons.length + 1}`,
                     is_break: isBreak,
                     custom_minutes: isBreak ? BREAK_MINUTES : null,

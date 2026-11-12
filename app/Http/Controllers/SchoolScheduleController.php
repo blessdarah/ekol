@@ -103,39 +103,7 @@ class SchoolScheduleController extends Controller
                 return;
             }
 
-            // Soft-deleted rows keep their ordinal, so new ones go past the end.
-            $nextOrdinal = (int) Period::withTrashed()->where('school_id', $school->id)->max('ordinal');
-            $kept = [];
-
-            foreach ($data['periods'] as $row) {
-                $period = empty($row['id'])
-                    ? null
-                    : Period::where('school_id', $school->id)->where('id', $row['id'])->firstOrFail();
-
-                if (! empty($row['_delete'])) {
-                    if ($period?->timetableSlots()->exists()) {
-                        throw ValidationException::withMessages([
-                            'periods' => __('Period :label is on the timetable and cannot be deleted.', ['label' => $period->label]),
-                        ]);
-                    }
-                    $period?->delete();
-
-                    continue;
-                }
-
-                $isBreak = (bool) ($row['is_break'] ?? false);
-                $fields = [
-                    'label' => $row['label'],
-                    'is_break' => $isBreak,
-                    'custom_minutes' => isset($row['custom_minutes']) ? (int) $row['custom_minutes'] : null,
-                ];
-
-                $kept[] = $period
-                    ? tap($period)->fill($fields)
-                    : new Period([...$fields, 'school_id' => $school->id, 'ordinal' => ++$nextOrdinal]);
-            }
-
-            $this->retime($school, $kept);
+            $this->retime($school, $this->syncPeriods($school, $data['periods']));
         });
 
         AuditEvent::record($this->schoolContext->school(), $request->user(), 'period', $school->id, 'schoolday_saved', [
@@ -147,6 +115,64 @@ class SchoolScheduleController extends Controller
         $this->notify('School day saved.');
 
         return back();
+    }
+
+    /**
+     * Make the school's periods exactly the rows sent, in order. The page
+     * gives a new period its id before saving it, so a save that is sent
+     * again finds the periods it already made instead of adding them
+     * twice, and a delete sent again is simply already done. A period
+     * not in the list (or marked `_delete`) is removed.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<Period>
+     */
+    protected function syncPeriods(School $school, array $rows): array
+    {
+        // One save at a time for a school, so two saves never hand out the same ordinal.
+        School::whereKey($school->id)->lockForUpdate()->first();
+
+        $existing = Period::withTrashed()->where('school_id', $school->id)->get()->keyBy('id');
+        // Soft-deleted rows keep their ordinal, so new ones go past the end.
+        $nextOrdinal = (int) $existing->max('ordinal');
+        $kept = [];
+
+        foreach ($rows as $row) {
+            if (! empty($row['_delete'])) {
+                continue;
+            }
+
+            $id = $row['id'] ?? null;
+            $period = $id ? $existing->get($id) : null;
+
+            if (! $period) {
+                // An id the page made up must not be one another school already has.
+                abort_if($id && Period::withoutGlobalScopes()->whereKey($id)->exists(), 404);
+
+                $period = new Period(['school_id' => $school->id, 'ordinal' => ++$nextOrdinal]);
+                $period->id = $id;
+            }
+
+            $period->deleted_at = null;
+            $kept[$period->id ?? spl_object_id($period)] = $period->fill([
+                'label' => $row['label'],
+                'is_break' => (bool) ($row['is_break'] ?? false),
+                'custom_minutes' => isset($row['custom_minutes']) ? (int) $row['custom_minutes'] : null,
+            ]);
+        }
+
+        $removed = $existing->reject(fn (Period $period) => $period->trashed() || isset($kept[$period->id]));
+        $onTimetable = $removed->first(fn (Period $period) => $period->timetableSlots()->exists());
+
+        if ($onTimetable) {
+            throw ValidationException::withMessages([
+                'periods' => __('Period :label is on the timetable and cannot be deleted.', ['label' => $onTimetable->label]),
+            ]);
+        }
+
+        $removed->each->delete();
+
+        return array_values($kept);
     }
 
     /**
