@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -48,6 +51,44 @@ class TimetableSlot extends Model
         return [
             'is_locked' => 'boolean',
         ];
+    }
+
+    /**
+     * The lessons a teacher takes on a day of the live timetable: her
+     * own and those she covers that day, in the order they are taught.
+     *
+     * @return Collection<int, TimetableSlot>
+     */
+    public static function lessonsOn(User $teacher, School $school, TimetableVersion $live, CarbonInterface $day): Collection
+    {
+        $periods = Period::where('school_id', $school->id)->pluck('starts_at', 'id');
+
+        return static::query()
+            ->taughtBy($teacher, $live, $day)
+            ->with(['schoolClass:id,name', 'subject:id,name', 'room:id,code', 'period'])
+            ->get()
+            ->sortBy(fn (TimetableSlot $slot) => $periods->get($slot->period_id))
+            ->values();
+    }
+
+    /**
+     * Lessons of the live timetable a teacher takes on a day: her own,
+     * and those a cover assigns her for that day.
+     *
+     * @param  Builder<TimetableSlot>  $query
+     */
+    public function scopeTaughtBy(Builder $query, User $teacher, TimetableVersion $live, CarbonInterface $day): void
+    {
+        $covering = TimetableChange::where('timetable_version_id', $live->id)
+            ->where('kind', 'cover')
+            ->where('staff_id', $teacher->id)
+            ->whereDate('starts_on', '<=', $day->toDateString())
+            ->whereDate('ends_on', '>=', $day->toDateString())
+            ->pluck('timetable_slot_id');
+
+        $query->where('timetable_version_id', $live->id)
+            ->where('weekday', $day->dayOfWeekIso - 1)
+            ->where(fn (Builder $query) => $query->where('staff_id', $teacher->id)->orWhereIn('id', $covering));
     }
 
     /**
