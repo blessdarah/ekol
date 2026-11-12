@@ -1,5 +1,7 @@
 <?php
 
+use App\Actions\ChangeStudentSeries;
+use App\Actions\RegisterStudentsForSeries;
 use App\Enums\AcademicYearStatus;
 use App\Enums\EnrolmentStatus;
 use App\Enums\SchoolCycle;
@@ -17,6 +19,7 @@ use App\Models\StudentSeries;
 use App\Models\Subject;
 use App\Models\Term;
 use App\Models\User;
+use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -300,3 +303,144 @@ test('opening a student without naming the level lands on their level', function
 
     expect($lower->ordinal)->toBeLessThan($world['level']->ordinal);
 });
+
+/**
+ * Registers the first student of the world in science with the given
+ * electives, straight through the registration action.
+ *
+ * @param  array<string, mixed>  $world
+ * @param  list<string>  $electives
+ */
+function registeredInScience(array $world, array $electives = ['Chemistry', 'Geography']): StudentSeries
+{
+    app(RegisterStudentsForSeries::class)->handle(
+        $world['school'], $world['admin'], $world['term'], $world['science'],
+        collect([$world['students'][0]]),
+        array_map(fn (string $name) => $world['subjects'][$name]->id, $electives),
+    );
+
+    return StudentSeries::where('student_id', $world['students'][0]->id)->firstOrFail();
+}
+
+/**
+ * @return array{reason: string, note: string|null, parent_agreed: bool}
+ */
+function seriesChangeDetails(array $overrides = []): array
+{
+    return array_merge(['reason' => 'Teacher advice', 'note' => 'Stronger in humanities.', 'parent_agreed' => true], $overrides);
+}
+
+test('the change action keeps taken subjects the destination offers as electives and drops the rest', function () {
+    $world = seriesWorld();
+    $registration = registeredInScience($world);
+    $mixed = Series::create([
+        'school_id' => $world['school']->id, 'level_id' => $world['level']->id, 'code' => 'M1',
+        'name' => 'Mixed 1', 'stream' => 'science',
+    ]);
+    $mixed->subjects()->sync([
+        $world['subjects']['Biology']->id => ['kind' => 'core'],
+        $world['subjects']['Physics']->id => ['kind' => 'elective'],
+        $world['subjects']['Chemistry']->id => ['kind' => 'elective'],
+    ]);
+
+    $changed = app(ChangeStudentSeries::class)->handle($world['school'], $world['admin'], $world['term'], $registration, $mixed, seriesChangeDetails());
+
+    expect($changed->fresh()->series_id)->toBe($mixed->id)
+        ->and($changed->fresh()->change_reason)->toBe('Teacher advice')
+        ->and($changed->fresh()->change_note)->toBe('Stronger in humanities.')
+        ->and($changed->fresh()->parent_agreed)->toBeTrue()
+        ->and($changed->fresh()->chosen_by)->toBe($world['admin']->id)
+        ->and($changed->electives()->orderBy('name')->pluck('subjects.name')->all())->toBe(['Chemistry', 'Physics']);
+
+    $event = AuditEvent::where('action', 'series_changed')->sole();
+
+    expect($event->school_id)->toBe($world['school']->id)
+        ->and($event->actor_id)->toBe($world['admin']->id)
+        ->and($event->entity_id)->toBe($world['students'][0]->id)
+        ->and($event->diff)->toBe(['from' => 'S1', 'to' => 'M1', 'reason' => 'Teacher advice', 'note' => 'Stronger in humanities.']);
+});
+
+test('the change action rejects destinations outside the level, the current series, or without core subjects', function (string $destination) {
+    $world = seriesWorld();
+    $other = seriesWorld('otherser');
+    $registration = registeredInScience($world);
+    $upper = Level::create([
+        'school_id' => $world['school']->id, 'name' => 'Upper Sixth', 'code' => 'U6', 'ordinal' => 7,
+        'cycle' => SchoolCycle::HighSchool, 'subsystem' => 'anglophone', 'uses_series' => true,
+    ]);
+    $series = match ($destination) {
+        'current' => $world['science'],
+        'other level' => Series::create([
+            'school_id' => $world['school']->id, 'level_id' => $upper->id, 'code' => 'S9', 'name' => 'Science 9', 'stream' => 'science',
+        ]),
+        'other school' => $other['arts'],
+        'no core' => Series::create([
+            'school_id' => $world['school']->id, 'level_id' => $world['level']->id, 'code' => 'E1', 'name' => 'Empty 1', 'stream' => 'arts',
+        ]),
+    };
+
+    if ($destination === 'other level') {
+        $series->subjects()->sync([$world['subjects']['Physics']->id => ['kind' => 'core']]);
+    }
+
+    expect(fn () => app(ChangeStudentSeries::class)->handle($world['school'], $world['admin'], $world['term'], $registration, $series->fresh(), seriesChangeDetails()))
+        ->toThrow(ValidationException::class);
+
+    expect($registration->fresh()->series_id)->toBe($world['science']->id)
+        ->and($registration->electives()->count())->toBe(2)
+        ->and(AuditEvent::where('action', 'series_changed')->exists())->toBeFalse();
+})->with(['current', 'other level', 'other school', 'no core']);
+
+test('the change action needs a parent to agree and a known reason, even for direct callers', function (array $overrides, string $field) {
+    $world = seriesWorld();
+    $registration = registeredInScience($world);
+
+    try {
+        app(ChangeStudentSeries::class)->handle($world['school'], $world['admin'], $world['term'], $registration, $world['arts'], seriesChangeDetails($overrides));
+        $this->fail('The change should have been refused.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKey($field);
+    }
+
+    expect($registration->fresh()->series_id)->toBe($world['science']->id)
+        ->and($registration->fresh()->change_reason)->toBeNull()
+        ->and(AuditEvent::where('action', 'series_changed')->exists())->toBeFalse();
+})->with([
+    'no agreement' => [['parent_agreed' => false], 'parent_agreed'],
+    'unknown reason' => [['reason' => 'Because'], 'reason'],
+]);
+
+test('the change action can run again and audits each move', function () {
+    $world = seriesWorld();
+    $registration = registeredInScience($world);
+    $change = app(ChangeStudentSeries::class);
+
+    $change->handle($world['school'], $world['admin'], $world['term'], $registration, $world['arts'], seriesChangeDetails());
+    $this->travel(1)->minute();
+    $change->handle($world['school'], null, $world['term'], $registration->fresh(), $world['science'], seriesChangeDetails(['reason' => 'Placed in the wrong series', 'note' => null]));
+
+    $registration->refresh();
+
+    expect($registration->series_id)->toBe($world['science']->id)
+        ->and($registration->change_reason)->toBe('Placed in the wrong series')
+        ->and($registration->change_note)->toBeNull()
+        ->and($registration->chosen_by)->toBeNull()
+        ->and($registration->electives()->pluck('subjects.name')->all())->toBe(['Geography'])
+        ->and(AuditEvent::where('action', 'series_changed')->oldest()->get()->map(fn (AuditEvent $event) => [$event->diff['from'], $event->diff['to']])->all())
+        ->toBe([['S1', 'A1'], ['A1', 'S1']]);
+});
+
+test('the change action refuses records from another school', function (string $foreign) {
+    $world = seriesWorld();
+    $other = seriesWorld('otherser');
+    $registration = registeredInScience($world);
+
+    $school = $foreign === 'school' ? $other['school'] : $world['school'];
+    $term = $foreign === 'term' ? $other['term'] : $world['term'];
+
+    expect(fn () => app(ChangeStudentSeries::class)->handle($school, $world['admin'], $term, $registration, $world['arts'], seriesChangeDetails()))
+        ->toThrow(ValidationException::class, __('The registration must belong to the same school.'));
+
+    expect($registration->fresh()->series_id)->toBe($world['science']->id)
+        ->and(AuditEvent::where('action', 'series_changed')->exists())->toBeFalse();
+})->with(['school', 'term']);
