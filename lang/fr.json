@@ -313,6 +313,7 @@
     "A published mark is locked. A teacher asks for a change, and the principal decides.": "Une note publiée est verrouillée. Un enseignant demande un changement, et le chef d’établissement décide.",
     "A register a teacher is marking is kept on the phone and saved once the connection is back. Other pages need a connection, and are built to load on a slow one.": "L’appel qu’un enseignant est en train de faire est gardé sur le téléphone et enregistré au retour de la connexion. Les autres pages ont besoin d’une connexion, et sont conçues pour se charger même lentement.",
     "A register appears here for each lesson on your timetable, on the day it is taught.": "Un appel apparaît ici pour chaque cours de votre emploi du temps, le jour où il a lieu.",
+    "A register can only be saved on the day of the lesson.": "Un appel ne peut être enregistré que le jour du cours.",
     "A remark shows once there is an average to grade.": "Une appréciation s’affiche dès qu’il y a une moyenne à évaluer.",
     "A report card for this average carries: “:remark”": "Un bulletin avec cette moyenne porte : « :remark »",
     "A sheet appears here when an assessment is scheduled for a class you teach.": "Un relevé apparaît ici lorsqu’une évaluation est programmée pour une classe où vous enseignez.",
