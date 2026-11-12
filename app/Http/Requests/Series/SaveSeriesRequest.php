@@ -55,6 +55,29 @@ class SaveSeriesRequest extends SchoolRequest
         ];
     }
 
+    /**
+     * @return array{code: string, name: string, stream: string, min_subjects: int, max_subjects: int, level_ids: list<string>, core: list<string>, electives: list<string>}
+     */
+    public function seriesData(): array
+    {
+        return [
+            'code' => $this->string('code')->toString(),
+            'name' => $this->string('name')->toString(),
+            'stream' => $this->string('stream')->toString(),
+            'min_subjects' => $this->integer('min_subjects'),
+            'max_subjects' => $this->integer('max_subjects'),
+            'level_ids' => $this->ids('level_ids'),
+            'core' => $this->ids('core'),
+            'electives' => $this->ids('electives'),
+        ];
+    }
+
+    /** @return list<string> */
+    protected function ids(string $key): array
+    {
+        return array_map(fn (int|string $index) => $this->string("{$key}.{$index}")->toString(), array_keys($this->array($key)));
+    }
+
     /** @return list<Closure> */
     public function after(): array
     {
