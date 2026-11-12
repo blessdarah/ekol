@@ -15,7 +15,7 @@ import {
     shortDate,
 } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { ordinalOf, t } from '../../lib/i18n';
+import { ordinalOf, t, tChoice } from '../../lib/i18n';
 
 interface Column {
     id: string;
@@ -462,19 +462,10 @@ function Academics({
                                             <span className="text-text-muted">
                                                 {termComplete
                                                     ? t('Ready')
-                                                    : t(
-                                                          'After :published more :are published',
-                                                          {
-                                                              published:
-                                                                  columns.length -
-                                                                  published.length,
-                                                              are:
-                                                                  columns.length -
-                                                                      published.length ===
-                                                                  1
-                                                                      ? 'is'
-                                                                      : 'are',
-                                                          },
+                                                    : tChoice(
+                                                          '{1} After :count more is published|[2,*] After :count more are published',
+                                                          columns.length -
+                                                              published.length,
                                                       )}
                                             </span>
                                         )}

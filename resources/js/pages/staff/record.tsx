@@ -482,7 +482,7 @@ function StaffRecord({
                     member.formal_name,
                     member.role_label,
                     employment,
-                    member.has_account ? 'portal on' : 'no account yet',
+                    member.has_account ? t('portal on') : t('no account yet'),
                 ]
                     .filter(Boolean)
                     .join(' · ')}
@@ -597,12 +597,14 @@ function StaffRecord({
                         <div className="mt-auto flex flex-col gap-2">
                             <p className="text-[12px] leading-[1.5] text-text-muted">
                                 {lastEdit
-                                    ? t('Last edited:by on :on. ', {
-                                          by: lastEdit.by
-                                              ? ` by the ${lastEdit.by}`
-                                              : '',
-                                          on: longDate(lastEdit.on, false),
-                                      })
+                                    ? lastEdit.by
+                                        ? t('Last edited by the :by on :on. ', {
+                                              by: lastEdit.by,
+                                              on: longDate(lastEdit.on, false),
+                                          })
+                                        : t('Last edited on :on. ', {
+                                              on: longDate(lastEdit.on, false),
+                                          })
                                     : ''}
                                 {t('Every change is kept in the log.')}
                             </p>

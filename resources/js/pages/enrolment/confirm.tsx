@@ -17,7 +17,7 @@ import {
 } from '../../components/structure/ui';
 import { fullDate } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface ConfirmProps {
     enrolment: EnrolmentProgress;
@@ -123,12 +123,16 @@ function Confirm({ enrolment, confirmedOn, who }: ConfirmProps) {
                         <Check
                             done={enrolment.to_review === 0}
                             label={t('Every application has an answer')}
-                            detail={`${count(enrolment.to_review)} left`}
+                            detail={t(':count left', {
+                                count: count(enrolment.to_review),
+                            })}
                         />
                         <Check
                             done={enrolment.undecided === 0}
                             label={t('Every continuing student is decided')}
-                            detail={`${count(enrolment.undecided)} left`}
+                            detail={t(':count left', {
+                                count: count(enrolment.undecided),
+                            })}
                         />
                         <Check
                             done={
@@ -136,15 +140,30 @@ function Confirm({ enrolment, confirmedOn, who }: ConfirmProps) {
                                 enrolment.expected > 0
                             }
                             label={t('Every student has a class')}
-                            detail={`${count(placed)} of ${count(enrolment.expected)}`}
+                            detail={t(':placed of :expected', {
+                                placed: count(placed),
+                                expected: count(enrolment.expected),
+                            })}
                         />
                         <Check
                             done={enrolment.over_classes === 0}
                             label={t('No class is over its seats')}
                             detail={
                                 enrolment.over_classes > 0
-                                    ? `${count(enrolment.over_classes)} over`
-                                    : `${count(enrolment.classes)} ${enrolment.classes === 1 ? 'class' : 'classes'}`
+                                    ? tChoice(
+                                          '{1} :count over|[2,*] :count over',
+                                          enrolment.over_classes,
+                                          {
+                                              count: count(
+                                                  enrolment.over_classes,
+                                              ),
+                                          },
+                                      )
+                                    : tChoice(
+                                          '{1} :count class|[2,*] :count classes',
+                                          enrolment.classes,
+                                          { count: count(enrolment.classes) },
+                                      )
                             }
                         />
                     </RowSection>

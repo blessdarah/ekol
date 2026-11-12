@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { storeTemplates } from '@/actions/App/Http/Controllers/SubjectTemplateController';
 import { router } from '@inertiajs/react';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import {
     type Assignments,
     type ClassOption,
@@ -62,7 +62,10 @@ export function staffing(plan: Plan): string {
     const rows = Object.values(plan.assignments);
     const teachers = new Set(rows.map((row) => row.staff_id).filter(Boolean))
         .size;
-    const classes = `${rows.length} ${rows.length === 1 ? 'class' : 'classes'}`;
+    const classes = tChoice(
+        '{1} :count class|[2,*] :count classes',
+        rows.length,
+    );
 
     if (rows.length === 0) {
         return t('No classes');
@@ -70,7 +73,7 @@ export function staffing(plan: Plan): string {
 
     return teachers === 0
         ? t(':classes · no teacher', { classes })
-        : `${classes} · ${teachers} ${teachers === 1 ? 'teacher' : 'teachers'}`;
+        : `${classes} · ${tChoice('{1} :count teacher|[2,*] :count teachers', teachers)}`;
 }
 /** The wizard's choices so far: the set, the subjects ticked, and each one's classes and teachers. */
 export function useTemplateWizard({

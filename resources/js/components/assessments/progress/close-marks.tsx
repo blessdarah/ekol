@@ -1,7 +1,7 @@
 import { router } from '@inertiajs/react';
 import { close } from '@/actions/App/Http/Controllers/AssessmentProgressController';
 import { linkClass, primaryClass, quietClass } from '../ui';
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import { type MarksProgressModel } from './model';
 export function CloseMarks({
     plan,
@@ -28,22 +28,23 @@ export function CloseMarks({
                         })}
                     </h2>
                     <p className="text-[13px] leading-[19px] text-text-muted">
-                        {stats.submitted} {t('of')} {stats.total}{' '}
-                        {t('mark sheets are in.')}
-                        {left > 0
-                            ? t(
-                                  ' :left :are still not submitted, from :teachers :teachers_a.',
-                                  {
-                                      left,
-                                      are: left === 1 ? 'is' : 'are',
-                                      teachers: stats.teachers,
-                                      teachers_a:
-                                          stats.teachers === 1
-                                              ? 'teacher'
-                                              : 'teachers',
-                                  },
-                              )
-                            : t(' Every sheet is submitted.')}
+                        {tChoice(
+                            '{1} :submitted of :count mark sheet is in.|[2,*] :submitted of :count mark sheets are in.',
+                            stats.total,
+                            { submitted: stats.submitted },
+                        )}{' '}
+                        {left <= 0
+                            ? t('Every sheet is submitted.')
+                            : stats.teachers === 1
+                              ? tChoice(
+                                    '{1} :count is still not submitted, from 1 teacher.|[2,*] :count are still not submitted, from 1 teacher.',
+                                    left,
+                                )
+                              : tChoice(
+                                    '{1} :count is still not submitted, from :teachers teachers.|[2,*] :count are still not submitted, from :teachers teachers.',
+                                    left,
+                                    { teachers: stats.teachers },
+                                )}
                     </p>
                 </div>
                 <ul className="flex flex-col border-y border-solid border-border">

@@ -21,7 +21,7 @@ import {
     solidButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface RegisterProps {
     yearLabel: string | null;
@@ -491,15 +491,9 @@ function RegisterOne({
                                                 'Core subjects are locked. Tick the electives this student takes.',
                                             )
                                           : room > 0
-                                            ? t(
-                                                  'You can add :room more :electives.',
-                                                  {
-                                                      room,
-                                                      electives:
-                                                          room === 1
-                                                              ? 'elective'
-                                                              : 'electives',
-                                                  },
+                                            ? tChoice(
+                                                  '{1} You can add :count more elective.|[2,*] You can add :count more electives.',
+                                                  room,
                                               )
                                             : t(
                                                   'That is the most subjects this series allows.',

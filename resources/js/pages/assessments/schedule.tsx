@@ -26,7 +26,7 @@ import {
     fieldLabelClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface Paper {
     id: string;
@@ -502,13 +502,10 @@ function Schedule({
                                 />
                                 {unset === 0
                                     ? t('Every subject has a paper')
-                                    : t(':unset :have no paper yet', {
+                                    : tChoice(
+                                          '{1} :count subject has no paper yet|[2,*] :count subjects have no paper yet',
                                           unset,
-                                          have:
-                                              unset === 1
-                                                  ? 'subject has'
-                                                  : 'subjects have',
-                                      })}
+                                      )}
                             </li>
                             {clashes.length === 0 ? (
                                 <li className="flex items-start gap-2 text-[13px] leading-[18px] text-text">

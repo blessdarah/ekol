@@ -15,7 +15,7 @@ import {
     shortDate,
 } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 type DayState = 'present' | 'late' | 'absent' | 'excused';
 
@@ -199,25 +199,28 @@ function StudentAttendance({
             label: t('Present'),
             value: String(stats.present),
             tone: 'text-success',
-            note: stats.present === 1 ? 'day' : 'days',
+            note: tChoice('{1} day|[2,*] days', stats.present),
         },
         {
             label: t('Late or part'),
             value: String(stats.late),
             tone: stats.late > 0 ? amber : 'text-text',
-            note: stats.late === 1 ? 'day' : 'days',
+            note: tChoice('{1} day|[2,*] days', stats.late),
         },
         {
             label: t('Absent'),
             value: String(stats.absent),
             tone: stats.absent > 0 ? 'text-danger' : 'text-text',
-            note: stats.absent === 1 ? 'whole day' : 'whole days',
+            note: tChoice('{1} whole day|[2,*] whole days', stats.absent),
         },
         {
             label: t('Attendance'),
             value: stats.rate === null ? '—' : `${stats.rate}%`,
             tone: 'text-text',
-            note: `of ${stats.days} ${stats.days === 1 ? 'day' : 'days'} with a register`,
+            note: tChoice(
+                '{1} of :count day with a register|[2,*] of :count days with a register',
+                stats.days,
+            ),
         },
     ];
 

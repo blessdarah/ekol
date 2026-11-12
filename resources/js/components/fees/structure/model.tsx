@@ -4,7 +4,7 @@ import {
     updateStructure,
 } from '@/actions/App/Http/Controllers/FeeStructureController';
 import { router, useForm, usePage } from '@inertiajs/react';
-import { t } from '../../../lib/i18n';
+import { numberLocale, t, tChoice } from '../../../lib/i18n';
 
 export interface ItemRow {
     id: string;
@@ -162,13 +162,15 @@ export function useFeeStructure({
 
         return paying.length === 0
             ? t('No level pays this yet. Enter its amounts below.')
-            : t('Only :paying :pay this.', {
-                  paying:
-                      paying.length === 1
-                          ? paying[0]
-                          : `${paying.slice(0, -1).join(', ')} and ${paying[paying.length - 1]}`,
-                  pay: paying.length === 1 ? 'pays' : 'pay',
-              });
+            : tChoice(
+                  '{1} Only :paying pays this.|[2,*] Only :paying pay this.',
+                  paying.length,
+                  {
+                      paying: new Intl.ListFormat(numberLocale(), {
+                          type: 'conjunction',
+                      }).format(paying),
+                  },
+              );
     };
     const unbilled = levels.reduce(
         (sum, level) =>

@@ -1,5 +1,5 @@
 import { ChipPicker, RemoveIcon, fieldLabelClass } from '../structure/ui';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 export interface LevelOption {
     id: string;
@@ -257,13 +257,10 @@ export function ClassTable({
                         <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-warning" />
                     )}
                     {unstaffedCount(value) > 0
-                        ? t(':value :need a teacher', {
-                              value: unstaffedCount(value),
-                              need:
-                                  unstaffedCount(value) === 1
-                                      ? 'class needs'
-                                      : 'classes need',
-                          })
+                        ? tChoice(
+                              '{1} :count class needs a teacher|[2,*] :count classes need a teacher',
+                              unstaffedCount(value),
+                          )
                         : t(':selected of :classes classes selected', {
                               selected: selected.length,
                               classes: classes.length,

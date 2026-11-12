@@ -5,7 +5,7 @@ import {
     show as sheetPage,
 } from '@/actions/App/Http/Controllers/MarkSheetController';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface Lesson {
     id: string;
@@ -68,7 +68,7 @@ const outlineButton =
 
 function day(iso: string | null): string {
     if (!iso) {
-        return 'soon';
+        return t('soon');
     }
 
     const [, month, date] = iso.split('-');
@@ -76,22 +76,21 @@ function day(iso: string | null): string {
     return `${Number(date)} ${t(MONTHS[Number(month) - 1])}`;
 }
 
-function plural(count: number, one: string, many = `${one}s`): string {
-    return `${count} ${count === 1 ? t(one) : t(many)}`;
-}
-
 function wait(minutes: number): string {
     if (minutes < 60) {
-        return `In ${plural(minutes, 'minute')}`;
+        return tChoice('{1} In :count minute|[2,*] In :count minutes', minutes);
     }
 
     const hours = Math.floor(minutes / 60);
     const rest = minutes % 60;
 
-    return t('In :hour:rest', {
-        hour: plural(hours, 'hour'),
-        rest: rest > 0 ? ` ${rest} min` : '',
-    });
+    return rest > 0
+        ? tChoice(
+              '{1} In :count hour :rest min|[2,*] In :count hours :rest min',
+              hours,
+              { rest },
+          )
+        : tChoice('{1} In :count hour|[2,*] In :count hours', hours);
 }
 
 function Card({
@@ -155,12 +154,18 @@ function Today({
 }: TodayProps) {
     const summary = [
         hasTimetable
-            ? plural(lessons.length, 'lesson') + ' today'
-            : 'no timetable published yet',
+            ? tChoice(
+                  '{1} :count lesson today|[2,*] :count lessons today',
+                  lessons.length,
+              )
+            : t('no timetable published yet'),
         ...(unmarked > 0
             ? [t(':unmarked attendance still to mark', { unmarked })]
             : []),
-        plural(openSheets, 'mark sheet') + ' open',
+        tChoice(
+            '{1} :count mark sheet open|[2,*] :count mark sheets open',
+            openSheets,
+        ),
     ].join(' · ');
     const upcoming = sheets.filter((sheet) => !sheet.open);
 
@@ -212,7 +217,11 @@ function Today({
                                 {next.room
                                     ? t('Room :room', { room: next.room })
                                     : t('No room set')}{' '}
-                                · {plural(next.students, 'student')}
+                                ·{' '}
+                                {tChoice(
+                                    '{1} :count student|[2,*] :count students',
+                                    next.students,
+                                )}
                             </p>
                         </div>
                         <div className="flex gap-3">
@@ -262,7 +271,16 @@ function Today({
                     title={t('Marks to enter')}
                     note={
                         openSheets > 0
-                            ? `${openSheets} open${closesOn ? ` · ${openSheets === 1 ? 'closes' : 'all close'} ${day(closesOn)}` : ''}`
+                            ? closesOn
+                                ? tChoice(
+                                      '{1} :count open · closes :day|[2,*] :count open · all close :day',
+                                      openSheets,
+                                      { day: day(closesOn) },
+                                  )
+                                : tChoice(
+                                      '{1} :count open|[2,*] :count open',
+                                      openSheets,
+                                  )
                             : undefined
                     }
                     className="xl:flex-[1.75]"
@@ -298,7 +316,10 @@ function Today({
                                         </p>
                                         <p className="text-[12px] leading-4 text-text-muted">
                                             {sheet.subject} ·{' '}
-                                            {plural(sheet.students, 'student')}
+                                            {tChoice(
+                                                '{1} :count student|[2,*] :count students',
+                                                sheet.students,
+                                            )}
                                         </p>
                                     </div>
                                     {sheet.open ? (
@@ -360,16 +381,10 @@ function Today({
                                 ? t('Nothing is owed right now.')
                                 : upcoming.length === 0
                                   ? t('Nothing else is coming up.')
-                                  : t(':sheet :open later.', {
-                                        sheet: plural(
-                                            upcoming.length,
-                                            'more sheet',
-                                        ),
-                                        open:
-                                            upcoming.length === 1
-                                                ? 'opens'
-                                                : 'open',
-                                    })}
+                                  : tChoice(
+                                        '{1} :count more sheet opens later.|[2,*] :count more sheets open later.',
+                                        upcoming.length,
+                                    )}
                         </p>
                     )}
                 </Card>
@@ -428,7 +443,10 @@ function Today({
                                                   })
                                                 : t('No room')}{' '}
                                             ·{' '}
-                                            {plural(lesson.students, 'student')}
+                                            {tChoice(
+                                                '{1} :count student|[2,*] :count students',
+                                                lesson.students,
+                                            )}
                                         </span>
                                     </span>
                                     <span

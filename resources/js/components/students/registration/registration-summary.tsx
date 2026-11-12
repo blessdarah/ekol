@@ -138,12 +138,16 @@ export function RegistrationSummary({
                         }
                     >
                         {chosenClass
-                            ? t(':chosen_class :full: :students of :capacity', {
-                                  chosen_class: chosenClass.name,
-                                  full: classHasRoom ? 'has room' : 'is full',
-                                  students: chosenClass.students,
-                                  capacity: chosenClass.capacity,
-                              })
+                            ? t(
+                                  classHasRoom
+                                      ? ':chosen_class has room: :students of :capacity'
+                                      : ':chosen_class is full: :students of :capacity',
+                                  {
+                                      chosen_class: chosenClass.name,
+                                      students: chosenClass.students,
+                                      capacity: chosenClass.capacity,
+                                  },
+                              )
                             : t('A class with room')}
                     </Check>
                     <Check

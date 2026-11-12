@@ -272,7 +272,10 @@ function PaymentDrawer({
                             message={
                                 errors.amount ??
                                 (over
-                                    ? `That is more than the ${figure(invoice.balance)} still owed.`
+                                    ? t(
+                                          'That is more than the :balance still owed.',
+                                          { balance: figure(invoice.balance) },
+                                      )
                                     : undefined)
                             }
                         />

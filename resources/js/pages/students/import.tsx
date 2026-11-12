@@ -20,7 +20,7 @@ import {
 } from '../../components/structure/ui';
 import { StudentHeader, money } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface Field {
     key: string;
@@ -295,7 +295,10 @@ function MatchStep({
         <form onSubmit={submit} className="flex flex-col gap-5">
             <FileBar
                 file={file}
-                note={`${file.headers.length} columns found`}
+                note={tChoice(
+                    '{1} :count column found|[2,*] :count columns found',
+                    file.headers.length,
+                )}
             />
             <div className="flex flex-col overflow-clip rounded-md border border-solid border-border">
                 <div className="flex h-8 shrink-0 items-center gap-4 bg-surface px-4 text-[12px] leading-4 font-semibold tracking-[0.06em] text-text-muted uppercase">
@@ -426,7 +429,10 @@ function CheckStep({
             <div className="flex min-w-0 flex-1 flex-col gap-5">
                 <FileBar
                     file={file}
-                    note={`${mapping.length} columns matched`}
+                    note={tChoice(
+                        '{1} :count column matched|[2,*] :count columns matched',
+                        mapping.length,
+                    )}
                 />
                 <dl className="flex border-y border-solid border-border">
                     {stats.map(([label, value, tone], position) => (

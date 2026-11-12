@@ -1,4 +1,4 @@
-import { t } from '../../../lib/i18n';
+import { t, tChoice } from '../../../lib/i18n';
 import type { MarkSheetModel } from './model';
 
 /** What is left to do before submitting, or why marks are locked. */
@@ -12,18 +12,30 @@ export function SheetFooter({ model }: { model: MarkSheetModel }) {
             >
                 {firstError ??
                     (open
-                        ? invalid > 0 || empty > 0
-                            ? t(':and:marks before submitting.', {
-                                  and:
-                                      invalid > 0
-                                          ? `Fix ${invalid} invalid ${invalid === 1 ? 'mark' : 'marks'}${empty > 0 ? ' and ' : ''}`
-                                          : '',
-                                  marks:
-                                      empty > 0
-                                          ? `${invalid > 0 ? 'fill' : 'Fill'} ${empty} empty ${empty === 1 ? 'mark' : 'marks'}`
-                                          : '',
-                              })
-                            : t('Every mark is in. Submit when you are done.')
+                        ? invalid > 0 && empty > 0
+                            ? empty === 1
+                                ? tChoice(
+                                      '{1} Fix :count invalid mark and fill 1 empty mark before submitting.|[2,*] Fix :count invalid marks and fill 1 empty mark before submitting.',
+                                      invalid,
+                                  )
+                                : tChoice(
+                                      '{1} Fix :count invalid mark and fill :empty empty marks before submitting.|[2,*] Fix :count invalid marks and fill :empty empty marks before submitting.',
+                                      invalid,
+                                      { empty },
+                                  )
+                            : invalid > 0
+                              ? tChoice(
+                                    '{1} Fix :count invalid mark before submitting.|[2,*] Fix :count invalid marks before submitting.',
+                                    invalid,
+                                )
+                              : empty > 0
+                                ? tChoice(
+                                      '{1} Fill :count empty mark before submitting.|[2,*] Fill :count empty marks before submitting.',
+                                      empty,
+                                  )
+                                : t(
+                                      'Every mark is in. Submit when you are done.',
+                                  )
                         : published
                           ? t(
                                 'These marks are published and locked. A change needs a correction approved by the principal.',
@@ -31,8 +43,10 @@ export function SheetFooter({ model }: { model: MarkSheetModel }) {
                           : t('Marks cannot be entered now.'))}
             </p>
             <p className="text-[13px] leading-4 text-text-muted">
-                {rows.length} {rows.length === 1 ? t('student') : t('students')}{' '}
-                {t('· Enter moves to the next student')}
+                {tChoice(
+                    '{1} :count student · Enter moves to the next student|[2,*] :count students · Enter moves to the next student',
+                    rows.length,
+                )}
             </p>
         </div>
     );

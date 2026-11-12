@@ -24,7 +24,7 @@ import {
 } from '../../components/assessments/ui';
 import { PlusIcon, capsLabelClass } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface CalendarProps {
     yearLabel: string | null;
@@ -59,12 +59,12 @@ function Status({ plan }: { plan: PlanSummary }) {
                 />
                 {left < 0
                     ? t('Marks open · window ended')
-                    : t('Marks open · :left', {
-                          left:
-                              left === 0
-                                  ? 'closes today'
-                                  : `${left} ${left === 1 ? 'day' : 'days'} left`,
-                      })}
+                    : left === 0
+                      ? t('Marks open · closes today')
+                      : tChoice(
+                            '{1} Marks open · :count day left|[2,*] Marks open · :count days left',
+                            left,
+                        )}
             </span>
         );
     }

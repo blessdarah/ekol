@@ -26,7 +26,7 @@ import {
     outlineButtonClass,
 } from '../../components/structure/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 type Kind = 'promoted' | 'repeating' | 'new';
 
@@ -620,31 +620,23 @@ function Placement({
                                         }
                                     >
                                         {enrolment.over_levels.length > 0
-                                            ? t(
-                                                  ':over_levels :have more students than seats → Add a class',
+                                            ? tChoice(
+                                                  '{1} :over_levels has more students than seats → Add a class|[2,*] :over_levels have more students than seats → Add a class',
+                                                  enrolment.over_levels.length,
                                                   {
                                                       over_levels: listed(
                                                           enrolment.over_levels,
                                                       ),
-                                                      have:
-                                                          enrolment.over_levels
-                                                              .length === 1
-                                                              ? 'has'
-                                                              : 'have',
                                                   },
                                               )
                                             : enrolment.unplaced > 0
-                                              ? t(
-                                                    ':unplaced :are still waiting for a class',
+                                              ? tChoice(
+                                                    '{1} :count student is still waiting for a class|[2,*] :count students are still waiting for a class',
+                                                    enrolment.unplaced,
                                                     {
-                                                        unplaced: count(
+                                                        count: count(
                                                             enrolment.unplaced,
                                                         ),
-                                                        are:
-                                                            enrolment.unplaced ===
-                                                            1
-                                                                ? 'student is'
-                                                                : 'students are',
                                                     },
                                                 )
                                               : enrolment.expected > 0

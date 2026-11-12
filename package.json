@@ -9,7 +9,8 @@
         "check": "vp check",
         "check:fix": "vp check --fix",
         "types:check": "tsc --noEmit",
-        "test:money": "node --experimental-strip-types --test resources/js/lib/money.test.mjs"
+        "test:money": "node --experimental-strip-types --test resources/js/lib/money.test.mjs",
+        "test:i18n": "node --experimental-strip-types --test resources/js/lib/plural.test.mjs"
     },
     "dependencies": {
         "@inertiajs/react": "^3.0.0",

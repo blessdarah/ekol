@@ -25,7 +25,7 @@ import {
 } from '../../components/structure/ui';
 import { fullDate } from '../../components/students/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { t } from '../../lib/i18n';
+import { t, tChoice } from '../../lib/i18n';
 
 interface LevelRow {
     id: string;
@@ -212,13 +212,11 @@ function Overview({
                             className={linkClass}
                         >
                             {applications.to_review > 0
-                                ? t('Review :to_review :applications →', {
-                                      to_review: count(applications.to_review),
-                                      applications:
-                                          applications.to_review === 1
-                                              ? 'application'
-                                              : 'applications',
-                                  })
+                                ? tChoice(
+                                      '{1} Review :count application →|[2,*] Review :count applications →',
+                                      applications.to_review,
+                                      { count: count(applications.to_review) },
+                                  )
                                 : t('Open applications →')}
                         </Link>
                     </div>
@@ -342,16 +340,11 @@ function Overview({
                             'Students can be placed as soon as they are decided. Confirm opens when everyone has a class.',
                         )}
                         {continuing.graduating > 0 &&
-                            t(
-                                ' :graduating final-year :are graduating and not re-enrolled.',
-                                {
-                                    graduating: count(continuing.graduating),
-                                    are:
-                                        continuing.graduating === 1
-                                            ? 'student is'
-                                            : 'students are',
-                                },
-                            )}
+                            ` ${tChoice(
+                                '{1} :count final-year student is graduating and not re-enrolled.|[2,*] :count final-year students are graduating and not re-enrolled.',
+                                continuing.graduating,
+                                { count: count(continuing.graduating) },
+                            )}`}
                     </p>
                 </div>
             </div>

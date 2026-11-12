@@ -23,7 +23,7 @@ import {
     primaryActionClass,
 } from '../../components/timetable/ui';
 import { withAppShell } from '../../layouts/app-layout';
-import { numberLocale, t } from '../../lib/i18n';
+import { numberLocale, t, tChoice } from '../../lib/i18n';
 
 interface OverviewProps {
     phase: TimetablePhase | null;
@@ -182,12 +182,14 @@ function Overview({
                         </span>
                         {' · '}
                         {phase.live !== null
-                            ? t('live: version :live:live_since', {
-                                  live: phase.live,
-                                  live_since: phase.live_since
-                                      ? ` since ${shortDate(phase.live_since)}`
-                                      : '',
-                              })
+                            ? phase.live_since
+                                ? t('live: version :live since :since', {
+                                      live: phase.live,
+                                      since: shortDate(phase.live_since),
+                                  })
+                                : t('live: version :live', {
+                                      live: phase.live,
+                                  })
                             : t('nothing published yet')}
                         {' · '}
                         {t('draft: version')} {phase.draft}
@@ -256,15 +258,17 @@ function Overview({
                         }
                     >
                         {phase.blocking > 0
-                            ? t(':stop the generator: :to_lower_case:more. ', {
-                                  stop: plural(
-                                      phase.blocking,
-                                      'problem stops',
-                                      'problems stop',
-                                  ),
-                                  to_lower_case: firstProblem?.toLowerCase(),
-                                  more: phase.blocking > 1 ? ', and more' : '',
-                              })
+                            ? tChoice(
+                                  '{1} :count problem stops the generator: :to_lower_case. |[2,*] :count problems stop the generator: :to_lower_case, and more. ',
+                                  phase.blocking,
+                                  {
+                                      count: new Intl.NumberFormat(
+                                          numberLocale(),
+                                      ).format(phase.blocking),
+                                      to_lower_case:
+                                          firstProblem?.toLowerCase(),
+                                  },
+                              )
                             : t('Nothing stops the generator. ')}
                         {warnings > 0
                             ? t(':warning can wait.', {
