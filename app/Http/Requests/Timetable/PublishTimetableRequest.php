@@ -15,6 +15,14 @@ class PublishTimetableRequest extends TermRequest
     }
 
     /**
+     * @return array{effective_on: string}
+     */
+    public function publicationData(): array
+    {
+        return ['effective_on' => $this->string('effective_on')->toString()];
+    }
+
+    /**
      * @return array<string, string>
      */
     public function messages(): array
