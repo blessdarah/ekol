@@ -2,18 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AssessmentState;
+use App\Actions\Assessments\DecideMarkCorrection;
+use App\Actions\Assessments\RequestMarkCorrection;
 use App\Http\Requests\Assessments\DecideCorrectionRequest;
 use App\Http\Requests\Assessments\RequestCorrectionRequest;
 use App\Models\AssessmentPlan;
-use App\Models\AuditEvent;
 use App\Models\Mark;
 use App\Models\MarkCorrection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -57,86 +55,34 @@ class CorrectionController extends Controller
     /**
      * Ask for a published mark to be changed.
      */
-    public function store(RequestCorrectionRequest $request): RedirectResponse
+    public function store(RequestCorrectionRequest $request, RequestMarkCorrection $requestMarkCorrection): RedirectResponse
     {
         $school = $this->schoolContext->school();
-        $user = $request->user();
-
         $data = $request->validated();
 
         $mark = Mark::whereKey($data['mark_id'])
             ->whereHas('assessmentSubject.assessment', fn ($query) => $query->where('school_id', $school->id))
-            ->with('assessmentSubject.assessment.plan')
+            ->with('assessmentSubject')
             ->firstOrFail();
-        $sheet = $mark->assessmentSubject;
-        $plan = $sheet?->assessment?->plan;
 
-        abort_unless($sheet !== null, 404);
-        Gate::authorize('enterMarks', $sheet);
+        abort_unless($mark->assessmentSubject !== null, 404);
+        Gate::authorize('enterMarks', $mark->assessmentSubject);
 
-        if ($plan?->state !== AssessmentState::Published) {
-            throw ValidationException::withMessages(['new_score' => __('A correction is for a published mark. This one can still be edited on its sheet.')]);
-        }
-
-        if ((float) $data['new_score'] > (float) $sheet->max_score) {
-            throw ValidationException::withMessages(['new_score' => __('A mark can\'t be above :max_score.', ['max_score' => (float) $sheet->max_score])]);
-        }
-
-        if ($mark->score !== null && abs((float) $mark->score - (float) $data['new_score']) < 0.001) {
-            throw ValidationException::withMessages(['new_score' => __('That is the mark already published.')]);
-        }
-
-        if (MarkCorrection::where('mark_id', $mark->id)->where('status', 'pending')->exists()) {
-            throw ValidationException::withMessages(['new_score' => __('A correction for this mark is already waiting for the principal.')]);
-        }
-
-        $correction = MarkCorrection::create([
-            'school_id' => $school->id,
-            'mark_id' => $mark->id,
-            'reference' => MarkCorrection::nextReference($school->id),
-            'old_score' => $mark->score,
-            'new_score' => round((float) $data['new_score'], 2),
-            'reason' => trim($data['reason']),
-            'status' => 'pending',
-            'requested_by' => $user->id,
-        ]);
-
-        AuditEvent::record($school, $request->user(), 'mark_correction', $correction->id, 'requested', $correction->only(['reference', 'old_score', 'new_score', 'status', 'note']));
+        $requestMarkCorrection->handle($school, $mark, $request->user(), $data);
 
         $this->notify('Correction requested.');
 
         return back();
     }
 
-    public function decide(DecideCorrectionRequest $request, string $correction): RedirectResponse
+    public function decide(DecideCorrectionRequest $request, string $correction, DecideMarkCorrection $decideMarkCorrection): RedirectResponse
     {
         $school = $this->schoolContext->school();
-        $user = $request->user();
         Gate::authorize('manage-staff');
 
-        $target = MarkCorrection::where('school_id', $school->id)->where('id', $correction)->with('mark')->firstOrFail();
-        $data = $request->validated();
+        $target = MarkCorrection::where('school_id', $school->id)->where('id', $correction)->firstOrFail();
 
-        if ($target->status !== 'pending') {
-            throw ValidationException::withMessages(['decision' => __('This correction has already been decided.')]);
-        }
-
-        DB::transaction(function () use ($request, $school, $target, $data, $user) {
-            $approved = $data['decision'] === 'approve';
-
-            $target->update([
-                'status' => $approved ? 'approved' : 'declined',
-                'decided_by' => $user->id,
-                'decided_at' => now(),
-                'note' => isset($data['note']) ? trim($data['note']) : null,
-            ]);
-
-            if ($approved) {
-                $target->mark?->update(['score' => $target->new_score, 'is_absent' => false]);
-            }
-
-            AuditEvent::record($school, $request->user(), 'mark_correction', $target->id, $approved ? 'approved' : 'declined', $target->only(['reference', 'old_score', 'new_score', 'status', 'note']));
-        });
+        $decideMarkCorrection->handle($school, $target, $request->user(), $request->validated());
 
         $this->notify('Decision recorded.');
 

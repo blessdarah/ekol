@@ -38,4 +38,18 @@ class SaveStaffAccessRequest extends SchoolRequest
             'create_now' => ['required', 'boolean'],
         ];
     }
+
+    /**
+     * @return array{role: UserRole, email: string, phone: string, channel: string, create_now: bool}
+     */
+    public function accessData(): array
+    {
+        return [
+            'role' => UserRole::from($this->string('role')->toString()),
+            'email' => $this->string('email')->toString(),
+            'phone' => $this->string('phone')->toString(),
+            'channel' => $this->string('channel')->toString(),
+            'create_now' => $this->boolean('create_now'),
+        ];
+    }
 }

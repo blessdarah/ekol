@@ -126,6 +126,20 @@ class User extends Authenticatable
     }
 
     /**
+     * How letters and the staff pages address the person: "Mrs Ngonda".
+     */
+    public function salutation(): string
+    {
+        $title = match ($this->gender) {
+            Gender::Female => 'Mrs ',
+            Gender::Male => 'Mr ',
+            default => '',
+        };
+
+        return $title.($this->family_name ?? $this->full_name);
+    }
+
+    /**
      * Subjects she teaches, in any class.
      *
      * @return BelongsToMany<Subject, $this>

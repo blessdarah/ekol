@@ -2,23 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Assessments\SaveMarkSheet;
 use App\Enums\AssessmentState;
 use App\Enums\EnrolmentStatus;
 use App\Models\AssessmentPlan;
 use App\Models\AssessmentSubject;
-use App\Models\AuditEvent;
 use App\Models\Enrolment;
-use App\Models\GradeBand;
-use App\Models\Mark;
 use App\Models\MarkCorrection;
 use App\Models\School;
 use App\Models\Term;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -143,31 +139,16 @@ class MarkSheetController extends Controller
      * Save a sheet, and hand it in when asked. Marks can only change
      * while the window is open.
      */
-    public function update(Request $request, string $sheet): RedirectResponse
+    public function update(Request $request, string $sheet, SaveMarkSheet $saveMarkSheet): RedirectResponse
     {
         $school = $this->schoolContext->school();
         [$target, $plan] = $this->sheet($request, $school, $sheet);
-
-        if (! $plan->acceptsMarks()) {
-            throw ValidationException::withMessages([
-                'marks' => match ($plan->state) {
-                    AssessmentState::Published => __('These results are published. Ask for a correction instead.'),
-                    AssessmentState::MarksClosed => __('Marks entry is closed for this assessment.'),
-                    AssessmentState::MarksOpen => __('The marks window ended on :date. Ask the school to extend it.', ['date' => $plan->window_ends_on?->translatedFormat('j M')]),
-                    default => __('Marks are not open for this assessment yet.'),
-                },
-            ]);
-        }
+        $saveMarkSheet->ensureAcceptsMarks($plan);
 
         $max = (float) $target->max_score;
-        $students = Enrolment::where('school_class_id', $target->assessment?->school_class_id)
-            ->where('status', '!=', EnrolmentStatus::Left)
-            ->pluck('student_id')
-            ->all();
-
         $data = $request->validate([
             'marks' => ['present', 'array'],
-            'marks.*.student_id' => ['required', 'distinct', Rule::in($students)],
+            'marks.*.student_id' => ['required', 'distinct', Rule::in($saveMarkSheet->eligibleStudentIds($target))],
             'marks.*.score' => ['nullable', 'numeric', 'min:0', "max:{$max}"],
             'marks.*.absent' => ['required', 'boolean'],
             'marks.*.remark' => ['nullable', 'string', 'max:200'],
@@ -178,41 +159,7 @@ class MarkSheetController extends Controller
             'marks.*.score.numeric' => __('Enter the mark as a number.'),
         ]);
 
-        $submit = (bool) ($data['submit'] ?? false);
-        $filled = collect($this->markRows($data))->filter(fn (array $row) => $row['absent'] || ($row['score'] ?? null) !== null)->pluck('student_id');
-
-        if ($submit && count(array_diff($students, $filled->all())) > 0) {
-            $left = count(array_diff($students, $filled->all()));
-
-            throw ValidationException::withMessages([
-                'marks' => trans_choice('{1} Fill :count empty mark before submitting, or mark the student absent.|[2,*] Fill :count empty marks before submitting, or mark the student absent.', $left, ['count' => $left]),
-            ]);
-        }
-
-        DB::transaction(function () use ($request, $school, $target, $data, $submit, $max) {
-            foreach ($this->markRows($data) as $row) {
-                $score = $row['absent'] || ($row['score'] ?? null) === null ? null : round((float) $row['score'], 2);
-                $band = GradeBand::forScore($school->id, $score !== null ? $score / max(1.0, $max) * AssessmentPlan::OUT_OF : null);
-
-                Mark::updateOrCreate(
-                    ['assessment_subject_id' => $target->id, 'student_id' => $row['student_id']],
-                    [
-                        'score' => $score,
-                        'is_absent' => (bool) $row['absent'],
-                        'remark' => isset($row['remark']) && trim((string) $row['remark']) !== '' ? trim((string) $row['remark']) : null,
-                        'grade_band_id' => $band['id'] ?? null,
-                        'entered_by' => $request->user()?->id,
-                        'entered_at' => now(),
-                    ],
-                );
-            }
-
-            if ($submit) {
-                $target->update(['submitted_at' => now(), 'submitted_by' => $request->user()?->id]);
-            }
-
-            AuditEvent::record($school, $request->user(), 'assessment_subject', $target->id, $submit ? 'marks_submitted' : 'marks_saved', ['marks' => count($data['marks'])]);
-        });
+        $saveMarkSheet->handle($school, $target, $request->user(), $data);
 
         $this->notify('Marks saved.');
 
@@ -259,15 +206,6 @@ class MarkSheetController extends Controller
                 'class' => $following->assessment?->schoolClass?->name,
             ] : null,
         ];
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     * @return list<array{student_id: string, score?: float|int|string|null, absent: bool, remark?: string|null}>
-     */
-    protected function markRows(array $data): array
-    {
-        return $data['marks'];
     }
 
     /**

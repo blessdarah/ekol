@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\ChangeStudentSeries;
 use App\Http\SchoolContext;
 use App\Http\SeriesRegistrationPageData;
-use App\Models\AuditEvent;
 use App\Models\Level;
 use App\Models\School;
 use App\Models\Series;
@@ -14,7 +14,6 @@ use App\Models\Subject;
 use App\Models\Term;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -22,8 +21,6 @@ use Inertia\Response;
 
 class SeriesChangeController extends Controller
 {
-    private const array REASONS = ["Student's request", "Parent's request", 'Teacher advice', 'Placed in the wrong series', 'Other'];
-
     public function __construct(SchoolContext $schoolContext, protected SeriesRegistrationPageData $page)
     {
         parent::__construct($schoolContext);
@@ -73,11 +70,11 @@ class SeriesChangeController extends Controller
                     ->values(),
             ],
             'series' => $this->page->seriesOptions($level),
-            'reasons' => self::REASONS,
+            'reasons' => ChangeStudentSeries::REASONS,
         ]);
     }
 
-    public function changeStore(Request $request, string $student): RedirectResponse
+    public function changeStore(Request $request, string $student, ChangeStudentSeries $changeSeries): RedirectResponse
     {
         $school = $this->schoolContext->school();
         $term = $this->term($school);
@@ -95,7 +92,7 @@ class SeriesChangeController extends Controller
                     ->where('level_id', $registration->series?->level_id),
                 Rule::notIn([$registration->series_id]),
             ],
-            'reason' => ['required', Rule::in(self::REASONS)],
+            'reason' => ['required', Rule::in(ChangeStudentSeries::REASONS)],
             'note' => ['nullable', 'string', 'max:255'],
             'parent_agreed' => ['accepted'],
         ], [
@@ -103,41 +100,18 @@ class SeriesChangeController extends Controller
             'series_id.not_in' => __('The student is already in that series.'),
         ]);
 
-        $series = Series::whereKey($data['series_id'])->with('subjects:id')->firstOrFail();
-
-        if ($series->subjects->where('pivot.kind', 'core')->isEmpty()) {
-            throw ValidationException::withMessages([
-                'series_id' => __(':name has no core subjects yet, so nobody can be moved into it.', ['name' => $series->name]),
-            ]);
-        }
-
-        // Everything the student took and the new pool still offers is kept.
-        $taken = [
-            ...$registration->electives->modelKeys(),
-            ...($registration->series ? array_values($registration->series->subjects->where('pivot.kind', 'core')->modelKeys()) : []),
-        ];
-        $kept = array_values(array_intersect($taken, array_values($series->subjects->where('pivot.kind', 'elective')->modelKeys())));
-
-        DB::transaction(function () use ($request, $school, $registration, $series, $kept, $data, $target) {
-            $from = $registration->series?->code;
-
-            $registration->update([
-                'series_id' => $series->id,
-                'chosen_by' => $request->user()?->id,
-                'chosen_at' => now(),
-                'change_reason' => $data['reason'],
-                'change_note' => $data['note'] ?? null,
-                'parent_agreed' => true,
-            ]);
-            $registration->electives()->sync($kept);
-
-            AuditEvent::record($school, $request->user(), 'student', $target->id, 'series_changed', [
-                'from' => $from,
-                'to' => $series->code,
+        $changeSeries->handle(
+            $school,
+            $request->user(),
+            $term,
+            $registration,
+            Series::forSchool($school->id)->whereKey($data['series_id'])->firstOrFail(),
+            [
                 'reason' => $data['reason'],
                 'note' => $data['note'] ?? null,
-            ]);
-        });
+                'parent_agreed' => $request->boolean('parent_agreed'),
+            ],
+        );
 
         $this->notify('Series changed.');
 

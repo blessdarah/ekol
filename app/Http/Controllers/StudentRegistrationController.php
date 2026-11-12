@@ -3,22 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Students\AdmitStudent;
+use App\Actions\Students\UpdateStudent;
 use App\Http\Requests\Students\SaveStudentRequest;
 use App\Http\StudentRegistrationForm;
-use App\Models\AuditEvent;
 use App\Models\Enrolment;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Series;
 use App\Models\Student;
 use App\Models\StudentGuardian;
-use App\Models\StudentSeries;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Response;
 
@@ -67,38 +64,19 @@ class StudentRegistrationController extends Controller
             : redirect()->route('students.show', $student->id);
     }
 
-    public function update(SaveStudentRequest $request, string $student): RedirectResponse
+    public function update(SaveStudentRequest $request, string $student, UpdateStudent $updateStudent): RedirectResponse
     {
         $school = $this->schoolContext->school();
-        $year = $this->schoolContext->year();
         $target = $this->student($school, $student);
         $data = $this->validated($request, $school, $target);
+        $class = SchoolClass::whereKey($data['class_id'])->firstOrFail();
+        $series = $data['series_id'] ? Series::whereKey($data['series_id'])->first() : null;
 
-        DB::transaction(function () use ($request, $school, $year, $target, $data) {
-            $target->update($this->profile($request, $data));
-            $target->replaceGuardians($this->guardians($data));
-
-            if ($year) {
-                Enrolment::updateOrCreate(
-                    ['student_id' => $target->id, 'academic_year_id' => $year->id],
-                    ['school_class_id' => $data['class_id']],
-                );
-            }
-
-            if ($term = $this->schoolContext->term()) {
-                if ($data['series_id']) {
-                    StudentSeries::updateOrCreate(
-                        ['student_id' => $target->id, 'term_id' => $term->id],
-                        ['series_id' => $data['series_id']],
-                    );
-                } else {
-                    StudentSeries::where('student_id', $target->id)->where('term_id', $term->id)->delete();
-                }
-            }
-
-            $this->linkSibling($school, $target, $data['link_sibling_id'] ?? null);
-            AuditEvent::record($school, $request->user(), 'student', $target->id, 'updated', ['class_id' => $data['class_id']]);
-        });
+        $updateStudent->handle(
+            $school, $request->user(), $this->schoolContext->year(), $this->schoolContext->term(),
+            $target, $class, $this->profile($request, $data), $this->guardians($data),
+            $series, $data['link_sibling_id'] ?? null, (bool) ($data['allow_duplicate'] ?? false),
+        );
 
         $this->notify('Student record saved.');
 
@@ -251,18 +229,5 @@ class StudentRegistrationController extends Controller
         }
 
         return $profile;
-    }
-
-    protected function linkSibling(School $school, Student $student, ?string $siblingId): void
-    {
-        if (! $siblingId || $siblingId === $student->id) {
-            return;
-        }
-
-        $sibling = $this->student($school, $siblingId);
-        $family = $sibling->family_id ?? $student->family_id ?? (string) Str::uuid7();
-
-        $sibling->update(['family_id' => $family]);
-        $student->update(['family_id' => $family]);
     }
 }

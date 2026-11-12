@@ -599,32 +599,33 @@ export function TableToolbar({
     searchPlaceholder,
     search,
     onSearch,
-    filterTitle,
-    fields,
+    filterTitle = '',
+    fields = [],
     quickPicks = [],
-    values,
-    onFilter,
-    sorts,
-    sort,
-    onSort,
-    countLabel,
-    total,
+    values = {},
+    onFilter = () => {},
+    sorts = [],
+    sort = '',
+    onSort = () => {},
+    countLabel = null,
+    total = 0,
     onExport,
 }: {
     searchLabel: string;
     searchPlaceholder: string;
     search: string;
     onSearch: (value: string) => void;
-    filterTitle: string;
-    fields: FilterField[];
+    filterTitle?: string;
+    /** Without fields the toolbar is a search box alone, with no Filter button. */
+    fields?: FilterField[];
     quickPicks?: QuickPick[];
-    values: FilterValues;
-    onFilter: (patch: FilterValues) => void;
-    sorts: SortOption[];
-    sort: string;
-    onSort: (value: string) => void;
-    countLabel: ReactNode;
-    total: number;
+    values?: FilterValues;
+    onFilter?: (patch: FilterValues) => void;
+    sorts?: SortOption[];
+    sort?: string;
+    onSort?: (value: string) => void;
+    countLabel?: ReactNode;
+    total?: number;
     onExport?: () => void;
 }) {
     const [open, setOpen] = useState(false);
@@ -648,7 +649,7 @@ export function TableToolbar({
 
     return (
         <div className="flex flex-wrap items-center gap-2">
-            <label className="flex h-9 w-full items-center gap-2 rounded-md border border-solid border-border bg-white px-3 focus-within:border-primary sm:w-[340px]">
+            <label className="flex h-9 w-full items-center gap-2 rounded-md border border-solid border-border bg-white px-3 focus-within:border-primary sm:w-[340px] sm:max-w-full">
                 <svg
                     width="14"
                     height="14"
@@ -681,47 +682,54 @@ export function TableToolbar({
                     className="min-w-0 flex-1 bg-transparent text-[14px] text-text outline-none placeholder:text-text-muted"
                 />
             </label>
-            <div ref={box} className="relative">
-                <button
-                    type="button"
-                    aria-haspopup="dialog"
-                    aria-expanded={open}
-                    onClick={() => setOpen(!open)}
-                    className={`flex h-9 items-center gap-2 rounded-md border border-solid bg-white px-3 text-[13px] font-semibold hover:bg-surface ${
-                        active > 0
-                            ? 'border-primary text-primary'
-                            : 'border-border text-text'
-                    }`}
-                >
-                    <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
-                        <path
-                            d="M3 5h18l-7 8v6l-4-2v-4z"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinejoin="round"
+            {fields.length > 0 && (
+                <div ref={box} className="relative">
+                    <button
+                        type="button"
+                        aria-haspopup="dialog"
+                        aria-expanded={open}
+                        onClick={() => setOpen(!open)}
+                        className={`flex h-9 items-center gap-2 rounded-md border border-solid bg-white px-3 text-[13px] font-semibold hover:bg-surface ${
+                            active > 0
+                                ? 'border-primary text-primary'
+                                : 'border-border text-text'
+                        }`}
+                    >
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            aria-hidden
+                        >
+                            <path
+                                d="M3 5h18l-7 8v6l-4-2v-4z"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinejoin="round"
+                            />
+                        </svg>
+                        {t('Filter')}
+                        {active > 0 && (
+                            <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-[5px] font-mono text-[11px] text-white">
+                                {active}
+                            </span>
+                        )}
+                    </button>
+                    {open && (
+                        <FilterPanel
+                            title={filterTitle}
+                            fields={fields}
+                            quickPicks={quickPicks}
+                            values={values}
+                            onChange={onFilter}
+                            onClear={clear}
+                            onClose={() => setOpen(false)}
+                            total={total}
                         />
-                    </svg>
-                    {t('Filter')}
-                    {active > 0 && (
-                        <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-[5px] font-mono text-[11px] text-white">
-                            {active}
-                        </span>
                     )}
-                </button>
-                {open && (
-                    <FilterPanel
-                        title={filterTitle}
-                        fields={fields}
-                        quickPicks={quickPicks}
-                        values={values}
-                        onChange={onFilter}
-                        onClear={clear}
-                        onClose={() => setOpen(false)}
-                        total={total}
-                    />
-                )}
-            </div>
+                </div>
+            )}
             {sorts.length > 1 && (
                 <SortMenu options={sorts} value={sort} onChange={onSort} />
             )}

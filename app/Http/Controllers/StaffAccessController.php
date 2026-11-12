@@ -2,27 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Staff\InviteStaffMember;
+use App\Actions\Staff\SaveStaffAccess;
 use App\Enums\UserRole;
 use App\Http\Requests\Staff\SaveStaffAccessRequest;
 use App\Http\StaffPresentation;
-use App\Mail\StaffInvitationMail;
-use App\Models\AuditEvent;
 use App\Models\School;
 use App\Models\Term;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class StaffAccessController extends Controller
 {
-    public const int INVITATION_DAYS = 7;
-
     protected function member(School $school, string $id): User
     {
         return User::where('school_id', $school->id)->where('id', $id)->firstOrFail();
@@ -53,92 +47,23 @@ class StaffAccessController extends Controller
         ]);
     }
 
-    public function saveAccess(SaveStaffAccessRequest $request, string $staff): RedirectResponse
+    public function saveAccess(SaveStaffAccessRequest $request, SaveStaffAccess $saveAccess, string $staff): RedirectResponse
     {
         $school = $this->schoolContext->school();
-        $member = $this->member($school, $staff);
-
-        $data = $request->validated();
-
-        $before = $member->only(['role', 'email', 'phone']);
-        $member->update([
-            'role' => $data['role'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'invitation_channel' => $data['channel'],
-        ]);
-
-        AuditEvent::record($school, $request->user(), 'staff', $member->id, 'access_saved', [
-            'before' => $before,
-            'after' => $member->only(['role', 'email', 'phone']),
-            'invited' => (bool) $data['create_now'],
-        ]);
-
-        if ($data['create_now'] && ! $member->hasPortalAccount()) {
-            $this->invite($request, $school, $member, $data['channel']);
-        }
+        $member = $saveAccess->handle($school, $this->member($school, $staff), $request->user(), $request->accessData());
 
         $this->notify('Portal access saved.');
 
         return redirect()->route('staff.show', $member->id);
     }
 
-    public function remind(Request $request, string $staff): RedirectResponse
+    public function remind(Request $request, InviteStaffMember $invite, string $staff): RedirectResponse
     {
         $school = $this->schoolContext->school();
-        $member = $this->member($school, $staff);
-
-        if (! $member->hasPortalAccount()) {
-            $this->invite($request, $school, $member, $member->invitation_channel ?? 'email');
-            AuditEvent::record($school, $request->user(), 'staff', $member->id, 'invitation_sent', [
-                'channel' => $member->invitation_channel,
-            ]);
-        }
+        $invite->handle($school, $this->member($school, $staff), $request->user());
 
         $this->notify('Invitation sent again.');
 
         return back();
-    }
-
-    /**
-     * Issue a fresh seven-day link and deliver it. The link replaces any
-     * earlier one; only its hash is stored.
-     */
-    protected function invite(Request $request, School $school, User $member, string $channel): void
-    {
-        $token = Str::random(64);
-
-        $member->update([
-            'invitation_token_hash' => hash('sha256', $token),
-            'invitation_channel' => $channel,
-            'invitation_expires_at' => now()->addDays(static::INVITATION_DAYS),
-            'invited_at' => now(),
-        ]);
-
-        if (in_array($channel, ['email', 'both'], true)) {
-            try {
-                Mail::to($member->email)->locale($member->locale ?? $school->locale)->send(new StaffInvitationMail(
-                    $school,
-                    StaffPresentation::salutation($member),
-                    (string) $request->user()?->full_name,
-                    route('invitation.show', $token),
-                ));
-            } catch (\Throwable $exception) {
-                Log::warning('Staff invitation email failed.', [
-                    'staff_id' => $member->id,
-                    'error' => $exception->getMessage(),
-                ]);
-
-                throw ValidationException::withMessages([
-                    'invitation' => __('The invitation email could not be sent. Check the address and send it again.'),
-                ]);
-            }
-        }
-
-        if (in_array($channel, ['sms', 'both'], true)) {
-            Log::warning('Staff invitation SMS pending: no SMS provider is configured.', [
-                'staff_id' => $member->id,
-            ]);
-        }
     }
 }
