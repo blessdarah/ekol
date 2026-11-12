@@ -3,7 +3,6 @@
 namespace App\Http;
 
 use App\Enums\AcademicYearStatus;
-use App\Enums\Gender;
 use App\Enums\UserRole;
 use App\Models\AcademicYear;
 use App\Models\School;
@@ -71,13 +70,7 @@ class StaffPresentation
 
     public static function salutation(User $member): string
     {
-        $title = match ($member->gender) {
-            Gender::Female => 'Mrs ',
-            Gender::Male => 'Mr ',
-            default => '',
-        };
-
-        return $title.($member->family_name ?? $member->full_name);
+        return $member->salutation();
     }
 
     public static function photoUrl(User $member): ?string
