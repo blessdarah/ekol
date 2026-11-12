@@ -135,7 +135,9 @@ export function ordinal(n: number): string {
 }
 
 /**
- * Debounced per-zone autosave. After each successful save the zone's
+ * Debounced per-zone autosave. Only one save is on its way at a time:
+ * a change made meanwhile waits and goes once it lands, so saves never
+ * race or arrive out of order. When nothing else is waiting the zone's
  * local state is re-read from the server props, so rows created by
  * that save carry their ids into the next one.
  */
@@ -149,23 +151,43 @@ export function useAutosave<T>(
     const [data, setData] = useState<T>(initial);
     const [errors, setErrors] = useState<Record<string, string>>({});
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const sending = useRef(false);
+    const waiting = useRef<{ next: T } | null>(null);
 
     function send(next: T) {
         timer.current = null;
+
+        if (sending.current) {
+            waiting.current = { next };
+
+            return;
+        }
+
+        sending.current = true;
         router.patch(url, serialize(next) as never, {
             async: true,
             preserveState: true,
             preserveScroll: true,
             onSuccess: (page) => {
                 setErrors({});
-                report('saved');
-                if (!timer.current) {
+
+                if (!timer.current && !waiting.current) {
+                    report('saved');
                     setData(fromProps(page.props as unknown as SetupProps));
                 }
             },
             onError: (failed) => {
                 setErrors(failed);
                 report('error');
+            },
+            onFinish: () => {
+                sending.current = false;
+                const queued = waiting.current;
+                waiting.current = null;
+
+                if (queued) {
+                    send(queued.next);
+                }
             },
         });
     }
